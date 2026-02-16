@@ -1,0 +1,44 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+  const next = url.searchParams.get("next") ?? "/dashboard";
+
+  if (!code) {
+    const redirectUrl = new URL("/login", url.origin);
+    redirectUrl.searchParams.set("error", "missing_code");
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  let response = NextResponse.redirect(new URL(next, url.origin));
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) {
+    const redirectUrl = new URL("/login", url.origin);
+    redirectUrl.searchParams.set("error", "oauth_failed");
+    redirectUrl.searchParams.set("message", error.message);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return response;
+}
