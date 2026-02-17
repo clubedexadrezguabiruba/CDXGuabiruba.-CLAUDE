@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 export default async function MainLayout({
   children,
@@ -53,11 +54,19 @@ export default async function MainLayout({
               </div>
             </div>
 
-            <form action="/auth/signout" method="post">
-              <button className="rounded-md border bg-white px-3 py-1.5 text-xs hover:bg-zinc-100">
-                Sair
-              </button>
-            </form>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/puzzles"
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                Puzzles
+              </Link>
+              <form action="/auth/signout" method="post">
+                <button className="rounded-md border bg-white px-3 py-1.5 text-xs hover:bg-zinc-100">
+                  Sair
+                </button>
+              </form>
+            </div>
           </div>
         </nav>
       )}

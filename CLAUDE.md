@@ -2,58 +2,77 @@
 
 ## Sobre o Projeto
 Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba.
-Mobile-first, responsivo, com gamificação completa.
+Mobile-first, com gamificação e progressão verificável pelo servidor.
 
 ## Stack
-- Frontend: Next.js 15 (App Router) + TypeScript + Tailwind CSS
-- Backend: Supabase (PostgreSQL + Auth + RLS + Edge Functions)
-- Tabuleiro: chessground (lib do Lichess)
-- Engine: Stockfish WASM (via Web Worker no browser)
-- State: Zustand
-- Áudio: Howler.js
-- Deploy: Vercel (frontend) + Supabase (backend)
+- Next.js 16 (App Router) + TypeScript strict + Tailwind CSS
+- Supabase (PostgreSQL + Auth + RLS + RPCs)
+- chessground + chess.js (tabuleiro e lógica)
+- Stockfish WASM (Web Worker, browser-only)
+- Zustand (state) + Howler.js (áudio)
+- Deploy: Vercel + Supabase
 
-## Princípios Fundamentais
+## REGRAS INVIOLÁVEIS
 
-### Autoridade do Servidor
-TODA concessão de recompensa (XP, rating, missões, baús, conquistas) é feita
-exclusivamente no servidor via Supabase RPCs/Edge Functions.
-O client NUNCA decide se o aluno ganhou algo — apenas envia tentativas.
-O servidor valida e executa.
+### 1. Server-authority
+Toda concessão de recompensa (XP, rating, missões, baús, conquistas, streak)
+acontece EXCLUSIVAMENTE no servidor via RPC/trigger.
+O client envia tentativas. O servidor valida e decide.
+- Client envia: puzzle_id + lances; bot_id + PGN; lesson_step + resposta
+- Servidor: valida, calcula, concede (idempotente, transacional)
 
-### Anti-Trapaça
-- Client envia: puzzle_id + lances, lesson_id + lance, bot_id + PGN
-- Servidor valida: compara com solução correta, calcula rating, concede XP
-- RLS ativo em todas as tabelas (aluno só acessa seus dados)
-- Rate limiting em RPCs de puzzle e missão
+### 2. Segurança
+- RLS ativo em TODAS as tabelas (aluno só vê/edita seus dados)
+- NUNCA expor service_role key ou segredos no client
+- NUNCA confiar no relógio do client para prazos/expiração
+- SEMPRE usar @supabase/ssr (createBrowserClient / createServerClient com getAll/setAll)
+- NUNCA usar @supabase/auth-helpers-nextjs (deprecado)
 
-## Estrutura de Pastas
-- src/app/ → Rotas (App Router)
-- src/components/ → Componentes (ui/, chess/, gamification/, layout/)
-- src/lib/ → Lógica compartilhada (supabase/, chess/, glicko2/, gamification/)
-- src/hooks/ → React hooks customizados
-- supabase/migrations/ → SQL migrations versionadas
-- supabase/functions/ → Edge Functions
+### 3. Não over-engineer
+- Não adicionar features, refactors ou abstrações além do pedido
+- Mínimo de complexidade necessária para a tarefa atual
+- Não criar helpers/utils para operações usadas uma única vez
 
-## Convenções de Código
-- TypeScript strict mode sempre
-- Componentes: PascalCase (PuzzleBoard.tsx)
-- Hooks: camelCase com prefixo use (usePuzzleRating.ts)
-- Lib/utils: camelCase (calculateGlicko.ts)
-- Supabase types gerados com: npx supabase gen types typescript
+## Padrões do Projeto
+
+### Auth e Routing
+- Next.js 16 usa proxy.ts (NÃO middleware.ts)
+- Entry point: src/proxy.ts → src/lib/supabase/proxy.ts
+- Rotas públicas: /, /login, /registro, /auth/*
+- Tudo mais requer autenticação
+
+### Componentes
+- Preferir Server Components; Client Components só com interatividade/hooks
+- Puzzles pré-importados do Lichess CSV (nunca API em tempo real)
+- Stockfish roda no browser via Web Worker (nunca no servidor)
+- Sons respeitam configuração de mudo do usuário
+
+### Migrations
+- NUNCA modificar uma migration já aplicada — sempre criar nova
+- Formato: supabase/migrations/YYYYMMDDHHMMSS_descricao.sql
+
+## Workflow
+- Antes de iniciar fase/tarefa grande: `npm run build`
+- Entregar arquivos completos (sem patches soltos)
 - Commits em português: "feat: adicionar modo rating de puzzles"
+- Se precisar de informação ou ação do usuário para avançar, perguntar imediatamente — não assumir
+- Se o prompt do usuário for ambíguo, incompleto ou puder ser melhorado, apontar antes de executar
 
-## Regras Importantes
-- Sempre usar Server Components quando possível (Next.js App Router)
-- Client Components apenas quando necessário (interatividade, hooks)
-- Nunca expor chaves secretas do Supabase no client
-- Sempre usar @supabase/ssr para auth no server side
-- Puzzles são pré-importados do Lichess CSV, nunca API em tempo real
-- Stockfish WASM roda no browser via Web Worker, nunca no servidor
-- Todos os sons devem respeitar a configuração de mudo do usuário
+## Verificação (rodar antes de concluir)
+- `npm run build`
+- `npm run lint`
+- `npm run verify:phase2` (gate de banco)
+- `npm run verify:seeds` (dados iniciais)
+- `npm run test:e2e` (quando mexer em UI/auth)
 
-## Documentação de Referência
+## Estrutura-chave
+- src/app/ → rotas (App Router)
+- src/components/chess/ → componentes do tabuleiro
+- src/lib/supabase/ → clients SSR + proxy de auth
+- src/hooks/ → useUser, useSound, etc.
+- supabase/migrations/ → SQL migrations versionadas
+- scripts/verify/ → gates de validação por fase
+
+## Referências (ler antes de mudanças grandes)
 - Visão do Produto: docs/CdxGuabiruba_Visao_do_Produto_v1.md
-- Roadmap: docs/CdxGuabiruba_Roadmap_Tecnico_v1.md
-- Supabase: usar Context7 MCP para doc atualizada
-- Next.js: usar Context7 MCP para doc atualizada
+- Roadmap Técnico: docs/CdxGuabiruba_Roadmap_Tecnico_v1.md
