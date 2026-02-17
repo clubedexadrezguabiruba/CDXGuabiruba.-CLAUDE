@@ -7,9 +7,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src/",
     "verify:phase2": "tsx scripts/verify/phase2/validate-phase2.ts",
-    "verify:seeds": "tsx scripts/verify/phase2/verify-seeds.ts"
+    "verify:seeds": "tsx scripts/verify/phase2/verify-seeds.ts",
+    "test:e2e": "npx playwright test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -26,14 +27,17 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "4.1.18",
     "@types/howler": "^2.2.12",
     "@types/node": "25.2.3",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "eslint": "10.0.0",
+    "eslint": "^9.39.2",
     "eslint-config-next": "16.1.6",
     "postcss": "8.5.6",
+    "postgres": "^3.4.8",
     "tailwindcss": "4.1.18",
     "tsx": "^4.21.0",
     "typescript": "5.9.3"

@@ -27,10 +27,27 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
 
   const pathname = request.nextUrl.pathname;
-  if (!user && !pathname.startsWith("/login") && !pathname.startsWith("/auth")) {
+
+  // Rotas públicas: /, /login, /registro, /auth/*
+  const isPublicRoute =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/registro") ||
+    pathname.startsWith("/auth");
+
+  // Não autenticado tentando acessar rota protegida → redirect /login
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // Autenticado acessando /login ou /registro → redirect /dashboard
+  if (user && (pathname.startsWith("/login") || pathname.startsWith("/registro"))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 
