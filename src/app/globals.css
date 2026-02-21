@@ -8,9 +8,16 @@ html, body { height: 100%; }
 
 /* Chessground board responsive wrapper */
 .puzzle-board-wrap {
-  width: min(calc(100vw - 2rem), 500px);
+  width: 100%;
+  max-width: 500px;
   aspect-ratio: 1;
   margin: 0 auto;
+}
+/* Rating mode desktop: larger board in two-column layout */
+@media (min-width: 1024px) {
+  .puzzle-rating-wrap .puzzle-board-wrap {
+    max-width: 560px;
+  }
 }
 .puzzle-board-wrap cg-board {
   background-color: #b58863;

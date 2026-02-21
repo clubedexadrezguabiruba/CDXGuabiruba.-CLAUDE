@@ -10,6 +10,9 @@
     "lint": "eslint src/",
     "verify:phase2": "tsx scripts/verify/phase2/validate-phase2.ts",
     "verify:seeds": "tsx scripts/verify/phase2/verify-seeds.ts",
+    "diagnose:revanche": "tsx scripts/verify/phase4/diagnose-revanche.ts",
+    "verify:revanche": "tsx scripts/verify/phase4/verify-revanche.ts",
+    "verify:rush": "tsx scripts/verify/phase4/verify-rush.ts",
     "test:e2e": "npx playwright test"
   },
   "dependencies": {

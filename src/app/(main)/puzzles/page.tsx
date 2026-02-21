@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 interface RevancheData {
+  due_count: number;
   total_pending: number;
 }
 
@@ -18,16 +19,19 @@ export default async function PuzzlesHubPage() {
   if (!authData.user) redirect("/login");
 
   // Buscar count de revanche para badge
-  let revancheCount = 0;
+  let revancheDueCount = 0;
+  let revancheTotalPending = 0;
   const { data: revancheData } = await supabase.rpc("get_revanche_due");
   if (revancheData) {
-    revancheCount = (revancheData as RevancheData).total_pending ?? 0;
+    const rd = revancheData as RevancheData;
+    revancheDueCount = rd.due_count ?? 0;
+    revancheTotalPending = rd.total_pending ?? 0;
   }
 
   // Buscar perfil para exibir rating
   const { data: profile } = await supabase
     .from("users")
-    .select("puzzle_rating, puzzle_streak, rush_3min_record, rush_5min_record")
+    .select("puzzle_rating, puzzle_streak, rush_3min_record, rush_5min_record, rush_resistencia_record")
     .eq("id", authData.user.id)
     .single();
 
@@ -54,9 +58,9 @@ export default async function PuzzlesHubPage() {
       href: "/puzzles/rush",
       icon: Timer,
       title: "Puzzle Rush",
-      description: "Resolva o máximo de puzzles contra o relógio",
+      description: "Contra o relógio ou no modo resistência",
       stat: profile
-        ? `Recorde 3min: ${profile.rush_3min_record} | 5min: ${profile.rush_5min_record}`
+        ? `3min: ${profile.rush_3min_record} | 5min: ${profile.rush_5min_record} | Resistência: ${profile.rush_resistencia_record}`
         : null,
       color: "bg-orange-50 border-orange-200 hover:bg-orange-100",
       iconColor: "text-orange-600",
@@ -66,8 +70,8 @@ export default async function PuzzlesHubPage() {
       icon: RotateCcw,
       title: "Revanche",
       description: "Revise puzzles que você errou (repetição espaçada)",
-      stat: null,
-      badge: revancheCount > 0 ? revancheCount : null,
+      stat: revancheTotalPending > 0 ? `${revancheTotalPending} para revisar` : null,
+      badge: revancheDueCount > 0 ? revancheDueCount : null,
       color: "bg-purple-50 border-purple-200 hover:bg-purple-100",
       iconColor: "text-purple-600",
     },

@@ -28,6 +28,9 @@ interface PuzzleBoardProps {
   onComplete: (result: PuzzleResult) => void;
   disabled?: boolean;
   soundEnabled?: boolean;
+  showHint?: boolean;
+  autoShowSolution?: boolean;
+  onSolutionEnd?: () => void;
 }
 
 type PuzzlePhase = "loading" | "playing" | "correct" | "failed";
@@ -38,6 +41,9 @@ export default function PuzzleBoard({
   onComplete,
   disabled = false,
   soundEnabled = true,
+  showHint = false,
+  autoShowSolution = false,
+  onSolutionEnd,
 }: PuzzleBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const cgRef = useRef<Api | null>(null);
@@ -46,6 +52,8 @@ export default function PuzzleBoard({
   const moveIndexRef = useRef(0);
   const movesPlayedRef = useRef<string[]>([]);
   const startTimeRef = useRef(0);
+  const completedRef = useRef(false);
+  const activeTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [phase, setPhase] = useState<PuzzlePhase>("loading");
   const [playerColor, setPlayerColor] = useState<"white" | "black">("white");
 
@@ -58,6 +66,13 @@ export default function PuzzleBoard({
   disabledRef.current = disabled;
   const soundEnabledRef = useRef(soundEnabled);
   soundEnabledRef.current = soundEnabled;
+  const showHintRef = useRef(showHint);
+  showHintRef.current = showHint;
+  const autoShowSolutionRef = useRef(autoShowSolution);
+  autoShowSolutionRef.current = autoShowSolution;
+  const onSolutionEndRef = useRef(onSolutionEnd);
+  onSolutionEndRef.current = onSolutionEnd;
+  const solutionRunIdRef = useRef(0);
 
   const playSound = useCallback(
     (name: Parameters<typeof soundManager.play>[0]) => {
@@ -65,6 +80,26 @@ export default function PuzzleBoard({
     },
     []
   );
+
+  // Tracked setTimeout that gets cleaned up on unmount/re-init
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      activeTimeoutsRef.current = activeTimeoutsRef.current.filter(t => t !== id);
+      fn();
+    }, ms);
+    activeTimeoutsRef.current.push(id);
+    return id;
+  }, []);
+
+  // showHintHighlight highlights the origin square of the current expected move
+  const showHintHighlight = useCallback(() => {
+    const cg = cgRef.current;
+    const moves = movesRef.current;
+    const idx = moveIndexRef.current;
+    if (!cg || !showHintRef.current || idx >= moves.length) return;
+    const origin = moves[idx].slice(0, 2);
+    cg.setAutoShapes([{ orig: origin as Key, brush: "blue" }]);
+  }, []);
 
   // updateBoard uses refs only → stable callback, no stale closures
   const updateBoard = useCallback(() => {
@@ -93,6 +128,9 @@ export default function PuzzleBoard({
   // completeResult uses refs only → stable callback
   const completeResult = useCallback(
     (solved: boolean) => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+
       const timeSpent = Date.now() - startTimeRef.current;
       setPhase(solved ? "correct" : "failed");
 
@@ -103,11 +141,15 @@ export default function PuzzleBoard({
         });
       }
 
-      onCompleteRef.current({
-        solved,
-        movesPlayed: movesPlayedRef.current,
-        timeSpentMs: timeSpent,
-      });
+      try {
+        onCompleteRef.current({
+          solved,
+          movesPlayed: movesPlayedRef.current,
+          timeSpentMs: timeSpent,
+        });
+      } catch (e) {
+        console.error("[PuzzleBoard] onComplete error:", e);
+      }
     },
     []
   );
@@ -122,7 +164,7 @@ export default function PuzzleBoard({
 
       if (!chess || !cg || idx >= moves.length) return;
 
-      setTimeout(() => {
+      safeTimeout(() => {
         const uci = moves[idx];
         const parsed = parseUci(uci);
         const moveResult = applyUciMove(chess, uci);
@@ -131,32 +173,38 @@ export default function PuzzleBoard({
           cg.move(parsed.from as Key, parsed.to as Key);
           movesPlayedRef.current.push(uci);
 
-          if (moveResult.captured) {
+          if (chess.isCheck()) {
+            playSound("check");
+          } else if (moveResult.captured) {
             playSound("capture");
           } else {
             playSound("move");
-          }
-          if (chess.isCheck()) {
-            playSound("check");
           }
 
           moveIndexRef.current = idx + 1;
 
           if (moveIndexRef.current >= moves.length) {
+            // Sync FEN so promoted pieces display correctly
+            const cgInner = cgRef.current;
+            if (cgInner && chess) cgInner.set({ fen: chess.fen() });
             completeResult(true);
             return;
           }
 
           updateBoard();
+          showHintHighlight();
 
           if (startTimeRef.current === 0) {
             startTimeRef.current = Date.now();
             setPhase("playing");
           }
+        } else {
+          // Puzzle data is invalid (FEN/moves mismatch) — skip to avoid freeze
+          completeResult(false);
         }
       }, delayMs);
     },
-    [playSound, updateBoard, completeResult]
+    [playSound, updateBoard, completeResult, showHintHighlight, safeTimeout]
   );
 
   // handleUserMove depends on stable callbacks → stable
@@ -199,27 +247,30 @@ export default function PuzzleBoard({
         const cg = cgRef.current;
         if (cg) {
           cg.setAutoShapes([{ orig: dest, brush: "green" }]);
+          // Lock board immediately — prevents stale-dests race during delay
+          cg.set({ movable: { color: undefined, dests: new Map() } });
         }
 
-        if (moveResult.captured) {
+        if (chess.isCheck()) {
+          playSound("check");
+        } else if (moveResult.captured) {
           playSound("capture");
         } else {
           playSound("move");
-        }
-        if (chess.isCheck()) {
-          playSound("check");
         }
 
         moveIndexRef.current = idx + 1;
 
         if (moveIndexRef.current >= moves.length) {
-          playSound("correct");
+          // Sync FEN so promoted pieces display correctly
+          const cgSync = cgRef.current;
+          if (cgSync && chess) cgSync.set({ fen: chess.fen() });
           completeResult(true);
           return;
         }
 
         // Play opponent's next move after delay
-        setTimeout(() => {
+        safeTimeout(() => {
           const cg = cgRef.current;
           if (cg) cg.setAutoShapes([]);
           playOpponentMove(300);
@@ -234,17 +285,94 @@ export default function PuzzleBoard({
         playSound("wrong");
         chess.undo();
 
-        setTimeout(() => {
+        safeTimeout(() => {
           completeResult(false);
         }, 600);
       }
     },
-    [playSound, updateBoard, completeResult, playOpponentMove]
+    [playSound, updateBoard, completeResult, playOpponentMove, safeTimeout]
   );
 
   // Ref for chessground event handler (always points to latest handleUserMove)
   const handleUserMoveRef = useRef(handleUserMove);
   handleUserMoveRef.current = handleUserMove;
+
+  // Auto-show solution after failure: replay remaining moves on the board
+  useEffect(() => {
+    if (!autoShowSolution || phase !== "failed") return;
+
+    const chess = chessRef.current;
+    const cg = cgRef.current;
+    const moves = movesRef.current;
+    const startIdx = moveIndexRef.current;
+    if (!chess || !cg || startIdx >= moves.length) {
+      // Nothing to replay
+      onSolutionEndRef.current?.();
+      return;
+    }
+
+    const runId = ++solutionRunIdRef.current;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    // Lock board and sync FEN (chess.undo() after wrong move desyncs cg from chess)
+    cg.set({
+      fen: chess.fen(),
+      movable: { free: false, color: undefined, dests: new Map() },
+      lastMove: undefined,
+    });
+    cg.setAutoShapes([]);
+
+    // Wait 1s then replay each move with 800ms gap
+    const startTimer = setTimeout(() => {
+      if (solutionRunIdRef.current !== runId) return;
+
+      let i = startIdx;
+      const playNext = () => {
+        if (solutionRunIdRef.current !== runId || i >= moves.length) {
+          if (solutionRunIdRef.current === runId) {
+            onSolutionEndRef.current?.();
+          }
+          return;
+        }
+        const uci = moves[i];
+        const parsed = parseUci(uci);
+        const moveResult = applyUciMove(chess, uci);
+        if (moveResult) {
+          cg.move(parsed.from as Key, parsed.to as Key);
+          cg.set({ fen: chess.fen(), check: chess.isCheck() ? (chess.turn() === "w" ? "white" : "black") : undefined });
+          if (soundEnabledRef.current) {
+            if (chess.isCheck()) soundManager.play("check");
+            else if (moveResult.captured) soundManager.play("capture");
+            else soundManager.play("move");
+          }
+        }
+        i++;
+        if (i < moves.length) {
+          const t = setTimeout(playNext, 800);
+          timers.push(t);
+        } else {
+          // Done
+          if (solutionRunIdRef.current === runId) {
+            onSolutionEndRef.current?.();
+          }
+        }
+      };
+      playNext();
+    }, 1000);
+    timers.push(startTimer);
+
+    return () => {
+      // Invalidate current run so stale callbacks are ignored
+      solutionRunIdRef.current = runId + 1;
+      timers.forEach(clearTimeout);
+    };
+  }, [autoShowSolution, phase]);
+
+  // Show hint when showHint prop changes to true (user clicks "Dica" button)
+  useEffect(() => {
+    if (!showHint || phase !== "playing") return;
+    showHintHighlight();
+  }, [showHint, phase, showHintHighlight]);
 
   // Initialize board
   useEffect(() => {
@@ -258,6 +386,7 @@ export default function PuzzleBoard({
     moveIndexRef.current = 0;
     movesPlayedRef.current = [];
     startTimeRef.current = 0;
+    completedRef.current = false;
 
     // Set player color synchronously via ref (avoids stale closure)
     const color = getPlayerColor(fen);
@@ -297,11 +426,14 @@ export default function PuzzleBoard({
     cgRef.current = cg;
 
     // Play opponent's first move after a delay
-    setTimeout(() => {
+    safeTimeout(() => {
       playOpponentMove(600);
     }, 300);
 
     return () => {
+      // Cancel ALL pending timeouts to prevent double-fire in React Strict Mode
+      activeTimeoutsRef.current.forEach(clearTimeout);
+      activeTimeoutsRef.current = [];
       cg.destroy();
       cgRef.current = null;
     };

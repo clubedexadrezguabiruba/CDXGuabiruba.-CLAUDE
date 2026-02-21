@@ -4,7 +4,6 @@ type SoundName =
   | "move"
   | "capture"
   | "check"
-  | "correct"
   | "wrong"
   | "streak"
   | "rush-tick"
@@ -16,7 +15,6 @@ const SOUND_FILES: Record<SoundName, string> = {
   move: "/sounds/move.mp3",
   capture: "/sounds/capture.mp3",
   check: "/sounds/check.mp3",
-  correct: "/sounds/correct.mp3",
   wrong: "/sounds/wrong.mp3",
   streak: "/sounds/streak.mp3",
   "rush-tick": "/sounds/rush-tick.mp3",

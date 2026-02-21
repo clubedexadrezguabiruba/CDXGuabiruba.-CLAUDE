@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { Chess } from "chess.js";
 import {
   seedTestPuzzles,
   cleanupTestPuzzles,
@@ -607,6 +608,97 @@ test.describe("puzzles — rush gameplay", () => {
     await page.waitForTimeout(1000);
     await expect(page.getByText("Score: 1")).toBeVisible({ timeout: 5_000 });
   });
+
+  test("C3: rush game-over por perda de vidas", async ({ page }) => {
+    test.setTimeout(90_000);
+
+    await loginUser(
+      page,
+      `rushtest+${TIMESTAMP}@cdxguabiruba.test`,
+      `RushTest@${TIMESTAMP}`
+    );
+    await page.goto("/puzzles/rush");
+
+    await page.click("text=3 Minutos");
+
+    const rpcPromise = interceptRPC(page, "start_rush");
+    await page.click("text=Iniciar Rush!");
+
+    const data = await rpcPromise;
+    const puzzles = (
+      data as { puzzles?: { fen: string; moves: string }[] }
+    )?.puzzles;
+    test.skip(!puzzles || puzzles.length === 0, "Rush não retornou puzzles");
+
+    // Wait for board to appear
+    await expect(page.locator(".puzzle-board-wrap")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Make 3 wrong moves to lose all lives.
+    // Use chess.js to find actual legal wrong moves from the puzzle data.
+    for (let i = 0; i < 3; i++) {
+      // Check if game already ended (3rd wrong move triggers async endRush)
+      const alreadyOver = await page
+        .getByText("Fim do Rush!")
+        .isVisible()
+        .catch(() => false);
+      if (alreadyOver) break;
+
+      const puzzle = puzzles![Math.min(i, puzzles!.length - 1)];
+      const orientation = getPlayerColor(puzzle.fen);
+      const allMoves = parseMoves(puzzle.moves);
+
+      // Use chess.js to compute the board state after opponent's setup move
+      // and find a legal but wrong move for the player.
+      const chess = new Chess(puzzle.fen);
+      const setupUci = allMoves[0];
+      chess.move({
+        from: setupUci.slice(0, 2),
+        to: setupUci.slice(2, 4),
+        promotion: setupUci.length > 4 ? setupUci[4] : undefined,
+      });
+
+      const correctUci = allMoves[1].slice(0, 4);
+      const legalMoves = chess.moves({ verbose: true });
+      const wrongMove = legalMoves.find(
+        (m) => m.from + m.to !== correctUci
+      );
+
+      if (!wrongMove) {
+        // Extremely rare: only 1 legal move (the correct one). Skip.
+        continue;
+      }
+
+      // Wait for opponent setup move + playing phase
+      await waitForOpponentMove(page, 2000);
+
+      // Check again after wait
+      const overAfterWait = await page
+        .getByText("Fim do Rush!")
+        .isVisible()
+        .catch(() => false);
+      if (overAfterWait) break;
+
+      await waitForPhase(page, "playing");
+
+      // Make the wrong (but legal) move
+      await makeMove(page, wrongMove.from, wrongMove.to, orientation);
+
+      // Wait for puzzle transition (800ms delay + next puzzle load)
+      if (i < 2) {
+        await page.waitForTimeout(2500);
+      }
+    }
+
+    // Should see game-over screen (endRush awaits pending + calls RPC)
+    await expect(page.getByText("Fim do Rush!")).toBeVisible({
+      timeout: 30_000,
+    });
+
+    // Should show "Jogar Novamente" button
+    await expect(page.getByText("Jogar Novamente")).toBeVisible();
+  });
 });
 
 // ============================================================
@@ -733,5 +825,268 @@ test.describe("puzzles — revanche gameplay", () => {
 
     expect(hasPuzzles).toBeGreaterThanOrEqual(1);
     expect(hasEmptyState).toBeFalsy();
+  });
+
+  test("D3: fluxo completo — errar puzzle em rating → aparece na revanche", async ({
+    page,
+  }) => {
+    // This test verifies the REAL flow: fail a puzzle via actual gameplay,
+    // then navigate to revanche and verify it appears.
+    // Unlike D2 which inserts directly, this tests the full puzzle_attempt RPC.
+
+    const revEmail = `revtest+${TIMESTAMP}@cdxguabiruba.test`;
+    const revPassword = `RevTest@${TIMESTAMP}`;
+
+    await loginUser(page, revEmail, revPassword);
+
+    // Intercept the puzzle data from rating mode
+    const rpcPromise = interceptRPC(page, "get_next_puzzle_rating");
+    await page.goto("/puzzles/rating");
+
+    const data = await rpcPromise;
+    const puzzle = (data as { puzzle?: { fen: string; moves: string } })
+      ?.puzzle;
+    test.skip(!puzzle, "Nenhum puzzle disponível no banco");
+
+    // Wait for board + opponent setup move
+    await expect(page.locator(".puzzle-board-wrap")).toBeVisible({
+      timeout: 15_000,
+    });
+    await waitForOpponentMove(page);
+    await waitForPhase(page, "playing");
+
+    // Parse solution to derive a wrong move: move the expected piece to a wrong square
+    const orientation = getPlayerColor(puzzle!.fen);
+    const allMoves = parseMoves(puzzle!.moves);
+    const playerMove = allMoves[1]; // player's first expected move (e.g., "f1f8")
+    const from = playerMove.slice(0, 2);
+    const correctTo = playerMove.slice(2, 4);
+
+    // Pick a wrong destination: try adjacent squares that differ from the correct one
+    const file = from.charCodeAt(0);
+    const rank = parseInt(from[1]);
+    const wrongTargets = [
+      String.fromCharCode(file) + String(rank + 1),       // same file, rank+1
+      String.fromCharCode(file) + String(rank - 1),       // same file, rank-1
+      String.fromCharCode(file + 1) + String(rank),       // file+1, same rank
+      String.fromCharCode(file - 1) + String(rank),       // file-1, same rank
+    ].filter(
+      (sq) =>
+        sq !== correctTo &&
+        sq[0] >= "a" && sq[0] <= "h" &&
+        parseInt(sq[1]) >= 1 && parseInt(sq[1]) <= 8
+    );
+
+    let wrongMoveWorked = false;
+    for (const wrongTo of wrongTargets) {
+      await makeMove(page, from, wrongTo, orientation);
+      const failed = await page
+        .getByText("Incorreto")
+        .first()
+        .isVisible()
+        .catch(() => false);
+      if (failed) {
+        wrongMoveWorked = true;
+        break;
+      }
+      // If the move wasn't accepted (illegal), try next
+      await page.waitForTimeout(200);
+    }
+
+    // Fallback: generic makeWrongMove
+    if (!wrongMoveWorked) {
+      await makeWrongMove(page, orientation);
+    }
+
+    // Wait for "Incorreto" phase — confirms wrong move was registered
+    await waitForPhase(page, "failed", 8_000);
+
+    // Wait for the puzzle_attempt RPC to complete and auto-advance
+    await page.waitForTimeout(5000);
+
+    // Navigate to revanche page
+    await page.goto("/puzzles/revanche");
+
+    // Wait for the revanche page to load
+    await expect(page.getByText("Revanche")).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(3000);
+
+    // The puzzle should appear in the list (NOT "Tudo em dia!")
+    const hasPuzzleItems = await page
+      .locator("button")
+      .filter({ hasText: /Puzzle/ })
+      .count();
+    const hasEmptyState = await page
+      .getByText("Tudo em dia!")
+      .isVisible()
+      .catch(() => false);
+
+    expect(hasPuzzleItems).toBeGreaterThanOrEqual(1);
+    expect(hasEmptyState).toBeFalsy();
+  });
+});
+
+// ============================================================
+// GAMEPLAY TESTS — Resistência (regression: board freeze fix)
+// ============================================================
+test.describe("puzzles — resistência gameplay", () => {
+  const hasAdminAccess = !!(SUPABASE_URL && SERVICE_ROLE_KEY);
+  let userId: string;
+
+  test.beforeAll(async () => {
+    test.skip(
+      !hasAdminAccess,
+      "SUPABASE_URL ou SERVICE_ROLE_KEY não definidos"
+    );
+    userId = await createTestUser(
+      `restest+${TIMESTAMP}@cdxguabiruba.test`,
+      `ResTest@${TIMESTAMP}`
+    );
+    await seedTestPuzzles();
+  });
+
+  test.afterAll(async () => {
+    if (userId) await deleteTestUser(userId);
+  });
+
+  test("E1: resistência joga 10+ puzzles sem travar (regression)", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    await loginUser(
+      page,
+      `restest+${TIMESTAMP}@cdxguabiruba.test`,
+      `ResTest@${TIMESTAMP}`
+    );
+    await page.goto("/puzzles/rush");
+
+    // Select Resistência mode
+    await page.click("text=Resistência");
+
+    const rpcPromise = interceptRPC(page, "start_rush");
+    await page.click("text=Jogar!");
+
+    const data = await rpcPromise;
+    const puzzles = (
+      data as { puzzles?: { fen: string; moves: string }[] }
+    )?.puzzles;
+    test.skip(!puzzles || puzzles.length < 10, "Resistência não retornou puzzles suficientes");
+
+    // Wait for board to appear
+    await expect(page.locator(".puzzle-board-wrap")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Solve at least 10 puzzles (covers the tier transition at score=5)
+    const target = Math.min(10, puzzles!.length);
+    for (let i = 0; i < target; i++) {
+      const puzzle = puzzles![i];
+      const moves = parseMoves(puzzle.moves);
+
+      // Solve this puzzle
+      await solvePuzzle(page, moves, puzzle.fen);
+
+      // Wait for "Correto!" phase
+      await waitForPhase(page, "correct", 8_000);
+
+      // Wait for auto-advance to next puzzle
+      await page.waitForTimeout(1000);
+
+      // Verify board is still visible (not frozen/disappeared)
+      if (i < target - 1) {
+        await expect(page.locator(".puzzle-board-wrap")).toBeVisible({
+          timeout: 5_000,
+        });
+      }
+    }
+
+    // After 10 puzzles, score should be 10
+    await expect(page.getByText(`Score: ${target}`)).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // Verify no console errors that indicate freeze
+    // (The board should still be interactive — try selecting any piece)
+    const boardVisible = await page.locator(".puzzle-board-wrap").isVisible();
+    expect(boardVisible).toBeTruthy();
+  });
+
+  test("E2: resistência game-over por perda de vidas", async ({ page }) => {
+    test.setTimeout(90_000);
+
+    await loginUser(
+      page,
+      `restest+${TIMESTAMP}@cdxguabiruba.test`,
+      `ResTest@${TIMESTAMP}`
+    );
+    await page.goto("/puzzles/rush");
+
+    // Select Resistência mode
+    await page.click("text=Resistência");
+
+    const rpcPromise = interceptRPC(page, "start_rush");
+    await page.click("text=Jogar!");
+
+    const data = await rpcPromise;
+    const puzzles = (
+      data as { puzzles?: { fen: string; moves: string }[] }
+    )?.puzzles;
+    test.skip(!puzzles || puzzles.length === 0, "Resistência não retornou puzzles");
+
+    // Wait for board
+    await expect(page.locator(".puzzle-board-wrap")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Make 3 wrong moves to lose all lives
+    for (let i = 0; i < 3; i++) {
+      const alreadyOver = await page
+        .getByText(/Fim da Resistência!/)
+        .isVisible()
+        .catch(() => false);
+      if (alreadyOver) break;
+
+      const puzzle = puzzles![Math.min(i, puzzles!.length - 1)];
+      const orientation = getPlayerColor(puzzle.fen);
+      const allMoves = parseMoves(puzzle.moves);
+
+      const chess = new Chess(puzzle.fen);
+      const setupUci = allMoves[0];
+      chess.move({
+        from: setupUci.slice(0, 2),
+        to: setupUci.slice(2, 4),
+        promotion: setupUci.length > 4 ? setupUci[4] : undefined,
+      });
+
+      const correctUci = allMoves[1].slice(0, 4);
+      const legalMoves = chess.moves({ verbose: true });
+      const wrongMove = legalMoves.find(
+        (m) => m.from + m.to !== correctUci
+      );
+
+      if (!wrongMove) continue;
+
+      await waitForOpponentMove(page, 2000);
+
+      const overAfterWait = await page
+        .getByText(/Fim da Resistência!/)
+        .isVisible()
+        .catch(() => false);
+      if (overAfterWait) break;
+
+      await waitForPhase(page, "playing");
+      await makeMove(page, wrongMove.from, wrongMove.to, orientation);
+
+      if (i < 2) {
+        await page.waitForTimeout(2500);
+      }
+    }
+
+    // Should see game-over screen
+    await expect(page.getByText(/Fim da Resistência!/)).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText("Jogar Novamente")).toBeVisible();
   });
 });

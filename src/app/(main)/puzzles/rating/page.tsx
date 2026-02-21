@@ -9,6 +9,10 @@ import { parsePuzzleMoves } from "@/lib/chess/puzzleLogic";
 import { ArrowLeft, SkipForward, Flame, TrendingUp, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
+const STREAK_MILESTONES = new Set([
+  3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100,
+]);
+
 interface PuzzleData {
   id: number;
   lichess_id: string;
@@ -149,7 +153,7 @@ export default function PuzzleRatingPage() {
         best_streak: number;
       };
 
-      if (d.solved && d.streak >= 3) {
+      if (d.solved && STREAK_MILESTONES.has(d.streak)) {
         play("streak");
       }
 
@@ -166,10 +170,10 @@ export default function PuzzleRatingPage() {
         bestStreak: d.best_streak,
       }));
 
-      // Auto-next after delay
+      // Auto-next after delay (1.5s on success for faster flow)
       autoAdvanceRef.current = setTimeout(() => {
         loadNextPuzzle();
-      }, 2500);
+      }, 1500);
     },
     [state.puzzle, loadNextPuzzle, play, supabase]
   );
@@ -183,9 +187,9 @@ export default function PuzzleRatingPage() {
   }, [loadNextPuzzle, supabase]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
+    <div className="puzzle-rating-wrap mx-auto max-w-2xl p-4 lg:max-w-5xl">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <Link
           href="/puzzles"
           className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700"
@@ -193,7 +197,8 @@ export default function PuzzleRatingPage() {
           <ArrowLeft className="h-4 w-4" />
           Puzzles
         </Link>
-        <div className="flex items-center gap-3">
+        {/* Mobile: rating + streak inline */}
+        <div className="flex items-center gap-3 lg:hidden">
           {state.streak > 0 && (
             <div className="flex items-center gap-1 text-orange-500">
               <Flame className="h-4 w-4" />
@@ -207,95 +212,132 @@ export default function PuzzleRatingPage() {
         </div>
       </div>
 
-      {/* Board */}
-      {state.loading && (
-        <div className="flex h-64 items-center justify-center">
-          <div className="animate-pulse text-zinc-400">Carregando puzzle...</div>
-        </div>
-      )}
+      {/* Two-column on desktop */}
+      <div className="lg:flex lg:gap-6">
+        {/* Left: Board area */}
+        <div className="flex-1 space-y-3">
+          {state.loading && (
+            <div className="flex h-64 items-center justify-center">
+              <div className="animate-pulse text-zinc-400">Carregando puzzle...</div>
+            </div>
+          )}
 
-      {state.error && (
-        <div className="rounded-lg bg-red-50 p-4 text-center text-sm text-red-600">
-          {state.error}
-          <button
-            onClick={loadNextPuzzle}
-            className="mt-2 block w-full rounded-md bg-red-100 px-3 py-1.5 text-sm hover:bg-red-200"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      )}
-
-      {state.puzzle && !state.loading && (
-        <>
-          <div className="text-center text-xs text-zinc-400">
-            Puzzle #{state.puzzle.lichess_id} — Rating: {state.puzzle.rating}
-          </div>
-
-          <PuzzleBoard
-            key={state.puzzle.id}
-            fen={state.puzzle.fen}
-            solutionMoves={state.puzzle.moves}
-            onComplete={handlePuzzleComplete}
-            soundEnabled={!profile?.sound_muted}
-          />
-
-          {/* Post-result overlay */}
-          {state.result && (
-            <div
-              className={`rounded-lg p-4 text-center ${
-                state.result.solved
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
-              }`}
-            >
-              <div className="text-lg font-bold">
-                {state.result.solved ? "Correto!" : "Incorreto"}
-              </div>
-              <div className="mt-1 text-sm">
-                Rating:{" "}
-                <span
-                  className={
-                    state.result.ratingDelta >= 0
-                      ? "font-bold text-green-600"
-                      : "font-bold text-red-600"
-                  }
-                >
-                  {state.result.ratingDelta >= 0 ? "+" : ""}
-                  {state.result.ratingDelta}
-                </span>{" "}
-                ({state.result.ratingAfter})
-              </div>
-              {state.result.streak >= 3 && (
-                <div className="mt-1 flex items-center justify-center gap-1 text-orange-500">
-                  <Flame className="h-4 w-4" />
-                  <span className="font-bold">Streak: {state.result.streak}</span>
-                </div>
-              )}
+          {state.error && (
+            <div className="rounded-lg bg-red-50 p-4 text-center text-sm text-red-600">
+              {state.error}
               <button
                 onClick={loadNextPuzzle}
-                className="mt-3 inline-flex items-center gap-1 rounded-md bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-white"
+                className="mt-2 block w-full rounded-md bg-red-100 px-3 py-1.5 text-sm hover:bg-red-200"
               >
-                Próximo puzzle
-                <ChevronRight className="h-4 w-4" />
+                Tentar novamente
               </button>
             </div>
           )}
 
-          {/* Skip button */}
-          {!state.result && state.skipsAvailable > 0 && (
-            <div className="text-center">
-              <button
-                onClick={handleSkip}
-                className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-zinc-500 hover:bg-zinc-50"
-              >
-                <SkipForward className="h-3 w-3" />
-                Pular ({state.skipsAvailable} restantes)
-              </button>
-            </div>
+          {state.puzzle && !state.loading && (
+            <>
+              <PuzzleBoard
+                key={state.puzzle.id}
+                fen={state.puzzle.fen}
+                solutionMoves={state.puzzle.moves}
+                onComplete={handlePuzzleComplete}
+                soundEnabled={!profile?.sound_muted}
+              />
+              <div className="text-center text-xs text-zinc-400">
+                Rating: {state.puzzle.rating}
+              </div>
+            </>
           )}
-        </>
-      )}
+        </div>
+
+        {/* Right: Info panel */}
+        {state.puzzle && !state.loading && (
+          <div className="mt-4 space-y-4 lg:mt-0 lg:w-72 lg:shrink-0">
+            {/* Desktop: rating card */}
+            <div className="hidden rounded-xl border bg-white p-4 lg:block">
+              <div className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                Seu Rating
+              </div>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-3xl font-bold">{state.userRating}</span>
+                {state.result && (
+                  <span
+                    className={`text-sm font-bold ${
+                      state.result.ratingDelta >= 0
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {state.result.ratingDelta >= 0 ? "+" : ""}
+                    {state.result.ratingDelta}
+                  </span>
+                )}
+              </div>
+              {state.streak > 0 && (
+                <div className="mt-3 flex items-center gap-1.5 text-orange-500">
+                  <Flame className="h-4 w-4" />
+                  <span className="text-sm font-bold">Streak: {state.streak}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Result */}
+            {state.result && (
+              <div
+                className={`rounded-xl p-4 text-center ${
+                  state.result.solved
+                    ? "bg-green-50 text-green-800"
+                    : "bg-red-50 text-red-800"
+                }`}
+              >
+                <div className="text-lg font-bold">
+                  {state.result.solved ? "Correto!" : "Incorreto"}
+                </div>
+                <div className="mt-1 text-sm">
+                  Rating:{" "}
+                  <span
+                    className={
+                      state.result.ratingDelta >= 0
+                        ? "font-bold text-green-600"
+                        : "font-bold text-red-600"
+                    }
+                  >
+                    {state.result.ratingDelta >= 0 ? "+" : ""}
+                    {state.result.ratingDelta}
+                  </span>{" "}
+                  ({state.result.ratingAfter})
+                </div>
+                {state.result.streak >= 3 && (
+                  <div className="mt-1 flex items-center justify-center gap-1 text-orange-500">
+                    <Flame className="h-4 w-4" />
+                    <span className="font-bold">Streak: {state.result.streak}</span>
+                  </div>
+                )}
+                <button
+                  onClick={loadNextPuzzle}
+                  className="mt-3 inline-flex items-center gap-1 rounded-md bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-white"
+                >
+                  Próximo puzzle
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Skip button */}
+            {!state.result && state.skipsAvailable > 0 && (
+              <div className="text-center lg:text-left">
+                <button
+                  onClick={handleSkip}
+                  className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-zinc-500 hover:bg-zinc-50"
+                >
+                  <SkipForward className="h-3 w-3" />
+                  Pular ({state.skipsAvailable} restantes)
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

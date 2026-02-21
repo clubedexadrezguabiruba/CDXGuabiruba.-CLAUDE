@@ -33,6 +33,13 @@ O client envia tentativas. O servidor valida e decide.
 - Mínimo de complexidade necessária para a tarefa atual
 - Não criar helpers/utils para operações usadas uma única vez
 
+#### 4. Regra de Evidência (anti-hallucination)
+Antes de alterar qualquer bug/fluxo:
+1) Reproduzir (passos).
+2) Apontar 1 causa provável com **arquivo+linhas** e/ou **query SQL**.
+3) Propor fix mínimo.
+4) Criar/rodar Gate de verificação que falha antes e passa depois.
+
 ## Padrões do Projeto
 
 ### Auth e Routing
@@ -50,12 +57,15 @@ O client envia tentativas. O servidor valida e decide.
 ### Migrations
 - NUNCA modificar uma migration já aplicada — sempre criar nova
 - Formato: supabase/migrations/YYYYMMDDHHMMSS_descricao.sql
+- Aplicar no banco remoto: `npx tsx scripts/apply-migration.ts <arquivo.sql>`
+  - Conecta direto via connection string do .env.local (não requer Supabase CLI)
+  - Supabase CLI NÃO está instalado nesta máquina
 
 ## Workflow
 - Antes de iniciar fase/tarefa grande: `npm run build`
 - Entregar arquivos completos (sem patches soltos)
 - Commits em português: "feat: adicionar modo rating de puzzles"
-- Se precisar de informação ou ação do usuário para avançar, perguntar imediatamente — não assumir
+- Se precisar de informação ou ação do usuário para avançar ou para realizar um tarefa de forma mais rápida e/ou efetiva, perguntar imediatamente — não assumir
 - Se o prompt do usuário for ambíguo, incompleto ou puder ser melhorado, apontar antes de executar
 
 ## Verificação (rodar antes de concluir)
