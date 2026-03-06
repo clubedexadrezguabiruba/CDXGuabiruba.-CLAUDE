@@ -56,6 +56,12 @@ export default async function MainLayout({
 
             <div className="flex items-center gap-4">
               <Link
+                href="/aulas"
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                Aulas
+              </Link>
+              <Link
                 href="/puzzles"
                 className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
               >
