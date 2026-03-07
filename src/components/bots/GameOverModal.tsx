@@ -1,0 +1,140 @@
+"use client";
+
+import type { Bot, GameResult, GameOverReason } from "@/types/bot";
+import { REASON_LABELS } from "@/types/bot";
+import type { GameAnalysis } from "@/lib/chess/botAnalysis";
+import { accuracyColor } from "@/lib/chess/analysisHelpers";
+
+interface GameOverModalProps {
+  bot: Bot;
+  result: GameResult;
+  reason: GameOverReason;
+  analysis: GameAnalysis | null;
+  analyzing: boolean;
+  onViewReview: () => void;
+  onRematch: () => void;
+  onNewBot: () => void;
+}
+
+export default function GameOverModal({
+  bot,
+  result,
+  reason,
+  analysis,
+  analyzing,
+  onViewReview,
+  onRematch,
+  onNewBot,
+}: GameOverModalProps) {
+  const emoji = bot.emoji || "\u265F";
+  const reasonLabel = REASON_LABELS[reason] || reason;
+
+  const resultIcon = result === "win" ? "\uD83C\uDFC6" : result === "loss" ? emoji : "\uD83E\uDD1D";
+  const resultTitle =
+    result === "win"
+      ? `Vitória sobre ${bot.name}`
+      : result === "loss"
+        ? "Derrota"
+        : "Empate";
+  const resultColor =
+    result === "win"
+      ? "text-green-600"
+      : result === "loss"
+        ? "text-red-600"
+        : "text-zinc-600";
+  const iconBg =
+    result === "win"
+      ? "bg-green-100"
+      : result === "loss"
+        ? "bg-red-100"
+        : "bg-zinc-100";
+
+  const canReview = !analyzing && analysis !== null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div
+        className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+        style={{ animation: "modal-enter 0.25s ease-out" }}
+      >
+        {/* Result icon */}
+        <div
+          className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full text-3xl ${iconBg}`}
+        >
+          {resultIcon}
+        </div>
+
+        {/* Title */}
+        <h2 className={`text-2xl font-bold ${resultColor}`}>{resultTitle}</h2>
+        <p className="mt-1 text-sm text-zinc-500">por {reasonLabel}</p>
+
+        {/* Accuracy */}
+        {analysis && (
+          <p
+            className="mt-1 text-sm font-semibold"
+            style={{ color: accuracyColor(analysis.accuracy) }}
+          >
+            {analysis.accuracy}% {"precis\u00E3o"}
+          </p>
+        )}
+
+        {/* Quick stats */}
+        {analysis && (
+          <div className="mt-4 flex justify-center gap-6">
+            {analysis.counts.brilliant > 0 && (
+              <div className="text-center">
+                <div className="text-lg font-bold text-cyan-500">
+                  {analysis.counts.brilliant}
+                </div>
+                <div className="text-xs text-zinc-400">Brilhante</div>
+              </div>
+            )}
+            <div className="text-center">
+              <div className="text-lg font-bold text-green-600">
+                {analysis.counts.best + analysis.counts.great}
+              </div>
+              <div className="text-xs text-zinc-400">Best</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-lime-600">
+                {analysis.counts.good}
+              </div>
+              <div className="text-xs text-zinc-400">Bom</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-red-600">
+                {analysis.counts.mistake + analysis.counts.blunder}
+              </div>
+              <div className="text-xs text-zinc-400">Erros</div>
+            </div>
+          </div>
+        )}
+
+        {/* Review button */}
+        <button
+          onClick={onViewReview}
+          disabled={!canReview}
+          className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white transition-colors duration-150 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+        >
+          {analyzing ? "Analisando..." : "Revisão de Batalha"}
+        </button>
+
+        {/* Secondary buttons */}
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={onNewBot}
+            className="flex-1 rounded-xl border-2 border-zinc-300 py-2.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Novo Duelo
+          </button>
+          <button
+            onClick={onRematch}
+            className="flex-1 rounded-xl border-2 border-zinc-300 py-2.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Revanche
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

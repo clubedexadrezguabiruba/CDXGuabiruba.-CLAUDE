@@ -36,3 +36,6 @@ Thumbs.db
 
 # Supabase CLI (local state)
 supabase/.temp/
+
+# Stockfish WASM binaries (copied via setup script)
+public/stockfish/
