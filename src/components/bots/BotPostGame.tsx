@@ -1,6 +1,7 @@
 "use client";
 
 import type { Bot, GameResult } from "@/types/bot";
+import BotAvatar from "./BotAvatar";
 
 
 import type { GameAnalysis, MoveAnalysis } from "@/lib/chess/botAnalysis";
@@ -142,6 +143,7 @@ interface BotPostGameProps {
   analysisProgress?: { current: number; total: number };
   onRematch: () => void;
   onBack: () => void;
+  onViewReview?: () => void;
 }
 
 export default function BotPostGame({
@@ -152,9 +154,8 @@ export default function BotPostGame({
   analysisProgress,
   onRematch,
   onBack,
+  onViewReview,
 }: BotPostGameProps) {
-  const emoji = bot.emoji || "\u265F";
-
   const resultLabel =
     result === "win" ? "Vit\u00F3ria" : result === "loss" ? "Derrota" : "Empate";
   const resultBadge =
@@ -183,8 +184,8 @@ export default function BotPostGame({
 
         {/* Bot */}
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-2xl">
-            {emoji}
+          <div className="mx-auto">
+            <BotAvatar bot={bot} size="sm" />
           </div>
           <p className="mt-1 text-sm font-medium text-zinc-800">{bot.name}</p>
           <p className="text-xs text-zinc-400">ELO {bot.elo}</p>
@@ -239,6 +240,35 @@ export default function BotPostGame({
             </div>
           </div>
 
+          {/* Best move of the game */}
+          {analysis.bestPlayerMove && (
+            <div className="mt-6">
+              <h3 className="mb-3 text-sm font-semibold text-zinc-700">
+                Melhor Lance da Partida
+              </h3>
+              <div className="flex items-start gap-3 rounded-lg border border-green-300 bg-white p-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-600">
+                  {analysis.bestPlayerMove.category === "brilliant" ? "!!" : analysis.bestPlayerMove.category === "great" ? "!" : "\u2605"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-semibold text-zinc-800">
+                      Lance {analysis.bestPlayerMove.moveNumber}
+                    </span>
+                    <span className="text-xs text-green-600">
+                      {analysis.bestPlayerMove.moveAccuracy.toFixed(0)}% {"precis\u00E3o"}
+                    </span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="inline-flex items-center rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
+                      {analysis.bestPlayerMove.moveSan}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mistakes */}
           {analysis.topBlunders.length > 0 && (
             <div className="mt-6">
@@ -256,19 +286,29 @@ export default function BotPostGame({
       )}
 
       {/* Action buttons */}
-      <div className="mt-6 flex gap-3">
-        <button
-          onClick={onRematch}
-          className="flex-1 rounded-xl border-2 border-zinc-300 py-3 font-bold text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 active:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
-        >
-          Revanche
-        </button>
-        <button
-          onClick={onBack}
-          className="flex-1 rounded-xl bg-green-600 py-3 font-bold text-white transition-colors duration-150 hover:bg-green-500 active:bg-green-700 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
-        >
-          Voltar aos Duelos
-        </button>
+      <div className="mt-6 flex flex-col gap-2">
+        {onViewReview && (
+          <button
+            onClick={onViewReview}
+            className="w-full rounded-xl bg-green-600 py-3 font-bold text-white transition-colors duration-150 hover:bg-green-500 active:bg-green-700 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            {"Revis\u00E3o de Batalha"}
+          </button>
+        )}
+        <div className="flex gap-3">
+          <button
+            onClick={onRematch}
+            className="flex-1 rounded-xl border-2 border-zinc-300 py-3 font-bold text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 active:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Revanche
+          </button>
+          <button
+            onClick={onBack}
+            className="flex-1 rounded-xl border-2 border-zinc-300 py-3 font-bold text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 active:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Voltar aos Duelos
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useArrowKeys } from "@/hooks/useArrowKeys";
 import { Chess } from "chess.js";
 import BotBoard from "@/components/chess/BotBoard";
 import type { Bot, PlayerColor, GameResult } from "@/types/bot";
+import BotAvatar from "./BotAvatar";
 
 
 import type { GameAnalysis, MoveCategory, MoveAnalysis } from "@/lib/chess/botAnalysis";
@@ -161,7 +163,6 @@ export default function GameReview({
 }: GameReviewProps) {
   const [currentHalfMove, setCurrentHalfMove] = useState(-1);
   const moveListRef = useRef<HTMLDivElement>(null);
-  const emoji = bot.emoji || "\u265F";
   const noop = useCallback(() => {}, []);
 
   // Build analysis lookup: halfMoveIndex -> MoveAnalysis
@@ -248,16 +249,7 @@ export default function GameReview({
   );
 
   // Keyboard navigation
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
-      else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
-      else if (e.key === "Home") { e.preventDefault(); goFirst(); }
-      else if (e.key === "End") { e.preventDefault(); goLast(); }
-    }
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [goFirst, goPrev, goNext, goLast]);
+  useArrowKeys({ onPrev: goPrev, onNext: goNext, onFirst: goFirst, onLast: goLast });
 
   // Auto-scroll move list to current move
   useEffect(() => {
@@ -294,12 +286,18 @@ export default function GameReview({
         : "bg-zinc-100 text-zinc-700";
 
   // Top = opponent, Bottom = player (relative to board orientation)
+  const botIcon = <BotAvatar bot={bot} size="xs" />;
+  const playerIcon = (
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600">
+      <span className="text-[10px] font-bold text-white">Vc</span>
+    </div>
+  );
   const topPlayer = playerColor === "white"
-    ? { name: bot.name, icon: <span className="text-lg">{emoji}</span>, bg: "bg-zinc-200" }
-    : { name: "Voc\u00EA", icon: <span className="text-[10px] font-bold text-white">Vc</span>, bg: "bg-green-600" };
+    ? { name: bot.name, icon: botIcon, isBot: true }
+    : { name: "Voc\u00EA", icon: playerIcon, isBot: false };
   const bottomPlayer = playerColor === "white"
-    ? { name: "Voc\u00EA", icon: <span className="text-[10px] font-bold text-white">Vc</span>, bg: "bg-green-600" }
-    : { name: bot.name, icon: <span className="text-lg">{emoji}</span>, bg: "bg-zinc-200" };
+    ? { name: "Voc\u00EA", icon: playerIcon, isBot: false }
+    : { name: bot.name, icon: botIcon, isBot: true };
 
   return (
     <div className="mx-auto max-w-[960px] px-3 py-4">
@@ -326,9 +324,7 @@ export default function GameReview({
           <div className="flex flex-col">
             {/* Top player label */}
             <div className="mb-1 flex items-center gap-2">
-              <div className={`flex h-7 w-7 items-center justify-center rounded-full ${topPlayer.bg}`}>
-                {topPlayer.icon}
-              </div>
+              {topPlayer.icon}
               <span className="text-sm font-semibold text-zinc-700">{topPlayer.name}</span>
             </div>
 
@@ -347,9 +343,7 @@ export default function GameReview({
 
             {/* Bottom player label */}
             <div className="mt-1 flex items-center gap-2">
-              <div className={`flex h-7 w-7 items-center justify-center rounded-full ${bottomPlayer.bg}`}>
-                {bottomPlayer.icon}
-              </div>
+              {bottomPlayer.icon}
               <span className="text-sm font-semibold text-zinc-700">{bottomPlayer.name}</span>
             </div>
 

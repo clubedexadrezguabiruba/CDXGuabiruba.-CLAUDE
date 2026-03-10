@@ -497,6 +497,7 @@ export default function PuzzleRushPage() {
                 solutionMoves={currentPuzzle.moves}
                 onComplete={handlePuzzleComplete}
                 soundEnabled={!profile?.sound_muted}
+                premovable={profile?.premove_enabled ?? true}
               />
             )}
 

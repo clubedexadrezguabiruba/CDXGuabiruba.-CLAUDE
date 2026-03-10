@@ -242,6 +242,7 @@ export default function PuzzleRatingPage() {
                 solutionMoves={state.puzzle.moves}
                 onComplete={handlePuzzleComplete}
                 soundEnabled={!profile?.sound_muted}
+                premovable={profile?.premove_enabled ?? true}
               />
               <div className="text-center text-xs text-zinc-400">
                 Rating: {state.puzzle.rating}

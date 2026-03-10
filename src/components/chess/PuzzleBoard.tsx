@@ -15,6 +15,7 @@ import {
   applyUciMove,
 } from "@/lib/chess/puzzleLogic";
 import { soundManager } from "@/lib/sounds/soundManager";
+import { useFutureMoveQueue } from "@/hooks/useFutureMoveQueue";
 
 export interface PuzzleResult {
   solved: boolean;
@@ -31,9 +32,13 @@ interface PuzzleBoardProps {
   showHint?: boolean;
   autoShowSolution?: boolean;
   onSolutionEnd?: () => void;
+  premovable?: boolean;
 }
 
 type PuzzlePhase = "loading" | "playing" | "correct" | "failed";
+
+// Dummy chess instance for hook init before real chess is created
+const DUMMY_CHESS = new Chess();
 
 export default function PuzzleBoard({
   fen,
@@ -44,6 +49,7 @@ export default function PuzzleBoard({
   showHint = false,
   autoShowSolution = false,
   onSolutionEnd,
+  premovable = false,
 }: PuzzleBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const cgRef = useRef<Api | null>(null);
@@ -58,7 +64,6 @@ export default function PuzzleBoard({
   const [playerColor, setPlayerColor] = useState<"white" | "black">("white");
 
   // Refs to avoid stale closures in chessground event handlers and timeouts.
-  // These are updated on every render so callbacks always access latest values.
   const playerColorRef = useRef<"white" | "black">("white");
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -73,6 +78,8 @@ export default function PuzzleBoard({
   const onSolutionEndRef = useRef(onSolutionEnd);
   onSolutionEndRef.current = onSolutionEnd;
   const solutionRunIdRef = useRef(0);
+  const premovableRef = useRef(premovable);
+  premovableRef.current = premovable;
 
   const playSound = useCallback(
     (name: Parameters<typeof soundManager.play>[0]) => {
@@ -117,9 +124,12 @@ export default function PuzzleBoard({
       turnColor,
       movable: {
         free: false,
-        color: isPlayerTurn && !isDisabled ? color : undefined,
+        color: premovableRef.current || (isPlayerTurn && !isDisabled) ? color : undefined,
         dests: isPlayerTurn && !isDisabled ? toDests(chess) : new Map(),
         showDests: true,
+      },
+      premovable: {
+        enabled: premovableRef.current,
       },
       check: chess.isCheck() ? turnColor : undefined,
     });
@@ -152,59 +162,6 @@ export default function PuzzleBoard({
       }
     },
     []
-  );
-
-  // playOpponentMove depends on stable callbacks → stable
-  const playOpponentMove = useCallback(
-    (delayMs: number = 400) => {
-      const chess = chessRef.current;
-      const cg = cgRef.current;
-      const moves = movesRef.current;
-      const idx = moveIndexRef.current;
-
-      if (!chess || !cg || idx >= moves.length) return;
-
-      safeTimeout(() => {
-        const uci = moves[idx];
-        const parsed = parseUci(uci);
-        const moveResult = applyUciMove(chess, uci);
-
-        if (moveResult) {
-          cg.move(parsed.from as Key, parsed.to as Key);
-          movesPlayedRef.current.push(uci);
-
-          if (chess.isCheck()) {
-            playSound("check");
-          } else if (moveResult.captured) {
-            playSound("capture");
-          } else {
-            playSound("move");
-          }
-
-          moveIndexRef.current = idx + 1;
-
-          if (moveIndexRef.current >= moves.length) {
-            // Sync FEN so promoted pieces display correctly
-            const cgInner = cgRef.current;
-            if (cgInner && chess) cgInner.set({ fen: chess.fen() });
-            completeResult(true);
-            return;
-          }
-
-          updateBoard();
-          showHintHighlight();
-
-          if (startTimeRef.current === 0) {
-            startTimeRef.current = Date.now();
-            setPhase("playing");
-          }
-        } else {
-          // Puzzle data is invalid (FEN/moves mismatch) — skip to avoid freeze
-          completeResult(false);
-        }
-      }, delayMs);
-    },
-    [playSound, updateBoard, completeResult, showHintHighlight, safeTimeout]
   );
 
   // handleUserMove depends on stable callbacks → stable
@@ -290,12 +247,93 @@ export default function PuzzleBoard({
         }, 600);
       }
     },
-    [playSound, updateBoard, completeResult, playOpponentMove, safeTimeout]
+    [playSound, updateBoard, completeResult, safeTimeout] // playOpponentMove added below via ref
   );
 
   // Ref for chessground event handler (always points to latest handleUserMove)
   const handleUserMoveRef = useRef(handleUserMove);
   handleUserMoveRef.current = handleUserMove;
+
+  // --- Premove queue (maxSize=1 for puzzles — deliberate product decision,
+  //     not a limitation. Puzzles have fixed solutions; multiple premoves
+  //     would be "guessing" sequences. Single premove = speed without
+  //     compromising learning.) ---
+  const moveQueue = useFutureMoveQueue({
+    maxSize: 1,
+    chess: chessRef.current ?? DUMMY_CHESS,
+    playerColor: playerColorRef.current,
+    enabled: premovable,
+    onExecute: (move) => handleUserMoveRef.current(move.from as Key, move.to as Key),
+    onInvalidated: () => { if (soundEnabledRef.current) soundManager.play("wrong"); },
+  });
+
+  // Ref to access clearQueue from init effect
+  const clearQueueRef = useRef(moveQueue.clearQueue);
+  clearQueueRef.current = moveQueue.clearQueue;
+  const tryExecuteFirstRef = useRef(moveQueue.tryExecuteFirst);
+  tryExecuteFirstRef.current = moveQueue.tryExecuteFirst;
+
+  // playOpponentMove depends on stable callbacks → stable
+  const playOpponentMove = useCallback(
+    (delayMs: number = 400) => {
+      const chess = chessRef.current;
+      const cg = cgRef.current;
+      const moves = movesRef.current;
+      const idx = moveIndexRef.current;
+
+      if (!chess || !cg || idx >= moves.length) return;
+
+      safeTimeout(() => {
+        const uci = moves[idx];
+        const parsed = parseUci(uci);
+        const moveResult = applyUciMove(chess, uci);
+
+        if (moveResult) {
+          cg.move(parsed.from as Key, parsed.to as Key);
+          movesPlayedRef.current.push(uci);
+
+          if (chess.isCheck()) {
+            playSound("check");
+          } else if (moveResult.captured) {
+            playSound("capture");
+          } else {
+            playSound("move");
+          }
+
+          moveIndexRef.current = idx + 1;
+
+          if (moveIndexRef.current >= moves.length) {
+            // Sync FEN so promoted pieces display correctly
+            const cgInner = cgRef.current;
+            if (cgInner && chess) cgInner.set({ fen: chess.fen() });
+            completeResult(true);
+            return;
+          }
+
+          updateBoard();
+          showHintHighlight();
+
+          if (startTimeRef.current === 0) {
+            startTimeRef.current = Date.now();
+            setPhase("playing");
+          }
+
+          // Try to execute queued premove after board is unlocked for player
+          requestAnimationFrame(() => {
+            tryExecuteFirstRef.current();
+          });
+        } else {
+          // Puzzle data is invalid (FEN/moves mismatch) — skip to avoid freeze
+          completeResult(false);
+        }
+      }, delayMs);
+    },
+    [playSound, updateBoard, completeResult, showHintHighlight, safeTimeout]
+  );
+
+  // Wire playOpponentMove into handleUserMove via ref (breaks circular dep)
+  const playOpponentMoveRef = useRef(playOpponentMove);
+  playOpponentMoveRef.current = playOpponentMove;
 
   // Auto-show solution after failure: replay remaining moves on the board
   useEffect(() => {
@@ -387,6 +425,7 @@ export default function PuzzleBoard({
     movesPlayedRef.current = [];
     startTimeRef.current = 0;
     completedRef.current = false;
+    clearQueueRef.current(); // Clear premove queue on puzzle switch
 
     // Set player color synchronously via ref (avoids stale closure)
     const color = getPlayerColor(fen);
@@ -400,7 +439,7 @@ export default function PuzzleBoard({
       turnColor: chess.turn() === "w" ? "white" : "black",
       movable: {
         free: false,
-        color: undefined,
+        color: premovable ? color : undefined,
         dests: new Map(),
         showDests: true,
         events: {
@@ -409,12 +448,30 @@ export default function PuzzleBoard({
           },
         },
       },
-      premovable: { enabled: false },
+      premovable: {
+        enabled: premovable,
+        showDests: true,
+        castle: true,
+        events: {
+          set: (orig: Key, dest: Key) => {
+            // Enqueue into our custom queue, then cancel chessground's ghost visual.
+            // Our queue is the single source of truth.
+            const accepted = moveQueue.enqueueMove(orig, dest);
+            if (!accepted && soundEnabledRef.current) soundManager.play("wrong");
+            // Always cancel chessground's internal premove state
+            cgRef.current?.cancelPremove();
+          },
+          // NO-OP: same pattern as BotBoard. Cancellation only from our
+          // explicit logic (queue invalidation, puzzle switch), never from
+          // chessground's timing-sensitive unset event.
+          unset: () => {},
+        },
+      },
       draggable: { enabled: true, showGhost: true },
       selectable: { enabled: true },
       animation: { enabled: true, duration: 200 },
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: false },
+      drawable: { enabled: true },
       coordinates: true,
     };
 

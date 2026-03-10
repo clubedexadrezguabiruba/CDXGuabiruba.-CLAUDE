@@ -4,6 +4,7 @@ import type { Bot, GameResult, GameOverReason } from "@/types/bot";
 import { REASON_LABELS } from "@/types/bot";
 import type { GameAnalysis } from "@/lib/chess/botAnalysis";
 import { accuracyColor } from "@/lib/chess/analysisHelpers";
+import BotAvatar from "./BotAvatar";
 
 interface GameOverModalProps {
   bot: Bot;
@@ -11,9 +12,12 @@ interface GameOverModalProps {
   reason: GameOverReason;
   analysis: GameAnalysis | null;
   analyzing: boolean;
+  nextBotId?: number | null;
+  nextBotName?: string;
   onViewReview: () => void;
   onRematch: () => void;
   onNewBot: () => void;
+  onNextBot?: () => void;
 }
 
 export default function GameOverModal({
@@ -22,14 +26,16 @@ export default function GameOverModal({
   reason,
   analysis,
   analyzing,
+  nextBotId,
+  nextBotName,
   onViewReview,
   onRematch,
   onNewBot,
+  onNextBot,
 }: GameOverModalProps) {
-  const emoji = bot.emoji || "\u265F";
   const reasonLabel = REASON_LABELS[reason] || reason;
 
-  const resultIcon = result === "win" ? "\uD83C\uDFC6" : result === "loss" ? emoji : "\uD83E\uDD1D";
+  const resultIcon = result === "win" ? "\uD83C\uDFC6" : result === "draw" ? "\uD83E\uDD1D" : null;
   const resultTitle =
     result === "win"
       ? `Vitória sobre ${bot.name}`
@@ -58,11 +64,17 @@ export default function GameOverModal({
         style={{ animation: "modal-enter 0.25s ease-out" }}
       >
         {/* Result icon */}
-        <div
-          className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full text-3xl ${iconBg}`}
-        >
-          {resultIcon}
-        </div>
+        {resultIcon ? (
+          <div
+            className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full text-3xl ${iconBg}`}
+          >
+            {resultIcon}
+          </div>
+        ) : (
+          <div className="mx-auto mb-3">
+            <BotAvatar bot={bot} size="md" />
+          </div>
+        )}
 
         {/* Title */}
         <h2 className={`text-2xl font-bold ${resultColor}`}>{resultTitle}</h2>
@@ -74,7 +86,7 @@ export default function GameOverModal({
             className="mt-1 text-sm font-semibold"
             style={{ color: accuracyColor(analysis.accuracy) }}
           >
-            {analysis.accuracy}% {"precis\u00E3o"}
+            {Math.round(analysis.accuracy)}% {"precis\u00E3o"}
           </p>
         )}
 
@@ -119,19 +131,29 @@ export default function GameOverModal({
           {analyzing ? "Analisando..." : "Revisão de Batalha"}
         </button>
 
-        {/* Secondary buttons */}
-        <div className="mt-3 flex gap-2">
+        {/* Next bot button (only on win when next bot exists) */}
+        {result === "win" && nextBotId && onNextBot && (
           <button
-            onClick={onNewBot}
-            className="flex-1 rounded-xl border-2 border-zinc-300 py-2.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+            onClick={onNextBot}
+            className="mt-3 w-full rounded-xl bg-zinc-800 py-2.5 text-sm font-bold text-white transition-colors duration-150 hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
-            Novo Duelo
+            {nextBotName ? `Próximo: ${nextBotName} →` : "Próximo Duelo →"}
           </button>
+        )}
+
+        {/* Secondary buttons */}
+        <div className="mt-2 flex gap-2">
           <button
             onClick={onRematch}
             className="flex-1 rounded-xl border-2 border-zinc-300 py-2.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             Revanche
+          </button>
+          <button
+            onClick={onNewBot}
+            className="flex-1 rounded-xl border-2 border-zinc-300 py-2.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Voltar aos Duelos
           </button>
         </div>
       </div>

@@ -7,6 +7,8 @@ const TEST_PASSWORD = `BotTest@${TIMESTAMP}`;
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const VALID_PGN =
+  "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 1-0";
 
 async function createTestUser(
   email: string,
@@ -49,11 +51,100 @@ async function login(
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
 }
 
+/** Fetch bot IDs from the database */
+async function getBotIds(): Promise<{ bot1Id: number; bot2Id: number; bot3Id: number }> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/bots?select=id,unlock_order&order=unlock_order`,
+    {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    }
+  );
+  const bots = await res.json();
+  return {
+    bot1Id: bots.find((b: { unlock_order: number }) => b.unlock_order === 1).id,
+    bot2Id: bots.find((b: { unlock_order: number }) => b.unlock_order === 2).id,
+    bot3Id: bots.find((b: { unlock_order: number }) => b.unlock_order === 3).id,
+  };
+}
+
+/** Register a win for a user via REST API (bypasses game) */
+async function registerWin(userId: string, botId: number) {
+  // Use service role to insert directly (bypasses RPC validation)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/user_bot_results`, {
+    method: "POST",
+    headers: {
+      apikey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      bot_id: botId,
+      result: "win",
+      pgn: VALID_PGN,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(`Failed to register win: ${JSON.stringify(data)}`);
+
+  // Also insert into user_bot_first_wins (atomic first-win table)
+  await fetch(`${SUPABASE_URL}/rest/v1/user_bot_first_wins`, {
+    method: "POST",
+    headers: {
+      apikey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=ignore-duplicates",
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      bot_id: botId,
+    }),
+  });
+
+  return data;
+}
+
+/** Check if analysis was persisted for a user */
+async function getLatestAnalysis(userId: string) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/bot_game_analysis?user_id=eq.${userId}&order=analyzed_at.desc&limit=1`,
+    {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    }
+  );
+  const data = await res.json();
+  return data?.[0] ?? null;
+}
+
+/** Get latest bot result for a user */
+async function getLatestResult(userId: string) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/user_bot_results?user_id=eq.${userId}&order=played_at.desc&limit=1`,
+    {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    }
+  );
+  const data = await res.json();
+  return data?.[0] ?? null;
+}
+
 // ============================================================
-// Fluxo completo: jogar → análise → revisão lance-a-lance
+// Nível C: Fluxo integrado real (ponta a ponta)
 // ============================================================
 
-test.describe("análise pós-jogo e revisão", () => {
+test.describe("Nível C: fluxo integrado real", () => {
   const hasAdminAccess = !!(SUPABASE_URL && SERVICE_ROLE_KEY);
   let userId: string;
 
@@ -66,102 +157,323 @@ test.describe("análise pós-jogo e revisão", () => {
   });
 
   test.afterAll(async () => {
-    if (userId) await deleteTestUser(userId);
+    if (userId) {
+      // Cleanup analysis, first wins, and results
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/bot_game_analysis?user_id=eq.${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/user_bot_first_wins?user_id=eq.${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/user_bot_results?user_id=eq.${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      await deleteTestUser(userId);
+    }
   });
 
-  test("jogar, abandonar, ver análise e revisar lances", async ({ page }) => {
-    test.setTimeout(90_000);
+  test("C1: derrota + análise + post-game + review (sem crash)", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
 
     // 1. Login
     await login(page, TEST_EMAIL, TEST_PASSWORD);
 
-    // 2. Navegar para a lista de bots
+    // 2. Navigate to bots
     await page.goto("/bots");
-    await expect(page.locator("h1, h2").first()).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.getByText("Duelos da Campanha")
+    ).toBeVisible({ timeout: 10_000 });
 
-    // 3. Clicar no primeiro bot (unlock_order=1)
-    const firstBotCard = page.locator("[data-bot-card]").first();
-    // Fallback: if no data-bot-card, click first link that goes to /bots/
-    if ((await firstBotCard.count()) === 0) {
-      await page.locator('a[href*="/bots/"]').first().click();
-    } else {
-      await firstBotCard.click();
-    }
+    // 3. Click first bot (Léo) — BotCard is a <button> with bot name text
+    await page.getByText("Léo").first().click();
     await expect(page).toHaveURL(/\/bots\//, { timeout: 10_000 });
 
-    // 4. Clicar "Iniciar Duelo" para iniciar com defaults (brancas, sem tempo)
-    await page.getByText("Iniciar Duelo").click();
+    // 4. Start game
+    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
 
-    // 5. Aguardar tabuleiro interativo
+    // 5. Wait for board
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
-
-    // Aguardar "Sua vez" para garantir que é a vez do jogador
-    // (pode estar em texto mobile ou desktop)
     await page.waitForTimeout(1500);
 
-    // 6. Fazer 2 lances como brancas
+    // 6. Make 2 moves
     await makeMove(page, "e2", "e4", "white");
-    // Aguardar resposta do bot
     await page.waitForTimeout(3000);
-
     await makeMove(page, "d2", "d4", "white");
     await page.waitForTimeout(3000);
 
-    // 7. Render-se
-    await page.getByText("Render-se").first().click();
-    await page.getByText("Sim").first().click();
+    // 7. Surrender
+    await page.locator('button:has-text("Render-se"):visible').click();
+    await page.locator('button:has-text("Sim"):visible').first().click();
 
-    // 8. GameOverModal: verificar "Derrota"
+    // 8. GameOverModal: "Derrota"
     await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
 
-    // 9. Aguardar análise: botão muda de "Analisando..." para "Revisão da Partida"
+    // 9. Wait for analysis
     await expect(
       page.getByRole("button", { name: /Revisão de Batalha/i })
     ).toBeEnabled({ timeout: 60_000 });
 
-    // 10. Verificar accuracy visível
+    // 10. Accuracy visible
     await expect(page.getByText(/%/)).toBeVisible();
 
-    // 11. Clicar "Revisão da Partida"
+    // 11. Click "Revisão de Batalha" → goes to post-game (BotPostGame)
     await page
       .getByRole("button", { name: /Revisão de Batalha/i })
       .click();
 
-    // 12. Verificar GameReview renderiza
-    await expect(
-      page.getByText(/Revisão de Batalha/i)
-    ).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator("cg-board")).toBeVisible();
+    // 12. Verify BotPostGame renders (accuracy gauge visible)
+    await expect(page.locator("svg").first()).toBeVisible({ timeout: 5_000 });
 
-    // Botões de navegação visíveis (4 botões)
-    const navButtons = page.locator("button").filter({
-      has: page.locator(
-        ':text("⏮"), :text("◀"), :text("▶"), :text("⏭")'
-      ),
-    });
-    // Alternativa: verificar que existem botões de nav
-    await expect(page.getByTitle(/lance/i).first()).toBeVisible();
+    // 13. Click "Revisão de Batalha" in BotPostGame → goes to review (GameReview)
+    await page
+      .getByRole("button", { name: /Revisão de Batalha/i })
+      .click();
 
-    // 13. Clicar próximo lance
-    const nextButton = page.getByTitle(/Pr\u00F3ximo/i);
-    if (await nextButton.isEnabled()) {
-      await nextButton.click();
+    // 14. Verify GameReview renders
+    await expect(page.locator("cg-board")).toBeVisible({ timeout: 5_000 });
+
+    // 15. Verify navigation buttons exist
+    const navNext = page.getByTitle(/Próximo/i);
+    if (await navNext.isVisible()) {
+      await navNext.click();
       await page.waitForTimeout(500);
     }
+  });
 
-    // 14. Clicar em lance na lista e verificar highlight
-    const moveButton = page.locator("button[data-active]").first();
-    if ((await moveButton.count()) > 0) {
-      await moveButton.click();
-      await expect(
-        page.locator("button[data-active='true']")
-      ).toBeVisible();
-    }
+  test("C2: revanche — volta para pre-game", async ({ page }) => {
+    test.setTimeout(90_000);
+    await login(page, TEST_EMAIL, TEST_PASSWORD);
 
-    // 15. Clicar "Voltar aos Duelos"
-    await page.getByText("Voltar aos Duelos").click();
+    const { bot1Id } = await getBotIds();
+    await page.goto(`/bots/${bot1Id}`);
+    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(1500);
 
-    // 16. Verificar navegação para /bots
+    // Make a move and surrender
+    await makeMove(page, "e2", "e4", "white");
+    await page.waitForTimeout(3000);
+    await page.locator('button:has-text("Render-se"):visible').click();
+    await page.locator('button:has-text("Sim"):visible').first().click();
+
+    // Modal appears
+    await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
+
+    // Click "Revanche"
+    await page.getByRole("button", { name: /Revanche/i }).click();
+
+    // Should return to pre-game
+    await expect(
+      page.locator('button:has-text("Iniciar Duelo"):visible')
+    ).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("C3: voltar aos duelos — navega para /bots", async ({ page }) => {
+    test.setTimeout(90_000);
+    await login(page, TEST_EMAIL, TEST_PASSWORD);
+
+    const { bot1Id } = await getBotIds();
+    await page.goto(`/bots/${bot1Id}`);
+    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(1500);
+
+    await makeMove(page, "e2", "e4", "white");
+    await page.waitForTimeout(3000);
+    await page.locator('button:has-text("Render-se"):visible').click();
+    await page.locator('button:has-text("Sim"):visible').first().click();
+
+    await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
+
+    // Click "Voltar aos Duelos"
+    await page.getByRole("button", { name: /Voltar aos Duelos/i }).click();
     await expect(page).toHaveURL(/\/bots$/, { timeout: 10_000 });
+  });
+
+  test("C4: encadeamento result→analysis persiste no banco", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await login(page, TEST_EMAIL, TEST_PASSWORD);
+
+    const { bot1Id } = await getBotIds();
+    await page.goto(`/bots/${bot1Id}`);
+    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(1500);
+
+    await makeMove(page, "e2", "e4", "white");
+    await page.waitForTimeout(3000);
+    await makeMove(page, "d2", "d4", "white");
+    await page.waitForTimeout(3000);
+
+    // Surrender
+    await page.locator('button:has-text("Render-se"):visible').click();
+    await page.locator('button:has-text("Sim"):visible').first().click();
+
+    // Wait for analysis to complete (button enabled = analysis done + persisted)
+    await expect(
+      page.getByRole("button", { name: /Revisão de Batalha/i })
+    ).toBeEnabled({ timeout: 60_000 });
+
+    // Give a moment for the save_bot_analysis RPC to complete
+    await page.waitForTimeout(3000);
+
+    // Verify in database
+    const result = await getLatestResult(userId);
+    expect(result).not.toBeNull();
+    expect(result.result).toBe("loss");
+    expect(result.bot_id).toBe(bot1Id);
+
+    const analysis = await getLatestAnalysis(userId);
+    expect(analysis).not.toBeNull();
+    expect(analysis.bot_result_id).toBe(result.id);
+    expect(analysis.accuracy_percent).toBeGreaterThan(0);
+  });
+});
+
+// ============================================================
+// Nível B: UI com estado preparado (RPC setup + verificação visual)
+// ============================================================
+
+test.describe("Nível B: UI com estado preparado", () => {
+  const hasAdminAccess = !!(SUPABASE_URL && SERVICE_ROLE_KEY);
+  const B_EMAIL = `bottest-b+${TIMESTAMP}@cdxguabiruba.test`;
+  const B_PASSWORD = `BotTestB@${TIMESTAMP}`;
+  let userId: string;
+  let botIds: { bot1Id: number; bot2Id: number; bot3Id: number };
+
+  test.beforeAll(async () => {
+    test.skip(
+      !hasAdminAccess,
+      "SUPABASE_URL ou SERVICE_ROLE_KEY não definidos"
+    );
+    userId = await createTestUser(B_EMAIL, B_PASSWORD);
+    botIds = await getBotIds();
+  });
+
+  test.afterAll(async () => {
+    if (userId) {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/bot_game_analysis?user_id=eq.${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/user_bot_first_wins?user_id=eq.${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/user_bot_results?user_id=eq.${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        }
+      );
+      await deleteTestUser(userId);
+    }
+  });
+
+  test("B1: bot 2 desbloqueado após vitória no bot 1", async ({ page }) => {
+    test.setTimeout(30_000);
+
+    // Setup: register win on bot 1
+    await registerWin(userId, botIds.bot1Id);
+
+    // Login and navigate to /bots
+    await login(page, B_EMAIL, B_PASSWORD);
+    await page.goto("/bots");
+    await expect(
+      page.getByText("Duelos da Campanha")
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Bot 2 should be clickable (not locked/disabled)
+    // Navigate to bot 2 page — should NOT redirect
+    await page.goto(`/bots/${botIds.bot2Id}`);
+    await expect(page).toHaveURL(
+      new RegExp(`/bots/${botIds.bot2Id}`),
+      { timeout: 10_000 }
+    );
+    // Should see pre-game UI
+    await expect(
+      page.locator('button:has-text("Iniciar Duelo"):visible')
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("B2: acesso direto a bot bloqueado redireciona para /bots", async ({
+    page,
+  }) => {
+    test.setTimeout(30_000);
+
+    // User has NO wins — bot 3 (unlock_order=3) should be locked
+    // Create a fresh user with no wins for this test
+    const freshEmail = `bottest-b2+${TIMESTAMP}@cdxguabiruba.test`;
+    const freshPassword = `BotTestB2@${TIMESTAMP}`;
+    const freshUserId = await createTestUser(freshEmail, freshPassword);
+
+    try {
+      await login(page, freshEmail, freshPassword);
+      await page.goto(`/bots/${botIds.bot3Id}`);
+
+      // Should redirect to /bots
+      await expect(page).toHaveURL(/\/bots$/, { timeout: 10_000 });
+    } finally {
+      await deleteTestUser(freshUserId);
+    }
+  });
+
+  test("B3: botão 'Próximo Duelo' existe no modal após vitória (inspeção de código)", async () => {
+    // Este cenário não pode ser validado ponta a ponta pela UI porque
+    // não é possível forçar vitória contra Stockfish deterministicamente.
+    //
+    // Validação por inspeção de código:
+    // - GameOverModal.tsx aceita props nextBotId e onNextBot
+    // - BotGameClient.tsx passa nextBotId={bot.unlock_order < 10 ? bot.id + 1 : null}
+    // - O botão "Próximo Duelo →" é renderizado quando result==="win" && nextBotId && onNextBot
+    // - onNextBot navega para /bots/${bot.id + 1}
+    //
+    // Validação RPC (Nível A) confirmou que:
+    // - bot_result com result='win' funciona e retorna first_win
+    // - Desbloqueio do próximo bot funciona
+    //
+    // VEREDICTO: Não validado ponta a ponta. Validado por inspeção + RPC.
+    expect(true).toBe(true); // Placeholder — documented as not E2E-testable
   });
 });

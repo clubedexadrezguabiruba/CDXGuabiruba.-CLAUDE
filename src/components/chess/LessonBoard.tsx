@@ -136,7 +136,7 @@ export default function LessonBoard({
       selectable: { enabled: interactive },
       animation: { enabled: true, duration: 200 },
       highlight: { lastMove: true, check: true },
-      drawable: { enabled: false, autoShapes: buildShapes() },
+      drawable: { enabled: true, autoShapes: buildShapes() },
       coordinates: true,
       check: isCheck ? turnColor : undefined,
     };

@@ -25,12 +25,11 @@ export default async function BotsPage() {
     );
   }
 
-  // Fetch user's wins to determine unlock status
+  // Fetch user's first wins to determine unlock status (canonical source)
   const { data: wins } = await supabase
-    .from("user_bot_results")
+    .from("user_bot_first_wins")
     .select("bot_id")
-    .eq("user_id", user.id)
-    .eq("result", "win");
+    .eq("user_id", user.id);
 
   const wonBotIds = new Set((wins || []).map((w) => w.bot_id));
 

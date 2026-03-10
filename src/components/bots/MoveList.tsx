@@ -4,14 +4,25 @@ import { useEffect, useRef } from "react";
 
 interface MoveListProps {
   history: string[];
+  activeIndex?: number | null;
+  onClickMove?: (halfMoveIndex: number) => void;
 }
 
-export default function MoveList({ history }: MoveListProps) {
+export default function MoveList({ history, activeIndex, onClickMove }: MoveListProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll: to active move if navigating, to end otherwise
   useEffect(() => {
+    if (activeIndex != null && containerRef.current) {
+      const el = containerRef.current.querySelector("[data-active='true']");
+      if (el) {
+        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        return;
+      }
+    }
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [history.length]);
+  }, [history.length, activeIndex]);
 
   // Group into pairs (white, black)
   const pairs: { num: number; white: string; black?: string }[] = [];
@@ -31,24 +42,47 @@ export default function MoveList({ history }: MoveListProps) {
     );
   }
 
+  const isNavigating = activeIndex != null;
+  const lastHalfMove = history.length - 1;
+
+  function moveClasses(halfMove: number) {
+    const isActive = activeIndex === halfMove;
+    const isLastAndNotNavigating = !isNavigating && halfMove === lastHalfMove;
+    return `w-16 rounded px-1 font-medium ${
+      isActive
+        ? "bg-blue-200 text-blue-900"
+        : isLastAndNotNavigating
+          ? "bg-yellow-100 text-zinc-800"
+          : "text-zinc-800"
+    } ${onClickMove ? "cursor-pointer hover:bg-zinc-100" : ""}`;
+  }
+
   return (
-    <div className="max-h-80 overflow-y-auto p-2 text-sm">
-      {pairs.map((pair, idx) => {
-        const isLast = idx === pairs.length - 1;
+    <div ref={containerRef} className="max-h-80 overflow-y-auto p-2 text-sm">
+      {pairs.map((pair) => {
+        const whiteIdx = (pair.num - 1) * 2;
+        const blackIdx = whiteIdx + 1;
         return (
-          <div
-            key={pair.num}
-            className={`flex gap-1 rounded px-1.5 py-0.5 ${
-              isLast ? "bg-yellow-100" : ""
-            }`}
-          >
+          <div key={pair.num} className="flex gap-1 px-1.5 py-0.5">
             <span className="w-7 shrink-0 text-right text-xs text-zinc-400">
               {pair.num}.
             </span>
-            <span className="w-16 font-medium text-zinc-800">{pair.white}</span>
-            <span className="w-16 font-medium text-zinc-800">
-              {pair.black || ""}
+            <span
+              data-active={activeIndex === whiteIdx || undefined}
+              className={moveClasses(whiteIdx)}
+              onClick={onClickMove ? () => onClickMove(whiteIdx) : undefined}
+            >
+              {pair.white}
             </span>
+            {pair.black && (
+              <span
+                data-active={activeIndex === blackIdx || undefined}
+                className={moveClasses(blackIdx)}
+                onClick={onClickMove ? () => onClickMove(blackIdx) : undefined}
+              >
+                {pair.black}
+              </span>
+            )}
           </div>
         );
       })}

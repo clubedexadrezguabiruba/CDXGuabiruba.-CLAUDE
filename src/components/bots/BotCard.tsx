@@ -1,6 +1,7 @@
 "use client";
 
 import type { Bot, BotStatus } from "@/types/bot";
+import BotAvatar from "./BotAvatar";
 
 interface BotCardProps {
   bot: Bot;
@@ -9,7 +10,6 @@ interface BotCardProps {
 }
 
 export default function BotCard({ bot, status, onClick }: BotCardProps) {
-  const emoji = bot.emoji || "\u265F";
   const isLocked = status === "locked";
   const isDefeated = status === "defeated";
 
@@ -33,12 +33,8 @@ export default function BotCard({ bot, status, onClick }: BotCardProps) {
       )}
 
       {/* Avatar circle */}
-      <div
-        className={`flex h-16 w-16 items-center justify-center rounded-full text-3xl shadow-inner transition-transform duration-150 group-hover:scale-[1.02] ${
-          isLocked ? "bg-zinc-200" : "bg-zinc-100"
-        }`}
-      >
-        {isLocked ? "\uD83D\uDD12" : emoji}
+      <div className="transition-transform duration-150 group-hover:scale-[1.02]">
+        <BotAvatar bot={bot} size="md" locked={isLocked} />
       </div>
 
       {/* Name + epithet */}

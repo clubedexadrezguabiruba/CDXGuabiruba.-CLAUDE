@@ -37,6 +37,7 @@ export interface GameAnalysis {
   moves: MoveAnalysis[];
   counts: Record<MoveCategory, number>;
   topBlunders: MoveAnalysis[];
+  bestPlayerMove: MoveAnalysis | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -296,5 +297,18 @@ export async function analyzeGame(
     .sort((a, b) => b.winProbLoss - a.winProbLoss)
     .slice(0, 3);
 
-  return { accuracy, moves: analyses, counts, topBlunders };
+  // Best player move (highest accuracy, prefer brilliant/great)
+  const bestPlayerMove = validMoves.length > 0
+    ? validMoves.reduce((best, curr) => {
+        if (curr.moveAccuracy > best.moveAccuracy) return curr;
+        if (curr.moveAccuracy === best.moveAccuracy) {
+          const rank = (c: MoveCategory) =>
+            c === "brilliant" ? 3 : c === "great" ? 2 : c === "best" ? 1 : 0;
+          if (rank(curr.category) > rank(best.category)) return curr;
+        }
+        return best;
+      })
+    : null;
+
+  return { accuracy, moves: analyses, counts, topBlunders, bestPlayerMove };
 }

@@ -39,11 +39,10 @@ export default async function BotPage({ params }: BotPageProps) {
 
     if (prevBot) {
       const { data: prevWin } = await supabase
-        .from("user_bot_results")
+        .from("user_bot_first_wins")
         .select("id")
         .eq("user_id", user.id)
         .eq("bot_id", prevBot.id)
-        .eq("result", "win")
         .limit(1);
 
       if (!prevWin || prevWin.length === 0) {
@@ -52,5 +51,17 @@ export default async function BotPage({ params }: BotPageProps) {
     }
   }
 
-  return <BotGameClient bot={bot as Bot} />;
+  // Fetch next bot by unlock_order (not by id arithmetic)
+  const { data: nextBot } = await supabase
+    .from("bots")
+    .select("id, name")
+    .eq("unlock_order", (bot as Bot).unlock_order + 1)
+    .single();
+
+  return (
+    <BotGameClient
+      bot={bot as Bot}
+      nextBot={nextBot ? { id: nextBot.id, name: nextBot.name } : null}
+    />
+  );
 }

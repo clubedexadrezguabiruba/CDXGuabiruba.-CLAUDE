@@ -1,25 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Bot, PlayerColor, TimeControl } from "@/types/bot";
 import { TIME_CONTROLS } from "@/types/bot";
 import { getRandomPhrase } from "@/lib/chess/botGameLogic";
 import BotSpeechBubble from "./BotSpeechBubble";
+import BotAvatar from "./BotAvatar";
 
 interface BotPreGameProps {
   bot: Bot;
+  selectedColor: "white" | "black" | "random";
+  onColorChange: (color: "white" | "black" | "random") => void;
+  selectedTC: number;
+  onTCChange: (index: number) => void;
   onStart: (color: PlayerColor, timeControl: TimeControl) => void;
 }
 
-export default function BotPreGame({ bot, onStart }: BotPreGameProps) {
-  const [selectedColor, setSelectedColor] = useState<"white" | "black" | "random">("white");
-  const [selectedTC, setSelectedTC] = useState(0);
+export default function BotPreGame({
+  bot,
+  selectedColor,
+  onColorChange,
+  selectedTC,
+  onTCChange,
+  onStart,
+}: BotPreGameProps) {
   const [phrase, setPhrase] = useState<string | null>(null);
 
   useEffect(() => {
     setPhrase(getRandomPhrase(bot, "pre_game"));
   }, [bot]);
-  const emoji = bot.emoji || "\u265F";
 
   const handleStart = () => {
     const color: PlayerColor =
@@ -32,9 +41,7 @@ export default function BotPreGame({ bot, onStart }: BotPreGameProps) {
   return (
     <div className="flex flex-col items-center gap-4">
       {/* Bot avatar */}
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-zinc-100 to-zinc-200 text-4xl shadow-lg">
-        {emoji}
-      </div>
+      <BotAvatar bot={bot} size="lg" />
 
       {/* Name + epithet + ELO */}
       <div className="text-center">
@@ -71,7 +78,7 @@ export default function BotPreGame({ bot, onStart }: BotPreGameProps) {
           ).map(({ value, label }) => (
             <button
               key={value}
-              onClick={() => setSelectedColor(value)}
+              onClick={() => onColorChange(value)}
               className={`rounded-xl border-2 px-3 py-1.5 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none ${
                 selectedColor === value
                   ? "border-zinc-800 bg-zinc-800 text-white"
@@ -93,7 +100,7 @@ export default function BotPreGame({ bot, onStart }: BotPreGameProps) {
           {TIME_CONTROLS.map((tc, i) => (
             <button
               key={tc.label}
-              onClick={() => setSelectedTC(i)}
+              onClick={() => onTCChange(i)}
               className={`rounded-xl border-2 px-3 py-1.5 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none ${
                 selectedTC === i
                   ? "border-zinc-800 bg-zinc-800 text-white"

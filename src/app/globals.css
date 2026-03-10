@@ -23,6 +23,22 @@ html, body { height: 100%; }
   background-color: #b58863;
 }
 
+/* Bot board wrapper (own class, decoupled from puzzle) */
+.bot-board-wrap {
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.bot-board-wrap cg-board {
+  background-color: #b58863;
+}
+@media (min-width: 1024px) {
+  .bot-game-wrap .bot-board-wrap {
+    max-width: 560px;
+  }
+}
+
 /* Feedback highlights for puzzle moves */
 .puzzle-board-wrap .cg-custom-svgs circle.correct {
   fill: rgba(34, 197, 94, 0.6);
@@ -45,6 +61,12 @@ html, body { height: 100%; }
 .lesson-dim-kings cg-board piece.king {
   opacity: 0.3;
   pointer-events: none;
+}
+
+/* Game over modal entrance */
+@keyframes modal-enter {
+  0% { opacity: 0; transform: scale(0.95) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* Confetti animation */

@@ -67,6 +67,18 @@ export default async function MainLayout({
               >
                 Puzzles
               </Link>
+              <Link
+                href="/bots"
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                Bots
+              </Link>
+              <Link
+                href="/configuracoes"
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                Config
+              </Link>
               <form action="/auth/signout" method="post">
                 <button className="rounded-md border bg-white px-3 py-1.5 text-xs hover:bg-zinc-100">
                   Sair

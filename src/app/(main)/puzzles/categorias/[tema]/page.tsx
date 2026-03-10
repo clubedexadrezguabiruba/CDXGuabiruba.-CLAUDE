@@ -181,6 +181,7 @@ export default function CategoriaTemaPuzzlePage() {
             solutionMoves={puzzle.moves}
             onComplete={handleComplete}
             soundEnabled={!profile?.sound_muted}
+            premovable={profile?.premove_enabled ?? true}
           />
           {result && (
             <div

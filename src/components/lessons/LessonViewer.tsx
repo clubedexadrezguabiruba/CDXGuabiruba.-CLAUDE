@@ -20,6 +20,7 @@ import type { ExerciseState } from "./LessonExercise";
 import Confetti from "./Confetti";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useSound } from "@/hooks/useSound";
+import { useArrowKeys } from "@/hooks/useArrowKeys";
 import Link from "next/link";
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -388,6 +389,9 @@ export default function LessonViewer({
     stopDemoAutoplay,
     navigateToSection,
   ]);
+
+  // ─── Keyboard navigation ───
+  useArrowKeys({ onPrev: goBack, onNext: goForward });
 
   // ─── Repeat current section ───
   const handleRepeat = useCallback(() => {

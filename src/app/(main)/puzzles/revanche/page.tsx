@@ -420,6 +420,7 @@ export default function PuzzleRevanchePage() {
           solutionMoves={puzzle.moves}
           onComplete={handlePuzzleComplete}
           soundEnabled={!profile?.sound_muted}
+          premovable={profile?.premove_enabled ?? true}
           showHint={showHint}
           autoShowSolution={isFailed ? true : false}
           onSolutionEnd={handleSolutionEnd}

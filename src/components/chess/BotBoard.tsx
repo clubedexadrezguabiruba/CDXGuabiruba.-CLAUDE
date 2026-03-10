@@ -19,14 +19,21 @@ interface BotBoardProps {
   lastMove?: [string, string];
   soundEnabled?: boolean;
   autoShapes?: DrawShape[];
+  premovable?: boolean;
+  autoQueen?: boolean;
+  // Premove queue
+  queueShapes?: DrawShape[];
+  enqueueMove?: (from: string, to: string) => boolean;
+  clearQueue?: () => void;
+  speculativeDests?: Map<Key, Key[]>;
 }
 
 const PROMOTION_PIECES = ["q", "r", "b", "n"] as const;
 const PIECE_SYMBOLS: Record<string, string> = {
-  q: "♛",
-  r: "♜",
-  b: "♝",
-  n: "♞",
+  q: "\u266B",
+  r: "\u265C",
+  b: "\u265D",
+  n: "\u265E",
 };
 
 export default function BotBoard({
@@ -37,6 +44,12 @@ export default function BotBoard({
   lastMove,
   soundEnabled = true,
   autoShapes,
+  premovable = false,
+  autoQueen = true,
+  queueShapes = [],
+  enqueueMove,
+  clearQueue,
+  speculativeDests,
 }: BotBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const cgRef = useRef<Api | null>(null);
@@ -54,6 +67,16 @@ export default function BotBoard({
   soundEnabledRef.current = soundEnabled;
   const chessRef = useRef(chess);
   chessRef.current = chess;
+  const autoQueenRef = useRef(autoQueen);
+  autoQueenRef.current = autoQueen;
+  const autoShapesRef = useRef(autoShapes);
+  autoShapesRef.current = autoShapes;
+  const enqueueMoveRef = useRef(enqueueMove);
+  enqueueMoveRef.current = enqueueMove;
+  const clearQueueRef = useRef(clearQueue);
+  clearQueueRef.current = clearQueue;
+  const speculativeDestsRef = useRef(speculativeDests);
+  speculativeDestsRef.current = speculativeDests;
 
   const playSound = useCallback(
     (name: Parameters<typeof soundManager.play>[0]) => {
@@ -74,11 +97,23 @@ export default function BotBoard({
   );
 
   const handleUserMove = useCallback(
-    (orig: Key, dest: Key) => {
-      if (!interactiveRef.current) return;
+    (orig: Key, dest: Key, isPremove: boolean) => {
+      // For premoves, skip interactive check
+      if (!isPremove && !interactiveRef.current) return;
 
       if (isPromotion(orig, dest)) {
-        // Block the board, show promotion modal
+        if (isPremove || autoQueenRef.current) {
+          const moveResult = chessRef.current.move({ from: orig, to: dest, promotion: "q" });
+          if (!moveResult) return;
+
+          if (chessRef.current.isCheck()) playSound("check");
+          else if (moveResult.captured) playSound("capture");
+          else playSound("move");
+
+          onMoveRef.current(orig + dest + "q");
+          return;
+        }
+        // Auto-queen disabled: show promotion modal
         setPromotionPending({ from: orig, to: dest });
         return;
       }
@@ -102,11 +137,7 @@ export default function BotBoard({
       const { from, to } = promotionPending;
       setPromotionPending(null);
 
-      const moveResult = chessRef.current.move({
-        from,
-        to,
-        promotion: piece,
-      });
+      const moveResult = chessRef.current.move({ from, to, promotion: piece });
       if (!moveResult) return;
 
       if (chessRef.current.isCheck()) playSound("check");
@@ -132,12 +163,44 @@ export default function BotBoard({
       turnColor: chess.turn() === "w" ? "white" : "black",
       movable: {
         free: false,
-        color: interactive ? orientation : undefined,
-        dests: interactive ? toDests(chess) : new Map(),
+        // "both" during opponent's turn bypasses chessground's isMovable() turn check,
+        // allowing premoves via movable.events.after + snap-back (not native premovable).
+        color: (premovable || interactive)
+          ? (interactive ? orientation : "both")
+          : undefined,
+        dests: interactive
+          ? toDests(chess)
+          : (premovable ? (speculativeDestsRef.current ?? new Map()) : new Map()),
         showDests: true,
         events: {
           after: (orig: Key, dest: Key) => {
-            handleUserMoveRef.current(orig, dest);
+            if (process.env.NODE_ENV === "development") {
+              console.log("[PREMOVE:after]", {
+                orig, dest,
+                interactive: interactiveRef.current,
+                destsSize: speculativeDestsRef.current?.size ?? 0,
+                fen: chessRef.current.fen().split(" ").slice(0, 2).join(" "),
+                ts: performance.now().toFixed(1),
+              });
+            }
+            if (interactiveRef.current) {
+              // Normal move on player's turn
+              handleUserMoveRef.current(orig, dest, false);
+            } else if (enqueueMoveRef.current) {
+              // Premove: enqueue + snap-back (piece returns to real position)
+              const accepted = enqueueMoveRef.current(orig, dest);
+              if (!accepted && soundEnabledRef.current) soundManager.play("wrong");
+              // Restore real position + keep "both" + dests for next premove
+              const realTurn = chessRef.current.turn() === "w" ? "white" : "black";
+              cgRef.current?.set({
+                fen: chessRef.current.fen(),
+                turnColor: realTurn,
+                movable: {
+                  color: "both",
+                  dests: speculativeDestsRef.current ?? new Map(),
+                },
+              });
+            }
           },
         },
       },
@@ -147,7 +210,7 @@ export default function BotBoard({
       animation: { enabled: true, duration: 200 },
       highlight: { lastMove: true, check: true },
       drawable: {
-        enabled: false,
+        enabled: true,
         autoShapes: autoShapes ?? [],
         brushes: {
           green:      { key: "green",      color: "#15803d", opacity: 1,   lineWidth: 10 },
@@ -178,6 +241,20 @@ export default function BotBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orientation]);
 
+  // Right-click to clear queue (desktop shortcut, supplementary to button)
+  useEffect(() => {
+    const el = boardRef.current;
+    if (!el) return;
+    const handler = (e: MouseEvent) => {
+      if (clearQueueRef.current) {
+        clearQueueRef.current();
+        e.preventDefault();
+      }
+    };
+    el.addEventListener("contextmenu", handler);
+    return () => el.removeEventListener("contextmenu", handler);
+  }, []);
+
   // Update board state when chess/interactive/lastMove changes
   const fen = chess.fen();
   useEffect(() => {
@@ -185,23 +262,33 @@ export default function BotBoard({
     const c = chessRef.current;
     if (!cg || !c) return;
 
-    const turnColor = c.turn() === "w" ? "white" : "black";
-    const isPlayerTurn = turnColor === orientation && interactive;
+    const realTurnColor = c.turn() === "w" ? "white" : "black";
+
+    // Merge autoShapes with queue arrows
+    const allShapes: DrawShape[] = [...(autoShapes ?? []), ...queueShapes];
 
     cg.set({
       fen,
-      turnColor,
+      turnColor: realTurnColor,
       lastMove: lastMove as [Key, Key] | undefined,
       movable: {
         free: false,
-        color: isPlayerTurn && !promotionPending ? orientation : undefined,
-        dests: isPlayerTurn && !promotionPending ? toDests(c) : new Map(),
+        color: (premovable || interactive)
+          ? (interactive ? orientation : "both")
+          : undefined,
+        dests: interactive && !promotionPending
+          ? toDests(c)
+          : (premovable ? (speculativeDests ?? new Map()) : new Map()),
         showDests: true,
       },
-      check: c.isCheck() ? turnColor : undefined,
-      drawable: { autoShapes: autoShapes ?? [] },
+      premovable: { enabled: false },
+      check: c.isCheck() ? realTurnColor : undefined,
+      drawable: { autoShapes: allShapes },
     });
-  }, [fen, interactive, lastMove, orientation, promotionPending, autoShapes]);
+  }, [
+    fen, interactive, lastMove, orientation, promotionPending, autoShapes,
+    premovable, queueShapes, speculativeDests,
+  ]);
 
   return (
     <div className="relative w-full flex flex-col items-center">
