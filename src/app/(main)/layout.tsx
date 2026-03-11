@@ -17,6 +17,7 @@ export default async function MainLayout({
     level: number;
     role: string;
   } | null = null;
+  let title: string = "Aprendiz";
 
   if (user) {
     const { data } = await supabase
@@ -25,6 +26,15 @@ export default async function MainLayout({
       .eq("id", user.id)
       .single();
     profile = data;
+
+    const { data: titleData } = await supabase
+      .from("user_titles")
+      .select("current_title")
+      .eq("user_id", user.id)
+      .single();
+    if (titleData?.current_title) {
+      title = titleData.current_title;
+    }
   }
 
   const displayName = profile?.display_name || user?.email || "Usuário";
@@ -52,6 +62,9 @@ export default async function MainLayout({
                 </span>
                 <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium">
                   Nv. {level}
+                </span>
+                <span className="ml-1 text-xs text-zinc-500">
+                  {title}
                 </span>
               </div>
             </div>

@@ -9,7 +9,8 @@ type SoundName =
   | "rush-tick"
   | "rush-gameover"
   | "victory"
-  | "defeat";
+  | "defeat"
+  | "notify";
 
 const SOUND_FILES: Record<SoundName, string> = {
   move: "/sounds/move.mp3",
@@ -21,6 +22,7 @@ const SOUND_FILES: Record<SoundName, string> = {
   "rush-gameover": "/sounds/rush-gameover.mp3",
   victory: "/sounds/victory.mp3",
   defeat: "/sounds/defeat.mp3",
+  notify: "/sounds/notify.mp3",
 };
 
 class SoundManager {
