@@ -24,7 +24,7 @@ const CATEGORY_INFO: Record<MoveCategory, { symbol: string; label: string; color
   good:       { symbol: "",   label: "Bom",        color: "#84cc16", bg: "" },
   inaccuracy: { symbol: "?!", label: "Imprecis\u00E3o", color: "#eab308", bg: "bg-yellow-100" },
   mistake:    { symbol: "?",  label: "Erro",       color: "#f97316", bg: "bg-orange-100" },
-  blunder:    { symbol: "??", label: "Blunder",    color: "#ef4444", bg: "bg-red-100" },
+  blunder:    { symbol: "??", label: "Erro Grave",  color: "#ef4444", bg: "bg-red-100" },
 };
 
 const STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

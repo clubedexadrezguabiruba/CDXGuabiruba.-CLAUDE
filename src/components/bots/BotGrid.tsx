@@ -42,6 +42,16 @@ export default function BotGrid({ bots, statusMap }: BotGridProps) {
       .map((s) => ({ name: s, stars: STAGE_STARS[s] || 1, bots: grouped.get(s)! }));
   }, [bots]);
 
+  // Map bot id → name of the previous bot (by unlock_order)
+  const prevBotNameMap = useMemo(() => {
+    const sorted = [...bots].sort((a, b) => a.unlock_order - b.unlock_order);
+    const map: Record<number, string> = {};
+    for (let i = 1; i < sorted.length; i++) {
+      map[sorted[i].id] = sorted[i - 1].name;
+    }
+    return map;
+  }, [bots]);
+
   return (
     <div className="space-y-8">
       {stages.map((stage) => (
@@ -63,6 +73,7 @@ export default function BotGrid({ bots, statusMap }: BotGridProps) {
                 key={bot.id}
                 bot={bot}
                 status={statusMap[bot.id] || "locked"}
+                prevBotName={prevBotNameMap[bot.id]}
                 onClick={() => router.push(`/bots/${bot.id}`)}
               />
             ))}

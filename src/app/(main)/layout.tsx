@@ -37,24 +37,26 @@ export default async function MainLayout({
     .slice(0, 2);
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
       {user && (
         <nav className="border-b bg-zinc-50">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2">
-            <div className="flex items-center gap-3">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-1 px-4 py-2">
+            <div className="flex min-w-0 items-center gap-3">
               {/* Avatar placeholder */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-white">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-white">
                 {initials}
               </div>
-              <div className="text-sm">
-                <span className="font-medium">{displayName}</span>
-                <span className="ml-2 rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium">
+              <div className="min-w-0 text-sm">
+                <span className="block max-w-30 truncate font-medium sm:max-w-none">
+                  {displayName}
+                </span>
+                <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium">
                   Nv. {level}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link
                 href="/aulas"
                 className="text-sm font-medium text-zinc-600 hover:text-zinc-900"

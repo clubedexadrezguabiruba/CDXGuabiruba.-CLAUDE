@@ -63,7 +63,7 @@ const CATEGORY_CONFIG = [
   { key: "good" as const, label: "Bom", color: "#84cc16", bg: "bg-lime-500" },
   { key: "inaccuracy" as const, label: "Imprecis\u00E3o", color: "#eab308", bg: "bg-yellow-500" },
   { key: "mistake" as const, label: "Erro", color: "#f97316", bg: "bg-orange-500" },
-  { key: "blunder" as const, label: "Blunder", color: "#ef4444", bg: "bg-red-500" },
+  { key: "blunder" as const, label: "Erro Grave", color: "#ef4444", bg: "bg-red-500" },
 ];
 
 function CategoryBars({ analysis }: { analysis: GameAnalysis }) {

@@ -1,10 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Bot, GameResult, GameOverReason } from "@/types/bot";
 import { REASON_LABELS } from "@/types/bot";
 import type { GameAnalysis } from "@/lib/chess/botAnalysis";
 import { accuracyColor } from "@/lib/chess/analysisHelpers";
+import { getRandomPhrase } from "@/lib/chess/botGameLogic";
 import BotAvatar from "./BotAvatar";
+import BotSpeechBubble from "./BotSpeechBubble";
 
 interface GameOverModalProps {
   bot: Bot;
@@ -57,6 +60,12 @@ export default function GameOverModal({
 
   const canReview = !analyzing && analysis !== null;
 
+  // Bot reacts to game outcome
+  const botPhrase = useMemo(() => {
+    const phraseKey = result === "win" ? "on_loss" : result === "loss" ? "on_win" : "on_win";
+    return getRandomPhrase(bot, phraseKey);
+  }, [bot, result]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
@@ -79,6 +88,13 @@ export default function GameOverModal({
         {/* Title */}
         <h2 className={`text-2xl font-bold ${resultColor}`}>{resultTitle}</h2>
         <p className="mt-1 text-sm text-zinc-500">por {reasonLabel}</p>
+
+        {/* Bot phrase */}
+        {botPhrase && (
+          <div className="mt-3">
+            <BotSpeechBubble message={botPhrase} dismissMs={30000} />
+          </div>
+        )}
 
         {/* Accuracy */}
         {analysis && (
@@ -105,7 +121,7 @@ export default function GameOverModal({
               <div className="text-lg font-bold text-green-600">
                 {analysis.counts.best + analysis.counts.great}
               </div>
-              <div className="text-xs text-zinc-400">Best</div>
+              <div className="text-xs text-zinc-400">Melhores</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-lime-600">
@@ -128,7 +144,7 @@ export default function GameOverModal({
           disabled={!canReview}
           className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white transition-colors duration-150 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          {analyzing ? "Analisando..." : "Revisão de Batalha"}
+          {analyzing ? "Analisando..." : "Ver Análise"}
         </button>
 
         {/* Next bot button (only on win when next bot exists) */}

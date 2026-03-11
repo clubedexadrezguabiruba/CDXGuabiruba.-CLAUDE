@@ -6,10 +6,11 @@ import BotAvatar from "./BotAvatar";
 interface BotCardProps {
   bot: Bot;
   status: BotStatus;
+  prevBotName?: string;
   onClick: () => void;
 }
 
-export default function BotCard({ bot, status, onClick }: BotCardProps) {
+export default function BotCard({ bot, status, prevBotName, onClick }: BotCardProps) {
   const isLocked = status === "locked";
   const isDefeated = status === "defeated";
 
@@ -50,7 +51,9 @@ export default function BotCard({ bot, status, onClick }: BotCardProps) {
 
       {/* Locked text */}
       {isLocked && (
-        <div className="line-clamp-1 text-xs text-zinc-400">Derrote o anterior</div>
+        <div className="line-clamp-1 text-xs text-zinc-400">
+          {prevBotName ? `Derrote ${prevBotName} primeiro` : "Derrote o anterior"}
+        </div>
       )}
     </button>
   );
