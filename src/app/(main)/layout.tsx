@@ -89,6 +89,18 @@ export default async function MainLayout({
                 Bots
               </Link>
               <Link
+                href="/turmas"
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                Turmas
+              </Link>
+              <Link
+                href="/perfil"
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                Perfil
+              </Link>
+              <Link
                 href="/configuracoes"
                 className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
               >

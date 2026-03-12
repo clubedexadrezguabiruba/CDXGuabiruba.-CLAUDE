@@ -648,27 +648,30 @@ Conecte o repositório GitHub à Vercel:
 
 **Objetivo:** Professor cria turmas, atribui tarefas, vê relatórios, mural funciona.
 
+> **Nota:** Ranking por turma (leaderboard filtrado) é implementado na Fase 10 (tarefa 10.4). A Fase 9 entrega relatórios de progresso individuais e agregados.
+
 ### Tarefas:
 
 | # | Tarefa | Critério de "Feito" |
 |---|---|---|
+| **RLS e Segurança** | | |
+| 9.1 | RLS: professor só vê alunos de suas turmas; aluno só vê turmas que pertence | Policies ativas, queries filtram corretamente |
 | **Turmas** | | |
-| 9.1 | Criar página /turmas (lista de turmas do professor) | Página renderiza |
-| 9.2 | Implementar criação de turma (nome + código de convite gerado) | Turma criada com código |
-| 9.3 | Implementar entrada de aluno por código de convite | Aluno entra na turma |
-| 9.4 | Implementar remoção de aluno da turma | Professor remove aluno |
+| 9.2 | Criar página /turmas (lista de turmas do professor) | Página renderiza |
+| 9.3 | Implementar criação de turma (nome + código de convite gerado) | Turma criada com código |
+| 9.4 | Implementar entrada de aluno por código de convite | Aluno entra na turma |
+| 9.5 | Implementar remoção de aluno da turma | Professor remove aluno |
 | **Tarefas** | | |
-| 9.5 | Criar interface de criação de tarefa (tipo + config + prazo) | Professor cria tarefa |
-| 9.6 | Implementar exibição de tarefas pendentes no dashboard do aluno | Aluno vê tarefas |
-| 9.7 | Implementar verificação automática de conclusão de tarefa | Tarefa marca como concluída |
-| 9.8 | Criar relatório de tarefas (quem completou, quem não) | Relatório funciona |
+| 9.6 | Criar interface de criação de tarefa (tipo + config + prazo). Tipos fechados: completar aula, resolver N puzzles (rating ou tema), derrotar bot, fazer puzzle rush. Tarefas apontam para atividades já existentes no site. | Professor cria tarefa com tipo, configuração e prazo |
+| 9.7 | Implementar exibição de tarefas pendentes no dashboard do aluno | Aluno vê tarefas |
+| 9.8 | Implementar verificação automática de conclusão de tarefa. Verificação server-side via RPC que consulta eventos já persistidos (user_puzzle_attempts, user_lesson_progress, user_bot_results, puzzle_rush_runs). | Tarefa marca como concluída ao detectar eventos reais |
+| 9.9 | Criar relatório de tarefas (quem completou, quem não) | Relatório funciona |
 | **Mural** | | |
-| 9.9 | Implementar inserção automática de eventos no feed (triggers) | Eventos aparecem ao derrotar bot, subir nível, etc. |
-| 9.10 | Criar página /turmas/[id]/mural com feed cronológico | Mural renderiza |
+| 9.10 | Implementar inserção automática de eventos no feed (triggers) | Eventos aparecem ao derrotar bot, subir nível, etc. |
+| 9.11 | Criar página /turmas/[id]/mural com feed cronológico | Mural renderiza |
 | **Relatório** | | |
-| 9.11 | Criar página de relatório de progresso por aluno | Dados corretos por aluno |
-| 9.12 | Criar visão geral da turma (métricas agregadas) | Dashboard da turma funciona |
-| 9.13 | RLS: professor só vê alunos de suas turmas | Validação funciona |
+| 9.12 | Criar página de relatório de progresso por aluno | Dados corretos por aluno |
+| 9.13 | Criar visão geral da turma (métricas agregadas) | Dashboard da turma funciona |
 | 9.14 | Testar com Playwright: criar turma → adicionar aluno → atribuir tarefa | Teste passa |
 
 **Dependências:** Fases 3-7 (precisa de auth, puzzles, aulas, bots, gamificação).

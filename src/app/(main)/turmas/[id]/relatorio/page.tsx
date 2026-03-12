@@ -1,0 +1,34 @@
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import RelatorioClient from "./RelatorioClient";
+
+interface RelatorioPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function RelatorioPage({ params }: RelatorioPageProps) {
+  const { id } = await params;
+  const classId = Number(id);
+
+  if (!classId || isNaN(classId)) notFound();
+
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+
+  if (!data.user) redirect("/login");
+
+  // Guard: só professor da turma
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("id, teacher_id, name")
+    .eq("id", classId)
+    .single();
+
+  if (!cls || cls.teacher_id !== data.user.id) notFound();
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-6">
+      <RelatorioClient classId={classId} className={cls.name} />
+    </div>
+  );
+}
