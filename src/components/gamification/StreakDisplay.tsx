@@ -50,7 +50,7 @@ interface StreakDisplayProps {
 export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
   if (loading) {
     return (
-      <div className="rounded-xl border p-4">
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="text-lg font-semibold">Sequência de Campanha</h2>
         <div className="mt-2 text-sm text-zinc-400">Carregando...</div>
       </div>
@@ -64,14 +64,14 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
     : 100;
 
   return (
-    <div className="rounded-xl border p-4">
+    <div className="rounded-xl border bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Sequência de Campanha</h2>
         <div className="flex items-center gap-1.5">
           <span className="text-2xl" aria-hidden="true">
             {effective > 0 ? "\uD83D\uDD25" : "\u2744\uFE0F"}
           </span>
-          <span className="text-2xl font-bold tabular-nums">
+          <span className="text-3xl font-bold tabular-nums">
             {effective}
           </span>
           <span className="text-sm text-zinc-500">
@@ -88,7 +88,7 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
               {effective}/{nextMilestone}
             </span>
           </div>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-200">
+          <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-zinc-200">
             <div
               className="h-full rounded-full bg-orange-500 transition-all duration-300"
               style={{ width: `${progressToNext}%` }}

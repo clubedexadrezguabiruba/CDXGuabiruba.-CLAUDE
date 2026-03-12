@@ -2,55 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { soundManager } from "@/lib/sounds/soundManager";
+import { RARITY_STYLES, RARITY_LABELS, SLOT_LABELS } from "@/lib/constants/items";
 import type { ClaimedItem } from "@/hooks/useChests";
 
 interface ChestOpeningModalProps {
   item: ClaimedItem;
   onClose: () => void;
 }
-
-const RARITY_STYLES: Record<string, { border: string; badge: string; bg: string; glow: string }> = {
-  common: {
-    border: "border-zinc-300",
-    badge: "bg-zinc-200 text-zinc-600",
-    bg: "bg-zinc-50",
-    glow: "",
-  },
-  rare: {
-    border: "border-blue-400",
-    badge: "bg-blue-100 text-blue-700",
-    bg: "bg-blue-50",
-    glow: "",
-  },
-  epic: {
-    border: "border-purple-500",
-    badge: "bg-purple-100 text-purple-700",
-    bg: "bg-purple-50",
-    glow: "",
-  },
-  legendary: {
-    border: "border-amber-400",
-    badge: "bg-amber-100 text-amber-700",
-    bg: "bg-amber-50",
-    glow: "shadow-[0_0_24px_rgba(251,191,36,0.4)]",
-  },
-};
-
-const RARITY_LABELS: Record<string, string> = {
-  common: "Comum",
-  rare: "Raro",
-  epic: "Épico",
-  legendary: "Lendário",
-};
-
-const SLOT_LABELS: Record<string, string> = {
-  head: "Cabeça",
-  outfit: "Roupa",
-  hand: "Mão",
-  background: "Fundo",
-  frame: "Moldura",
-  pet: "Pet",
-};
 
 /**
  * Modal de abertura de baú com animação em 3 fases.

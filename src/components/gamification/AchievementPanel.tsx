@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAchievements, type Achievement } from "@/hooks/useAchievements";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -21,16 +22,16 @@ function AchievementCard({ ach }: { ach: Achievement }) {
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+      className={`flex items-start gap-3 rounded-lg border p-3 transition-all ${
         ach.unlocked
-          ? "border-amber-200 bg-amber-50"
+          ? "border-amber-200 bg-amber-50 shadow-sm"
           : "border-zinc-200 bg-white opacity-70"
       }`}
     >
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg ${
           ach.unlocked
-            ? "bg-amber-100 text-amber-700"
+            ? "bg-amber-200 text-amber-800"
             : "bg-zinc-100 text-zinc-400"
         }`}
       >
@@ -68,10 +69,11 @@ function AchievementCard({ ach }: { ach: Achievement }) {
 
 export default function AchievementPanel() {
   const { achievements, loading, error } = useAchievements();
+  const [showLocked, setShowLocked] = useState(false);
 
   if (loading) {
     return (
-      <div className="rounded-xl border p-4">
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-lg font-semibold">Insígnias</h2>
         <div className="flex items-center justify-center py-6 text-sm text-zinc-400">
           Carregando conquistas...
@@ -82,7 +84,7 @@ export default function AchievementPanel() {
 
   if (error) {
     return (
-      <div className="rounded-xl border p-4">
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-lg font-semibold">Insígnias</h2>
         <p className="text-sm text-red-600">Erro: {error}</p>
       </div>
@@ -90,24 +92,40 @@ export default function AchievementPanel() {
   }
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const lockedCount = achievements.length - unlockedCount;
 
-  // Group by category
-  const grouped = new Map<string, Achievement[]>();
-  for (const ach of achievements) {
+  // Separate unlocked and locked
+  const unlocked = achievements.filter((a) => a.unlocked);
+  const locked = achievements.filter((a) => !a.unlocked);
+
+  // Group unlocked by category
+  const groupedUnlocked = new Map<string, Achievement[]>();
+  for (const ach of unlocked) {
     const cat = ach.category || "general";
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(ach);
+    if (!groupedUnlocked.has(cat)) groupedUnlocked.set(cat, []);
+    groupedUnlocked.get(cat)!.push(ach);
   }
 
-  // Sort categories by defined order
-  const sortedCategories = CATEGORY_ORDER.filter((c) => grouped.has(c));
-  // Add any categories not in the predefined order
-  for (const cat of grouped.keys()) {
-    if (!sortedCategories.includes(cat)) sortedCategories.push(cat);
+  // Group locked by category
+  const groupedLocked = new Map<string, Achievement[]>();
+  for (const ach of locked) {
+    const cat = ach.category || "general";
+    if (!groupedLocked.has(cat)) groupedLocked.set(cat, []);
+    groupedLocked.get(cat)!.push(ach);
+  }
+
+  const unlockedCategories = CATEGORY_ORDER.filter((c) => groupedUnlocked.has(c));
+  for (const cat of groupedUnlocked.keys()) {
+    if (!unlockedCategories.includes(cat)) unlockedCategories.push(cat);
+  }
+
+  const lockedCategories = CATEGORY_ORDER.filter((c) => groupedLocked.has(c));
+  for (const cat of groupedLocked.keys()) {
+    if (!lockedCategories.includes(cat)) lockedCategories.push(cat);
   }
 
   return (
-    <div className="rounded-xl border p-4">
+    <div className="rounded-xl border bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Insígnias</h2>
         <span className="text-sm font-medium text-zinc-500">
@@ -115,23 +133,63 @@ export default function AchievementPanel() {
         </span>
       </div>
 
-      <div className="space-y-4">
-        {sortedCategories.map((cat) => {
-          const items = grouped.get(cat) ?? [];
-          return (
-            <div key={cat}>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                {CATEGORY_LABELS[cat] ?? cat}
-              </h3>
-              <div className="space-y-2">
-                {items.map((ach) => (
-                  <AchievementCard key={ach.id} ach={ach} />
-                ))}
+      {/* Unlocked achievements — always visible */}
+      {unlockedCategories.length > 0 ? (
+        <div className="space-y-4">
+          {unlockedCategories.map((cat) => {
+            const items = groupedUnlocked.get(cat) ?? [];
+            return (
+              <div key={cat}>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  {CATEGORY_LABELS[cat] ?? cat}
+                </h3>
+                <div className="space-y-2">
+                  {items.map((ach) => (
+                    <AchievementCard key={ach.id} ach={ach} />
+                  ))}
+                </div>
               </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="py-4 text-center text-sm text-zinc-400">
+          Nenhuma insígnia desbloqueada ainda.
+        </p>
+      )}
+
+      {/* Locked achievements — collapsed by default */}
+      {lockedCount > 0 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowLocked(!showLocked)}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-300 py-2 text-sm font-medium text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
+          >
+            {showLocked ? "Ocultar" : "Mostrar"} bloqueadas ({lockedCount})
+            <span className="text-xs">{showLocked ? "▲" : "▼"}</span>
+          </button>
+
+          {showLocked && (
+            <div className="mt-3 space-y-4">
+              {lockedCategories.map((cat) => {
+                const items = groupedLocked.get(cat) ?? [];
+                return (
+                  <div key={cat}>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                      {CATEGORY_LABELS[cat] ?? cat}
+                    </h3>
+                    <div className="space-y-2">
+                      {items.map((ach) => (
+                        <AchievementCard key={ach.id} ach={ach} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -12,14 +12,17 @@ const SOURCE_LABELS: Record<string, string> = {
   streak_bonus: "Bônus de sequência",
 };
 
+const VISIBLE_LIMIT = 3;
+
 export default function ChestPanel() {
   const { chests, loading, error, openChest } = useChests();
   const [opening, setOpening] = useState<number | null>(null);
   const [claimedItem, setClaimedItem] = useState<ClaimedItem | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   async function handleOpen(chest: PendingChest) {
-    if (opening !== null) return; // já abrindo outro
+    if (opening !== null) return;
     setOpening(chest.id);
     setOpenError(null);
 
@@ -27,12 +30,10 @@ export default function ChestPanel() {
       const result = await openChest(chest.id);
 
       if (result.alreadyClaimed) {
-        // já foi aberto — baú removido da lista pelo hook
         setOpening(null);
         return;
       }
 
-      // mostra modal de revelação
       setClaimedItem(result.item);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao abrir baú";
@@ -48,7 +49,7 @@ export default function ChestPanel() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border p-4">
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-lg font-semibold">Baús</h2>
         <div className="flex items-center justify-center py-4 text-sm text-zinc-400">
           Carregando...
@@ -59,16 +60,19 @@ export default function ChestPanel() {
 
   if (error) {
     return (
-      <div className="rounded-xl border p-4">
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-lg font-semibold">Baús</h2>
         <p className="text-sm text-red-600">Erro: {error}</p>
       </div>
     );
   }
 
+  const visibleChests = expanded ? chests : chests.slice(0, VISIBLE_LIMIT);
+  const hiddenCount = chests.length - VISIBLE_LIMIT;
+
   return (
     <>
-      <div className="rounded-xl border p-4">
+      <div className="rounded-xl border bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Baús</h2>
           {chests.length > 0 && (
@@ -84,10 +88,10 @@ export default function ChestPanel() {
           </p>
         ) : (
           <div className="space-y-2">
-            {chests.map((chest) => (
+            {visibleChests.map((chest) => (
               <div
                 key={chest.id}
-                className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-3"
+                className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-3 shadow-sm transition-all hover:shadow"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🎁</span>
@@ -101,12 +105,21 @@ export default function ChestPanel() {
                 <button
                   onClick={() => handleOpen(chest)}
                   disabled={opening !== null}
-                  className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+                  className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50"
                 >
                   {opening === chest.id ? "Abrindo..." : "Abrir"}
                 </button>
               </div>
             ))}
+
+            {!expanded && hiddenCount > 0 && (
+              <button
+                onClick={() => setExpanded(true)}
+                className="w-full rounded-lg border border-dashed border-zinc-300 py-2 text-sm font-medium text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
+              >
+                Ver mais {hiddenCount} {hiddenCount === 1 ? "baú" : "baús"}
+              </button>
+            )}
           </div>
         )}
 
