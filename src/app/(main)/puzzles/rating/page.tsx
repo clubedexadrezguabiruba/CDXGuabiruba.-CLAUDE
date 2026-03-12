@@ -62,17 +62,21 @@ export default function PuzzleRatingPage() {
       autoAdvanceRef.current = null;
     }
 
-    setState((s) => ({ ...s, loading: true, error: null, result: null }));
+    requestAnimationFrame(() => {
+      setState((s) => ({ ...s, loading: true, error: null, result: null }));
+    });
 
 
     const { data, error } = await supabase.rpc("get_next_puzzle_rating");
 
     if (error || !data) {
-      setState((s) => ({
-        ...s,
-        loading: false,
-        error: error?.message ?? "Erro ao carregar puzzle",
-      }));
+      requestAnimationFrame(() => {
+        setState((s) => ({
+          ...s,
+          loading: false,
+          error: error?.message ?? "Erro ao carregar puzzle",
+        }));
+      });
       return;
     }
 
@@ -86,19 +90,23 @@ export default function PuzzleRatingPage() {
     };
 
     if (d.error) {
-      setState((s) => ({ ...s, loading: false, error: d.error! }));
+      requestAnimationFrame(() => {
+        setState((s) => ({ ...s, loading: false, error: d.error! }));
+      });
       return;
     }
 
-    setState((s) => ({
-      ...s,
-      puzzle: d.puzzle ?? null,
-      userRating: d.user_rating,
-      streak: d.streak,
-      bestStreak: d.best_streak,
-      skipsAvailable: d.skips_available,
-      loading: false,
-    }));
+    requestAnimationFrame(() => {
+      setState((s) => ({
+        ...s,
+        puzzle: d.puzzle ?? null,
+        userRating: d.user_rating,
+        streak: d.streak,
+        bestStreak: d.best_streak,
+        skipsAvailable: d.skips_available,
+        loading: false,
+      }));
+    });
   }, [supabase]);
 
   useEffect(() => {

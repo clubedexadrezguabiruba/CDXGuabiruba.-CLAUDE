@@ -247,7 +247,8 @@ export default function PuzzleBoard({
         }, 600);
       }
     },
-    [playSound, updateBoard, completeResult, safeTimeout] // playOpponentMove added below via ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [playSound, updateBoard, completeResult, safeTimeout] // playOpponentMove accessed via ref, not direct dep
   );
 
   // Ref for chessground event handler (always points to latest handleUserMove)

@@ -56,9 +56,11 @@ export default function CategoriaTemaPuzzlePage() {
       autoAdvanceRef.current = null;
     }
 
-    setLoading(true);
-    setError(null);
-    setResult(null);
+    requestAnimationFrame(() => {
+      setLoading(true);
+      setError(null);
+      setResult(null);
+    });
 
 
     // Use random key for multi-key themes (e.g., mateIn3plus)
@@ -69,20 +71,27 @@ export default function CategoriaTemaPuzzlePage() {
     );
 
     if (rpcError || !data) {
-      setError(rpcError?.message ?? "Erro ao carregar");
-      setLoading(false);
+      requestAnimationFrame(() => {
+        setError(rpcError?.message ?? "Erro ao carregar");
+        setLoading(false);
+      });
       return;
     }
 
     const d = data as { puzzle?: PuzzleData; error?: string };
     if (d.error) {
-      setError(d.error);
-      setLoading(false);
+      const errMsg = d.error;
+      requestAnimationFrame(() => {
+        setError(errMsg);
+        setLoading(false);
+      });
       return;
     }
 
-    setPuzzle(d.puzzle ?? null);
-    setLoading(false);
+    requestAnimationFrame(() => {
+      setPuzzle(d.puzzle ?? null);
+      setLoading(false);
+    });
   }, [tema, difficulty, supabase]);
 
   useEffect(() => {

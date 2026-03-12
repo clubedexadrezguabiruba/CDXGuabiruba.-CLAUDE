@@ -31,7 +31,7 @@ export default function Confetti() {
         size: 6 + Math.random() * 6,
       });
     }
-    setParticles(items);
+    requestAnimationFrame(() => setParticles(items));
   }, []);
 
   if (particles.length === 0) return null;
