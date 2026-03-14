@@ -16,13 +16,25 @@ export function getLastMoveSquares(
   }
 }
 
+/** Check if a centipawn value encodes a forced mate. */
+export function isMateEval(cp: number): boolean {
+  return Math.abs(cp) > 9999;
+}
+
+/** Extract mate-in-N from an encoded mate eval. */
+export function extractMateIn(cp: number): number {
+  return 100 - (Math.abs(cp) - 10000);
+}
+
 /**
  * Format centipawn eval for display.
- * Mate scores show as "+M" / "-M".
+ * Mate scores show as "+M3" / "-M3" with distance.
  */
 export function formatEval(cp: number): string {
-  if (cp >= 9000) return "+M";
-  if (cp <= -9000) return "-M";
+  if (isMateEval(cp)) {
+    const m = extractMateIn(cp);
+    return cp > 0 ? `+M${m}` : `-M${m}`;
+  }
   const val = (cp / 100).toFixed(2);
   return cp >= 0 ? `+${val}` : val;
 }
@@ -32,8 +44,7 @@ export function formatEval(cp: number): string {
  * Clamped to [2, 98].
  */
 export function evalBarPercent(cp: number): number {
-  if (cp >= 9000) return 100;
-  if (cp <= -9000) return 0;
+  if (isMateEval(cp)) return cp > 0 ? 100 : 0;
   const pct = 50 + 50 * (2 / (1 + Math.exp(-cp / 250)) - 1);
   return Math.max(2, Math.min(98, pct));
 }

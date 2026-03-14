@@ -7,6 +7,7 @@ export class StockfishEngine {
   private pendingResolve: ((value: string) => void) | null = null;
   private pendingReject: ((reason: Error) => void) | null = null;
   private pendingTimeout: ReturnType<typeof setTimeout> | null = null;
+  private readyResolve: (() => void) | null = null;
   private destroyed = false;
 
   /** Initialize the Worker and wait for UCI readiness. */
@@ -37,9 +38,22 @@ export class StockfishEngine {
     });
   }
 
-  /** Set engine skill level (0-20). */
-  setSkill(level: number): void {
+  /** Set engine skill level (0-20). Waits for readyok confirmation. */
+  async setSkill(level: number): Promise<void> {
+    if (this.destroyed || !this.worker) return;
     this.send(`setoption name Skill Level value ${level}`);
+    return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.readyResolve = null;
+        reject(new Error("setSkill timeout (3s)"));
+      }, 3000);
+      this.readyResolve = () => {
+        clearTimeout(timeout);
+        this.readyResolve = null;
+        resolve();
+      };
+      this.send("isready");
+    });
   }
 
   /** Get the best move for a given FEN position. */
@@ -89,7 +103,11 @@ export class StockfishEngine {
         const mateMatch = line.match(/score mate (-?\d+)/);
         if (mateMatch) {
           const moves = parseInt(mateMatch[1], 10);
-          lastEval = moves > 0 ? 10000 : -10000;
+          // Encode mate distance: mate 1 = ±10099, mate 3 = ±10097, mate 50 = ±10050
+          const absN = Math.min(Math.abs(moves), 99);
+          lastEval = moves > 0
+            ? 10000 + (100 - absN)
+            : -(10000 + (100 - absN));
         }
 
         if (line.startsWith("bestmove")) {
@@ -131,6 +149,12 @@ export class StockfishEngine {
 
   private onMessage(e: MessageEvent): void {
     const line = typeof e.data === "string" ? e.data : String(e.data);
+
+    // Handle readyok response (from setSkill confirmation)
+    if (line.includes("readyok") && this.readyResolve) {
+      this.readyResolve();
+      return;
+    }
 
     if (line.startsWith("bestmove")) {
       const move = line.split(" ")[1];

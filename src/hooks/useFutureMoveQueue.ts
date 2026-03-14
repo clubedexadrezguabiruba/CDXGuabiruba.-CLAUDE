@@ -145,9 +145,9 @@ export function useFutureMoveQueue({
         const pColor = playerColorRef.current === "white" ? "w" : "b";
 
         // Start with player's turn
+        // Turn-swap: flip turn to player but preserve en passant and castling rights
         const startFen = chess.fen().split(" ");
         startFen[1] = pColor;
-        startFen[3] = "-"; // clear en passant (stale after turn swap)
         let projected: Chess;
         try { projected = new Chess(startFen.join(" ")); } catch { return false; }
 
@@ -157,10 +157,9 @@ export function useFutureMoveQueue({
             const r = projected.move({ from: item.from, to: item.to, promotion: item.promotion });
             if (!r) return false;
           } catch { return false; }
-          // Swap turn back to player for the next premove
+          // Swap turn back to player for the next premove (preserve en passant + castling)
           const pFen = projected.fen().split(" ");
           pFen[1] = pColor;
-          pFen[3] = "-";
           try { projected = new Chess(pFen.join(" ")); } catch { return false; }
         }
 
@@ -211,7 +210,6 @@ export function useFutureMoveQueue({
     const pColor = playerColor === "white" ? "w" : "b";
     const startFen = currentFen.split(" ");
     startFen[1] = pColor;
-    startFen[3] = "-";
     let projected: Chess;
     try { projected = new Chess(startFen.join(" ")); } catch { return new Map(); }
 
@@ -222,7 +220,6 @@ export function useFutureMoveQueue({
       } catch { return new Map(); }
       const pFen = projected.fen().split(" ");
       pFen[1] = pColor;
-      pFen[3] = "-";
       try { projected = new Chess(pFen.join(" ")); } catch { return new Map(); }
     }
     return toDests(projected);

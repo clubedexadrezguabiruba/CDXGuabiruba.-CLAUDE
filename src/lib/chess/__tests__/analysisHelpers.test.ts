@@ -4,6 +4,8 @@ import {
   evalBarPercent,
   getLastMoveSquares,
   accuracyColor,
+  isMateEval,
+  extractMateIn,
 } from "../analysisHelpers";
 
 // ---------------------------------------------------------------------------
@@ -27,14 +29,16 @@ describe("formatEval", () => {
     expect(formatEval(50)).toBe("+0.50");
   });
 
-  it("returns +M for mate winning (cp >= 9000)", () => {
-    expect(formatEval(9000)).toBe("+M");
-    expect(formatEval(10000)).toBe("+M");
+  it("returns +MN for mate winning with distance", () => {
+    expect(formatEval(10099)).toBe("+M1"); // mate in 1
+    expect(formatEval(10097)).toBe("+M3"); // mate in 3
+    expect(formatEval(10050)).toBe("+M50"); // mate in 50
   });
 
-  it("returns -M for mate losing (cp <= -9000)", () => {
-    expect(formatEval(-9000)).toBe("-M");
-    expect(formatEval(-10000)).toBe("-M");
+  it("returns -MN for mate losing with distance", () => {
+    expect(formatEval(-10099)).toBe("-M1");
+    expect(formatEval(-10097)).toBe("-M3");
+    expect(formatEval(-10050)).toBe("-M50");
   });
 });
 
@@ -48,11 +52,13 @@ describe("evalBarPercent", () => {
   });
 
   it("returns 100 for mate winning", () => {
-    expect(evalBarPercent(9000)).toBe(100);
+    expect(evalBarPercent(10099)).toBe(100);
+    expect(evalBarPercent(10050)).toBe(100);
   });
 
   it("returns 0 for mate losing", () => {
-    expect(evalBarPercent(-9000)).toBe(0);
+    expect(evalBarPercent(-10099)).toBe(0);
+    expect(evalBarPercent(-10050)).toBe(0);
   });
 
   it("large positive returns <= 98 (clamped)", () => {
@@ -108,6 +114,33 @@ describe("getLastMoveSquares", () => {
     const fen = "r1bqkbnr/pppppppp/2n5/8/8/5NP1/PPPPPPBP/RNBQK2R w KQkq - 2 3";
     const result = getLastMoveSquares(fen, "O-O");
     expect(result).toEqual(["e1", "g1"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isMateEval / extractMateIn
+// ---------------------------------------------------------------------------
+
+describe("isMateEval", () => {
+  it("returns true for encoded mate values", () => {
+    expect(isMateEval(10099)).toBe(true);
+    expect(isMateEval(-10050)).toBe(true);
+  });
+
+  it("returns false for normal centipawn values", () => {
+    expect(isMateEval(500)).toBe(false);
+    expect(isMateEval(-9999)).toBe(false);
+    expect(isMateEval(0)).toBe(false);
+  });
+});
+
+describe("extractMateIn", () => {
+  it("extracts mate distance correctly", () => {
+    expect(extractMateIn(10099)).toBe(1);
+    expect(extractMateIn(10097)).toBe(3);
+    expect(extractMateIn(10050)).toBe(50);
+    expect(extractMateIn(-10099)).toBe(1);
+    expect(extractMateIn(-10097)).toBe(3);
   });
 });
 
