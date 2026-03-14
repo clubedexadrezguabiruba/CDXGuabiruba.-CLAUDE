@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useChests, type PendingChest, type ClaimedItem } from "@/hooks/useChests";
+import { useChests, type PendingChest, type ClaimResult } from "@/hooks/useChests";
 import ChestOpeningModal from "./ChestOpeningModal";
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -17,7 +17,7 @@ const VISIBLE_LIMIT = 3;
 export default function ChestPanel() {
   const { chests, loading, error, openChest } = useChests();
   const [opening, setOpening] = useState<number | null>(null);
-  const [claimedItem, setClaimedItem] = useState<ClaimedItem | null>(null);
+  const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -34,7 +34,7 @@ export default function ChestPanel() {
         return;
       }
 
-      setClaimedItem(result.item);
+      setClaimResult(result);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao abrir baú";
       setOpenError(msg);
@@ -43,7 +43,7 @@ export default function ChestPanel() {
   }
 
   function handleCloseModal() {
-    setClaimedItem(null);
+    setClaimResult(null);
     setOpening(null);
   }
 
@@ -128,8 +128,13 @@ export default function ChestPanel() {
         )}
       </div>
 
-      {claimedItem && (
-        <ChestOpeningModal item={claimedItem} onClose={handleCloseModal} />
+      {claimResult && (
+        <ChestOpeningModal
+          item={claimResult.item}
+          scrapped={claimResult.scrapped}
+          scrappedXp={claimResult.scrappedXp}
+          onClose={handleCloseModal}
+        />
       )}
     </>
   );

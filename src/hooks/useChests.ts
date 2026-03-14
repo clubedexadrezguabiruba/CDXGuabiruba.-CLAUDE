@@ -23,6 +23,8 @@ export interface ClaimResult {
   item: ClaimedItem;
   rarity: string;
   alreadyClaimed: boolean;
+  scrapped: boolean;
+  scrappedXp: number;
 }
 
 const supabase = createBrowserClient(
@@ -93,6 +95,8 @@ export function useChests() {
           },
           rarity: (json.rarity as string) ?? "common",
           alreadyClaimed: true,
+          scrapped: false,
+          scrappedXp: 0,
         };
       }
 
@@ -113,6 +117,8 @@ export function useChests() {
         },
         rarity: json.rarity as string,
         alreadyClaimed: false,
+        scrapped: (json.scrapped as boolean) ?? false,
+        scrappedXp: (json.scrapped_xp as number) ?? 0,
       };
     },
     [],
