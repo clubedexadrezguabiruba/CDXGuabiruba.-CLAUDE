@@ -15,6 +15,7 @@
     "verify:rush": "tsx scripts/verify/phase4/verify-rush.ts",
     "verify:phase5": "tsx scripts/verify/phase5/verify-lessons.ts",
     "test:e2e": "npx playwright test",
+    "postinstall": "tsx scripts/setup-stockfish.ts",
     "setup:stockfish": "tsx scripts/setup-stockfish.ts",
     "verify:phase6": "tsx scripts/verify/phase6/verify-bots.ts",
     "verify:turmas": "tsx scripts/verify/phase9/verify-turmas.ts",
