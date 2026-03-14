@@ -39,3 +39,6 @@ supabase/.temp/
 
 # Stockfish WASM binaries (copied via setup script)
 public/stockfish/
+
+# Test artifacts
+/test-results/
