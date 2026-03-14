@@ -133,6 +133,7 @@ export default function ChestPanel() {
           item={claimResult.item}
           scrapped={claimResult.scrapped}
           scrappedXp={claimResult.scrappedXp}
+          isEgg={claimResult.isEgg}
           onClose={handleCloseModal}
         />
       )}

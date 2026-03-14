@@ -52,3 +52,16 @@ export const SLOT_EMOJIS: Record<string, string> = {
 
 export const ALL_SLOTS = ["head", "outfit", "hand", "background", "frame", "pet"] as const;
 export const ALL_RARITIES = ["common", "rare", "epic", "legendary"] as const;
+
+// --- Egg Hatching System ---
+
+export const EGG_HATCH_HOURS = 72;
+
+export const EGG_STAGES = [
+  { hours: 0,  label: "Ovo Intacto",       crack: 0 },
+  { hours: 12, label: "Primeira Rachadura", crack: 1 },
+  { hours: 24, label: "Mais Rachaduras",    crack: 2 },
+  { hours: 36, label: "Rachando Bastante",  crack: 3 },
+  { hours: 48, label: "Prestes a Chocar",   crack: 4, tremble: true },
+  { hours: 72, label: "Pronto!",            crack: 5, tremble: true },
+] as const;

@@ -25,6 +25,7 @@ export interface ClaimResult {
   alreadyClaimed: boolean;
   scrapped: boolean;
   scrappedXp: number;
+  isEgg: boolean;
 }
 
 const supabase = createBrowserClient(
@@ -86,7 +87,7 @@ export function useChests() {
         );
         return {
           item: {
-            id: json.item_id as number,
+            id: (json.item_id as number) ?? 0,
             name: "",
             slot: "",
             rarity: (json.rarity as string) ?? "common",
@@ -97,6 +98,7 @@ export function useChests() {
           alreadyClaimed: true,
           scrapped: false,
           scrappedXp: 0,
+          isEgg: false,
         };
       }
 
@@ -104,6 +106,18 @@ export function useChests() {
       requestAnimationFrame(() =>
         setChests((prev) => prev.filter((c) => c.id !== chestId)),
       );
+
+      // Ovo: retorno sem dados do pet
+      if (json.is_egg) {
+        return {
+          item: { id: 0, name: "", slot: "pet", rarity: "common", image_url: null, description: "" },
+          rarity: "common",
+          alreadyClaimed: false,
+          scrapped: false,
+          scrappedXp: 0,
+          isEgg: true,
+        };
+      }
 
       const item = json.item as Record<string, unknown>;
       return {
@@ -119,6 +133,7 @@ export function useChests() {
         alreadyClaimed: false,
         scrapped: (json.scrapped as boolean) ?? false,
         scrappedXp: (json.scrapped_xp as number) ?? 0,
+        isEgg: false,
       };
     },
     [],

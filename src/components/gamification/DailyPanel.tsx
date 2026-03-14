@@ -10,6 +10,7 @@ import AchievementPanel from "./AchievementPanel";
 import AchievementToast from "./AchievementToast";
 import MissionCompletionToast from "./MissionCompletionToast";
 import ChestPanel from "./ChestPanel";
+import EggCard from "./EggCard";
 
 export default function DailyPanel({ title }: { title: string }) {
   const {
@@ -48,6 +49,9 @@ export default function DailyPanel({ title }: { title: string }) {
 
       {/* Baús */}
       <ChestPanel />
+
+      {/* Chocadeira */}
+      <EggCard />
 
       {/* Insígnias */}
       <AchievementPanel />

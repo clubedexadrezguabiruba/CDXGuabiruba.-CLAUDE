@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { soundManager } from "@/lib/sounds/soundManager";
 import { RARITY_STYLES, RARITY_LABELS, SLOT_LABELS } from "@/lib/constants/items";
 import type { ClaimedItem } from "@/hooks/useChests";
@@ -9,6 +10,7 @@ interface ChestOpeningModalProps {
   item: ClaimedItem;
   scrapped?: boolean;
   scrappedXp?: number;
+  isEgg?: boolean;
   onClose: () => void;
 }
 
@@ -38,6 +40,7 @@ export default function ChestOpeningModal({
   item,
   scrapped = false,
   scrappedXp = 0,
+  isEgg = false,
   onClose,
 }: ChestOpeningModalProps) {
   const [phase, setPhase] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -99,7 +102,7 @@ export default function ChestOpeningModal({
 
   const style = RARITY_STYLES[item.rarity] ?? RARITY_STYLES.common;
   const fragmentColor = FRAGMENT_COLORS[item.rarity] ?? FRAGMENT_COLORS.common;
-  const canClose = scrapped ? phase === 5 : phase === 3;
+  const canClose = isEgg ? phase === 3 : scrapped ? phase === 5 : phase === 3;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -128,8 +131,35 @@ export default function ChestOpeningModal({
           </div>
         )}
 
-        {/* Fase 3: Revelação */}
-        {phase === 3 && (
+        {/* Fase 3: Ovo misterioso (quando é pet → ovo) */}
+        {phase === 3 && isEgg && (
+          <div className="animate-scale-in flex w-72 flex-col items-center rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 shadow-2xl">
+            <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-xl bg-white shadow-inner text-5xl">
+              🥚
+            </div>
+            <h3 className="text-center text-lg font-bold text-amber-900">
+              Um ovo misterioso apareceu!
+            </h3>
+            <p className="mt-2 text-center text-sm text-amber-700">
+              Algo esta se formando dentro... Volte em breve para chocar!
+            </p>
+            <Link
+              href="/perfil"
+              className="mt-4 block w-full rounded-lg bg-amber-500 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-amber-600"
+            >
+              Ir para Chocadeira
+            </Link>
+            <button
+              onClick={onClose}
+              className="mt-2 text-xs text-zinc-500 hover:text-zinc-700"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
+
+        {/* Fase 3: Revelação (item normal) */}
+        {phase === 3 && !isEgg && (
           <div
             className={`animate-scale-in flex w-72 flex-col items-center rounded-2xl border-2 ${
               scrapped ? "border-amber-400 animate-pulse" : style.border

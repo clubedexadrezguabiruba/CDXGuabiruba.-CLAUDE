@@ -26,6 +26,7 @@ export interface NewAchievement {
   icon: string;
   reward_xp: number;
   reward_chest: boolean;
+  reward_egg?: boolean;
   category: string;
 }
 

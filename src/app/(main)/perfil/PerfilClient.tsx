@@ -4,6 +4,7 @@ import { useInventory } from "@/hooks/useInventory";
 import AvatarDisplay from "@/components/avatar/AvatarDisplay";
 import SlotGrid from "@/components/avatar/SlotGrid";
 import InventoryGrid from "@/components/avatar/InventoryGrid";
+import Chocadeira from "@/components/avatar/Chocadeira";
 import type { ItemSlot } from "@/types/inventory";
 
 interface ProfileData {
@@ -115,6 +116,9 @@ export default function PerfilClient({ profile, botsDefeated, lessonsCompleted }
               <SlotGrid equipped={equipped} onUnequip={handleUnequip} />
             )}
           </section>
+
+          {/* Chocadeira */}
+          <Chocadeira />
 
           {/* Histórico de Combate */}
           <section className="rounded-xl border bg-white p-4 shadow-sm">

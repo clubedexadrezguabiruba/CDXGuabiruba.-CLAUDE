@@ -55,6 +55,7 @@ export default function AchievementToast({
               <div className="mt-0.5 text-xs text-purple-600">
                 {ach.description}
                 {ach.reward_xp > 0 && ` (+${ach.reward_xp} XP)`}
+                {ach.reward_egg && " + 🥚 Ovo recebido!"}
               </div>
             </div>
           </div>
