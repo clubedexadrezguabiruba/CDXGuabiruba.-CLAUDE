@@ -19,10 +19,10 @@ import type { Key } from "chessground/types";
 
 const CATEGORY_INFO: Record<MoveCategory, { symbol: string; label: string; color: string; bg: string }> = {
   brilliant:  { symbol: "!!", label: "Brilhante",  color: "#06b6d4", bg: "bg-cyan-100" },
-  great:      { symbol: "!",  label: "Excelente",  color: "#3b82f6", bg: "bg-blue-100" },
-  best:       { symbol: "\u2605", label: "Melhor", color: "#22c55e", bg: "bg-green-100" },
+  great:      { symbol: "\u2605", label: "Ótimo",  color: "#22c55e", bg: "bg-green-100" },
+  best:       { symbol: "\u2605", label: "Ótimo",  color: "#22c55e", bg: "bg-green-100" },
   good:       { symbol: "",   label: "Bom",        color: "#84cc16", bg: "" },
-  inaccuracy: { symbol: "?!", label: "Imprecis\u00E3o", color: "#eab308", bg: "bg-yellow-100" },
+  inaccuracy: { symbol: "?!", label: "Imprecisão", color: "#eab308", bg: "bg-yellow-100" },
   mistake:    { symbol: "?",  label: "Erro",       color: "#f97316", bg: "bg-orange-100" },
   blunder:    { symbol: "??", label: "Erro Grave",  color: "#ef4444", bg: "bg-red-100" },
 };

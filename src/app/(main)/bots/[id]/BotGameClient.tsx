@@ -36,6 +36,7 @@ import MoveList from "@/components/bots/MoveList";
 import GameOverModal from "@/components/bots/GameOverModal";
 import GameReview from "@/components/bots/GameReview";
 import BotAvatar from "@/components/bots/BotAvatar";
+import CapturedPieces from "@/components/bots/CapturedPieces";
 import { useArrowKeys } from "@/hooks/useArrowKeys";
 import { useFutureMoveQueue } from "@/hooks/useFutureMoveQueue";
 import type { QueuedMove } from "@/lib/chess/futureMoveQueue";
@@ -127,6 +128,7 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
   const engineRef = useRef<StockfishEngine | null>(null);
   const chessRef = useRef<Chess | null>(null);
   const resultSubmittedRef = useRef(false);
+  const gameEndedRef = useRef(false);
   const moveCountRef = useRef(0);
   const gameStartTimeRef = useRef(0);
   const playerColorRef = useRef<PlayerColor>("white");
@@ -141,6 +143,7 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
   const premoveEnabled = profile?.premove_enabled ?? true;
   const handleQueueExecute = useCallback(
     (move: QueuedMove) => {
+      if (gameEndedRef.current) return;
       const c = chessRef.current;
       if (!c) return;
 
@@ -223,6 +226,8 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
 
   const endGame = useCallback(
     async (info: GameOverInfo) => {
+      if (gameEndedRef.current) return;
+      gameEndedRef.current = true;
       setInteractive(false);
       setActiveClockColor(null);
       clearQueueRef.current?.();
@@ -247,19 +252,24 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
           );
 
           try {
-            const { data } = await supabase.rpc("bot_result", {
+            const { data, error } = await supabase.rpc("bot_result", {
               p_bot_id: bot.id,
               p_result: info.result,
               p_pgn: pgn,
               p_time_spent_seconds: timeSpent,
             });
-            if (data?.result_id) {
-              resultIdRef.current = data.result_id;
+            if (error) {
+              resultSubmittedRef.current = false;
+              console.error("bot_result RPC failed:", { botId: bot.id, result: info.result, error: error.message });
+            } else {
+              if (data?.result_id) {
+                resultIdRef.current = data.result_id;
+              }
+              // Trigger activity toasts (missions, achievements, tasks, level-up)
+              setToastTrigger((c) => c + 1);
             }
-
-            // Trigger activity toasts (missions, achievements, tasks, level-up)
-            setToastTrigger((c) => c + 1);
           } catch (err) {
+            resultSubmittedRef.current = false;
             console.error("Failed to submit bot result:", { botId: bot.id, result: info.result, error: err });
           }
         }
@@ -286,7 +296,7 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
             const analysisEngine = new StockfishEngine();
             analysisEngineRef.current = analysisEngine;
             await analysisEngine.init();
-            analysisEngine.setSkill(20);
+            await analysisEngine.setSkill(20);
 
             const pColor = playerColorRef.current;
             const result = await analyzeGame(
@@ -351,6 +361,7 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
   );
 
   const makeBotMove = useCallback(async () => {
+    if (gameEndedRef.current) return;
     const engine = engineRef.current;
     const c = chessRef.current;
     if (!engine || !c || c.isGameOver()) return;
@@ -445,6 +456,7 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
       playerColorRef.current = color;
       setTimeControl(tc);
       resultSubmittedRef.current = false;
+      gameEndedRef.current = false;
       resultIdRef.current = null;
       moveCountRef.current = 0;
       gameStartTimeRef.current = Date.now();
@@ -467,7 +479,7 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
 
       try {
         await engine.init();
-        engine.setSkill(bot.skill_level);
+        await engine.setSkill(bot.skill_level);
       } catch (err) {
         console.error("Failed to init Stockfish:", { botId: bot.id, skillLevel: bot.skill_level, error: err });
         setEngineError("Falha ao carregar o engine de xadrez. Recarregue a página.");
@@ -676,12 +688,22 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
       <div className="flex flex-col lg:flex-row lg:gap-6">
         {/* Left column: board area */}
         <div className="flex flex-1 flex-col items-center gap-2">
-          {/* Top bar: opponent (bot) info + clock */}
+          {/* Top bar: opponent (bot) info + captured pieces + clock */}
           <div className="flex w-full max-w-[500px] items-center justify-between lg:max-w-[560px]">
             <div className="flex items-center gap-2">
               <BotAvatar bot={bot} size="xs" />
-              <span className="text-sm font-bold text-zinc-800">{bot.name}</span>
-              <span className="text-xs text-zinc-400">({bot.elo})</span>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-zinc-800">{bot.name}</span>
+                  <span className="text-xs text-zinc-400">({bot.elo})</span>
+                </div>
+                {!isPreGame && verboseHistory.length > 0 && (
+                  <CapturedPieces
+                    history={verboseHistory}
+                    perspective={playerColor === "white" ? "black" : "white"}
+                  />
+                )}
+              </div>
             </div>
             {isTimed && (
               <ClockBadge time={topClock.time} timeMs={topClock.ms} active={topClock.active} />
@@ -703,13 +725,21 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
             speculativeDests={moveQueue.speculativeDests}
           />
 
-          {/* Bottom bar: player info + clock */}
+          {/* Bottom bar: player info + captured pieces + clock */}
           <div className="flex w-full max-w-[500px] items-center justify-between lg:max-w-[560px]">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white">
                 Vc
               </div>
-              <span className="text-sm font-bold text-zinc-800">{"Voc\u00EA"}</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-zinc-800">{"Voc\u00EA"}</span>
+                {!isPreGame && verboseHistory.length > 0 && (
+                  <CapturedPieces
+                    history={verboseHistory}
+                    perspective={playerColor}
+                  />
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {!isPreGame && !isTimed && (

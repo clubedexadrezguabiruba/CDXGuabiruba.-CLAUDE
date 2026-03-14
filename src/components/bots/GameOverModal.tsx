@@ -121,7 +121,7 @@ export default function GameOverModal({
               <div className="text-lg font-bold text-green-600">
                 {analysis.counts.best + analysis.counts.great}
               </div>
-              <div className="text-xs text-zinc-400">Melhores</div>
+              <div className="text-xs text-zinc-400">Ótimos</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-lime-600">

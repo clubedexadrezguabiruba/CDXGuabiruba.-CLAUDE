@@ -58,10 +58,9 @@ function AccuracyGauge({ accuracy }: { accuracy: number }) {
 
 const CATEGORY_CONFIG = [
   { key: "brilliant" as const, label: "Brilhante", color: "#06b6d4", bg: "bg-cyan-500" },
-  { key: "great" as const, label: "Excelente", color: "#3b82f6", bg: "bg-blue-500" },
-  { key: "best" as const, label: "Melhor", color: "#22c55e", bg: "bg-green-500" },
+  { key: "best" as const, label: "Ótimo", color: "#22c55e", bg: "bg-green-500", mergeGreat: true },
   { key: "good" as const, label: "Bom", color: "#84cc16", bg: "bg-lime-500" },
-  { key: "inaccuracy" as const, label: "Imprecis\u00E3o", color: "#eab308", bg: "bg-yellow-500" },
+  { key: "inaccuracy" as const, label: "Imprecisão", color: "#eab308", bg: "bg-yellow-500" },
   { key: "mistake" as const, label: "Erro", color: "#f97316", bg: "bg-orange-500" },
   { key: "blunder" as const, label: "Erro Grave", color: "#ef4444", bg: "bg-red-500" },
 ];
@@ -71,8 +70,11 @@ function CategoryBars({ analysis }: { analysis: GameAnalysis }) {
 
   return (
     <div className="w-full space-y-2">
-      {CATEGORY_CONFIG.map(({ key, label, color, bg }) => {
-        const count = analysis.counts[key];
+      {CATEGORY_CONFIG.map(({ key, label, color, bg, ...rest }) => {
+        // Merge great+best counts for unified "Ótimo" row
+        const count = "mergeGreat" in rest && rest.mergeGreat
+          ? analysis.counts[key] + analysis.counts.great
+          : analysis.counts[key];
         const pct = totalMoves > 0 ? (count / totalMoves) * 100 : 0;
 
         return (
@@ -248,7 +250,7 @@ export default function BotPostGame({
               </h3>
               <div className="flex items-start gap-3 rounded-lg border border-green-300 bg-white p-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-600">
-                  {analysis.bestPlayerMove.category === "brilliant" ? "!!" : analysis.bestPlayerMove.category === "great" ? "!" : "\u2605"}
+                  {analysis.bestPlayerMove.category === "brilliant" ? "!!" : "\u2605"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">

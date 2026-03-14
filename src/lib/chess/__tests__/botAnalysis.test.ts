@@ -24,20 +24,24 @@ describe("cpToWinProb", () => {
     expect(cpToWinProb(-400)).toBeCloseTo(0.091, 2);
   });
 
-  it("returns 1.0 for mate winning (cp=9000)", () => {
-    expect(cpToWinProb(9000)).toBe(1.0);
+  it("returns 1.0 for mate winning (cp > 9999)", () => {
+    expect(cpToWinProb(10099)).toBe(1.0);
+    expect(cpToWinProb(10050)).toBe(1.0);
   });
 
-  it("returns 1.0 for cp above mate threshold (cp=9500)", () => {
-    expect(cpToWinProb(9500)).toBe(1.0);
+  it("returns close to 1.0 for very large positive cp (not mate)", () => {
+    expect(cpToWinProb(9000)).toBeGreaterThan(0.99);
+    expect(cpToWinProb(9500)).toBeGreaterThan(0.99);
   });
 
-  it("returns 0.0 for mate losing (cp=-9000)", () => {
-    expect(cpToWinProb(-9000)).toBe(0.0);
+  it("returns 0.0 for mate losing (cp < -9999)", () => {
+    expect(cpToWinProb(-10099)).toBe(0.0);
+    expect(cpToWinProb(-10050)).toBe(0.0);
   });
 
-  it("returns 0.0 for cp below mate threshold (cp=-9500)", () => {
-    expect(cpToWinProb(-9500)).toBe(0.0);
+  it("returns close to 0.0 for very large negative cp (not mate)", () => {
+    expect(cpToWinProb(-9000)).toBeLessThan(0.01);
+    expect(cpToWinProb(-9500)).toBeLessThan(0.01);
   });
 
   it("is symmetric: cpToWinProb(x) + cpToWinProb(-x) ≈ 1.0", () => {
@@ -157,9 +161,11 @@ describe("categorize", () => {
       cpLoss: 0,
       winProbLoss: 0,
       winProbBefore: 0.5,
+      winProbAfter: 0.5,
       isBestMove: false,
       isSacrifice: false,
       legalMoveCount: 20,
+      totalPieces: 32,
       ...overrides,
     };
   }
@@ -184,17 +190,53 @@ describe("categorize", () => {
     expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 3, winProbBefore: 0.9 }))).toBe("best");
   });
 
-  it("returns great for best move in complex balanced position", () => {
-    expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 10, winProbBefore: 0.5 }))).toBe("great");
+  it("returns best for best move in complex balanced position (great unified into best)", () => {
+    expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 10, winProbBefore: 0.5 }))).toBe("best");
   });
 
-  it("returns brilliant for sacrifice + near-best + contested", () => {
+  it("returns brilliant for sacrifice + near-best + contested + good after", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
+      isBestMove: true,
+      cpLoss: 0,
+      winProbBefore: 0.5,
+      winProbAfter: 0.55,
+      winProbLoss: 0,
+    }))).toBe("brilliant");
+  });
+
+  it("brilliant rejected when cpLoss > 5 and not best move", () => {
+    expect(categorize(makeInput({
+      isSacrifice: true,
+      isBestMove: false,
       cpLoss: 10,
       winProbBefore: 0.5,
+      winProbAfter: 0.45,
       winProbLoss: 0.01,
-    }))).toBe("brilliant");
+    }))).toBe("good");
+  });
+
+  it("brilliant rejected when position bad after sacrifice (winProbAfter <= 0.25)", () => {
+    expect(categorize(makeInput({
+      isSacrifice: true,
+      isBestMove: true,
+      cpLoss: 0,
+      winProbBefore: 0.5,
+      winProbAfter: 0.20,
+      winProbLoss: 0.03,
+    }))).toBe("best");
+  });
+
+  it("brilliant rejected in endgame when not best move", () => {
+    expect(categorize(makeInput({
+      isSacrifice: true,
+      isBestMove: false,
+      cpLoss: 3,
+      winProbBefore: 0.5,
+      winProbAfter: 0.55,
+      winProbLoss: 0,
+      totalPieces: 8,
+    }))).toBe("good");
   });
 
   // Boundary tests (strict >)
@@ -213,39 +255,32 @@ describe("categorize", () => {
     expect(categorize(makeInput({ winProbLoss: 0.05 }))).toBe("good");
   });
 
-  it("brilliant rejected when position already winning (wpBefore > 0.90)", () => {
+  it("brilliant rejected when position already winning (wpBefore >= 0.75)", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
-      cpLoss: 10,
-      winProbBefore: 0.95,
-      winProbLoss: 0.01,
-    }))).toBe("good");
+      isBestMove: true,
+      cpLoss: 0,
+      winProbBefore: 0.80,
+      winProbAfter: 0.85,
+      winProbLoss: 0,
+    }))).toBe("best");
   });
 
-  it("brilliant rejected when position already losing (wpBefore < 0.10)", () => {
+  it("brilliant rejected when position already losing (wpBefore <= 0.25)", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
-      cpLoss: 10,
-      winProbBefore: 0.05,
-      winProbLoss: 0.01,
-    }))).toBe("good");
+      isBestMove: true,
+      cpLoss: 0,
+      winProbBefore: 0.20,
+      winProbAfter: 0.30,
+      winProbLoss: 0,
+    }))).toBe("best");
   });
 
-  it("brilliant rejected when cpLoss >= 30", () => {
-    expect(categorize(makeInput({
-      isSacrifice: true,
-      cpLoss: 30,
-      winProbBefore: 0.5,
-      winProbLoss: 0.01,
-    }))).toBe("good");
-  });
-
-  it("great requires legalMoveCount >= 6", () => {
-    expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 5, winProbBefore: 0.5 }))).toBe("best");
-    expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 6, winProbBefore: 0.5 }))).toBe("great");
-  });
-
-  it("great requires balanced position (wpBefore 0.20-0.80)", () => {
+  it("great no longer returned — best move always returns best", () => {
+    // Previously, best move in complex balanced position returned "great"
+    // Now unified: always "best"
+    expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 6, winProbBefore: 0.5 }))).toBe("best");
     expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 10, winProbBefore: 0.15 }))).toBe("best");
     expect(categorize(makeInput({ isBestMove: true, legalMoveCount: 10, winProbBefore: 0.85 }))).toBe("best");
   });

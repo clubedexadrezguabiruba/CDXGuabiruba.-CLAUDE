@@ -51,8 +51,8 @@ const PIECE_VALUES: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 
  * Uses sigmoid calibrated to Elo-based expected score (cp/400 scale).
  */
 export function cpToWinProb(cp: number): number {
-  if (cp >= 9000) return 1.0;  // forced mate winning
-  if (cp <= -9000) return 0.0; // forced mate losing
+  if (cp > 9999) return 1.0;  // forced mate winning
+  if (cp < -9999) return 0.0; // forced mate losing
   return 1 / (1 + Math.pow(10, -cp / 400));
 }
 
@@ -104,13 +104,26 @@ export interface CategorizationInput {
   cpLoss: number;
   winProbLoss: number;     // 0-1
   winProbBefore: number;   // 0-1
+  winProbAfter: number;    // 0-1
   isBestMove: boolean;
   isSacrifice: boolean;
   legalMoveCount: number;
+  totalPieces: number;     // pieces on board (from FEN)
 }
 
+/**
+ * Categorize a move. Brilliant detection aligned with chess.com criteria:
+ * 1. Material sacrifice (isSacrifice)
+ * 2. Best or nearly best move (isBestMove || cpLoss <= 5)
+ * 3. Competitive position before (wp 0.25-0.75)
+ * 4. Good position after (wp > 0.25)
+ * 5. In endgame: must be THE best move
+ */
 export function categorize(input: CategorizationInput): MoveCategory {
-  const { cpLoss, winProbLoss, winProbBefore, isBestMove, isSacrifice, legalMoveCount } = input;
+  const {
+    cpLoss, winProbLoss, winProbBefore, winProbAfter,
+    isBestMove, isSacrifice, legalMoveCount, totalPieces,
+  } = input;
 
   // Negative outcomes first (by severity)
   if (winProbLoss > 0.20) return "blunder";
@@ -119,17 +132,22 @@ export function categorize(input: CategorizationInput): MoveCategory {
 
   // --- Move is at least "good" from here ---
 
-  // Brilliant: sacrifice + near-best + position was contested (not already winning/losing)
-  if (isSacrifice && cpLoss < 30 && winProbBefore > 0.10 && winProbBefore < 0.90) {
-    return "brilliant";
+  // Brilliant: aligned with chess.com — rare and celebratory
+  if (isSacrifice) {
+    const isNearBest = isBestMove || cpLoss <= 5;
+    const positionContested = winProbBefore > 0.25 && winProbBefore < 0.75;
+    const positionGoodAfter = winProbAfter > 0.25;
+    // Endgame heuristic: few pieces → must be THE best move (chess.com: "only good move")
+    const isEndgame = totalPieces <= 10;
+    const endgameOk = !isEndgame || isBestMove;
+
+    if (isNearBest && positionContested && positionGoodAfter && endgameOk) {
+      return "brilliant";
+    }
   }
 
-  // Best move
+  // Best move (great unified into best — great preserved only for DB compatibility)
   if (isBestMove) {
-    // Great: best move in a complex, balanced position (many alternatives)
-    if (legalMoveCount >= 6 && winProbBefore >= 0.20 && winProbBefore <= 0.80) {
-      return "great";
-    }
     return "best";
   }
 
@@ -220,13 +238,18 @@ export async function analyzeGame(
       // Forced move (only 1 legal) → always 100% accuracy
       if (legalMoveCount === 1) moveAccuracy = 100;
 
+      // Count pieces on board for endgame detection
+      const totalPieces = move.before.replace(/[^pnbrqkPNBRQK]/g, "").length;
+
       const category = categorize({
         cpLoss,
         winProbLoss,
         winProbBefore,
+        winProbAfter,
         isBestMove,
         isSacrifice: sacrifice,
         legalMoveCount,
+        totalPieces,
       });
 
       analyses.push({
