@@ -8,8 +8,7 @@ import PuzzleBoard, { type PuzzleResult } from "@/components/chess/PuzzleBoard";
 import { parsePuzzleMoves } from "@/lib/chess/puzzleLogic";
 import { ArrowLeft, SkipForward, Flame, TrendingUp, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import TaskCompletionToast from "@/components/gamification/TaskCompletionToast";
-import type { TaskProgress } from "@/types/class";
+import ActivityToasts from "@/components/gamification/ActivityToasts";
 
 const STREAK_MILESTONES = new Set([
   3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100,
@@ -55,7 +54,7 @@ export default function PuzzleRatingPage() {
     result: null,
   });
 
-  const [completedTasks, setCompletedTasks] = useState<TaskProgress[]>([]);
+  const [toastTrigger, setToastTrigger] = useState(0);
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadNextPuzzle = useCallback(async () => {
@@ -168,12 +167,8 @@ export default function PuzzleRatingPage() {
         play("streak");
       }
 
-      // Check task completion
-      supabase.rpc("check_my_tasks").then(({ data: taskData }) => {
-        const tasks = (taskData ?? []) as TaskProgress[];
-        const just = tasks.filter((t) => t.just_completed);
-        if (just.length > 0) requestAnimationFrame(() => setCompletedTasks(just));
-      });
+      // Trigger activity toasts (missions, achievements, tasks, level-up)
+      setToastTrigger((c) => c + 1);
 
       setState((s) => ({
         ...s,
@@ -357,7 +352,7 @@ export default function PuzzleRatingPage() {
           </div>
         )}
       </div>
-      <TaskCompletionToast completedTasks={completedTasks} />
+      <ActivityToasts triggerCount={toastTrigger} />
     </div>
   );
 }

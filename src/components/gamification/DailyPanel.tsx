@@ -5,12 +5,10 @@ import { useUser } from "@/hooks/useUser";
 import MissionPanel from "./MissionPanel";
 import StreakDisplay from "./StreakDisplay";
 import XPBar from "./XPBar";
-import LevelUpToast from "./LevelUpToast";
 import AchievementPanel from "./AchievementPanel";
-import AchievementToast from "./AchievementToast";
-import MissionCompletionToast from "./MissionCompletionToast";
 import ChestPanel from "./ChestPanel";
 import EggCard from "./EggCard";
+import ActivityToasts from "./ActivityToasts";
 
 export default function DailyPanel({ title }: { title: string }) {
   const {
@@ -26,12 +24,9 @@ export default function DailyPanel({ title }: { title: string }) {
 
   return (
     <div className="space-y-4">
-      {/* XP e Level-up */}
+      {/* XP */}
       {profile && !profileLoading && (
-        <>
-          <XPBar xp={profile.xp} level={profile.level} />
-          <LevelUpToast level={profile.level} />
-        </>
+        <XPBar xp={profile.xp} level={profile.level} />
       )}
 
       {/* Ordens do Dia */}
@@ -56,9 +51,16 @@ export default function DailyPanel({ title }: { title: string }) {
       {/* Insígnias */}
       <AchievementPanel />
 
-      {/* Toasts */}
-      <MissionCompletionToast missions={missions} />
-      <AchievementToast achievements={newAchievements} />
+      {/* Toasts unificados (fila sequencial) */}
+      {profile && !profileLoading && (
+        <ActivityToasts
+          preloadedData={{
+            missions,
+            newAchievements,
+            level: profile.level,
+          }}
+        />
+      )}
     </div>
   );
 }

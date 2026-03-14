@@ -44,7 +44,7 @@ interface UseMissionsResult extends MissionsState {
   refresh: () => Promise<void>;
 }
 
-async function fetchMissions(): Promise<
+export async function fetchMissions(): Promise<
   { ok: true; state: MissionsState } | { ok: false; error: string }
 > {
   const supabase = createClient();
