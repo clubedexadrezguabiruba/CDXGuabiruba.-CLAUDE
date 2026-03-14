@@ -242,35 +242,6 @@ export default function BotPostGame({
             </div>
           </div>
 
-          {/* Best move of the game */}
-          {analysis.bestPlayerMove && (
-            <div className="mt-6">
-              <h3 className="mb-3 text-sm font-semibold text-zinc-700">
-                Melhor Lance da Partida
-              </h3>
-              <div className="flex items-start gap-3 rounded-lg border border-green-300 bg-white p-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-600">
-                  {analysis.bestPlayerMove.category === "brilliant" ? "!!" : "\u2605"}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-semibold text-zinc-800">
-                      Lance {analysis.bestPlayerMove.moveNumber}
-                    </span>
-                    <span className="text-xs text-green-600">
-                      {analysis.bestPlayerMove.moveAccuracy.toFixed(0)}% {"precis\u00E3o"}
-                    </span>
-                  </div>
-                  <div className="mt-1">
-                    <span className="inline-flex items-center rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
-                      {analysis.bestPlayerMove.moveSan}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Mistakes */}
           {analysis.topBlunders.length > 0 && (
             <div className="mt-6">

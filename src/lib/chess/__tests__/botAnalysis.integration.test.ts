@@ -77,10 +77,12 @@ describe("analyzeGame integration", () => {
       engine as unknown as StockfishEngine
     );
 
-    // White has 2 moves (indices 0 and 2)
+    // moves = player only: White has 2 moves (indices 0 and 2)
     expect(result.moves).toHaveLength(2);
     expect(result.moves[0].halfMoveIndex).toBe(0);
     expect(result.moves[1].halfMoveIndex).toBe(2);
+    // allMoves = all 4 moves
+    expect(result.allMoves).toHaveLength(4);
   });
 
   it("analyzes only player (black) moves", async () => {
@@ -99,10 +101,12 @@ describe("analyzeGame integration", () => {
       engine as unknown as StockfishEngine
     );
 
-    // Black has 2 moves (indices 1 and 3)
+    // moves = player only: Black has 2 moves (indices 1 and 3)
     expect(result.moves).toHaveLength(2);
     expect(result.moves[0].halfMoveIndex).toBe(1);
     expect(result.moves[1].halfMoveIndex).toBe(3);
+    // allMoves = all 4 moves
+    expect(result.allMoves).toHaveLength(4);
   });
 
   it("returns empty analysis for empty history", async () => {
@@ -115,6 +119,7 @@ describe("analyzeGame integration", () => {
 
     expect(result.accuracy).toBe(0);
     expect(result.moves).toHaveLength(0);
+    expect(result.allMoves).toHaveLength(0);
     expect(result.topBlunders).toHaveLength(0);
     expect(result.counts.brilliant).toBe(0);
     expect(result.counts.blunder).toBe(0);
@@ -259,11 +264,13 @@ describe("analyzeGame integration", () => {
       (current, total) => progressCalls.push([current, total])
     );
 
-    // White has 3 moves (indices 0, 2, 4)
+    // All 5 moves are now analyzed (indices 0-4)
     expect(progressCalls).toEqual([
-      [1, 3],
-      [2, 3],
-      [3, 3],
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [4, 5],
+      [5, 5],
     ]);
   });
 

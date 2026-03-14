@@ -37,7 +37,7 @@ export interface GameAnalysis {
   moves: MoveAnalysis[];
   counts: Record<MoveCategory, number>;
   topBlunders: MoveAnalysis[];
-  bestPlayerMove: MoveAnalysis | null;
+  allMoves: MoveAnalysis[];
 }
 
 // ---------------------------------------------------------------------------
@@ -68,11 +68,12 @@ export function computeMoveAccuracy(wpBefore: number, wpAfter: number): number {
 }
 
 /**
- * Detect if a move sacrifices material.
+ * Detect if a move sacrifices material and return the net sacrifice value.
  * Sacrifice = moved piece lands on square attacked by opponent AND
  * piece value > value of what it captured.
+ * Returns { isSacrifice, netValue } where netValue = movedPieceValue - capturedValue.
  */
-export function isSacrificingMaterial(fenBefore: string, moveUci: string): boolean {
+export function isSacrificingMaterial(fenBefore: string, moveUci: string): { isSacrifice: boolean; netValue: number } {
   try {
     const chess = new Chess(fenBefore);
     const from = moveUci.slice(0, 2) as Square;
@@ -80,19 +81,20 @@ export function isSacrificingMaterial(fenBefore: string, moveUci: string): boole
     const promotion = moveUci.length > 4 ? (moveUci[4] as PieceSymbol) : undefined;
 
     const moveObj = chess.move({ from, to, promotion });
-    if (!moveObj) return false;
+    if (!moveObj) return { isSacrifice: false, netValue: 0 };
 
     const capturedValue = moveObj.captured ? PIECE_VALUES[moveObj.captured] : 0;
     const movedPieceValue = PIECE_VALUES[moveObj.piece] || 0;
 
     // After the move, chess.turn() is the opponent's color
     const isAttacked = chess.isAttacked(to, chess.turn());
-    if (!isAttacked) return false;
+    if (!isAttacked) return { isSacrifice: false, netValue: 0 };
 
+    const netValue = movedPieceValue - capturedValue;
     // Sacrifice if we're losing material in the exchange
-    return movedPieceValue > capturedValue;
+    return { isSacrifice: netValue > 0, netValue };
   } catch {
-    return false;
+    return { isSacrifice: false, netValue: 0 };
   }
 }
 
@@ -107,8 +109,10 @@ export interface CategorizationInput {
   winProbAfter: number;    // 0-1
   isBestMove: boolean;
   isSacrifice: boolean;
+  netSacrificeValue: number; // movedPieceValue - capturedValue
   legalMoveCount: number;
   totalPieces: number;     // pieces on board (from FEN)
+  halfMoveIndex: number;   // 0-indexed position in game history
 }
 
 /**
@@ -122,7 +126,8 @@ export interface CategorizationInput {
 export function categorize(input: CategorizationInput): MoveCategory {
   const {
     cpLoss, winProbLoss, winProbBefore, winProbAfter,
-    isBestMove, isSacrifice, legalMoveCount, totalPieces,
+    isBestMove, isSacrifice, netSacrificeValue, legalMoveCount,
+    totalPieces, halfMoveIndex,
   } = input;
 
   // Negative outcomes first (by severity)
@@ -133,7 +138,10 @@ export function categorize(input: CategorizationInput): MoveCategory {
   // --- Move is at least "good" from here ---
 
   // Brilliant: aligned with chess.com — rare and celebratory
-  if (isSacrifice) {
+  // Hardened criteria:
+  //   - Must be a sacrifice of at least a minor piece (netValue >= 2)
+  //   - Must not be in the opening (halfMoveIndex >= 10, ~move 6+)
+  if (isSacrifice && netSacrificeValue >= 2 && halfMoveIndex >= 10) {
     const isNearBest = isBestMove || cpLoss <= 5;
     const positionContested = winProbBefore > 0.25 && winProbBefore < 0.75;
     const positionGoodAfter = winProbAfter > 0.25;
@@ -159,7 +167,8 @@ export function categorize(input: CategorizationInput): MoveCategory {
 // ---------------------------------------------------------------------------
 
 /**
- * Analyze a completed game — only the player's moves.
+ * Analyze a completed game — all moves (player + bot).
+ * Accuracy and counts are based on player moves only (like chess.com).
  * IMPORTANT: All engine calls are sequential (engine is single-threaded).
  */
 export async function analyzeGame(
@@ -169,26 +178,20 @@ export async function analyzeGame(
   onProgress?: (current: number, total: number) => void
 ): Promise<GameAnalysis> {
   const ANALYSIS_DEPTH = 12;
-  const playerMoveIndices: number[] = [];
+  const totalMoves = history.length;
+  const allAnalyses: MoveAnalysis[] = [];
 
-  // Determine which moves are the player's (0-indexed: white=even, black=odd)
   for (let i = 0; i < history.length; i++) {
-    const isWhiteMove = i % 2 === 0;
-    if (
-      (playerColor === "white" && isWhiteMove) ||
-      (playerColor === "black" && !isWhiteMove)
-    ) {
-      playerMoveIndices.push(i);
-    }
-  }
-
-  const totalMoves = playerMoveIndices.length;
-  const analyses: MoveAnalysis[] = [];
-
-  for (let pi = 0; pi < playerMoveIndices.length; pi++) {
-    const i = playerMoveIndices[pi];
     const move = history[i];
-    onProgress?.(pi + 1, totalMoves);
+    onProgress?.(i + 1, totalMoves);
+
+    // Determine whose move this is
+    const isWhiteMove = i % 2 === 0;
+    const isPlayerMove =
+      (playerColor === "white" && isWhiteMove) ||
+      (playerColor === "black" && !isWhiteMove);
+    // For eval perspective: side-to-move before this move
+    const sideToMoveIsWhite = isWhiteMove;
 
     try {
       // Sequential calls — engine is single-threaded, cannot run concurrently
@@ -196,21 +199,21 @@ export async function analyzeGame(
       const bestMoveUci = await engine.bestMove(move.before, ANALYSIS_DEPTH);
       const evalAfterRaw = await engine.evaluate(move.after, ANALYSIS_DEPTH);
 
-      // Normalize evals to player's perspective.
+      // Normalize evals to the moving side's perspective.
       // SF returns eval from side-to-move's POV:
-      // - Before player's move: player is side-to-move → evalBefore is already player's perspective
-      // - After player's move: opponent is side-to-move → negate to get player's perspective
-      const playerEvalBefore = evalBefore;
-      const playerEvalAfter = -evalAfterRaw;
-      const cpLoss = Math.max(0, playerEvalBefore - playerEvalAfter);
+      // - Before move: side-to-move is the mover → evalBefore is mover's perspective
+      // - After move: opponent is side-to-move → negate to get mover's perspective
+      const moverEvalBefore = evalBefore;
+      const moverEvalAfter = -evalAfterRaw;
+      const cpLoss = Math.max(0, moverEvalBefore - moverEvalAfter);
 
-      // Win probability
-      const winProbBefore = cpToWinProb(playerEvalBefore);
-      const winProbAfter = cpToWinProb(playerEvalAfter);
+      // Win probability (from mover's perspective)
+      const winProbBefore = cpToWinProb(moverEvalBefore);
+      const winProbAfter = cpToWinProb(moverEvalAfter);
       const winProbLoss = Math.max(0, winProbBefore - winProbAfter);
       let moveAccuracy = computeMoveAccuracy(winProbBefore, winProbAfter);
 
-      // Derive UCI and SAN from the player's move
+      // Derive UCI and SAN from the move
       const tempChess = new Chess(move.before);
       const moveObj = tempChess.move(move.san);
       const moveUci = moveObj
@@ -233,7 +236,7 @@ export async function analyzeGame(
 
       // Legal move count & sacrifice detection
       const legalMoveCount = new Chess(move.before).moves().length;
-      const sacrifice = isSacrificingMaterial(move.before, moveUci);
+      const sacrificeResult = isSacrificingMaterial(move.before, moveUci);
 
       // Forced move (only 1 legal) → always 100% accuracy
       if (legalMoveCount === 1) moveAccuracy = 100;
@@ -247,32 +250,34 @@ export async function analyzeGame(
         winProbBefore,
         winProbAfter,
         isBestMove,
-        isSacrifice: sacrifice,
+        isSacrifice: sacrificeResult.isSacrifice,
+        netSacrificeValue: sacrificeResult.netValue,
         legalMoveCount,
         totalPieces,
+        halfMoveIndex: i,
       });
 
-      analyses.push({
+      allAnalyses.push({
         moveNumber: Math.floor(i / 2) + 1,
         moveUci,
         moveSan: move.san,
         fen: move.before,
         bestMoveUci,
         bestMoveSan,
-        evalBefore: playerEvalBefore,
-        evalAfter: playerEvalAfter,
+        evalBefore: moverEvalBefore,
+        evalAfter: moverEvalAfter,
         cpLoss,
         winProbBefore,
         winProbAfter,
         winProbLoss,
         moveAccuracy,
         category,
-        isSacrifice: sacrifice,
+        isSacrifice: sacrificeResult.isSacrifice,
         halfMoveIndex: i,
       });
     } catch {
       // Timeout or engine error — skip this move
-      analyses.push({
+      allAnalyses.push({
         moveNumber: Math.floor(i / 2) + 1,
         moveUci: "",
         moveSan: move.san,
@@ -293,16 +298,22 @@ export async function analyzeGame(
     }
   }
 
-  // Overall accuracy: average of per-move accuracies
-  const validMoves = analyses.filter((a) => !a.skipped);
+  // Separate player moves for accuracy/counts (like chess.com)
+  const playerMoves = allAnalyses.filter((a) => {
+    const isWhite = a.halfMoveIndex % 2 === 0;
+    return (playerColor === "white" && isWhite) || (playerColor === "black" && !isWhite);
+  });
+
+  // Overall accuracy: average of player's per-move accuracies
+  const validPlayerMoves = playerMoves.filter((a) => !a.skipped);
   const accuracy =
-    validMoves.length > 0
+    validPlayerMoves.length > 0
       ? Math.round(
-          validMoves.reduce((sum, a) => sum + a.moveAccuracy, 0) / validMoves.length
+          validPlayerMoves.reduce((sum, a) => sum + a.moveAccuracy, 0) / validPlayerMoves.length
         )
       : 0;
 
-  // Count categories
+  // Count categories (player only)
   const counts: Record<MoveCategory, number> = {
     brilliant: 0,
     great: 0,
@@ -312,26 +323,13 @@ export async function analyzeGame(
     mistake: 0,
     blunder: 0,
   };
-  for (const a of validMoves) counts[a.category]++;
+  for (const a of validPlayerMoves) counts[a.category]++;
 
-  // Top 3 worst moves (sorted by win probability loss)
-  const topBlunders = validMoves
+  // Top 3 worst player moves (sorted by win probability loss)
+  const topBlunders = validPlayerMoves
     .filter((a) => a.category === "blunder" || a.category === "mistake")
     .sort((a, b) => b.winProbLoss - a.winProbLoss)
     .slice(0, 3);
 
-  // Best player move (highest accuracy, prefer brilliant/great)
-  const bestPlayerMove = validMoves.length > 0
-    ? validMoves.reduce((best, curr) => {
-        if (curr.moveAccuracy > best.moveAccuracy) return curr;
-        if (curr.moveAccuracy === best.moveAccuracy) {
-          const rank = (c: MoveCategory) =>
-            c === "brilliant" ? 3 : c === "great" ? 2 : c === "best" ? 1 : 0;
-          if (rank(curr.category) > rank(best.category)) return curr;
-        }
-        return best;
-      })
-    : null;
-
-  return { accuracy, moves: analyses, counts, topBlunders, bestPlayerMove };
+  return { accuracy, moves: playerMoves, counts, topBlunders, allMoves: allAnalyses };
 }

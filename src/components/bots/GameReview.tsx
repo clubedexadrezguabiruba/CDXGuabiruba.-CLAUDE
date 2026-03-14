@@ -83,10 +83,10 @@ function MoveInfoPanel({
     );
   }
 
-  if (!isPlayerMove || !moveAnalysis) {
+  if (!moveAnalysis) {
     return (
       <div className="px-4 py-3">
-        <div className="text-xs text-zinc-400">Lance do bot</div>
+        <div className="text-xs text-zinc-400">{isPlayerMove ? "Seu lance" : "Lance do bot"}</div>
         <div className="mt-0.5 text-base font-bold text-zinc-700">{entry.san}</div>
       </div>
     );
@@ -165,10 +165,10 @@ export default function GameReview({
   const moveListRef = useRef<HTMLDivElement>(null);
   const noop = useCallback(() => {}, []);
 
-  // Build analysis lookup: halfMoveIndex -> MoveAnalysis
+  // Build analysis lookup: halfMoveIndex -> MoveAnalysis (using allMoves for both sides)
   const analysisMap = useMemo(() => {
     const map = new Map<number, MoveAnalysis>();
-    for (const m of analysis.moves) {
+    for (const m of analysis.allMoves) {
       map.set(m.halfMoveIndex, m);
     }
     return map;
@@ -199,22 +199,27 @@ export default function GameReview({
   const currentIsPlayer = currentHalfMove >= 0 && isPlayerHalfMove(currentHalfMove);
 
   // Eval for bar (from white's perspective for consistent display)
+  // evalAfter is always from the mover's perspective, so convert to white's:
+  //   - White's move (even halfMoveIndex): evalAfter is white's perspective → use as-is
+  //   - Black's move (odd halfMoveIndex): evalAfter is black's perspective → negate
   const currentEvalWhite = useMemo(() => {
+    const toWhitePerspective = (ma: MoveAnalysis) => {
+      const isWhiteMove = ma.halfMoveIndex % 2 === 0;
+      return isWhiteMove ? ma.evalAfter : -ma.evalAfter;
+    };
     if (currentAnalysis) {
-      return playerColor === "white" ? currentAnalysis.evalAfter : -currentAnalysis.evalAfter;
+      return toWhitePerspective(currentAnalysis);
     }
     for (let i = currentHalfMove; i >= 0; i--) {
       const ma = analysisMap.get(i);
-      if (ma) {
-        return playerColor === "white" ? ma.evalAfter : -ma.evalAfter;
-      }
+      if (ma) return toWhitePerspective(ma);
     }
     return 0;
-  }, [currentHalfMove, currentAnalysis, analysisMap, playerColor]);
+  }, [currentHalfMove, currentAnalysis, analysisMap]);
 
   // Board shapes: category circle on destination + best move arrow
   const autoShapes = useMemo((): DrawShape[] => {
-    if (currentHalfMove < 0 || !currentIsPlayer || !currentAnalysis) return [];
+    if (currentHalfMove < 0 || !currentAnalysis) return [];
 
     const shapes: DrawShape[] = [];
     const entry = fullHistory[currentHalfMove];
@@ -424,7 +429,7 @@ export default function GameReview({
                       }`}
                       style={{ minWidth: "3.5rem" }}
                     >
-                      {isPlayerHalfMove(pair.white.idx) && analysisMap.has(pair.white.idx) && (
+                      {analysisMap.has(pair.white.idx) && (
                         <CategoryBadge category={analysisMap.get(pair.white.idx)!.category} />
                       )}
                       <span>{pair.white.san}</span>
@@ -443,7 +448,7 @@ export default function GameReview({
                       }`}
                       style={{ minWidth: "3.5rem" }}
                     >
-                      {isPlayerHalfMove(pair.black.idx) && analysisMap.has(pair.black.idx) && (
+                      {analysisMap.has(pair.black.idx) && (
                         <CategoryBadge category={analysisMap.get(pair.black.idx)!.category} />
                       )}
                       <span>{pair.black.san}</span>

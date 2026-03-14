@@ -109,45 +109,45 @@ describe("computeMoveAccuracy", () => {
 describe("isSacrificingMaterial", () => {
   const STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-  it("returns false for normal pawn push (not attacked)", () => {
-    expect(isSacrificingMaterial(STARTPOS, "e2e4")).toBe(false);
+  it("returns { isSacrifice: false } for normal pawn push (not attacked)", () => {
+    const result = isSacrificingMaterial(STARTPOS, "e2e4");
+    expect(result.isSacrifice).toBe(false);
   });
 
-  it("returns false for invalid FEN", () => {
-    expect(isSacrificingMaterial("invalid", "e2e4")).toBe(false);
+  it("returns { isSacrifice: false } for invalid FEN", () => {
+    const result = isSacrificingMaterial("invalid", "e2e4");
+    expect(result.isSacrifice).toBe(false);
   });
 
-  it("returns false for invalid move", () => {
-    expect(isSacrificingMaterial(STARTPOS, "a1h8")).toBe(false);
+  it("returns { isSacrifice: false } for invalid move", () => {
+    const result = isSacrificingMaterial(STARTPOS, "a1h8");
+    expect(result.isSacrifice).toBe(false);
   });
 
-  it("returns true when knight moves to square attacked by pawn", () => {
-    // White knight on b5, black pawn on a6 attacks b5 → but we need Nc3 attacked
-    // FEN: white Nb1, black pawn on d4. After Nc3, d4 attacks c3.
-    // Actually simpler: white knight on g1, black pawn on f6.
-    // After Nf3, f6 doesn't attack f3. Let's use explicit setup.
+  it("returns sacrifice with correct netValue when knight moves to attacked square", () => {
     // FEN where white Nb1 can go to c3 which is attacked by black pawn on d4
     const fen = "rnbqkb1r/ppp1pppp/5n2/8/3p4/8/PPPPPPPP/RNBQKBNR w KQkq - 0 3";
-    // Nb1 → c3, and d4 pawn attacks c3 (d4 can take on c3)
-    expect(isSacrificingMaterial(fen, "b1c3")).toBe(true);
+    // Nb1 → c3, d4 pawn attacks c3 → sacrifice (knight=3, captured=0, net=3)
+    const result = isSacrificingMaterial(fen, "b1c3");
+    expect(result.isSacrifice).toBe(true);
+    expect(result.netValue).toBe(3);
   });
 
-  it("returns true when queen captures pawn on attacked square (Q value > p value)", () => {
-    // White queen captures pawn on f7 which is defended by king on e8
-    const fen = "rnbqkbnr/pppppBpp/8/8/4P3/3Q4/PPPP1PPP/RNB1K1NR w KQkq - 0 1";
-    // Actually let's use a cleaner FEN. White Qd3 captures pawn f5 defended by pawn g6
+  it("returns sacrifice when queen captures pawn on attacked square", () => {
+    // White Qd3 captures pawn f5 defended by pawn g6
     const fen2 = "rnbqkbnr/pppppp1p/6p1/5p2/8/3Q4/PPPPPPPP/RNB1KBNR w KQkq - 0 1";
-    // Qd3 x f5, f5 is attacked by g6 pawn → sacrifice (9 > 1)
-    expect(isSacrificingMaterial(fen2, "d3f5")).toBe(true);
+    // Qd3 x f5, f5 is attacked by g6 pawn → sacrifice (9 > 1, net=8)
+    const result = isSacrificingMaterial(fen2, "d3f5");
+    expect(result.isSacrifice).toBe(true);
+    expect(result.netValue).toBe(8);
   });
 
-  it("returns false when pawn captures pawn on attacked square (equal value)", () => {
-    // After 1.e4 d5, exd5 captures pawn. If d5 is also defended, pawn value = pawn value.
-    // FEN after 1.e4 d5: black pawn on d5 defended by Qd8 (not pawn). Actually we need
-    // the captured square to be attacked by opponent. Let's make c6 defend d5.
+  it("returns { isSacrifice: false } when pawn captures pawn on attacked square (equal value)", () => {
+    // FEN with c6 pawn defending d5
     const fen = "rnbqkbnr/pp2pppp/2p5/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2";
     // exd5, d5 is defended by c6 pawn → pawn captures pawn, 1 > 1 is false
-    expect(isSacrificingMaterial(fen, "e4d5")).toBe(false);
+    const result = isSacrificingMaterial(fen, "e4d5");
+    expect(result.isSacrifice).toBe(false);
   });
 });
 
@@ -164,8 +164,10 @@ describe("categorize", () => {
       winProbAfter: 0.5,
       isBestMove: false,
       isSacrifice: false,
+      netSacrificeValue: 0,
       legalMoveCount: 20,
       totalPieces: 32,
+      halfMoveIndex: 20, // default to mid-game (past opening filter)
       ...overrides,
     };
   }
@@ -197,6 +199,7 @@ describe("categorize", () => {
   it("returns brilliant for sacrifice + near-best + contested + good after", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
+      netSacrificeValue: 3, // minor piece sacrifice
       isBestMove: true,
       cpLoss: 0,
       winProbBefore: 0.5,
@@ -205,9 +208,35 @@ describe("categorize", () => {
     }))).toBe("brilliant");
   });
 
+  it("brilliant rejected for pawn sacrifice (netSacrificeValue < 2)", () => {
+    expect(categorize(makeInput({
+      isSacrifice: true,
+      netSacrificeValue: 1, // pawn for nothing — too small
+      isBestMove: true,
+      cpLoss: 0,
+      winProbBefore: 0.5,
+      winProbAfter: 0.55,
+      winProbLoss: 0,
+    }))).toBe("best"); // falls through to best since isBestMove
+  });
+
+  it("brilliant rejected in opening (halfMoveIndex < 10)", () => {
+    expect(categorize(makeInput({
+      isSacrifice: true,
+      netSacrificeValue: 3,
+      isBestMove: true,
+      cpLoss: 0,
+      winProbBefore: 0.5,
+      winProbAfter: 0.55,
+      winProbLoss: 0,
+      halfMoveIndex: 4, // too early
+    }))).toBe("best");
+  });
+
   it("brilliant rejected when cpLoss > 5 and not best move", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
+      netSacrificeValue: 3,
       isBestMove: false,
       cpLoss: 10,
       winProbBefore: 0.5,
@@ -219,6 +248,7 @@ describe("categorize", () => {
   it("brilliant rejected when position bad after sacrifice (winProbAfter <= 0.25)", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
+      netSacrificeValue: 3,
       isBestMove: true,
       cpLoss: 0,
       winProbBefore: 0.5,
@@ -230,6 +260,7 @@ describe("categorize", () => {
   it("brilliant rejected in endgame when not best move", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
+      netSacrificeValue: 5,
       isBestMove: false,
       cpLoss: 3,
       winProbBefore: 0.5,
@@ -258,6 +289,7 @@ describe("categorize", () => {
   it("brilliant rejected when position already winning (wpBefore >= 0.75)", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
+      netSacrificeValue: 3,
       isBestMove: true,
       cpLoss: 0,
       winProbBefore: 0.80,
@@ -269,6 +301,7 @@ describe("categorize", () => {
   it("brilliant rejected when position already losing (wpBefore <= 0.25)", () => {
     expect(categorize(makeInput({
       isSacrifice: true,
+      netSacrificeValue: 3,
       isBestMove: true,
       cpLoss: 0,
       winProbBefore: 0.20,
