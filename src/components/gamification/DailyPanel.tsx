@@ -8,6 +8,7 @@ import XPBar from "./XPBar";
 import LevelUpToast from "./LevelUpToast";
 import AchievementPanel from "./AchievementPanel";
 import AchievementToast from "./AchievementToast";
+import MissionCompletionToast from "./MissionCompletionToast";
 import ChestPanel from "./ChestPanel";
 
 export default function DailyPanel() {
@@ -51,6 +52,7 @@ export default function DailyPanel() {
       <AchievementPanel />
 
       {/* Toasts */}
+      <MissionCompletionToast missions={missions} />
       <AchievementToast achievements={newAchievements} />
     </div>
   );

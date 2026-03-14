@@ -6,10 +6,17 @@ import TaskPanel from "@/components/gamification/TaskPanel";
 
 interface RankingEntry {
   user_id: string;
-  display_name: string | null;
+  public_name: string;
   level: number;
-  puzzle_rating: number;
-  title: string | null;
+  metric_value: number;
+  title: string;
+  position: number;
+}
+
+interface RankingResponse {
+  entries: RankingEntry[];
+  my_rank: RankingEntry | null;
+  is_hidden: boolean;
 }
 
 const MEDAL = ["🥇", "🥈", "🥉"];
@@ -28,12 +35,13 @@ export default async function DashboardPage() {
     .single();
   const title = titleData?.current_title ?? "Aprendiz";
 
-  // Ranking top 5 para preview
+  // Ranking top 5 para preview (nomes já mascarados pela RPC)
   const { data: ranking, error: rankingError } = await supabase.rpc(
-    "get_ranking",
+    "get_ranking_with_position",
     { p_type: "rating", p_limit: 5 }
   );
-  const entries: RankingEntry[] = (ranking as RankingEntry[] | null) ?? [];
+  const response = ranking as RankingResponse | null;
+  const entries: RankingEntry[] = response?.entries ?? [];
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -89,7 +97,15 @@ export default async function DashboardPage() {
 
       {/* Quadro de Honra — preview top 5 */}
       <div className="mt-6 rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Quadro de Honra</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Quadro de Honra</h2>
+          <Link
+            href="/ranking"
+            className="text-xs font-medium text-blue-600 hover:underline"
+          >
+            Ver ranking completo &rarr;
+          </Link>
+        </div>
 
         {rankingError ? (
           <p className="text-sm text-red-600">
@@ -110,7 +126,7 @@ export default async function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {entries.map((entry, i) => (
+              {entries.map((entry) => (
                 <tr
                   key={entry.user_id}
                   className={`border-b transition-colors last:border-0 hover:bg-zinc-50 ${
@@ -118,12 +134,17 @@ export default async function DashboardPage() {
                   }`}
                 >
                   <td className="px-3 py-2.5 font-medium">
-                    {i < 3 ? MEDAL[i] : i + 1}
+                    {entry.position <= 3 ? MEDAL[entry.position - 1] : entry.position}
                   </td>
                   <td className="px-3 py-2.5">
-                    {entry.display_name ?? "Jogador"}
+                    <Link
+                      href={`/perfil/${entry.user_id}`}
+                      className="hover:underline"
+                    >
+                      {entry.public_name}
+                    </Link>
                   </td>
-                  <td className="px-3 py-2.5 tabular-nums">{entry.puzzle_rating}</td>
+                  <td className="px-3 py-2.5 tabular-nums">{entry.metric_value}</td>
                   <td className="px-3 py-2.5 text-zinc-500">
                     {entry.title ?? "Aprendiz"}
                   </td>

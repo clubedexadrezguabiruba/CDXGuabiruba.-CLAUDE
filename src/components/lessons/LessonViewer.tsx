@@ -18,6 +18,8 @@ import LessonDemo from "./LessonDemo";
 import LessonExercise from "./LessonExercise";
 import type { ExerciseState } from "./LessonExercise";
 import Confetti from "./Confetti";
+import TaskCompletionToast from "@/components/gamification/TaskCompletionToast";
+import type { TaskProgress } from "@/types/class";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useSound } from "@/hooks/useSound";
 import { useArrowKeys } from "@/hooks/useArrowKeys";
@@ -204,6 +206,7 @@ export default function LessonViewer({
   const [finalStars, setFinalStars] = useState(initialProgress?.stars ?? 0);
   const [xpGained, setXpGained] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [completedTasks, setCompletedTasks] = useState<TaskProgress[]>([]);
 
   // Demo state
   const [demoMoveIndex, setDemoMoveIndex] = useState(0);
@@ -614,6 +617,13 @@ export default function LessonViewer({
             setXpGained(result.xp_gained);
             setShowConfetti(true);
             play("victory");
+
+            // Check task completion
+            supabase.rpc("check_my_tasks").then(({ data: taskData }) => {
+              const tasks = (taskData ?? []) as TaskProgress[];
+              const just = tasks.filter((t) => t.just_completed);
+              if (just.length > 0) requestAnimationFrame(() => setCompletedTasks(just));
+            });
           } else {
             // Auto-advance after 2.5s
             scheduleAutoAdvance();
@@ -1156,6 +1166,7 @@ export default function LessonViewer({
           <p className="mt-1 text-sm text-zinc-600">Aula já concluída</p>
         </div>
       )}
+      <TaskCompletionToast completedTasks={completedTasks} />
     </div>
   );
 }

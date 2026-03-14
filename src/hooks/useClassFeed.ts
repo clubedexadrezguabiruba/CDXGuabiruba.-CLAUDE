@@ -23,7 +23,7 @@ export function useClassFeed(classId: number): UseClassFeedResult {
     try {
       const { data, error: qErr } = await supabase
         .from("class_feed")
-        .select("id, class_id, user_id, event_type, event_data, created_at, users(display_name)")
+        .select("id, class_id, user_id, event_type, event_data, created_at")
         .eq("class_id", classId)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -31,15 +31,15 @@ export function useClassFeed(classId: number): UseClassFeedResult {
       if (qErr) throw new Error(qErr.message);
 
       const mapped: FeedEvent[] = (data ?? []).map((row) => {
-        const u = row.users as unknown as { display_name: string | null } | null;
+        const ed = row.event_data as Record<string, unknown>;
         return {
           id: row.id,
           class_id: row.class_id,
           user_id: row.user_id,
           event_type: row.event_type,
-          event_data: row.event_data as Record<string, unknown>,
+          event_data: ed,
           created_at: row.created_at,
-          display_name: u?.display_name ?? null,
+          display_name: (ed.display_name as string) ?? null,
         };
       });
 

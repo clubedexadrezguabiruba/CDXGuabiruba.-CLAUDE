@@ -1,6 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import type { Mission } from "@/hooks/useMissions";
+
+function getMissionHref(key: string): string {
+  if (key.includes("rating") || key.startsWith("streak_")) return "/puzzles/rating";
+  if (key.includes("lesson")) return "/aulas";
+  if (key.includes("bot")) return "/bots";
+  if (key.includes("rush")) return "/puzzles/rush";
+  if (key.includes("category")) return "/puzzles/categorias";
+  if (key.includes("revanche")) return "/puzzles/revanche";
+  if (key.includes("mate2") || key.includes("fork") || key.includes("pin") || key.includes("endgame"))
+    return "/puzzles/categorias";
+  return "/dashboard";
+}
 
 function MissionRow({ mission }: { mission: Mission }) {
   const pct = Math.min(
@@ -8,12 +21,12 @@ function MissionRow({ mission }: { mission: Mission }) {
     Math.round((mission.progress / mission.target) * 100)
   );
 
-  return (
+  const inner = (
     <div
       className={`rounded-lg border p-3 transition-all ${
         mission.completed
           ? "border-green-200 bg-green-50"
-          : "border-zinc-200 bg-white shadow-sm"
+          : "border-zinc-200 bg-white shadow-sm hover:border-blue-200 hover:shadow-md"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -43,7 +56,21 @@ function MissionRow({ mission }: { mission: Mission }) {
           {mission.progress}/{mission.target}
         </span>
       </div>
+
+      {!mission.completed && (
+        <div className="mt-1 text-right">
+          <span className="text-xs font-medium text-blue-600">Iniciar &rarr;</span>
+        </div>
+      )}
     </div>
+  );
+
+  if (mission.completed) return inner;
+
+  return (
+    <Link href={getMissionHref(mission.mission_key)} className="block">
+      {inner}
+    </Link>
   );
 }
 

@@ -2,7 +2,11 @@
 
 import type { StreakData } from "@/hooks/useMissions";
 
-const MILESTONES = [7, 14, 30, 60, 100];
+const MILESTONES = [
+  1, 3, 5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100,
+  125, 150, 200, 250, 300, 350, 400, 500, 600, 700, 800, 900,
+  1000, 1200, 1500, 2000,
+];
 
 function getNextMilestone(current: number): number | null {
   for (const m of MILESTONES) {
@@ -97,7 +101,7 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
         </div>
       )}
 
-      {!nextMilestone && effective >= 100 && (
+      {!nextMilestone && effective >= 2000 && (
         <div className="mt-2 text-sm font-medium text-amber-600">
           Todos os marcos alcançados!
         </div>

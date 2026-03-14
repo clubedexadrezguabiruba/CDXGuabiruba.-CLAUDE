@@ -37,7 +37,7 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await expect(turmasLink).toBeVisible();
     await turmasLink.click();
     await page.waitForURL("**/turmas");
-    await expect(page.locator("text=Companhias")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Companhias" })).toBeVisible();
     await expect(page.locator("text=Criar Companhia")).toBeVisible();
   });
 
@@ -46,8 +46,9 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await page.goto("/turmas");
 
     await page.click("text=Criar Companhia");
+    await expect(page.locator('input[placeholder="Nome da companhia"]')).toBeVisible({ timeout: 5000 });
     await page.fill('input[placeholder="Nome da companhia"]', CLASS_NAME);
-    await page.click('button:has-text("Criar")');
+    await page.click('button[type="submit"]');
 
     // Espera modal de sucesso com invite code
     await expect(page.locator("text=Companhia Criada!")).toBeVisible({ timeout: 10000 });
@@ -89,7 +90,7 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
-    await expect(page.locator("text=Membros")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Membros" })).toBeVisible();
     // Pelo menos 1 membro listado
     await expect(page.locator("text=1 membro")).toBeVisible();
   });
@@ -98,7 +99,7 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
-    await page.click("text=Tarefas");
+    await page.locator('a[href*="/tarefas"]').click();
     await page.waitForURL(`**/turmas/${classId}/tarefas`);
     await expect(page.locator("text=Nova Tarefa")).toBeVisible();
   });
@@ -108,7 +109,11 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await page.goto(`/turmas/${classId}/tarefas`);
 
     await page.click("text=Nova Tarefa");
-    await expect(page.locator("text=Nova Tarefa")).toBeVisible();
+    // Esperar form abrir e lessons carregarem no dropdown
+    await expect(page.locator("select").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("option").nth(1)).toBeAttached({ timeout: 5000 });
+    // Pequena espera para useEffect setar lessonId
+    await page.waitForTimeout(500);
 
     // Tipo já é lesson por default
     await page.fill('input[placeholder="Ex: Completar aula de aberturas"]', "Completar aula 1");
@@ -133,7 +138,7 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
-    await page.click("text=Mural");
+    await page.locator('a[href*="/mural"]').click();
     await page.waitForURL(`**/turmas/${classId}/mural`);
     await expect(page.locator("text=Mural da Companhia")).toBeVisible();
   });
@@ -142,11 +147,11 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
-    await page.click("text=Relatorios");
+    await page.locator('a[href*="/relatorio"]').click();
     await page.waitForURL(`**/turmas/${classId}/relatorio`);
     await expect(page.locator("text=Relatorio da Companhia")).toBeVisible();
     // Pelo menos 1 membro listado
-    await expect(page.locator("text=Membros")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Membros" }).or(page.locator("text=Membros").first())).toBeVisible();
   });
 
   test("aluno vê turma na lista e acessa detalhe", async ({ page }) => {
@@ -158,9 +163,9 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await page.waitForURL(`**/turmas/${classId}`);
 
     // Aluno vê "Colegas" (não "Membros")
-    await expect(page.locator("text=Colegas")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Colegas" })).toBeVisible();
     // Aluno vê Mural mas NÃO vê Tarefas nem Relatorios
-    await expect(page.locator("text=Mural")).toBeVisible();
+    await expect(page.locator('a[href*="/mural"]')).toBeVisible();
   });
 
   test("aluno vê tarefas no dashboard", async ({ page }) => {

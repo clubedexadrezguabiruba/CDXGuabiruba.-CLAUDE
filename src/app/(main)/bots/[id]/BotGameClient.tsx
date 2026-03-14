@@ -15,6 +15,8 @@ import {
 } from "@/lib/chess/botGameLogic";
 import { parseUci } from "@/lib/chess/puzzleLogic";
 import { analyzeGame } from "@/lib/chess/botAnalysis";
+import TaskCompletionToast from "@/components/gamification/TaskCompletionToast";
+import type { TaskProgress } from "@/types/class";
 import type { GameAnalysis } from "@/lib/chess/botAnalysis";
 import type {
   Bot,
@@ -111,6 +113,8 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
   const [fullHistory, setFullHistory] = useState<
     { san: string; before: string; after: string }[]
   >([]);
+
+  const [completedTasks, setCompletedTasks] = useState<TaskProgress[]>([]);
 
   // Move navigation state (null = live position, number = viewing past move)
   const [viewHalfMove, setViewHalfMove] = useState<number | null>(null);
@@ -253,6 +257,13 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
             if (data?.result_id) {
               resultIdRef.current = data.result_id;
             }
+
+            // Check task completion
+            supabase.rpc("check_my_tasks").then(({ data: taskData }) => {
+              const tasks = (taskData ?? []) as TaskProgress[];
+              const just = tasks.filter((t) => t.just_completed);
+              if (just.length > 0) requestAnimationFrame(() => setCompletedTasks(just));
+            });
           } catch (err) {
             console.error("Failed to submit bot result:", { botId: bot.id, result: info.result, error: err });
           }
@@ -864,6 +875,7 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
           onNextBot={nextBot ? () => router.push(`/bots/${nextBot.id}`) : undefined}
         />
       )}
+      <TaskCompletionToast completedTasks={completedTasks} />
     </div>
   );
 }

@@ -95,6 +95,12 @@ export default async function MainLayout({
                 Turmas
               </Link>
               <Link
+                href="/ranking"
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                Honra
+              </Link>
+              <Link
                 href="/perfil"
                 className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
               >

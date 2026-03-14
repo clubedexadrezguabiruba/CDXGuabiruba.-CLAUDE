@@ -17,6 +17,8 @@
     "test:e2e": "npx playwright test",
     "setup:stockfish": "tsx scripts/setup-stockfish.ts",
     "verify:phase6": "tsx scripts/verify/phase6/verify-bots.ts",
+    "verify:turmas": "tsx scripts/verify/phase9/verify-turmas.ts",
+    "test:turmas-rpcs": "tsx scripts/verify/phase9/test-turmas-rpcs.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -67,7 +67,7 @@ export default function InventoryGrid({ items, onEquip, onUnequip }: InventoryGr
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((item) => (
             <ItemCard
-              key={item.id}
+              key={`${item.id}-${item.obtained_at}`}
               item={item}
               onEquip={onEquip}
               onUnequip={onUnequip}

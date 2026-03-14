@@ -45,6 +45,7 @@ export default function ConfiguracoesPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [premoveEnabled, setPremoveEnabled] = useState(true);
   const [autoQueen, setAutoQueen] = useState(true);
+  const [rankingVisible, setRankingVisible] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Sync local state with profile on load
@@ -53,6 +54,7 @@ export default function ConfiguracoesPage() {
       setSoundEnabled(!profile.sound_muted);
       setPremoveEnabled(profile.premove_enabled);
       setAutoQueen(profile.auto_queen);
+      setRankingVisible(profile.ranking_visible);
     }
   }, [profile]);
 
@@ -86,6 +88,11 @@ export default function ConfiguracoesPage() {
   function handleAutoQueenToggle(enabled: boolean) {
     setAutoQueen(enabled);
     updatePreference("auto_queen", enabled);
+  }
+
+  function handleRankingToggle(enabled: boolean) {
+    setRankingVisible(enabled);
+    updatePreference("ranking_visible", enabled);
   }
 
   if (loading) {
@@ -132,6 +139,14 @@ export default function ConfiguracoesPage() {
           description="Promoção sempre para dama, sem perguntar (essencial para pre-moves)"
           checked={autoQueen}
           onChange={handleAutoQueenToggle}
+          disabled={saving}
+        />
+
+        <Toggle
+          label="Visibilidade no Quadro de Honra"
+          description="Aparecer nos rankings globais. Professor sempre vê você no ranking da turma."
+          checked={rankingVisible}
+          onChange={handleRankingToggle}
           disabled={saving}
         />
       </div>

@@ -46,17 +46,16 @@ export default async function PerfilPage() {
     .eq("user_id", user.id)
     .single();
 
-  // Contar bots derrotados (distintos bot_id com resultado 'win')
+  // Contar bots derrotados (distintos — user_bot_first_wins tem UNIQUE(user_id, bot_id))
   const { count: botsDefeated } = await supabase
-    .from("bot_results")
-    .select("bot_id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("result", "win");
+    .from("user_bot_first_wins")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
 
   // Contar aulas completadas
   const { count: lessonsCompleted } = await supabase
-    .from("lesson_progress")
-    .select("lesson_id", { count: "exact", head: true })
+    .from("user_lesson_progress")
+    .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
     .eq("completed", true);
 

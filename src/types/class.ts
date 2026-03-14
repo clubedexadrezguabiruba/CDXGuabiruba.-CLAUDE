@@ -61,16 +61,14 @@ export interface ClassWithCount extends Class {
   member_count: number;
 }
 
-/** class_members JOIN users — SELECT explícito no hook */
+/** Membro da turma — retornado por get_class_members RPC */
 export interface ClassMember {
-  id: number;
-  class_id: number;
   user_id: string;
-  joined_at: string;
-  // JOIN users (SELECT explícito)
   display_name: string | null;
   level: number;
   puzzle_rating: number;
+  is_teacher: boolean;
+  joined_at: string;
 }
 
 /** Tabela class_tasks — SELECT direto */

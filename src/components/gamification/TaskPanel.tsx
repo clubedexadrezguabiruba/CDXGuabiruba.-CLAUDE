@@ -1,6 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useMyTasks } from "@/hooks/useMyTasks";
+import TaskCompletionToast from "./TaskCompletionToast";
+
+function getTaskHref(taskType: string): string {
+  switch (taskType) {
+    case "lesson": return "/aulas";
+    case "puzzles_count": return "/puzzles/rating";
+    case "puzzles_theme": return "/puzzles/categorias";
+    case "bot": return "/bots";
+    case "rush": return "/puzzles/rush";
+    default: return "/dashboard";
+  }
+}
 
 export default function TaskPanel() {
   const { tasks, loading, error } = useMyTasks();
@@ -23,7 +36,9 @@ export default function TaskPanel() {
     );
   }
 
-  if (tasks.length === 0) return null;
+  const justCompleted = tasks.filter((t) => t.just_completed);
+
+  if (tasks.length === 0) return <TaskCompletionToast completedTasks={justCompleted} />;
 
   const pending = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
@@ -39,7 +54,11 @@ export default function TaskPanel() {
             const isOverdue = task.deadline && new Date(task.deadline) < new Date();
 
             return (
-              <div key={task.task_id} className="rounded-lg border p-3">
+              <Link
+                key={task.task_id}
+                href={getTaskHref(task.task_type)}
+                className="block rounded-lg border p-3 transition-all hover:border-blue-200 hover:shadow-md"
+              >
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-zinc-900">{task.title}</p>
@@ -57,17 +76,20 @@ export default function TaskPanel() {
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <div className="mt-1 flex items-center gap-2 text-xs text-zinc-400">
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5">
-                    {task.task_type}
-                  </span>
-                  {task.deadline && (
-                    <span className={isOverdue ? "text-red-500 font-medium" : ""}>
-                      {isOverdue ? "Atrasada" : `Prazo: ${new Date(task.deadline).toLocaleDateString("pt-BR")}`}
+                <div className="mt-1 flex items-center justify-between text-xs text-zinc-400">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5">
+                      {task.task_type}
                     </span>
-                  )}
+                    {task.deadline && (
+                      <span className={isOverdue ? "text-red-500 font-medium" : ""}>
+                        {isOverdue ? "Atrasada" : `Prazo: ${new Date(task.deadline).toLocaleDateString("pt-BR")}`}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-medium text-blue-600">Iniciar &rarr;</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -93,6 +115,7 @@ export default function TaskPanel() {
           </div>
         </div>
       )}
+      <TaskCompletionToast completedTasks={justCompleted} />
     </div>
   );
 }

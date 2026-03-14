@@ -49,31 +49,21 @@ export function useClassDetail(classId: number): UseClassDetailResult {
       const classRow = cls as Class;
       const teacher = classRow.teacher_id === user.id;
 
-      // Busca membros com JOIN users
-      const { data: membersData, error: memErr } = await supabase
-        .from("class_members")
-        .select("id, class_id, user_id, joined_at, users(display_name, level, puzzle_rating)")
-        .eq("class_id", classId)
-        .order("joined_at", { ascending: true });
+      // Busca membros via RPC (SECURITY DEFINER — bypassa RLS do users)
+      const { data: membersJson, error: memErr } = await supabase.rpc("get_class_members", {
+        p_class_id: classId,
+      });
 
       if (memErr) throw new Error(memErr.message);
 
-      const mappedMembers: ClassMember[] = (membersData ?? []).map((row) => {
-        const u = row.users as unknown as {
-          display_name: string | null;
-          level: number;
-          puzzle_rating: number;
-        } | null;
-        return {
-          id: row.id,
-          class_id: row.class_id,
-          user_id: row.user_id,
-          joined_at: row.joined_at,
-          display_name: u?.display_name ?? null,
-          level: u?.level ?? 1,
-          puzzle_rating: u?.puzzle_rating ?? 400,
-        };
-      });
+      const mappedMembers: ClassMember[] = ((membersJson as unknown as Record<string, unknown>[]) ?? []).map((m) => ({
+        user_id: m.user_id as string,
+        display_name: (m.display_name as string) ?? null,
+        level: (m.level as number) ?? 1,
+        puzzle_rating: (m.puzzle_rating as number) ?? 400,
+        is_teacher: (m.is_teacher as boolean) ?? false,
+        joined_at: m.joined_at as string,
+      }));
 
       // Busca tarefas (RLS filtra: professor vê todas, aluno só ativas)
       const { data: tasksData, error: taskErr } = await supabase
