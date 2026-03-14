@@ -1,9 +1,25 @@
 @import "tailwindcss";
+@config "../../tailwind.config.ts";
 @import "chessground/assets/chessground.base.css";
 @import "chessground/assets/chessground.brown.css";
 @import "chessground/assets/chessground.cburnett.css";
 
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+
+  /* Brand colors */
+  --brand-cyan: #00D4AA;
+  --brand-teal: #0A8F7F;
+  --deep-navy: #0F1A2E;
+  --dark-base: #060F18;
+
+  /* Prestige colors */
+  --gold: #C9A84C;
+  --gold-light: #E8D48B;
+  --warm-stone: #F5F0E8;
+  --warm-ivory: #FAF8F3;
+}
+
 html, body { height: 100%; }
 
 /* Chessground board responsive wrapper */

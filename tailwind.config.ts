@@ -8,6 +8,24 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        "brand-cyan": "#00D4AA",
+        "brand-teal": "#0A8F7F",
+        "deep-navy": "#0F1A2E",
+        "dark-base": "#060F18",
+        "gold": "#C9A84C",
+        "gold-light": "#E8D48B",
+        "warm-stone": "#F5F0E8",
+        "warm-ivory": "#FAF8F3",
+      },
+      fontFamily: {
+        heading: ["var(--font-cinzel)", "Georgia", "serif"],
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        "glow-cyan": "0 0 20px rgba(0, 212, 170, 0.15)",
+        "glow-gold": "0 0 20px rgba(201, 168, 76, 0.15)",
+      },
       keyframes: {
         "scale-in": {
           "0%": { transform: "scale(0)", opacity: "0" },
