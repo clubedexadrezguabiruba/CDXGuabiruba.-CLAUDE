@@ -80,6 +80,7 @@ interface MissionPanelProps {
   chestAvailable: boolean;
   loading: boolean;
   error: string | null;
+  title?: string;
 }
 
 export default function MissionPanel({
@@ -88,6 +89,7 @@ export default function MissionPanel({
   chestAvailable,
   loading,
   error,
+  title = "Recruta",
 }: MissionPanelProps) {
   if (loading) {
     return (
@@ -120,7 +122,23 @@ export default function MissionPanel({
         </span>
       </div>
 
-      {missions.length === 0 ? (
+      {allCompleted ? (
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <span className="text-4xl">&#127942;</span>
+          <p className="text-sm font-medium text-zinc-700">
+            Parabéns, <span className="font-bold text-amber-700">{title}</span>!
+            Você concluiu todas as ordens do dia!
+          </p>
+          <p className="text-xs text-zinc-500">
+            Volte amanhã para novas missões.
+          </p>
+          {chestAvailable && (
+            <p className="mt-1 text-xs font-medium text-amber-600">
+              Abra seu baú no painel de baús!
+            </p>
+          )}
+        </div>
+      ) : missions.length === 0 ? (
         <p className="text-sm text-zinc-500">
           Nenhuma missão disponível hoje.
         </p>
@@ -129,14 +147,6 @@ export default function MissionPanel({
           {missions.map((mission) => (
             <MissionRow key={mission.id} mission={mission} />
           ))}
-        </div>
-      )}
-
-      {allCompleted && (
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm font-medium text-amber-700">
-          {chestAvailable
-            ? "Todas as missões completas! Abra seu baú no painel de baús."
-            : "Todas as missões completas! Baú do dia já concedido."}
         </div>
       )}
     </div>

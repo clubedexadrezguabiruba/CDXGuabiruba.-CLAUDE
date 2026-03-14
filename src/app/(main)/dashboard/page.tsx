@@ -88,7 +88,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Blocos client-side: XP, missões, streak, baús, insígnias */}
-      <DailyPanel />
+      <DailyPanel title={title} />
 
       {/* Tarefas da companhia (só aparece se aluno tem tarefas) */}
       <div className="mt-6">

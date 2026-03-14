@@ -11,7 +11,7 @@ import AchievementToast from "./AchievementToast";
 import MissionCompletionToast from "./MissionCompletionToast";
 import ChestPanel from "./ChestPanel";
 
-export default function DailyPanel() {
+export default function DailyPanel({ title }: { title: string }) {
   const {
     missions,
     allCompleted,
@@ -40,6 +40,7 @@ export default function DailyPanel() {
         chestAvailable={chestAvailable}
         loading={loading}
         error={error}
+        title={title}
       />
 
       {/* Sequência de Campanha */}
