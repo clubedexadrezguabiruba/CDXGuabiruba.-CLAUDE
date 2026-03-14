@@ -155,14 +155,18 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══════════ HERO ═══════════ */}
-      <section
-        className="relative flex min-h-screen items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage: "url('/images/hero-camp.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center 40%",
-        }}
-      >
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
+        {/* Responsive hero image */}
+        <picture>
+          <source media="(max-width: 768px)" srcSet="/images/hero-camp-mobile.png" />
+          <img
+            src="/images/hero-camp.png"
+            alt="Acampamento dos Recrutas — O Reino das 64 Casas"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: "center 40%" }}
+          />
+        </picture>
+
         {/* Stronger overlay */}
         <div
           className="absolute inset-0"
