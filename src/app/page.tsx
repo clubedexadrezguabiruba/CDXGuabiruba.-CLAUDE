@@ -156,16 +156,22 @@ export default function LandingPage() {
 
       {/* ═══════════ HERO ═══════════ */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
-        {/* Responsive hero image */}
-        <picture>
-          <source media="(max-width: 768px)" srcSet="/images/hero-camp-mobile.png" />
-          <img
-            src="/images/hero-camp.png"
-            alt="Acampamento dos Recrutas — O Reino das 64 Casas"
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: "center 40%" }}
-          />
-        </picture>
+        {/* Hero background — video on desktop, static image on mobile */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="/images/hero-camp.png"
+          className="absolute inset-0 hidden h-full w-full object-cover sm:block"
+        >
+          <source src="/images/hero-camp.mp4" type="video/mp4" />
+        </video>
+        <img
+          src="/images/hero-camp-mobile.png"
+          alt="Acampamento dos Recrutas — O Reino das 64 Casas"
+          className="absolute inset-0 h-full w-full object-cover sm:hidden"
+        />
 
         {/* Stronger overlay */}
         <div
