@@ -103,7 +103,10 @@ export default function BotBoard({
 
       if (isPromotion(orig, dest)) {
         if (isPremove || autoQueenRef.current) {
-          const moveResult = chessRef.current.move({ from: orig, to: dest, promotion: "q" });
+          let moveResult;
+          try {
+            moveResult = chessRef.current.move({ from: orig, to: dest, promotion: "q" });
+          } catch { return; }
           if (!moveResult) return;
 
           if (chessRef.current.isCheck()) playSound("check");
@@ -119,7 +122,10 @@ export default function BotBoard({
       }
 
       // Non-promotion move — apply directly
-      const moveResult = chessRef.current.move({ from: orig, to: dest });
+      let moveResult;
+      try {
+        moveResult = chessRef.current.move({ from: orig, to: dest });
+      } catch { return; }
       if (!moveResult) return;
 
       if (chessRef.current.isCheck()) playSound("check");
@@ -137,7 +143,10 @@ export default function BotBoard({
       const { from, to } = promotionPending;
       setPromotionPending(null);
 
-      const moveResult = chessRef.current.move({ from, to, promotion: piece });
+      let moveResult;
+      try {
+        moveResult = chessRef.current.move({ from, to, promotion: piece });
+      } catch { return; }
       if (!moveResult) return;
 
       if (chessRef.current.isCheck()) playSound("check");

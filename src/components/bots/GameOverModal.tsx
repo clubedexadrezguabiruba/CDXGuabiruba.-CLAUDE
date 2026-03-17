@@ -96,14 +96,23 @@ export default function GameOverModal({
           </div>
         )}
 
-        {/* Accuracy */}
+        {/* Accuracy — player vs bot */}
         {analysis && (
-          <p
-            className="mt-1 text-sm font-semibold"
-            style={{ color: accuracyColor(analysis.accuracy) }}
-          >
-            {Math.round(analysis.accuracy)}% {"precis\u00E3o"}
-          </p>
+          <div className="mt-2 flex items-center justify-center gap-3">
+            <span
+              className="text-lg font-bold"
+              style={{ color: accuracyColor(analysis.accuracy) }}
+            >
+              {Math.round(analysis.accuracy)}%
+            </span>
+            <span className="text-xs text-zinc-400">vs</span>
+            <span
+              className="text-lg font-bold"
+              style={{ color: accuracyColor(analysis.botAccuracy) }}
+            >
+              {Math.round(analysis.botAccuracy)}%
+            </span>
+          </div>
         )}
 
         {/* Quick stats */}

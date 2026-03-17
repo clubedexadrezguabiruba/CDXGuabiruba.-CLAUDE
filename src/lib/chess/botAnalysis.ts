@@ -38,6 +38,8 @@ export interface GameAnalysis {
   counts: Record<MoveCategory, number>;
   topBlunders: MoveAnalysis[];
   allMoves: MoveAnalysis[];
+  botAccuracy: number;
+  botCounts: Record<MoveCategory, number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -331,5 +333,20 @@ export async function analyzeGame(
     .sort((a, b) => b.winProbLoss - a.winProbLoss)
     .slice(0, 3);
 
-  return { accuracy, moves: playerMoves, counts, topBlunders, allMoves: allAnalyses };
+  // Bot moves — accuracy and counts
+  const botMoves = allAnalyses.filter((a) => {
+    const isWhite = a.halfMoveIndex % 2 === 0;
+    return (playerColor === "white" && !isWhite) || (playerColor === "black" && isWhite);
+  });
+  const validBotMoves = botMoves.filter((a) => !a.skipped);
+  const botAccuracy =
+    validBotMoves.length > 0
+      ? Math.round(validBotMoves.reduce((sum, a) => sum + a.moveAccuracy, 0) / validBotMoves.length)
+      : 0;
+  const botCounts: Record<MoveCategory, number> = {
+    brilliant: 0, great: 0, best: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0,
+  };
+  for (const a of validBotMoves) botCounts[a.category]++;
+
+  return { accuracy, moves: playerMoves, counts, topBlunders, allMoves: allAnalyses, botAccuracy, botCounts };
 }
