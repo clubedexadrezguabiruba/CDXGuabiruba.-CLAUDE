@@ -1,7 +1,7 @@
-# CdxGuabiruba — Diretriz Geral dos Bots v1
+# Recruta 64 — Diretriz Geral dos Bots v1
 
 ## Status do documento
-Documento diretriz final de **visão geral dos bots** do CdxGuabiruba.
+Documento diretriz final de **visão geral dos bots** do Recruta 64.
 
 Este material consolida a escada dos 20 bots como referência canônica para:
 - tom e identidade narrativa;
@@ -387,7 +387,7 @@ Esses itens pertencem ao próximo documento: a ficha de produção por bot.
 ---
 
 ## 7. Próximo documento recomendado
-**CdxGuabiruba — Ficha de Produção dos Bots v1**
+**Recruta 64 — Ficha de Produção dos Bots v1**
 
 Campos sugeridos por bot:
 - nome oficial;

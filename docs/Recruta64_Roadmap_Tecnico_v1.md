@@ -1,4 +1,4 @@
-# 🛠️ CdxGuabiruba — Roadmap Técnico de Implementação v1.0
+# 🛠️ Recruta 64 — Roadmap Técnico de Implementação v1.0
 
 > **Guia completo: setup do ambiente, workflow com Claude Code, MCPs e fases de desenvolvimento**
 > Documento complementar à Visão do Produto | Fevereiro 2026
@@ -262,10 +262,10 @@ O `CLAUDE.md` é um arquivo que fica na raiz do projeto e serve como **instruç�
 Crie o arquivo `CLAUDE.md` na raiz do projeto com:
 
 ```markdown
-# CdxGuabiruba — Plataforma Educacional de Xadrez
+# Recruta 64 — Plataforma Educacional de Xadrez
 
 ## Sobre o Projeto
-Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba.
+Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba (Recruta 64).
 Mobile-first, responsivo, com gamificação completa.
 
 ## Stack

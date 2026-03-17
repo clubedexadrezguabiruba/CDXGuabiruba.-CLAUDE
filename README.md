@@ -1,4 +1,4 @@
-# CdxGuabiruba — Base
+# Recruta 64 — Base
 
 Base mínima para iniciar o MVP com:
 - Next.js (App Router)

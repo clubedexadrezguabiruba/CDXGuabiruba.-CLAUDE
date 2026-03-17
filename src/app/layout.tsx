@@ -16,7 +16,7 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
-  title: "CdxGuabiruba",
+  title: "Recruta 64",
   description: "Plataforma educacional de xadrez",
 };
 

@@ -1,7 +1,7 @@
-# CdxGuabiruba — Plataforma Educacional de Xadrez
+# Recruta 64 — Plataforma Educacional de Xadrez
 
 ## Sobre o Projeto
-Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba.
+Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba (Recruta 64).
 Mobile-first, com gamificação e progressão verificável pelo servidor.
 
 ## Stack
@@ -84,5 +84,5 @@ Antes de alterar qualquer bug/fluxo:
 - scripts/verify/ → gates de validação por fase
 
 ## Referências (ler antes de mudanças grandes)
-- Visão do Produto: docs/CdxGuabiruba_Visao_do_Produto_v1.md
-- Roadmap Técnico: docs/CdxGuabiruba_Roadmap_Tecnico_v1.md
+- Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md
+- Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md

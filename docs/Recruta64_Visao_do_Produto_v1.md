@@ -1,13 +1,13 @@
-# 🏰 CdxGuabiruba — Visão Geral do Produto v1.0
+# 🏰 Recruta 64 — Visão Geral do Produto v1.0
 
-> **Clube de Xadrez Guabiruba — Plataforma Educacional de Xadrez**
+> **Recruta 64 — Plataforma Educacional de Xadrez**
 > Documento de Visão do Produto | Fevereiro 2026
 
 ---
 
 ## 1. Visão do Produto
 
-Uma plataforma web educacional de xadrez, responsiva (mobile-first), que funciona como extensão digital das aulas presenciais do Clube de Xadrez Guabiruba. O aluno pratica, evolui e se diverte com gamificação completa — aulas interativas, puzzles, bots com personalidade e um sistema de progressão com avatar vestível.
+Uma plataforma web educacional de xadrez, responsiva (mobile-first), que funciona como extensão digital das aulas presenciais do Clube de Xadrez Guabiruba (Recruta 64). O aluno pratica, evolui e se diverte com gamificação completa — aulas interativas, puzzles, bots com personalidade e um sistema de progressão com avatar vestível.
 
 ### 1.1 Objetivos Estratégicos
 
@@ -825,7 +825,7 @@ O site será configurado como PWA, permitindo que alunos "instalem" no celular c
 | Recurso PWA | Descrição |
 |---|---|
 | **Instalável** | Ícone na home screen do celular, abre sem barra do navegador |
-| **Manifest** | Nome "CdxGuabiruba", ícone do clube, tema de cores do site |
+| **Manifest** | Nome "Recruta 64", ícone do clube, tema de cores do site |
 | **Service Worker** | Cache de assets estáticos (CSS, JS, imagens, fontes, sons) |
 | **Splash screen** | Tela de carregamento com logo do clube |
 

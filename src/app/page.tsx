@@ -127,7 +127,7 @@ export default function LandingPage() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Link href="/" className="font-heading text-xl font-bold tracking-wide text-brand-cyan">
-            CdxGuabiruba
+            Recruta 64
           </Link>
 
           <div className="hidden items-center gap-8 sm:flex">
@@ -413,7 +413,7 @@ export default function LandingPage() {
           {/* Logo */}
           <div>
             <p className="font-heading text-sm font-semibold tracking-wide text-brand-cyan/80">
-              CdxGuabiruba
+              Recruta 64
             </p>
           </div>
 
@@ -434,7 +434,7 @@ export default function LandingPage() {
         {/* Copyright */}
         <div className="mx-auto mt-8 max-w-6xl border-t border-slate-800/40 px-5 pt-6 text-center">
           <p className="font-sans text-xs text-slate-600">
-            2026 CdxGuabiruba &middot; Clube de Xadrez Guabiruba &middot; O
+            2026 Recruta 64 &middot; Clube de Xadrez Guabiruba &middot; O
             Reino das 64 Casas
           </p>
         </div>

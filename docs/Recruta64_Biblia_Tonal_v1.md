@@ -1,8 +1,8 @@
-# Bíblia Tonal — CdxGuabiruba
+# Bíblia Tonal — Recruta 64
 
 ## 1. Propósito do documento
 
-Este documento define a **identidade tonal, narrativa e simbólica** do CdxGuabiruba.
+Este documento define a **identidade tonal, narrativa e simbólica** do Recruta 64.
 
 Ele serve como guia para garantir consistência em:
 
@@ -25,7 +25,7 @@ O objetivo é fazer o site parecer um **mundo único e coerente**, em vez de uma
 
 **O xadrez como arte da guerra inteligente.**
 
-No CdxGuabiruba, o aluno não está apenas “jogando xadrez”.
+No Recruta 64, o aluno não está apenas “jogando xadrez”.
 Ele está entrando em uma **campanha estratégica de formação**, onde cada aula, puzzle, missão e batalha contra bots representa um passo na sua evolução.
 
 A jornada começa com um recém-chegado no campo de treinamento e avança até os níveis mais altos de domínio, comando e maestria.
@@ -72,7 +72,7 @@ Mas sem ficar:
 
 ### Regra de ouro do tom
 
-> O CdxGuabiruba não fala de guerra literal. Ele fala de **estratégia, formação, avanço e comando**.
+> O Recruta 64 não fala de guerra literal. Ele fala de **estratégia, formação, avanço e comando**.
 
 A guerra aqui é **simbólica**.
 É o campo da mente, da disciplina, da decisão e da leitura do jogo.
@@ -88,7 +88,7 @@ A guerra aqui é **simbólica**.
 ### Promessa principal ao aluno
 
 Você não precisa nascer sabendo.
-No CdxGuabiruba, você entra como aprendiz, treina com método, sobe de patente e aprende a pensar com clareza, paciência e estratégia.
+No Recruta 64, você entra como aprendiz, treina com método, sobe de patente e aprende a pensar com clareza, paciência e estratégia.
 
 ---
 
@@ -98,7 +98,7 @@ No CdxGuabiruba, você entra como aprendiz, treina com método, sobe de patente 
 
 **O Reino das 64 Casas**
 
-Esse é o nome oficial do universo narrativo e simbólico do CdxGuabiruba.
+Esse é o nome oficial do universo narrativo e simbólico do Recruta 64.
 Ele serve como base para identidade visual, direção de arte, vocabulário e progressão do produto.
 
 ## Estrutura macro da jornada
@@ -633,7 +633,7 @@ Não deve soar como zombaria, competição tóxica ou humilhação pública.
 2. O humor deve ser leve e pontual, principalmente nos níveis iniciais.
 3. Os bots avançados devem parecer prestigiosos, não aleatórios.
 4. A progressão visual dos bots deve acompanhar a progressão do mundo.
-5. Mesmo os bots finais precisam continuar pertencendo ao universo do CdxGuabiruba.
+5. Mesmo os bots finais precisam continuar pertencendo ao universo do Recruta 64.
 
 ---
 
@@ -676,7 +676,7 @@ Este documento existe justamente para impedir que o produto fique inconsistente.
 
 ## 16. Aplicação da Bíblia Tonal por Feature
 
-Esta seção traduz a identidade do CdxGuabiruba em regras práticas para cada área principal do produto.
+Esta seção traduz a identidade do Recruta 64 em regras práticas para cada área principal do produto.
 
 O objetivo é garantir que cada feature não apenas funcione, mas também pareça pertencer ao mesmo universo: **O Reino das 64 Casas**.
 
@@ -1040,7 +1040,7 @@ Cada avanço simboliza crescimento de disciplina, leitura estratégica e prestí
 
 ## 17. Diretriz final
 
-O CdxGuabiruba deve passar a sensação de que o aluno está entrando em um **mundo de formação estratégica**, onde cada treino importa, cada desafio ensina e cada avanço representa mérito real.
+O Recruta 64 deve passar a sensação de que o aluno está entrando em um **mundo de formação estratégica**, onde cada treino importa, cada desafio ensina e cada avanço representa mérito real.
 
 O site deve ser:
 
@@ -1050,5 +1050,5 @@ O site deve ser:
 
 ### Síntese final
 
-**CdxGuabiruba é uma campanha estratégica de aprendizado, onde o xadrez é apresentado como disciplina, inteligência, honra e ascensão.**
+**Recruta 64 é uma campanha estratégica de aprendizado, onde o xadrez é apresentado como disciplina, inteligência, honra e ascensão.**
 
