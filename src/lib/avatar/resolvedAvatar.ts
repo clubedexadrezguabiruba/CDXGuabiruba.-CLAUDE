@@ -151,10 +151,12 @@ export function resolveAvatar(
 
   // Head knockout mask: quando head equipado, calcula clipPath inset para
   // recortar cabelo/cabeça da base. Derivado da head anchor region.
-  // KNOCKOUT_FACTOR_Y: fração vertical da head region a recortar (0.58 = topo 58%)
-  // KNOCKOUT_SIDE_SHRINK: fração lateral extra a recortar além da head region
-  const KNOCKOUT_FACTOR_Y = 0.71;
-  const KNOCKOUT_SIDE_SHRINK = 0.20; // 20% extra de cada lado
+  // Valores validados visualmente por gênero.
+  const KNOCKOUT_BY_GENDER = {
+    male:   { factorY: 0.71, sideShrink: 0.20 },
+    female: { factorY: 0.66, sideShrink: 0.20 },
+  } as const;
+  const { factorY: KNOCKOUT_FACTOR_Y, sideShrink: KNOCKOUT_SIDE_SHRINK } = KNOCKOUT_BY_GENDER[gender];
   let headKnockout: ResolvedAvatar["headKnockout"] = null;
   if (equipped.head) {
     const headAnchor = anchors.head;
