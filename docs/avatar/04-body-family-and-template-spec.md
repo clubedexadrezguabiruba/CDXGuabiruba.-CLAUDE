@@ -124,10 +124,10 @@ Cada slot tem uma região no canvas onde seu asset é renderizado. As coordenada
 
 Quando head está equipado, o body recebe clipPath que recorta a região da cabeça/cabelo, evitando vazamento atrás do head_swap.
 
-| Parâmetro | Male (validado) | Female (pendente) | Descrição |
+| Parâmetro | Male (validado) | Female (validado) | Descrição |
 |-----------|----------------|-------------------|-----------|
-| `KNOCKOUT_FACTOR_Y` | 0.71 | 0.71 (ajustar após validação) | Fração vertical da head region a recortar do topo |
-| `KNOCKOUT_SIDE_SHRINK` | 0.20 | 0.20 (ajustar após validação) | Fração lateral extra a recortar de cada lado |
+| `KNOCKOUT_FACTOR_Y` | 0.71 | 0.66 | Fração vertical da head region a recortar do topo |
+| `KNOCKOUT_SIDE_SHRINK` | 0.20 | 0.20 | Fração lateral extra a recortar de cada lado |
 
 **Regra**: Valores derivados da head anchor region, aplicados per-gender. Sem head equipado, body aparece completo (sem clipPath).
 
