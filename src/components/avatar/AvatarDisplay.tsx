@@ -94,8 +94,10 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
               motionProfile={hand.motionProfile}
               animated={animated}
               zIndex={Z_INDEX.hand}
-              containerW={cfg.w * bodyScale}
-              containerH={cfg.h * bodyScale}
+              canvasW={cfg.w}
+              canvasH={cfg.h}
+              rootOffsetTop={cfg.h * (1 - bodyScale)}
+              rootOffsetLeft={(cfg.w - cfg.w * bodyScale) / 2}
             >
               <AvatarLayer
                 src={hand.src}
@@ -113,8 +115,10 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
               motionProfile={head.motionProfile}
               animated={animated}
               zIndex={Z_INDEX.head}
-              containerW={cfg.w * bodyScale}
-              containerH={cfg.h * bodyScale}
+              canvasW={cfg.w}
+              canvasH={cfg.h}
+              rootOffsetTop={cfg.h * (1 - bodyScale)}
+              rootOffsetLeft={(cfg.w - cfg.w * bodyScale) / 2}
             >
               <AvatarLayer
                 src={head.src}
@@ -166,26 +170,37 @@ function MotionAnchor({
   motionProfile,
   animated,
   zIndex,
-  containerW,
-  containerH,
+  canvasW,
+  canvasH,
+  rootOffsetTop,
+  rootOffsetLeft,
   children,
 }: {
   anchor: AnchorProfile;
   motionProfile: MotionProfile | null;
   animated: boolean;
   zIndex: number;
-  containerW: number;
-  containerH: number;
+  canvasW: number;
+  canvasH: number;
+  rootOffsetTop: number;
+  rootOffsetLeft: number;
   children: React.ReactNode;
 }) {
+  // Anchors são frações do canvas (400×560), mas este div está dentro do
+  // character-root (93% do canvas, bottom-anchored). Converter canvas→root:
+  const top = canvasH * anchor.top - rootOffsetTop;
+  const left = canvasW * anchor.left - rootOffsetLeft;
+  const width = canvasW * anchor.width;
+  const height = canvasH * anchor.height;
+
   return (
     <motion.div
       className="absolute"
       style={{
-        top: `${containerH * anchor.top}px`,
-        left: `${containerW * anchor.left}px`,
-        width: containerW * anchor.width,
-        height: containerH * anchor.height,
+        top: `${top}px`,
+        left: `${left}px`,
+        width,
+        height,
         transformOrigin: anchor.origin,
         zIndex,
       }}
