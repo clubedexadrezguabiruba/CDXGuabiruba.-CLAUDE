@@ -29,7 +29,7 @@ interface AvatarDisplayProps {
  */
 export default function AvatarDisplay({ equipped, avatarBase = "male", size = "lg" }: AvatarDisplayProps) {
   const resolved = resolveAvatar(equipped, avatarBase, size);
-  const { sizeConfig: cfg, animated, bodySrc, bodyScale, globalMotion, layers, headKnockoutInsetTop } = resolved;
+  const { sizeConfig: cfg, animated, bodySrc, bodyScale, globalMotion, layers, headKnockout } = resolved;
 
   const bg = layers.background;
   const head = layers.head;
@@ -87,8 +87,8 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
             src={bodySrc}
             alt="Avatar"
             className="absolute inset-0 h-full w-full object-contain"
-            style={headKnockoutInsetTop != null ? {
-              clipPath: `inset(${(headKnockoutInsetTop * 100).toFixed(1)}% 0 0 0)`,
+            style={headKnockout != null ? {
+              clipPath: `inset(${(headKnockout.top * 100).toFixed(1)}% ${(headKnockout.right * 100).toFixed(1)}% 0 ${(headKnockout.left * 100).toFixed(1)}%)`,
             } : undefined}
           />
 

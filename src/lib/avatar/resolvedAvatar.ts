@@ -61,13 +61,16 @@ export interface ResolvedAvatar {
   /** Layers resolvidos por slot */
   layers: Partial<Record<AvatarSlot, ResolvedLayer>>;
   /**
-   * Head knockout: fração do topo do character-root a recortar quando
-   * head está equipado. Derivado do bottom da head anchor region.
-   * Usado como clipPath inset para esconder cabelo/cabeça da base
-   * que ficaria visível atrás do head_swap.
+   * Head knockout: clipPath inset para recortar cabeça/cabelo da base
+   * quando head está equipado. Derivado da head anchor region.
+   * Esconde cabelo que vazaria atrás do head_swap.
    * null quando head não está equipado (body aparece completo).
    */
-  headKnockoutInsetTop: number | null;
+  headKnockout: {
+    top: number;   // fração do topo a recortar
+    left: number;  // fração da esquerda a recortar
+    right: number; // fração da direita a recortar
+  } | null;
 }
 
 // --- Motion profile por slot ---
@@ -146,22 +149,33 @@ export function resolveAvatar(
     };
   }
 
-  // Head knockout mask: quando head equipado, calcula fração do topo do
-  // character-root a recortar. Recorta apenas a parte SUPERIOR da head region
-  // (onde fica o cabelo), preservando a parte inferior (pescoço/queixo).
-  // Fator 0.5 = corta metade da head region de cima. Conservador para não
-  // criar gap entre head_swap e body no pescoço.
-  const KNOCKOUT_FACTOR = 0.5;
-  let headKnockoutInsetTop: number | null = null;
+  // Head knockout mask: quando head equipado, calcula clipPath inset para
+  // recortar cabelo/cabeça da base. Derivado da head anchor region.
+  // KNOCKOUT_FACTOR_Y: fração vertical da head region a recortar (0.58 = topo 58%)
+  // KNOCKOUT_SIDE_SHRINK: fração lateral extra a recortar além da head region
+  const KNOCKOUT_FACTOR_Y = 0.58;
+  const KNOCKOUT_SIDE_SHRINK = 0.12; // 12% extra de cada lado
+  let headKnockout: ResolvedAvatar["headKnockout"] = null;
   if (equipped.head) {
     const headAnchor = anchors.head;
+    const canvasW = sizeConfig.w;
     const canvasH = sizeConfig.h;
+    const rootW = canvasW * bodyFamily.body.scale;
     const rootH = canvasH * bodyFamily.body.scale;
     const rootOffsetTop = canvasH * (1 - bodyFamily.body.scale);
-    // Corta até metade da head region (top + height * factor)
-    const knockoutCanvas = canvasH * (headAnchor.top + headAnchor.height * KNOCKOUT_FACTOR);
-    const knockoutInRoot = (knockoutCanvas - rootOffsetTop) / rootH;
-    headKnockoutInsetTop = Math.max(0, knockoutInRoot);
+    const rootOffsetLeft = (canvasW - rootW) / 2;
+
+    // Vertical: corta do topo até 58% da head region
+    const knockoutCanvasY = canvasH * (headAnchor.top + headAnchor.height * KNOCKOUT_FACTOR_Y);
+    const knockoutTop = Math.max(0, (knockoutCanvasY - rootOffsetTop) / rootH);
+
+    // Lateral: usa os limites da head region + shrink extra
+    const headLeftCanvas = canvasW * headAnchor.left;
+    const headRightCanvas = canvasW * (headAnchor.left + headAnchor.width);
+    const knockoutLeft = Math.max(0, (headLeftCanvas - rootOffsetLeft + canvasW * KNOCKOUT_SIDE_SHRINK) / rootW);
+    const knockoutRight = Math.max(0, (rootW - (headRightCanvas - rootOffsetLeft) + canvasW * KNOCKOUT_SIDE_SHRINK) / rootW);
+
+    headKnockout = { top: knockoutTop, left: knockoutLeft, right: knockoutRight };
   }
 
   return {
@@ -173,6 +187,6 @@ export function resolveAvatar(
     globalMotion: GLOBAL_IDLE,
     bodyScale: bodyFamily.body.scale,
     layers,
-    headKnockoutInsetTop,
+    headKnockout,
   };
 }
