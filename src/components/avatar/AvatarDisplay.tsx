@@ -115,25 +115,29 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
           )}
 
           {/* z:4 — Head (LOCAL tilt, aditivo ao global) */}
-          {head?.src && (
-            <MotionAnchor
-              anchor={head.anchor as AnchorProfile}
-              motionProfile={head.motionProfile}
-              animated={animated}
-              zIndex={Z_INDEX.head}
-              canvasW={cfg.w}
-              canvasH={cfg.h}
-              rootOffsetTop={cfg.h * (1 - bodyScale)}
-              rootOffsetLeft={(cfg.w - cfg.w * bodyScale) / 2}
-            >
-              <AvatarLayer
-                src={head.src}
-                alt="Head"
-                className="h-full w-full"
-                style={{}}
-              />
-            </MotionAnchor>
-          )}
+          {head?.src && (() => {
+            const headAnchor = head.anchor as AnchorProfile;
+            const headScale = headAnchor.scale ?? 1;
+            return (
+              <MotionAnchor
+                anchor={headAnchor}
+                motionProfile={head.motionProfile}
+                animated={animated}
+                zIndex={Z_INDEX.head}
+                canvasW={cfg.w}
+                canvasH={cfg.h}
+                rootOffsetTop={cfg.h * (1 - bodyScale)}
+                rootOffsetLeft={(cfg.w - cfg.w * bodyScale) / 2}
+              >
+                <AvatarLayer
+                  src={head.src}
+                  alt="Head"
+                  className="h-full w-full"
+                  style={headScale !== 1 ? { transform: `scale(${headScale})` } : {}}
+                />
+              </MotionAnchor>
+            );
+          })()}
         </motion.div>
 
         {/* z:5 — Pet (FORA do character-root, companion independente) */}

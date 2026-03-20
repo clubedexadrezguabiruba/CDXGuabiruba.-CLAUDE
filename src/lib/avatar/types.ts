@@ -43,6 +43,7 @@ export interface AnchorProfile {
   width: number;
   height: number;
   origin: string; // CSS transform-origin (ex: "bottom center")
+  scale?: number; // Escala do asset dentro da região (default 1.0). Reduz tamanho visual sem mudar posição.
 }
 
 /** Posicionamento especial do pet (bottom/right em vez de top/left) */

@@ -42,6 +42,7 @@ export const RECRUTA_V1: BodyFamilyDefinition = {
         width: 0.8,
         height: 0.215,
         origin: "bottom center",
+        scale: 0.92,
       },
       hand: {
         top: 0.32,
