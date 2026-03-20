@@ -417,7 +417,7 @@ export default function PerfilClient({
                         onClick={handleSwitchAvatar}
                         disabled={switchingAvatar || loading}
                         title="Trocar aparência"
-                        className="absolute -top-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-amber-600 text-white shadow-lg transition-all hover:scale-110 hover:bg-amber-700 disabled:opacity-40"
+                        className="absolute -top-1 -right-1 z-20 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-amber-600 text-white shadow-lg transition-all hover:scale-110 hover:bg-amber-700 disabled:opacity-40"
                       >
                         {switchingAvatar ? (
                           <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -438,7 +438,7 @@ export default function PerfilClient({
                         onClick={handleSwitchAvatar}
                         disabled={switchingAvatar || loading}
                         title="Trocar aparência"
-                        className="absolute -top-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-amber-600 text-white shadow-lg transition-all hover:scale-110 hover:bg-amber-700 disabled:opacity-40"
+                        className="absolute -top-2 -right-2 z-20 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-amber-600 text-white shadow-lg transition-all hover:scale-110 hover:bg-amber-700 disabled:opacity-40"
                       >
                         {switchingAvatar ? (
                           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
