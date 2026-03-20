@@ -8,6 +8,7 @@ import type { Easing } from "motion/react";
 import { resolveAvatar } from "@/lib/avatar/resolvedAvatar";
 import { Z_INDEX } from "@/lib/avatar/constants";
 import { getFrameStyle, FRAME_BORDER_WIDTH } from "@/lib/avatar/frameStyles";
+import { baseSkinPath } from "@/lib/avatar/fallbacks";
 
 // Backward-compatible re-export — call sites importam AvatarBase daqui
 export type AvatarBase = "male" | "female";
@@ -82,14 +83,10 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
           {/* z:1 — Body (base skin ou dressed_base) */}
           {/* Knockout mask: quando head equipado, recorta topo do body para esconder */}
           {/* cabelo/cabeça da base que vazaria atrás do head_swap */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <BodyImage
             src={bodySrc}
-            alt="Avatar"
-            className="absolute inset-0 h-full w-full object-contain"
-            style={headKnockout != null ? {
-              clipPath: `inset(${(headKnockout.top * 100).toFixed(1)}% ${(headKnockout.right * 100).toFixed(1)}% 0 ${(headKnockout.left * 100).toFixed(1)}%)`,
-            } : undefined}
+            fallbackSrc={baseSkinPath(avatarBase)}
+            headKnockout={headKnockout}
           />
 
           {/* z:3 — Prop/Hand (forearm_prop: sem motion local, herda apenas global) */}
@@ -225,6 +222,44 @@ function MotionAnchor({
     >
       {children}
     </motion.div>
+  );
+}
+
+// ============================================================
+// AvatarLayer — img wrapper com fallback de erro
+// ============================================================
+// BodyImage — body com fallback runtime para base skin
+// Se bodySrc (dressed_base) retornar 404, cai para base skin.
+// Knockout mask só aplica quando body carregou com sucesso.
+// ============================================================
+function BodyImage({
+  src,
+  fallbackSrc,
+  headKnockout,
+}: {
+  src: string;
+  fallbackSrc: string;
+  headKnockout: { top: number; left: number; right: number } | null;
+}) {
+  const [useFallback, setUseFallback] = useState(false);
+  const activeSrc = useFallback ? fallbackSrc : src;
+
+  // Knockout só aplica se body carregou (não fallback por 404)
+  const applyKnockout = headKnockout != null && !useFallback;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={activeSrc}
+      alt="Avatar"
+      className="absolute inset-0 h-full w-full object-contain"
+      style={applyKnockout ? {
+        clipPath: `inset(${(headKnockout.top * 100).toFixed(1)}% ${(headKnockout.right * 100).toFixed(1)}% 0 ${(headKnockout.left * 100).toFixed(1)}%)`,
+      } : undefined}
+      onError={() => {
+        if (!useFallback) setUseFallback(true);
+      }}
+    />
   );
 }
 

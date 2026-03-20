@@ -149,35 +149,26 @@ export function resolveAvatar(
     };
   }
 
-  // Head knockout mask: quando head equipado, calcula clipPath inset para
-  // recortar cabelo/cabeça da base. Derivado da head anchor region.
-  // Valores validados visualmente por gênero.
+  // Head knockout mask: quando head equipado, recorta cabelo/cabeça da base.
+  // Vertical: derivado da head anchor region × factorY (validado visualmente).
+  // Lateral: inset fixo pequeno (5%) — suficiente para cobrir cabelo espetado.
   const KNOCKOUT_BY_GENDER = {
-    male:   { factorY: 0.71, sideShrink: 0.20 },
-    female: { factorY: 0.66, sideShrink: 0.20 },
+    male:   { factorY: 0.71, side: 0.05 },
+    female: { factorY: 0.66, side: 0.05 },
   } as const;
-  const { factorY: KNOCKOUT_FACTOR_Y, sideShrink: KNOCKOUT_SIDE_SHRINK } = KNOCKOUT_BY_GENDER[gender];
   let headKnockout: ResolvedAvatar["headKnockout"] = null;
   if (equipped.head) {
+    const { factorY, side } = KNOCKOUT_BY_GENDER[gender];
     const headAnchor = anchors.head;
-    const canvasW = sizeConfig.w;
     const canvasH = sizeConfig.h;
-    const rootW = canvasW * bodyFamily.body.scale;
     const rootH = canvasH * bodyFamily.body.scale;
     const rootOffsetTop = canvasH * (1 - bodyFamily.body.scale);
-    const rootOffsetLeft = (canvasW - rootW) / 2;
 
-    // Vertical: corta do topo até 58% da head region
-    const knockoutCanvasY = canvasH * (headAnchor.top + headAnchor.height * KNOCKOUT_FACTOR_Y);
+    // Vertical: corta do topo até factorY% da head region
+    const knockoutCanvasY = canvasH * (headAnchor.top + headAnchor.height * factorY);
     const knockoutTop = Math.max(0, (knockoutCanvasY - rootOffsetTop) / rootH);
 
-    // Lateral: usa os limites da head region + shrink extra
-    const headLeftCanvas = canvasW * headAnchor.left;
-    const headRightCanvas = canvasW * (headAnchor.left + headAnchor.width);
-    const knockoutLeft = Math.max(0, (headLeftCanvas - rootOffsetLeft + canvasW * KNOCKOUT_SIDE_SHRINK) / rootW);
-    const knockoutRight = Math.max(0, (rootW - (headRightCanvas - rootOffsetLeft) + canvasW * KNOCKOUT_SIDE_SHRINK) / rootW);
-
-    headKnockout = { top: knockoutTop, left: knockoutLeft, right: knockoutRight };
+    headKnockout = { top: knockoutTop, left: side, right: side };
   }
 
   return {
