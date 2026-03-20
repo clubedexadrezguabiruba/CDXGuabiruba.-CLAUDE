@@ -29,7 +29,7 @@ interface AvatarDisplayProps {
  */
 export default function AvatarDisplay({ equipped, avatarBase = "male", size = "lg" }: AvatarDisplayProps) {
   const resolved = resolveAvatar(equipped, avatarBase, size);
-  const { sizeConfig: cfg, animated, bodySrc, bodyScale, globalMotion, layers } = resolved;
+  const { sizeConfig: cfg, animated, bodySrc, bodyScale, globalMotion, layers, headKnockoutInsetTop } = resolved;
 
   const bg = layers.background;
   const head = layers.head;
@@ -80,11 +80,16 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
           } : {})}
         >
           {/* z:1 — Body (base skin ou dressed_base) */}
+          {/* Knockout mask: quando head equipado, recorta topo do body para esconder */}
+          {/* cabelo/cabeça da base que vazaria atrás do head_swap */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={bodySrc}
             alt="Avatar"
             className="absolute inset-0 h-full w-full object-contain"
+            style={headKnockoutInsetTop != null ? {
+              clipPath: `inset(${(headKnockoutInsetTop * 100).toFixed(1)}% 0 0 0)`,
+            } : undefined}
           />
 
           {/* z:3 — Prop/Hand (forearm_prop: sem motion local, herda apenas global) */}

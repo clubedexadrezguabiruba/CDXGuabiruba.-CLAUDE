@@ -60,6 +60,14 @@ export interface ResolvedAvatar {
   bodyScale: number;
   /** Layers resolvidos por slot */
   layers: Partial<Record<AvatarSlot, ResolvedLayer>>;
+  /**
+   * Head knockout: fração do topo do character-root a recortar quando
+   * head está equipado. Derivado do bottom da head anchor region.
+   * Usado como clipPath inset para esconder cabelo/cabeça da base
+   * que ficaria visível atrás do head_swap.
+   * null quando head não está equipado (body aparece completo).
+   */
+  headKnockoutInsetTop: number | null;
 }
 
 // --- Motion profile por slot ---
@@ -138,6 +146,22 @@ export function resolveAvatar(
     };
   }
 
+  // Head knockout mask: quando head equipado, calcula fração do topo do
+  // character-root a recortar. Derivado do bottom da head anchor region.
+  // Em coordenadas do character-root (não do canvas).
+  let headKnockoutInsetTop: number | null = null;
+  if (equipped.head) {
+    const headAnchor = anchors.head;
+    const canvasH = sizeConfig.h;
+    const rootH = canvasH * bodyFamily.body.scale;
+    const rootOffsetTop = canvasH * (1 - bodyFamily.body.scale);
+    // Bottom da head region em pixels do canvas
+    const headBottomCanvas = canvasH * (headAnchor.top + headAnchor.height);
+    // Converter para fração do character-root
+    const headBottomInRoot = (headBottomCanvas - rootOffsetTop) / rootH;
+    headKnockoutInsetTop = Math.max(0, headBottomInRoot);
+  }
+
   return {
     bodySrc,
     gender,
@@ -147,5 +171,6 @@ export function resolveAvatar(
     globalMotion: GLOBAL_IDLE,
     bodyScale: bodyFamily.body.scale,
     layers,
+    headKnockoutInsetTop,
   };
 }
