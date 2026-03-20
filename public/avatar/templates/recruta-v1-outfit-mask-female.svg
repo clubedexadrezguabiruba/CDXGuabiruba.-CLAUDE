@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="400" height="560">
+  <title>Recruta V1 — Outfit Mask (female / dressed_base)</title>
+  <defs>
+    <style>
+      .canvas { fill: #f5f5f5; stroke: #ccc; stroke-width: 1; }
+      .body-region { fill: rgba(100,180,255,0.15); stroke: #4a90d9; stroke-width: 2; }
+      .head-safe { fill: none; stroke: #e74c3c; stroke-width: 1; stroke-dasharray: 4,3; }
+      .hand-safe { fill: none; stroke: #27ae60; stroke-width: 1; stroke-dasharray: 4,3; }
+      .ground-line { stroke: #8b4513; stroke-width: 1.5; stroke-dasharray: 10,5; }
+      .label { font-family: sans-serif; font-size: 11px; font-weight: bold; fill: #4a90d9; }
+      .note { font-family: sans-serif; font-size: 9px; fill: #666; }
+      .warn { font-family: sans-serif; font-size: 9px; fill: #e74c3c; }
+    </style>
+  </defs>
+
+  <!-- Canvas background -->
+  <rect x="0" y="0" width="400" height="560" class="canvas" />
+
+  <!-- Body / Outfit region: 93% canvas, bottom-anchored -->
+  <rect x="14" y="39.2" width="372" height="520.8" class="body-region" rx="4" />
+
+  <!-- Ground line -->
+  <line x1="0" y1="532" x2="400" y2="532" class="ground-line" />
+
+  <!-- Head safe zone female (wider) -->
+  <rect x="15.6" y="54.9" width="368" height="128.8" class="head-safe" rx="4" />
+
+  <!-- Hand safe zone -->
+  <rect x="68" y="179.2" width="100" height="140" class="hand-safe" rx="4" />
+
+  <!-- Labels -->
+  <text x="200" y="30" text-anchor="middle" class="label">OUTFIT REGION (female / dressed_base)</text>
+
+  <text x="200" y="115" text-anchor="middle" class="warn">Head safe zone (female) — wider for longer hair</text>
+  <text x="118" y="248" text-anchor="middle" class="warn">Hand safe — keep arm accessible</text>
+
+  <text x="200" y="450" text-anchor="middle" class="note">Asset canvas: 400×600 (runtime) / 800×1200 (production)</text>
+  <text x="200" y="465" text-anchor="middle" class="note">Same pose, same proportions, feet at bottom edge</text>
+  <text x="200" y="480" text-anchor="middle" class="note">dressed_base = same character, wearing the outfit</text>
+
+  <text x="395" y="528" text-anchor="end" class="note" fill="#8b4513">Ground Line (95%)</text>
+</svg>

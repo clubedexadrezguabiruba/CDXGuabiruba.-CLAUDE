@@ -1,142 +1,210 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 import type { EquippedMap } from "@/types/inventory";
-import { RARITY_STYLES } from "@/lib/constants/items";
+import type { AnchorProfile, PetAnchor, MotionProfile } from "@/lib/avatar/types";
+import type { Easing } from "motion/react";
+import { resolveAvatar } from "@/lib/avatar/resolvedAvatar";
+import { Z_INDEX } from "@/lib/avatar/constants";
+import { getFrameStyle, FRAME_BORDER_WIDTH } from "@/lib/avatar/frameStyles";
+
+// Backward-compatible re-export — call sites importam AvatarBase daqui
+export type AvatarBase = "male" | "female";
 
 interface AvatarDisplayProps {
   equipped: EquippedMap;
-  size?: "sm" | "md" | "lg";
+  avatarBase?: AvatarBase;
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
-const SIZE_CONFIG = {
-  sm: { w: 56, h: 78, petSize: 24 },
-  md: { w: 100, h: 140, petSize: 40 },
-  lg: { w: 200, h: 280, petSize: 80 },
-} as const;
-
 /**
- * Avatar vestível com camadas sobrepostas por slot.
- * Renderiza background (z:0) → base (z:1) → outfit (z:2) → hand (z:3) → head (z:4) → frame (z:5).
- * Pet é renderizado fora do container principal, ao lado.
+ * Avatar vestível com character-root motion group.
+ *
+ * Arquitetura (doc 03):
+ * - background: FORA do character-root (cenário estático)
+ * - character-root: motion.div com breathing global (body + head + hand)
+ * - pet: FORA do character-root (companion independente)
+ * - frame: CSS decorativo (border + glow por rarity), fora do render stack
  */
-export default function AvatarDisplay({ equipped, size = "lg" }: AvatarDisplayProps) {
-  const cfg = SIZE_CONFIG[size];
-  const frameStyle = equipped.frame ? RARITY_STYLES[equipped.frame.rarity] : null;
+export default function AvatarDisplay({ equipped, avatarBase = "male", size = "lg" }: AvatarDisplayProps) {
+  const resolved = resolveAvatar(equipped, avatarBase, size);
+  const { sizeConfig: cfg, animated, bodySrc, bodyScale, globalMotion, layers } = resolved;
+
+  const bg = layers.background;
+  const head = layers.head;
+  const hand = layers.hand;
+  const pet = layers.pet;
+
+  // Frame: CSS decorativo por rarity (border + glow)
+  const frameItem = equipped.frame;
+  const frameStyle = frameItem ? getFrameStyle(frameItem.rarity) : null;
+  const frameBorderWidth = FRAME_BORDER_WIDTH[size];
 
   return (
     <div className="flex items-end gap-2">
       {/* Avatar container */}
       <div
         className={`relative shrink-0 overflow-hidden rounded-xl shadow-sm ${
-          !equipped.background ? "bg-linear-to-b from-zinc-100 to-zinc-200" : ""
+          !bg?.src ? "bg-linear-to-b from-zinc-100 to-zinc-200" : ""
         }`}
         style={{ width: cfg.w, height: cfg.h }}
       >
-        {/* z:0 — Background */}
-        {equipped.background && (
+        {/* z:0 — Background (FORA do character-root) */}
+        {bg?.src && (
           <AvatarLayer
-            src={equipped.background.image_url}
-            alt={equipped.background.name}
+            src={bg.src}
+            alt="Background"
             className="absolute inset-0 z-0 rounded-xl"
             style={{ width: cfg.w, height: cfg.h }}
           />
         )}
 
-        {/* z:1 — Avatar base (sempre visível) */}
-        <div className="absolute inset-0 z-1 flex items-center justify-center">
+        {/* CHARACTER ROOT — motion.div com breathing global */}
+        {/* Head e hand são filhos: herdam o transform via CSS composition */}
+        <motion.div
+          className="absolute bottom-0 z-1"
+          style={{
+            width: cfg.w * bodyScale,
+            height: cfg.h * bodyScale,
+            left: (cfg.w - cfg.w * bodyScale) / 2,
+            transformOrigin: globalMotion.origin,
+          }}
+          {...(animated ? {
+            animate: globalMotion.animate,
+            transition: {
+              duration: globalMotion.duration,
+              repeat: Infinity,
+              ease: globalMotion.ease as Easing,
+            },
+          } : {})}
+        >
+          {/* z:1 — Body (base skin ou dressed_base) */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/items/base/avatar-base.png"
+            src={bodySrc}
             alt="Avatar"
-            className="h-full w-full object-contain"
-            style={{ width: cfg.w, height: cfg.h }}
+            className="absolute inset-0 h-full w-full object-contain"
           />
-        </div>
 
-        {/* z:2 — Outfit */}
-        {equipped.outfit && (
-          <AvatarLayer
-            src={equipped.outfit.image_url}
-            alt={equipped.outfit.name}
-            className="absolute z-2"
-            style={{
-              top: `${cfg.h * 0.35}px`,
-              left: `${cfg.w * 0.15}px`,
-              width: cfg.w * 0.7,
-              height: cfg.h * 0.57,
-            }}
-          />
-        )}
+          {/* z:3 — Hand (LOCAL swing, aditivo ao global) */}
+          {hand?.src && (
+            <MotionAnchor
+              anchor={hand.anchor as AnchorProfile}
+              motionProfile={hand.motionProfile}
+              animated={animated}
+              zIndex={Z_INDEX.hand}
+              containerW={cfg.w * bodyScale}
+              containerH={cfg.h * bodyScale}
+            >
+              <AvatarLayer
+                src={hand.src}
+                alt="Hand"
+                className="h-full w-full"
+                style={{}}
+              />
+            </MotionAnchor>
+          )}
 
-        {/* z:3 — Hand */}
-        {equipped.hand && (
-          <AvatarLayer
-            src={equipped.hand.image_url}
-            alt={equipped.hand.name}
-            className="absolute z-3"
-            style={{
-              top: `${cfg.h * 0.45}px`,
-              right: `${cfg.w * 0.02}px`,
-              width: cfg.w * 0.3,
-              height: cfg.h * 0.28,
-            }}
-          />
-        )}
+          {/* z:4 — Head (LOCAL tilt, aditivo ao global) */}
+          {head?.src && (
+            <MotionAnchor
+              anchor={head.anchor as AnchorProfile}
+              motionProfile={head.motionProfile}
+              animated={animated}
+              zIndex={Z_INDEX.head}
+              containerW={cfg.w * bodyScale}
+              containerH={cfg.h * bodyScale}
+            >
+              <AvatarLayer
+                src={head.src}
+                alt="Head"
+                className="h-full w-full"
+                style={{}}
+              />
+            </MotionAnchor>
+          )}
+        </motion.div>
 
-        {/* z:4 — Head */}
-        {equipped.head && (
-          <AvatarLayer
-            src={equipped.head.image_url}
-            alt={equipped.head.name}
-            className="absolute z-4"
-            style={{
-              top: 0,
-              left: `${cfg.w * 0.25}px`,
-              width: cfg.w * 0.5,
-              height: cfg.h * 0.22,
-            }}
-          />
-        )}
-
-        {/* z:5 — Frame */}
-        {equipped.frame && (
+        {/* z:5 — Pet (FORA do character-root, companion independente) */}
+        {pet?.src && (
           <div
-            className={`pointer-events-none absolute z-5 ${frameStyle?.glow ?? ""}`}
+            className="absolute z-5"
             style={{
-              top: `${-cfg.h * 0.036}px`,
-              left: `${-cfg.w * 0.05}px`,
-              width: cfg.w * 1.1,
-              height: cfg.h * 1.07,
+              bottom: `${cfg.h * (pet.anchor as PetAnchor).bottom}px`,
+              right: `${-cfg.w * Math.abs((pet.anchor as PetAnchor).right)}px`,
+              width: cfg.petSize * (pet.anchor as PetAnchor).sizeMultiplier,
+              height: cfg.petSize * (pet.anchor as PetAnchor).sizeMultiplier,
             }}
           >
-            <AvatarLayer
-              src={equipped.frame.image_url}
-              alt={equipped.frame.name}
-              className="h-full w-full"
-              style={{}}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={animated && pet.animatedSrc ? pet.animatedSrc : pet.src}
+              alt="Pet"
+              className="h-full w-full object-contain"
             />
           </div>
         )}
-      </div>
 
-      {/* Pet — fora do container, ao lado */}
-      {equipped.pet && (
-        <div className="shrink-0" style={{ width: cfg.petSize, height: cfg.petSize }}>
-          <AvatarLayer
-            src={equipped.pet.image_url}
-            alt={equipped.pet.name}
-            className="h-full w-full"
-            style={{}}
+        {/* z:10 — Frame (CSS decorativo, FORA do render stack) */}
+        {frameStyle && (
+          <div
+            className={`absolute inset-0 rounded-xl border-solid pointer-events-none ${frameStyle.borderClass} ${frameStyle.glowClass}`}
+            style={{ borderWidth: frameBorderWidth, zIndex: Z_INDEX.frame }}
           />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
 // ============================================================
-// Componente interno para camadas com fallback
+// MotionAnchor — posiciona um slot via AnchorProfile + animação local
+// ============================================================
+function MotionAnchor({
+  anchor,
+  motionProfile,
+  animated,
+  zIndex,
+  containerW,
+  containerH,
+  children,
+}: {
+  anchor: AnchorProfile;
+  motionProfile: MotionProfile | null;
+  animated: boolean;
+  zIndex: number;
+  containerW: number;
+  containerH: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      className="absolute"
+      style={{
+        top: `${containerH * anchor.top}px`,
+        left: `${containerW * anchor.left}px`,
+        width: containerW * anchor.width,
+        height: containerH * anchor.height,
+        transformOrigin: anchor.origin,
+        zIndex,
+      }}
+      {...(animated && motionProfile ? {
+        animate: motionProfile.animate,
+        transition: {
+          duration: motionProfile.duration,
+          repeat: Infinity,
+          ease: motionProfile.ease as Easing,
+        },
+      } : {})}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ============================================================
+// AvatarLayer — img wrapper com fallback de erro
 // ============================================================
 function AvatarLayer({
   src,
