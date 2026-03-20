@@ -65,7 +65,7 @@ export interface ResolvedAvatar {
 // --- Motion profile por slot ---
 
 const SLOT_MOTION: Partial<Record<AvatarSlot, MotionProfile>> = {
-  hand: HAND_SWING,
+  // hand: sem motion local — forearm_prop herda apenas global (braço relaxado)
   head: HEAD_TILT,
 };
 

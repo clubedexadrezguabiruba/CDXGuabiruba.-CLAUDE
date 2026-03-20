@@ -34,7 +34,7 @@ export const SLOT_DEFINITIONS: SlotDefinition[] = [
     zIndex: Z_INDEX.hand,
     requiresGenderVariant: false,
     insideCharacterRoot: true,
-    localAnimation: "local",
+    localAnimation: "none", // forearm_prop: herda global, sem motion local (braço relaxado)
     hasAnimatedVariant: false,
   },
   {

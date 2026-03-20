@@ -87,11 +87,12 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
             className="absolute inset-0 h-full w-full object-contain"
           />
 
-          {/* z:3 — Hand (LOCAL swing, aditivo ao global) */}
+          {/* z:3 — Prop/Hand (forearm_prop: sem motion local, herda apenas global) */}
+          {/* Motion local removida: braço relaxado não sustenta swing de item */}
           {hand?.src && (
             <MotionAnchor
               anchor={hand.anchor as AnchorProfile}
-              motionProfile={hand.motionProfile}
+              motionProfile={null}
               animated={animated}
               zIndex={Z_INDEX.hand}
               canvasW={cfg.w}

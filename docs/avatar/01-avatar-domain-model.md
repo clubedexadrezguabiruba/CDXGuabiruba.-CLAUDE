@@ -85,7 +85,7 @@ user
 |------|-----------|-------------|------------------------|
 | `background` | Cenário atrás do personagem | `underlay` | Não |
 | `outfit` | Roupa/armadura — mesmo corpo vestido | `dressed_base` | Sim (male/female) |
-| `hand` | Item segurado na mão | `overlay` | Não |
+| `hand` | Prop/item junto ao corpo (forearm_prop) | `overlay` | Não |
 | `head` | Cabeça redesenhada com acessório | `head_swap` | Sim (male/female) |
 | `pet` | Companion ao lado do personagem | `companion` | Não |
 | `frame` | Moldura decorativa ao redor do avatar | `frame_ui` | Não |
@@ -128,9 +128,21 @@ user
 - **Variantes**: Requer versão male e female (`{slug}-swap-male.png`, `{slug}-swap-female.png`).
 
 #### `overlay`
-- **Usado por**: hand
-- **Comportamento**: Imagem sobreposta ao corpo na posição definida pelo anchor profile. Renderizado sobre o corpo (z:3). Dentro do character root.
+- **Usado por**: hand (prop)
+- **Comportamento**: Imagem sobreposta ao corpo na posição definida pelo anchor profile. Renderizado sobre o corpo (z:3). Dentro do character root. **Sem motion local** — herda apenas o breathing global.
 - **Sem variantes de gênero** — mesmo asset para ambos.
+
+**Conceito: prop (não "item segurado")**
+
+O slot `hand` funciona como **prop** — item visual junto ao corpo. A base tem braços relaxados, não existe mão segurando. Items são classificados por subclasse:
+
+| Subclasse | Descrição | Exemplos | Status |
+|-----------|-----------|----------|--------|
+| `forearm_prop` | Preso ao braço/antebraço | Escudo, braceira, broquel | Liberado |
+| `floating_prop` | Flutuando por magia/tema | Orbe, grimório, peça encantada | Liberado |
+| `held_prop` | Realmente empunhado | Espada, tocha, livro segurado | Bloqueado — requer pose variant `grip` |
+
+**Regra**: Nunca tentar fazer item empunhado parecer correto numa base neutra que não foi desenhada para empunhar. Items `held_prop` só entram quando existir pose variant com braço estendido.
 
 #### `companion`
 - **Usado por**: pet

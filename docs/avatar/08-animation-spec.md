@@ -261,9 +261,11 @@ Valores que não devem ser excedidos sob nenhuma circunstância:
 | Layer | Transform | Valores | Duração | Origin | Easing |
 |-------|-----------|---------|---------|--------|--------|
 | character-root | scaleY + rotate | [1, 1.004, 1] + [-0.3°, 0.3°, -0.3°] | 4s | bottom center | easeInOut |
-| hand | rotate | [-2°, 2°, -2°] | 3s | top center | easeInOut |
+| hand (prop) | (herda global) | — | — | — | — |
 | head | rotate | [-0.5°, 0.5°, -0.5°] | 3.5s | bottom center | easeInOut |
 | pet | baked (APNG) | 240px, 8fps | 10-16s ciclo | — | — |
 | body | (herda global) | — | — | — | — |
 | background | nenhuma | — | — | — | — |
 | frame | nenhuma | — | — | — | — |
+
+> **Hand/prop sem motion local**: Removido porque a base tem braços relaxados — swing local fazia o item parecer adesivo flutuante. Props herdam apenas o breathing global. Motion local para held_prop poderá ser reintroduzida quando existir pose variant `grip`.
