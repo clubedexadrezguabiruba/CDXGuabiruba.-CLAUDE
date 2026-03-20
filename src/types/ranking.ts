@@ -2,6 +2,7 @@ export interface RankingEntry {
   user_id: string;
   public_name: string;
   avatar_config: Record<string, unknown>;
+  avatar_base: string;
   level: number;
   metric_value: number;
   title: string;
@@ -20,6 +21,7 @@ export type RankingType = "rating" | "rush_3min" | "rush_5min" | "level";
 export interface PublicProfileData {
   public_name: string;
   avatar_config: Record<string, unknown>;
+  avatar_base: string;
   level: number;
   xp: number;
   puzzle_rating: number;

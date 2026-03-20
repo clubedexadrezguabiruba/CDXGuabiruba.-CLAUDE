@@ -20,6 +20,7 @@ export interface UserProfile {
   premove_enabled: boolean;
   auto_queen: boolean;
   avatar_config: Record<string, unknown>;
+  avatar_base: string;
   rush_3min_record: number;
   rush_5min_record: number;
   rush_resistencia_record: number;
@@ -50,7 +51,7 @@ export function useUser(): UseUserResult {
         const { data } = await supabase
           .from("users")
           .select(
-            "id, email, name, display_name, role, xp, level, puzzle_rating, puzzle_rd, puzzle_streak, puzzle_best_streak, sound_muted, premove_enabled, auto_queen, avatar_config, rush_3min_record, rush_5min_record, rush_resistencia_record, ranking_visible"
+            "id, email, name, display_name, role, xp, level, puzzle_rating, puzzle_rd, puzzle_streak, puzzle_best_streak, sound_muted, premove_enabled, auto_queen, avatar_config, avatar_base, rush_3min_record, rush_5min_record, rush_resistencia_record, ranking_visible"
           )
           .eq("id", user.id)
           .single();

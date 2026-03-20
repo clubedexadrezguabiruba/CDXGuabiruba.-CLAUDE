@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import AvatarDisplay from "@/components/avatar/AvatarDisplay";
+import type { AvatarBase } from "@/components/avatar/AvatarDisplay";
 import type { PublicProfileData } from "@/types/ranking";
 import type { EquippedMap, ItemSlot, ItemRarity } from "@/types/inventory";
 
@@ -47,7 +48,7 @@ export default function PublicProfileClient({ profile }: Props) {
       {/* Header: Avatar + Info */}
       <div className="mb-6 flex items-start gap-4 rounded-xl border bg-white p-5 shadow-sm">
         <div className="shrink-0">
-          <AvatarDisplay equipped={equipped} size="md" />
+          <AvatarDisplay equipped={equipped} avatarBase={(profile.avatar_base || "male") as AvatarBase} size="md" />
         </div>
 
         <div className="min-w-0 flex-1">

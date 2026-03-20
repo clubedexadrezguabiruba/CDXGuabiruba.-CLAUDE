@@ -27,6 +27,17 @@ export default async function DashboardPage() {
 
   if (!data.user) redirect("/login");
 
+  // Verificar se o aluno já escolheu avatar
+  const { data: avatarCheck } = await supabase
+    .from("users")
+    .select("avatar_chosen")
+    .eq("id", data.user.id)
+    .single();
+
+  if (avatarCheck && !avatarCheck.avatar_chosen) {
+    redirect("/criar-personagem");
+  }
+
   // Buscar título do aluno
   const { data: titleData } = await supabase
     .from("user_titles")
