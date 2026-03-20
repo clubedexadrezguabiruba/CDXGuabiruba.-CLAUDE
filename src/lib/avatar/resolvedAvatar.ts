@@ -22,7 +22,7 @@ import type {
 import { SIZE_CONFIG } from "./constants";
 import { SLOT_DEFINITION_MAP } from "./slotDefinitions";
 import { DEFAULT_BODY_FAMILY } from "./bodyFamilies";
-import { GLOBAL_IDLE, HAND_SWING, HEAD_TILT, isAnimated } from "./animationProfiles";
+import { GLOBAL_IDLE, HEAD_TILT, isAnimated } from "./animationProfiles";
 import { resolveAssetUrl } from "./assetResolver";
 import { baseSkinPath } from "./fallbacks";
 
@@ -147,19 +147,21 @@ export function resolveAvatar(
   }
 
   // Head knockout mask: quando head equipado, calcula fração do topo do
-  // character-root a recortar. Derivado do bottom da head anchor region.
-  // Em coordenadas do character-root (não do canvas).
+  // character-root a recortar. Recorta apenas a parte SUPERIOR da head region
+  // (onde fica o cabelo), preservando a parte inferior (pescoço/queixo).
+  // Fator 0.5 = corta metade da head region de cima. Conservador para não
+  // criar gap entre head_swap e body no pescoço.
+  const KNOCKOUT_FACTOR = 0.5;
   let headKnockoutInsetTop: number | null = null;
   if (equipped.head) {
     const headAnchor = anchors.head;
     const canvasH = sizeConfig.h;
     const rootH = canvasH * bodyFamily.body.scale;
     const rootOffsetTop = canvasH * (1 - bodyFamily.body.scale);
-    // Bottom da head region em pixels do canvas
-    const headBottomCanvas = canvasH * (headAnchor.top + headAnchor.height);
-    // Converter para fração do character-root
-    const headBottomInRoot = (headBottomCanvas - rootOffsetTop) / rootH;
-    headKnockoutInsetTop = Math.max(0, headBottomInRoot);
+    // Corta até metade da head region (top + height * factor)
+    const knockoutCanvas = canvasH * (headAnchor.top + headAnchor.height * KNOCKOUT_FACTOR);
+    const knockoutInRoot = (knockoutCanvas - rootOffsetTop) / rootH;
+    headKnockoutInsetTop = Math.max(0, knockoutInRoot);
   }
 
   return {
