@@ -53,12 +53,14 @@ Todo asset do avatar pertence ao universo do **Reino das 64 Casas**. Independent
 - Terço médio: ambiente (paredes, árvores, mobília)
 - Terço superior: espaço aberto (céu, teto, arco)
 - Ground line a ~95% da altura — o personagem pisa aqui
+- **Zona do pet livre**: O canto inferior direito (~25% da largura, ~25% da altura desde o chão) deve ter chão vazio ou superfície baixa (banquinho, tapete, pedra rasa). Nunca mesa, mobília alta ou objeto que faça o pet parecer "em cima de algo".
 
 **Quando reprovar**:
 - Chão não é sólido (personagem flutuaria)
 - Estilo incompatível (realista, 3D, pixel art)
 - Ratio não é 5:7
 - Elementos que competem visualmente com o personagem (objetos no centro)
+- Mobília ou objetos altos no canto inferior direito (zona do pet)
 
 **Quando usar inpainting**: Para corrigir áreas específicas (ex: adicionar mais chão, remover objeto do centro) sem regenerar tudo.
 

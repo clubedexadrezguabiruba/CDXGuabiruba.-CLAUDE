@@ -150,6 +150,7 @@ Este documento define os checklists operacionais para validar assets antes de de
 | 1 | Chão sólido no terço inferior | REPROVA |
 | 2 | Personagem não ficaria "flutuando" | CORRIGÍVEL (inpainting do chão) |
 | 3 | Sem elementos dominantes no centro (onde o avatar ficará) | CORRIGÍVEL (inpainting) |
+| 4 | Canto inferior direito livre (zona do pet) — sem mesa, mobília alta ou objetos | CORRIGÍVEL (inpainting) |
 | 4 | Estilo consistente com Reino das 64 Casas | REPROVA |
 
 ### Validação técnica
