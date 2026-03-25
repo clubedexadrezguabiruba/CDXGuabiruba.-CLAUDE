@@ -37,7 +37,7 @@ export const RECRUTA_V1: BodyFamilyDefinition = {
   anchors: {
     male: {
       head: {
-        top: 0.095,
+        top: 0.100,
         left: 0.1,
         width: 0.8,
         height: 0.215,
