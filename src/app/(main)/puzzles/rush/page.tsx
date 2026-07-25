@@ -438,8 +438,8 @@ export default function PuzzleRushPage() {
     return (
       <div className="mx-auto max-w-2xl p-4 lg:max-w-5xl">
         <div className="lg:flex lg:gap-6">
-          {/* Left: Board */}
-          <div className="flex-1 space-y-3">
+          {/* Left: Board — `relative` para o banner de tier poder ser overlay */}
+          <div className="relative flex-1 space-y-3">
             {/* Top bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
@@ -486,9 +486,18 @@ export default function PuzzleRushPage() {
               </div>
             </div>
 
-            {/* Tier promotion banner */}
+            {/* Tier promotion banner — OVERLAY, nunca no fluxo.
+                Antes era um bloco no fluxo logo acima do PuzzleBoard: ao
+                aparecer (e 2s depois ao sair) empurrava o tabuleiro para baixo
+                e de volta. O board se movia sob o cursor no exato momento em
+                que o jogador acabara de acertar e ia jogar de novo — e era o
+                que fazia o e2e E1 falhar sempre no puzzle 6 (score = 5, o
+                primeiro limiar de tier).
+                `pointer-events-none` garante que nunca intercepte um clique. */}
             {tierBanner && (
-              <div className={`animate-bounce rounded-lg py-2 text-center text-lg font-bold ${getTier(currentIdx).bg} ${getTier(currentIdx).text}`}>
+              <div
+                className={`pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 animate-bounce rounded-lg px-4 py-2 text-center text-lg font-bold shadow-lg ${getTier(score).bg} ${getTier(score).text}`}
+              >
                 NÍVEL: {tierBanner}!
               </div>
             )}

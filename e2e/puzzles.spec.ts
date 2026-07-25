@@ -985,6 +985,17 @@ test.describe("puzzles — resistência gameplay", () => {
       const puzzle = puzzles![i];
       const moves = parseMoves(puzzle.moves);
 
+      // Antes de jogar, confirmar que o board está MESMO no puzzle i.
+      // solvePuzzle() não valida isso: ele só executa os lances de
+      // puzzles[i]. Se o board estiver noutro puzzle, os lances são
+      // ilegais/errados e o teste morria num timeout genérico esperando
+      // "Correto!", sem dizer em que iteração nem por quê.
+      // O contador da página (rush/page.tsx:508) é a única fonte visível
+      // no DOM do índice atual.
+      await expect(
+        page.getByText(new RegExp(`Puzzle ${i + 1} / \\d+`))
+      ).toBeVisible({ timeout: 10_000 });
+
       // Solve this puzzle
       await solvePuzzle(page, moves, puzzle.fen);
 
