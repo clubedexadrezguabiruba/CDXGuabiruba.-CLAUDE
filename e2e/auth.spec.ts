@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { settleAfterLogin } from "./helpers/auth-helpers";
 
 // Gera credenciais únicas por run para auto-registro
 const TIMESTAMP = Date.now();
@@ -70,7 +71,7 @@ test.describe("fluxo autenticado", () => {
     if (userId) await deleteTestUser(userId);
   });
 
-  test("login exibe dashboard com email e navbar com nível", async ({
+  test("login exibe dashboard com display_name e navbar com nível", async ({
     page,
   }) => {
     await page.goto("/login");
@@ -80,10 +81,17 @@ test.describe("fluxo autenticado", () => {
     await page.click('button[type="submit"]');
 
     // Aguarda redirect para /dashboard
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+    await settleAfterLogin(page);
 
-    // Email visível no dashboard
-    await expect(page.getByText(TEST_EMAIL)).toBeVisible();
+    // A navbar mostra display_name, NÃO o email: o trigger handle_new_user
+    // deriva display_name da parte antes do @ por LGPD
+    // (20260216180500_auth_trigger.sql:19-32). Assertar o email completo
+    // aqui era expectativa obsoleta.
+    const displayName = TEST_EMAIL.split("@")[0];
+    await expect(page.getByText(displayName)).toBeVisible();
+
+    // Email completo não deve aparecer na UI
+    await expect(page.getByText(TEST_EMAIL)).toHaveCount(0);
 
     // Navbar com nível visível (criado pelo trigger)
     await expect(page.getByText("Nv. 1")).toBeVisible();
@@ -97,7 +105,7 @@ test.describe("fluxo autenticado", () => {
     await page.fill('input[type="email"]', TEST_EMAIL);
     await page.fill('input[type="password"]', TEST_PASSWORD);
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+    await settleAfterLogin(page);
 
     // Clica em "Sair" (navbar do layout)
     await page.click('button:has-text("Sair")');

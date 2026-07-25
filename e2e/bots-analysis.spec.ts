@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { settleAfterLogin } from "./helpers/auth-helpers";
 import { makeMove } from "./helpers/chess-helpers";
 
 const TIMESTAMP = Date.now();
@@ -48,7 +49,7 @@ async function login(
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+  await settleAfterLogin(page);
 }
 
 /** Fetch bot IDs from the database */

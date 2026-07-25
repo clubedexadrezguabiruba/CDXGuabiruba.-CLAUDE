@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { settleAfterLogin } from "./helpers/auth-helpers";
 import { Chess } from "chess.js";
 import {
   seedTestPuzzles,
@@ -59,7 +60,7 @@ async function loginUser(
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+  await settleAfterLogin(page);
 }
 
 // ============================================================
@@ -156,7 +157,7 @@ test.describe("puzzles — smoke tests", () => {
     await expect(page.getByText("Puzzle Rush")).toBeVisible();
     await expect(page.getByText("3 Minutos")).toBeVisible();
     await expect(page.getByText("5 Minutos")).toBeVisible();
-    await expect(page.getByText("Iniciar Rush!")).toBeVisible();
+    await expect(page.getByText("Jogar!")).toBeVisible();
   });
 
   test("rush inicia e mostra timer + vidas", async ({ page }) => {
@@ -164,7 +165,7 @@ test.describe("puzzles — smoke tests", () => {
     await page.goto("/puzzles/rush");
 
     await page.click("text=3 Minutos");
-    await page.click("text=Iniciar Rush!");
+    await page.click("text=Jogar!");
 
     await expect(page.locator("svg.fill-red-500").first()).toBeVisible({
       timeout: 15_000,
@@ -561,7 +562,7 @@ test.describe("puzzles — rush gameplay", () => {
     await page.click("text=3 Minutos");
 
     const rpcPromise = interceptRPC(page, "start_rush");
-    await page.click("text=Iniciar Rush!");
+    await page.click("text=Jogar!");
 
     const data = await rpcPromise;
     const puzzles = (data as { puzzles?: unknown[] })?.puzzles;
@@ -591,7 +592,7 @@ test.describe("puzzles — rush gameplay", () => {
     await page.click("text=3 Minutos");
 
     const rpcPromise = interceptRPC(page, "start_rush");
-    await page.click("text=Iniciar Rush!");
+    await page.click("text=Jogar!");
 
     const data = await rpcPromise;
     const puzzles = (
@@ -622,7 +623,7 @@ test.describe("puzzles — rush gameplay", () => {
     await page.click("text=3 Minutos");
 
     const rpcPromise = interceptRPC(page, "start_rush");
-    await page.click("text=Iniciar Rush!");
+    await page.click("text=Jogar!");
 
     const data = await rpcPromise;
     const puzzles = (
@@ -816,7 +817,7 @@ test.describe("puzzles — revanche gameplay", () => {
     // Puzzle should be in the revanche list
     const hasPuzzles = await page
       .locator("button")
-      .filter({ hasText: /Puzzle/ })
+      .filter({ hasText: /Rating \d+/ })
       .count();
     const hasEmptyState = await page
       .getByText("Tudo em dia!")
@@ -914,7 +915,7 @@ test.describe("puzzles — revanche gameplay", () => {
     // The puzzle should appear in the list (NOT "Tudo em dia!")
     const hasPuzzleItems = await page
       .locator("button")
-      .filter({ hasText: /Puzzle/ })
+      .filter({ hasText: /Rating \d+/ })
       .count();
     const hasEmptyState = await page
       .getByText("Tudo em dia!")

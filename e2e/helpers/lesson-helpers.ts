@@ -1,6 +1,3 @@
-import type { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
-
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
@@ -37,17 +34,7 @@ export async function deleteTestUser(userId: string): Promise<void> {
   });
 }
 
-export async function loginUser(
-  page: Page,
-  email: string,
-  password: string
-): Promise<void> {
-  await page.goto("/login");
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', password);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
-}
+export { loginAndSettle as loginUser } from "./auth-helpers";
 
 // ============================================================
 // Lesson IDs — Recruta (hardcoded from DB)

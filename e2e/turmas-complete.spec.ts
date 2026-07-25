@@ -142,10 +142,15 @@ test.describe.serial("Suite A — Fluxo do Aluno", () => {
     await expect(page.locator(`text=${CLASS_NAME}`)).toBeVisible({ timeout: 10000 });
   });
 
-  test("A2. aluno acessa detalhe da turma e ve Colegas", async ({ page }) => {
+  test("A2. aluno acessa detalhe da turma e ve a Companhia", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
-    await expect(page.locator("text=Colegas")).toBeVisible({ timeout: 10000 });
+    // "Colegas" não existe mais: a seção de membros é "Companhia" para os dois
+    // papéis (TurmaDetailClient.tsx:118). exact evita casar com o h1
+    // "Companhia <nome>".
+    await expect(
+      page.getByRole("heading", { name: "Companhia", exact: true })
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("A3. aluno ve cards de Mural e Ranking", async ({ page }) => {
@@ -158,8 +163,10 @@ test.describe.serial("Suite A — Fluxo do Aluno", () => {
   test("A4. aluno NAO ve cards de Tarefas nem Relatorios", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
-    // Esperar conteudo carregar
-    await expect(page.locator("text=Colegas")).toBeVisible({ timeout: 10000 });
+    // Esperar conteudo carregar (a seção de membros é "Companhia" — ver A2)
+    await expect(
+      page.getByRole("heading", { name: "Companhia", exact: true })
+    ).toBeVisible({ timeout: 15_000 });
     // Verificar ausencia
     const tarefasCard = page.locator('a[href*="/tarefas"]');
     await expect(tarefasCard).toHaveCount(0);

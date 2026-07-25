@@ -90,9 +90,18 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
-    await expect(page.getByRole("heading", { name: "Membros" })).toBeVisible();
-    // Pelo menos 1 membro listado
-    await expect(page.locator("text=1 membro")).toBeVisible();
+    // A seção foi renomeada de "Membros" para "Companhia" (tom militar do
+    // projeto) e o subtítulo passou a ser "1 professor, N aluno(s)"
+    // — TurmaDetailClient.tsx:118-121.
+    //
+    // exact: true é necessário porque o match de `name` é por substring, e o
+    // h1 da página é "Companhia E2E <ts>" — sem exact, o locator resolveria
+    // para 2 elementos. O timeout maior cobre o carregamento do
+    // useClassDetail (o conteúdo vem de RPC, não do server component).
+    await expect(
+      page.getByRole("heading", { name: "Companhia", exact: true })
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/1 professor, \d+ aluno\(s\)/)).toBeVisible();
   });
 
   test("professor acessa página de tarefas", async ({ page }) => {
@@ -162,10 +171,16 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await page.click(`text=${CLASS_NAME}`);
     await page.waitForURL(`**/turmas/${classId}`);
 
-    // Aluno vê "Colegas" (não "Membros")
-    await expect(page.getByRole("heading", { name: "Colegas" })).toBeVisible();
-    // Aluno vê Mural mas NÃO vê Tarefas nem Relatorios
+    // A seção é "Companhia" para os dois papéis — "Colegas" não existe mais na
+    // UI. A distinção por papel migrou para os links: Tarefas e Relatorios são
+    // gated por isTeacher (TurmaDetailClient.tsx:243), Mural é para todos.
+    await expect(
+      page.getByRole("heading", { name: "Companhia", exact: true })
+    ).toBeVisible({ timeout: 15_000 });
+
     await expect(page.locator('a[href*="/mural"]')).toBeVisible();
+    await expect(page.locator('a[href*="/tarefas"]')).toHaveCount(0);
+    await expect(page.locator('a[href*="/relatorio"]')).toHaveCount(0);
   });
 
   test("aluno vê tarefas no dashboard", async ({ page }) => {
@@ -184,7 +199,8 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await expect(page.locator("text=Remover")).toBeVisible();
     await page.click("text=Remover");
 
-    // Membro removido — espera refresh
-    await expect(page.locator("text=Nenhum membro ainda.")).toBeVisible({ timeout: 10000 });
+    // Membro removido — espera refresh. O estado vazio é "Nenhum aluno
+    // ainda." (TurmaDetailClient.tsx:139), não "Nenhum membro ainda.".
+    await expect(page.getByText("Nenhum aluno ainda.")).toBeVisible({ timeout: 15_000 });
   });
 });

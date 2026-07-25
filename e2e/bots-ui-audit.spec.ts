@@ -11,6 +11,7 @@
 
 import { test, expect, type Page } from "@playwright/test";
 import { makeMove } from "./helpers/chess-helpers";
+import { settleAfterLogin } from "./helpers/auth-helpers";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -59,7 +60,7 @@ async function login(page: Page, email: string, password: string) {
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+  await settleAfterLogin(page);
 }
 
 async function getBotIds(): Promise<{ bot1Id: number; bot2Id: number; bot3Id: number }> {
