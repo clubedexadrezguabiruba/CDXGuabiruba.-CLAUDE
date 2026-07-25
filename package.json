@@ -20,6 +20,11 @@
     "verify:phase6": "tsx scripts/verify/phase6/verify-bots.ts",
     "verify:turmas": "tsx scripts/verify/phase9/verify-turmas.ts",
     "test:turmas-rpcs": "tsx scripts/verify/phase9/test-turmas-rpcs.ts",
+    "verify:privileges": "tsx scripts/verify/security/verify-privileges.ts",
+    "verify:xp-curve": "tsx scripts/verify/security/verify-xp-curve.ts",
+    "verify:no-dup-rpc": "tsx scripts/verify/security/verify-no-duplicate-rpc.ts",
+    "verify:puzzle-authority": "tsx scripts/verify/security/verify-puzzle-authority.ts",
+    "verify:all": "npm run verify:phase2 && npm run verify:seeds && npm run verify:revanche && npm run verify:rush && npm run verify:phase5 && npm run verify:phase6 && npm run verify:turmas && npm run verify:privileges && npm run verify:xp-curve && npm run verify:no-dup-rpc && npm run verify:puzzle-authority",
     "test": "vitest run",
     "test:watch": "vitest"
   },
