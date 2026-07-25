@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useUser } from "@/hooks/useUser";
 import PuzzleBoard, { type PuzzleResult } from "@/components/chess/PuzzleBoard";
-import { parsePuzzleMoves } from "@/lib/chess/puzzleLogic";
 import { PUZZLE_THEMES } from "@/lib/chess/themeMap";
 import { soundManager } from "@/lib/sounds/soundManager";
 import { ArrowLeft, RotateCcw, CheckCircle, Clock, Lightbulb, Trophy, AlertTriangle } from "lucide-react";
@@ -263,11 +262,10 @@ export default function PuzzleRevanchePage() {
       const puzzle = puzzles[currentIdx];
       if (!puzzle) return;
 
-      const allMoves = parsePuzzleMoves(puzzle.moves);
-
       const { data, error } = await supabase.rpc("puzzle_attempt", {
         p_puzzle_id: puzzle.puzzle_id,
-        p_moves: puzzleResult.solved ? allMoves : puzzleResult.movesPlayed,
+        // Sempre os lances REALMENTE jogados — ver comentário em rating/page.tsx
+        p_moves: puzzleResult.movesPlayed,
         p_mode: "revanche",
         p_time_spent_ms: puzzleResult.timeSpentMs,
       });

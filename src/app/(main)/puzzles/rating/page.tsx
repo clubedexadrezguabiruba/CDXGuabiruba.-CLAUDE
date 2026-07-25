@@ -5,7 +5,6 @@ import { useSupabase } from "@/hooks/useSupabase";
 import { useUser } from "@/hooks/useUser";
 import { useSound } from "@/hooks/useSound";
 import PuzzleBoard, { type PuzzleResult } from "@/components/chess/PuzzleBoard";
-import { parsePuzzleMoves } from "@/lib/chess/puzzleLogic";
 import { ArrowLeft, SkipForward, Flame, TrendingUp, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import ActivityToasts from "@/components/gamification/ActivityToasts";
@@ -127,11 +126,12 @@ export default function PuzzleRatingPage() {
       if (!state.puzzle) return;
   
 
-      const allMoves = parsePuzzleMoves(state.puzzle.moves);
-
       const { data, error } = await supabase.rpc("puzzle_attempt", {
         p_puzzle_id: state.puzzle.id,
-        p_moves: result.solved ? allMoves : result.movesPlayed,
+        // Sempre os lances REALMENTE jogados: é o servidor que decide se
+        // resolveu (CLAUDE.md regra #1). Enviar a solução aqui tornaria a
+        // validação de puzzle_attempt tautológica.
+        p_moves: result.movesPlayed,
         p_mode: "rating",
         p_time_spent_ms: result.timeSpentMs,
       });

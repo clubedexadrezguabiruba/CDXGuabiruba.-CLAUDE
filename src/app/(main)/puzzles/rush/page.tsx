@@ -5,7 +5,6 @@ import { useSupabase } from "@/hooks/useSupabase";
 import { useUser } from "@/hooks/useUser";
 import { useSound } from "@/hooks/useSound";
 import PuzzleBoard, { type PuzzleResult } from "@/components/chess/PuzzleBoard";
-import { parsePuzzleMoves } from "@/lib/chess/puzzleLogic";
 import { ArrowLeft, Heart, Timer, Trophy, Zap, Shield, Flame } from "lucide-react";
 import Link from "next/link";
 import ActivityToasts from "@/components/gamification/ActivityToasts";
@@ -238,11 +237,10 @@ export default function PuzzleRushPage() {
       const currentPuzzle = puzzles[currentIdx];
       if (!currentPuzzle || !runId) return;
 
-      const allMoves = parsePuzzleMoves(currentPuzzle.moves);
-
       const args = {
         p_puzzle_id: currentPuzzle.id,
-        p_moves: result.solved ? allMoves : result.movesPlayed,
+        // Sempre os lances REALMENTE jogados — ver comentário em rating/page.tsx
+        p_moves: result.movesPlayed,
         p_mode: mode === "resistencia" ? "resistencia" : ("rush" as string),
         p_time_spent_ms: result.timeSpentMs,
         p_rush_run_id: runId,
