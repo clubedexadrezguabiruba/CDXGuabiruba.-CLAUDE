@@ -1,13 +1,10 @@
 "use client";
 
+import { xpForLevel } from "@/lib/gamification/xp";
+
 interface XPBarProps {
   xp: number;
   level: number;
-}
-
-/** XP necessário para avançar do nível N → N+1: round(100 * 1.05^(N-1)) */
-function xpForLevel(level: number): number {
-  return Math.round(100 * Math.pow(1.05, level - 1));
 }
 
 export default function XPBar({ xp, level }: XPBarProps) {

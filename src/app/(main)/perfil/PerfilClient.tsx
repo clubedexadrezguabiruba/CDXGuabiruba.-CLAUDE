@@ -11,6 +11,7 @@ import InventoryGrid from "@/components/avatar/InventoryGrid";
 import Chocadeira from "@/components/avatar/Chocadeira";
 import AchievementPanel from "@/components/gamification/AchievementPanel";
 import type { ItemSlot } from "@/types/inventory";
+import { xpForLevel } from "@/lib/gamification/xp";
 import { createClient } from "@/lib/supabase/client";
 
 /* ================================================================
@@ -308,7 +309,6 @@ export default function PerfilClient({
   };
 
   // --- XP ---
-  const xpForLevel = (lv: number) => Math.round(100 * Math.pow(1.05, lv - 1));
   const xpNeeded = xpForLevel(profile.level);
   const xpPercent = Math.min(100, Math.round((profile.xp / xpNeeded) * 100));
 

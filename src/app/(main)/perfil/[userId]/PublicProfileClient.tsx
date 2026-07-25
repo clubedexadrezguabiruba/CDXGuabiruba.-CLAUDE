@@ -5,6 +5,7 @@ import AvatarDisplay from "@/components/avatar/AvatarDisplay";
 import type { AvatarBase } from "@/components/avatar/AvatarDisplay";
 import type { PublicProfileData } from "@/types/ranking";
 import type { EquippedMap, ItemSlot, ItemRarity } from "@/types/inventory";
+import { xpForLevel } from "@/lib/gamification/xp";
 
 interface Props {
   profile: PublicProfileData;
@@ -24,8 +25,6 @@ export default function PublicProfileClient({ profile }: Props) {
     };
   }
 
-  // XP necessário para avançar do nível N → N+1
-  const xpForLevel = (lv: number) => Math.round(100 * Math.pow(1.05, lv - 1));
   const xpNeeded = xpForLevel(profile.level);
   const xpPercent = Math.min(100, Math.round((profile.xp / xpNeeded) * 100));
 
