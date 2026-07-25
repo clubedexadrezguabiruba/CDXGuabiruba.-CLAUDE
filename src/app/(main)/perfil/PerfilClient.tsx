@@ -289,6 +289,7 @@ export default function PerfilClient({
   );
   const [switchingAvatar, setSwitchingAvatar] = useState(false);
   const [showAllAchievements, setShowAllAchievements] = useState(false);
+  const [inventoryError, setInventoryError] = useState<string | null>(null);
 
   // --- Handlers ---
   const handleSwitchAvatar = async () => {
@@ -300,12 +301,33 @@ export default function PerfilClient({
     setSwitchingAvatar(false);
   };
 
+  // Antes estes dois handlers eram `catch { /* silencioso */ }`: quando o RPC
+  // falhava, o aluno clicava em Equipar e NADA acontecia — sem mensagem, sem
+  // log. Uma falha ficava indistinguível de sucesso, o que também tornava
+  // qualquer diagnóstico impossível (foi o que escondeu a causa de um teste e2e
+  // por horas). Agora o erro aparece na tela e no console.
   const handleEquip = async (itemId: number) => {
-    try { await equip(itemId); } catch { /* silencioso */ }
+    setInventoryError(null);
+    try {
+      await equip(itemId);
+    } catch (e) {
+      console.error("[perfil] equip falhou:", e);
+      setInventoryError(
+        `Não foi possível equipar. ${(e as Error).message ?? "Tente novamente."}`
+      );
+    }
   };
 
   const handleUnequip = async (slot: ItemSlot) => {
-    try { await unequip(slot); } catch { /* silencioso */ }
+    setInventoryError(null);
+    try {
+      await unequip(slot);
+    } catch (e) {
+      console.error("[perfil] unequip falhou:", e);
+      setInventoryError(
+        `Não foi possível desequipar. ${(e as Error).message ?? "Tente novamente."}`
+      );
+    }
   };
 
   // --- XP ---
@@ -605,6 +627,15 @@ export default function PerfilClient({
 
           {/* --- Right Column: Equipamentos + Chocadeira + Arsenal --- */}
           <div className="flex flex-col gap-5">
+            {inventoryError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {inventoryError}
+              </div>
+            )}
+
             {/* EQUIPAMENTOS */}
             <CollapsibleSection title="Equipamentos da Campanha">
               {loading ? (

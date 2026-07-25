@@ -95,24 +95,29 @@ export function useInventory() {
     const itemData = json.item as Record<string, unknown>;
     const slot = json.slot as ItemSlot;
 
-    // Atualizar estado local otimisticamente
-    requestAnimationFrame(() => {
-      const newEquipped: EquippedItem = {
-        slot,
-        id: itemData.id as number,
-        name: itemData.name as string,
-        rarity: itemData.rarity as ItemRarity,
-        image_url: (itemData.image_url as string) ?? null,
-      };
+    // Atualizar estado local otimisticamente.
+    //
+    // SEM requestAnimationFrame: este código roda num handler de evento
+    // (clique em "Equipar"), não no corpo de um effect. A regra
+    // react-hooks/set-state-in-effect que motivou o wrapper de rAF no resto do
+    // projeto NÃO se aplica aqui — e o wrapper era ativamente nocivo: se o rAF
+    // não disparasse (aba em segundo plano, throttling, navegador headless), o
+    // equip não produzia efeito nenhum na UI, sem erro nem log.
+    const newEquipped: EquippedItem = {
+      slot,
+      id: itemData.id as number,
+      name: itemData.name as string,
+      rarity: itemData.rarity as ItemRarity,
+      image_url: (itemData.image_url as string) ?? null,
+    };
 
-      setEquipped((prev) => ({ ...prev, [slot]: newEquipped }));
-      setItems((prev) =>
-        prev.map((it) => ({
-          ...it,
-          equipped: it.id === itemId ? true : it.slot === slot ? false : it.equipped,
-        })),
-      );
-    });
+    setEquipped((prev) => ({ ...prev, [slot]: newEquipped }));
+    setItems((prev) =>
+      prev.map((it) => ({
+        ...it,
+        equipped: it.id === itemId ? true : it.slot === slot ? false : it.equipped,
+      })),
+    );
 
     return json;
   }, []);
@@ -121,20 +126,18 @@ export function useInventory() {
     const { error: rpcErr } = await supabase.rpc("unequip_slot", { p_slot: slot });
     if (rpcErr) throw new Error(rpcErr.message);
 
-    // Atualizar estado local
-    requestAnimationFrame(() => {
-      setEquipped((prev) => {
-        const next = { ...prev };
-        delete next[slot];
-        return next;
-      });
-      setItems((prev) =>
-        prev.map((it) => ({
-          ...it,
-          equipped: it.slot === slot ? false : it.equipped,
-        })),
-      );
+    // Atualizar estado local — sem rAF, pelo mesmo motivo de equip() acima
+    setEquipped((prev) => {
+      const next = { ...prev };
+      delete next[slot];
+      return next;
     });
+    setItems((prev) =>
+      prev.map((it) => ({
+        ...it,
+        equipped: it.slot === slot ? false : it.equipped,
+      })),
+    );
   }, []);
 
   return { items, equipped, loading, error, equip, unequip, refresh: load };

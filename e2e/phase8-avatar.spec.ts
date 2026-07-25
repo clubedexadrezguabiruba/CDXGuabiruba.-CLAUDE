@@ -50,14 +50,25 @@ async function openSection(
   const section = sectionByTitle(page, title);
   await section.waitFor({ timeout: 15_000 });
 
-  // O wrapper do conteúdo é o div com `transition-all`; quando fechado ele
-  // carrega `max-h-0` (PerfilClient.tsx:181-185).
-  const content = section.locator("div.transition-all").first();
+  // O wrapper do conteúdo é o FILHO DIRETO da <section> com `transition-all`;
+  // fechado ele carrega `max-h-0` (PerfilClient.tsx:181-185).
+  //
+  // `:scope >` é essencial aqui. Com `div.transition-all` + .first() o locator
+  // podia casar um elemento interno (cards e botões também usam transition-*),
+  // cuja classe nunca tem max-h-0 — e aí o helper CLICAVA no header de uma
+  // seção que já estava aberta, colapsando-a. O botão ficava dentro de um
+  // container em colapso e o clique entrava em "element was detached from the
+  // DOM, retrying" até o timeout do teste.
+  const content = section.locator(":scope > div.transition-all");
   const cls = (await content.getAttribute("class")) ?? "";
   if (cls.includes("max-h-0")) {
-    await section.locator("button").first().click();
+    await section.locator(":scope > button").click();
   }
   await expect(content).not.toHaveClass(/max-h-0/, { timeout: 5_000 });
+
+  // Espera a transição de 300ms terminar: clicar durante a animação de altura
+  // faz o alvo se mover sob o cursor.
+  await page.waitForTimeout(400);
 
   return section;
 }
@@ -81,6 +92,13 @@ async function readItemCount(page: import("@playwright/test").Page) {
 }
 
 test.describe("Fase 8 — Avatar e Inventário", () => {
+  // O dashboard e o perfil disparam vários RPCs (missões, baús, streak,
+  // ranking, inventário, conquistas) contra o Supabase remoto. Rodando a suíte
+  // inteira em série, os 30s default do Playwright não bastam: estes testes
+  // passavam isolados e estouravam no run completo. Não é bug de lógica, é
+  // latência de rede sob carga.
+  test.describe.configure({ timeout: 90_000 });
+
   const hasAdmin = !!(SUPABASE_URL && SERVICE_ROLE_KEY);
   let userId: string;
   let accessToken: string;
@@ -143,8 +161,8 @@ test.describe("Fase 8 — Avatar e Inventário", () => {
   test("abrir baú e ver item no inventário", async ({ page }) => {
     await loginUser(page, TEST_EMAIL, TEST_PASSWORD);
 
-    // Wait for ChestPanel to load
-    await page.getByText("Baús").waitFor({ timeout: 10_000 });
+    // Wait for ChestPanel to load (o dashboard agrega vários RPCs)
+    await page.getByText("Baús").waitFor({ timeout: 30_000 });
 
     // Click first "Abrir" button
     const openBtn = page.getByRole("button", { name: "Abrir" }).first();
@@ -233,27 +251,33 @@ test.describe("Fase 8 — Avatar e Inventário", () => {
   // T3: Desequipar item e ver avatar voltar ao vazio
   // ============================================================
   test("desequipar item e ver avatar voltar ao estado vazio", async ({ page }) => {
+    // Precondição estabelecida pelo SERVIDOR, não pela UI de outro teste.
+    //
+    // Antes este teste dependia do T2 ter equipado o item e do estado
+    // sobreviver entre testes — o que o tornava frágil e, quando falhava, dava
+    // um erro que não dizia nada ("Desequipar" não encontrado). Equipar via RPC
+    // aqui deixa o teste determinístico e focado no que ele promete verificar:
+    // que desequipar pela UI funciona.
+    const equipRes = await callRpcAsUser(accessToken, "equip_item", {
+      p_item_id: headItem.id,
+    });
+    expect(equipRes.error, `equip_item falhou no setup: ${JSON.stringify(equipRes)}`).toBeFalsy();
+
     await loginUser(page, TEST_EMAIL, TEST_PASSWORD);
     await page.goto("/perfil");
     await expect(page.locator(".animate-pulse").first()).toBeHidden({ timeout: 15_000 });
 
-    const inventario = await openSection(page, SECTION_INVENTARIO);
-    const card = inventario
-      .locator("div.rounded-lg", { hasText: headItem.name })
-      .first();
-    await expect(card).toBeVisible({ timeout: 10_000 });
-
-    // Garante que está equipado antes de desequipar
-    if (await card.getByRole("button", { name: "Equipar" }).isVisible().catch(() => false)) {
-      await card.getByRole("button", { name: "Equipar" }).click();
-      await expect(card.getByText("Equipado")).toBeVisible({ timeout: 10_000 });
-    }
-
     const equipados = await openSection(page, SECTION_EQUIPADOS);
+
+    // Precondição explícita: o slot Cabeça precisa estar preenchido. Se o card
+    // diz "Equipado" mas o SlotGrid diz "Vazio", isso é inconsistência de
+    // produto e o teste deve acusar aqui, não num timeout adiante.
+    await expect(equipados.getByText(headItem.name)).toBeVisible({ timeout: 15_000 });
+
     const imgCountBefore = await page.locator(`img[alt="${headItem.name}"]`).count();
 
     const unequipBtn = equipados.getByText("Desequipar").first();
-    await expect(unequipBtn).toBeVisible({ timeout: 5_000 });
+    await expect(unequipBtn).toBeVisible({ timeout: 10_000 });
     await unequipBtn.click();
 
     await expect(equipados.getByText("Vazio").first()).toBeVisible({ timeout: 10_000 });

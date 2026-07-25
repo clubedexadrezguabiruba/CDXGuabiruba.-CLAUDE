@@ -244,11 +244,23 @@ test.describe("aulas — smoke tests", () => {
     await makeMove(page, "g1", "f3", "white");
 
     // Banner de conclusão (renderizado fora do panel)
-    await expect(page.getByText("Aula Completa!")).toBeVisible({
-      timeout: 10_000,
+    const banner = page.locator("div.border-green-300", {
+      hasText: "Aula Completa!",
     });
-    await expect(page.getByText("★").first()).toBeVisible();
-    await expect(page.getByText(/\+\d+ XP/)).toBeVisible();
+    await expect(banner).toBeVisible({ timeout: 10_000 });
+    await expect(banner.getByText("★").first()).toBeVisible();
+
+    // O locator /\+\d+ XP/ solto era ambíguo (strict mode violation): dois
+    // elementos casam nesta tela — o banner da aula (LessonViewer.tsx:884) e o
+    // toast da missão. Escopamos ao banner.
+    //
+    // NÃO assertar XP positivo aqui: aulas não concedem XP direto, por design
+    // (Visao_do_Produto — XP só via missões e conquistas), então o banner
+    // legitimamente mostra "+0 XP". O XP real vem do toast da missão
+    // complete_1_lesson, que só aparece na PRIMEIRA aula do dia — e este spec
+    // compartilha um usuário entre 14 testes, então exigir XP positivo tornaria
+    // o teste dependente de ordem.
+    await expect(banner.getByText(/\+\d+ XP/)).toBeVisible({ timeout: 10_000 });
 
     // Voltar ao mapa (exact para distinguir do header "← Voltar ao mapa")
     const voltarBtn = page.getByRole("link", {
