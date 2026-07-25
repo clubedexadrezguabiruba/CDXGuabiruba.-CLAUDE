@@ -222,7 +222,10 @@ export default function ActivityToasts({
       preloadedData.level
     );
     if (items.length > 0) {
-      setQueue(items);
+      // rAF: react-hooks/set-state-in-effect proíbe setState sincrono no
+      // corpo do effect. Mesmo padrão usado nos demais fetch-on-mount deste
+      // projeto. preloadedProcessedRef acima garante execução única.
+      requestAnimationFrame(() => setQueue(items));
     }
   }, [preloadedData, buildQueue]);
 
@@ -232,9 +235,15 @@ export default function ActivityToasts({
     if (current !== null || queue.length === 0) return;
 
     const next = queue[0];
-    setQueue((prev) => prev.slice(1));
-    setCurrent(next);
-    setExiting(false);
+
+    // rAF: react-hooks/set-state-in-effect proíbe setState sincrono no corpo
+    // do effect. Não há risco de disparo duplo: as deps são [current, queue]
+    // e nenhuma das duas muda antes do callback rodar.
+    const raf = requestAnimationFrame(() => {
+      setQueue((prev) => prev.slice(1));
+      setCurrent(next);
+      setExiting(false);
+    });
 
     // Play sound
     if (next.type === "levelup") {
@@ -244,15 +253,19 @@ export default function ActivityToasts({
     }
 
     // Auto-dismiss after duration
+    let removeTimer: ReturnType<typeof setTimeout> | null = null;
     const hideTimer = setTimeout(() => {
       setExiting(true);
-      const removeTimer = setTimeout(() => {
+      removeTimer = setTimeout(() => {
         setCurrent(null);
       }, TOAST_GAP);
-      return () => clearTimeout(removeTimer);
     }, TOAST_DURATION);
 
-    return () => clearTimeout(hideTimer);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(hideTimer);
+      if (removeTimer) clearTimeout(removeTimer);
+    };
   }, [current, queue]);
 
   // ── Render ─────────────────────────────────────────────────

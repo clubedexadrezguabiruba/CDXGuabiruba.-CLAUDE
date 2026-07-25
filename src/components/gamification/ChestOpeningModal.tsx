@@ -22,6 +22,34 @@ const FRAGMENT_COLORS: Record<string, string> = {
 };
 
 /**
+ * Fragmentos do despedaçamento (fase 4), derivados do id do item.
+ *
+ * Usa um LCG determinístico em vez de Math.random(): a regra
+ * react-hooks/purity proíbe função impura durante o render, e o confete não
+ * precisa ser realmente aleatório — só precisa variar entre itens. Mesmo id
+ * → mesmo padrão, o que também torna o visual reproduzível em teste.
+ */
+function makeFragments(seed: number) {
+  let state = (seed * 2654435761) % 2147483647;
+  const rand = () => {
+    state = (state * 16807) % 2147483647;
+    return state / 2147483647;
+  };
+
+  return Array.from({ length: 10 }, (_, i) => {
+    const angle = (i / 10) * 360 + rand() * 36;
+    const dist = 80 + rand() * 120;
+    return {
+      fx: `${Math.cos((angle * Math.PI) / 180) * dist}px`,
+      fy: `${Math.sin((angle * Math.PI) / 180) * dist}px`,
+      fr: `${rand() * 720 - 360}deg`,
+      size: 6 + rand() * 8,
+      delay: rand() * 0.15,
+    };
+  });
+}
+
+/**
  * Modal de abertura de baú com animação em 3 fases (normal)
  * ou 5 fases quando item é duplicado (forja de experiência).
  *
@@ -45,22 +73,8 @@ export default function ChestOpeningModal({
 }: ChestOpeningModalProps) {
   const [phase, setPhase] = useState<1 | 2 | 3 | 4 | 5>(1);
 
-  // Fragmentos pré-calculados (estáveis entre renders)
-  const fragments = useMemo(
-    () =>
-      Array.from({ length: 10 }, (_, i) => {
-        const angle = (i / 10) * 360 + Math.random() * 36;
-        const dist = 80 + Math.random() * 120;
-        return {
-          fx: `${Math.cos((angle * Math.PI) / 180) * dist}px`,
-          fy: `${Math.sin((angle * Math.PI) / 180) * dist}px`,
-          fr: `${Math.random() * 720 - 360}deg`,
-          size: 6 + Math.random() * 8,
-          delay: Math.random() * 0.15,
-        };
-      }),
-    [],
-  );
+  // Fragmentos pré-calculados (puros, estáveis entre renders)
+  const fragments = useMemo(() => makeFragments(item.id), [item.id]);
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
