@@ -121,12 +121,17 @@ test.describe("premove: múltiplos premoves contra bot", () => {
     });
 
     // 3. Click first bot
-    const botLink = page.locator('a[href*="/bots/"]').first();
-    await botLink.click();
+    //
+    // Os cards de bot são <button> com onClick -> router.push (BotGrid.tsx:77 +
+    // BotCard.tsx:18), NÃO âncoras. O seletor a[href*="/bots/"] nunca casava e
+    // o teste ficava esperando até estourar o timeout de 120s.
+    await page.getByText("Léo").first().click();
     await expect(page).toHaveURL(/\/bots\//, { timeout: 10_000 });
 
     // 4. Start game (white, no time)
-    await page.getByText("Iniciar Duelo").click();
+    // dois botões (layout mobile + desktop), só um visível — mesmo padrão
+    // usado em bots-analysis.spec.ts
+    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
 
     // 5. Wait for board
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
@@ -144,8 +149,13 @@ test.describe("premove: múltiplos premoves contra bot", () => {
     await makeMove(page, "d2", "d4", "white");
 
     // 9. Now bot is thinking — this is our window for premoves.
-    // Wait a tiny bit for interactive to become false
-    await page.waitForTimeout(500);
+    //
+    // NÃO esperar aqui. Léo é o bot mais fraco (250 elo, profundidade baixa) e
+    // responde em poucas centenas de ms; os 500ms que havia antes já eram
+    // suficientes para a vez voltar ao jogador, e então os "premoves" abaixo
+    // eram registrados como lances normais (interactive=true). Era por isso que
+    // a asserção de premove encontrava zero.
+    // Emitimos os lances imediatamente, para cair dentro da janela de reflexão.
 
     // 10. Premove 1: Nb1→c3
     await makeMove(page, "b1", "c3", "white");
@@ -171,9 +181,18 @@ test.describe("premove: múltiplos premoves contra bot", () => {
     console.log(`[TEST] enqueue logs: ${enqueueLogs.length}`);
     console.log(`[TEST] execute logs: ${executeLogs.length}`);
 
-    // Key assertion: at least 1 premove was enqueued (proves color:"both" works)
-    expect(premoveAfterLogs.length).toBeGreaterThanOrEqual(1);
+    // Asserção corrigida.
+    //
+    // Antes exigia >= 1 log [PREMOVE:after] com "interactive":false, e isso é o
+    // sinal ERRADO: o caminho de premove passa pelo evento
+    // `premovable.events.set` do chessground (BotBoard), não pelo evento
+    // `after`. Na prática o filtro dava 0 mesmo quando os premoves
+    // funcionavam perfeitamente — enquanto os logs de enqueue/execute
+    // mostravam 3 enfileirados e 1 executado.
+    //
+    // O que de fato prova que a fila de premoves funciona:
     expect(enqueueLogs.length).toBeGreaterThanOrEqual(1);
+    expect(executeLogs.length).toBeGreaterThanOrEqual(1);
 
     // 14. Wait for bot to finish and premove to execute
     await page.waitForTimeout(5000);
@@ -203,9 +222,11 @@ test.describe("premove: múltiplos premoves contra bot", () => {
     await expect(page.locator("h1, h2").first()).toBeVisible({
       timeout: 10_000,
     });
-    await page.locator('a[href*="/bots/"]').first().click();
+    await page.getByText("Léo").first().click();  // card é <button>, não <a>
     await expect(page).toHaveURL(/\/bots\//, { timeout: 10_000 });
-    await page.getByText("Iniciar Duelo").click();
+    // dois botões (layout mobile + desktop), só um visível — mesmo padrão
+    // usado em bots-analysis.spec.ts
+    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
 

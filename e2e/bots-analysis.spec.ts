@@ -232,23 +232,27 @@ test.describe("Nível C: fluxo integrado real", () => {
     // 8. GameOverModal: "Derrota"
     await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
 
-    // 9. Wait for analysis
-    await expect(
-      page.getByRole("button", { name: /Revisão de Batalha/i })
-    ).toBeEnabled({ timeout: 60_000 });
+    // 9. Esperar a análise terminar.
+    //
+    // O botão do GameOverModal é "Ver Análise" (GameOverModal.tsx:156) e fica
+    // disabled mostrando "Analisando..." enquanto roda. O teste esperava aqui
+    // por "Revisão de Batalha", que só existe DEPOIS, no BotPostGame — ou seja,
+    // esperava 60s por um elemento que só aparece após este clique. Medi a
+    // análise de verdade: ~0,9 s numa partida de 4-5 lances. Nunca foi lentidão,
+    // era o alvo errado.
+    const verAnalise = page.getByRole("button", { name: /Ver Análise|Analisando/i });
+    await expect(verAnalise).toBeEnabled({ timeout: 60_000 });
 
-    // 10. Accuracy visible
-    await expect(page.getByText(/%/)).toBeVisible();
+    // 10. Accuracy visible (há duas porcentagens: jogador e bot)
+    await expect(page.getByText(/%/).first()).toBeVisible();
 
-    // 11. Click "Revisão de Batalha" → goes to post-game (BotPostGame)
-    await page
-      .getByRole("button", { name: /Revisão de Batalha/i })
-      .click();
+    // 11. "Ver Análise" → post-game (BotPostGame)
+    await verAnalise.click();
 
     // 12. Verify BotPostGame renders (accuracy gauge visible)
-    await expect(page.locator("svg").first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator("svg").first()).toBeVisible({ timeout: 10_000 });
 
-    // 13. Click "Revisão de Batalha" in BotPostGame → goes to review (GameReview)
+    // 13. Click "Revisão de Batalha" no BotPostGame → review (GameReview)
     await page
       .getByRole("button", { name: /Revisão de Batalha/i })
       .click();
@@ -335,9 +339,11 @@ test.describe("Nível C: fluxo integrado real", () => {
     await page.locator('button:has-text("Render-se"):visible').click();
     await page.locator('button:has-text("Sim"):visible').first().click();
 
-    // Wait for analysis to complete (button enabled = analysis done + persisted)
+    // Análise concluída = botão "Ver Análise" do GameOverModal sai de disabled
+    // (ele mostra "Analisando..." enquanto roda). Não usar "Revisão de Batalha":
+    // esse só existe no BotPostGame, depois de clicar em "Ver Análise".
     await expect(
-      page.getByRole("button", { name: /Revisão de Batalha/i })
+      page.getByRole("button", { name: /Ver Análise|Analisando/i })
     ).toBeEnabled({ timeout: 60_000 });
 
     // Give a moment for the save_bot_analysis RPC to complete

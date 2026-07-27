@@ -622,12 +622,15 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     // Modal aparece
     await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
 
-    // Esperar análise completar (oportunístico — timeout de 60s)
-    const reviewButton = page.getByRole("button", { name: /Revisão de Batalha/i });
+    // Esperar análise completar. O botão do MODAL é "Ver Análise"
+    // (GameOverModal.tsx:156) — "Revisão de Batalha" só existe no BotPostGame,
+    // depois deste clique. Esperar aqui pelo nome errado fazia o teste sempre
+    // cair no catch e se auto-skipar como "análise não completou", escondendo
+    // que a análise leva ~0,9 s.
+    const reviewButton = page.getByRole("button", { name: /Ver Análise|Analisando/i });
     try {
       await expect(reviewButton).toBeEnabled({ timeout: 60_000 });
     } catch {
-      // Análise não completou a tempo — documentar limitação e pular
       await takeAuditScreenshot(page, "F1-analysis-timeout-modal");
       test.skip(true, "Análise não completou em 60s — limitação documentada");
       return;
@@ -701,8 +704,8 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     await page.locator('button:has-text("Sim"):visible').first().click();
     await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
 
-    // Esperar análise
-    const reviewButton = page.getByRole("button", { name: /Revisão de Batalha/i });
+    // Esperar análise — botão do modal é "Ver Análise" (ver F1)
+    const reviewButton = page.getByRole("button", { name: /Ver Análise|Analisando/i });
     try {
       await expect(reviewButton).toBeEnabled({ timeout: 60_000 });
     } catch {
