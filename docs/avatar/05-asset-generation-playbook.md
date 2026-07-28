@@ -1,5 +1,22 @@
 # 05 — Playbook de Geração de Assets
 
+> [!WARNING]
+> **Parcialmente superado pelo [doc 10 — Avatar v3 "O Estrategista"](10-avatar-v3-definitive.md).**
+>
+> A v3 é o plano vigente. Onde este documento conflitar com o 10, vale o 10.
+> O que caiu:
+> - **`dressed_base`** (outfit trocando o corpo inteiro) → **`garment`** (roupa
+>   sobre corpo persistente, transparente na pele).
+> - **`head_swap` + knockout mask** → **`hair` + `headgear` como overlays**;
+>   o knockout foi **deletado**.
+> - **`GenderVariant` / dual male-female** → **corpo único unissex + `avatar_skin`**
+>   (5 tons de pele). Some todo sufixo `-{gender}` / `-swap-{gender}`.
+> - Slots **`hair`** e **`back`** passam a existir.
+>
+> **Não produza assets seguindo este documento sem antes ler o 10** — em especial,
+> a **Fase 6 do doc 09** ("Outfit Assets — produção dressed_base") **não deve ser
+> executada**: são 14 assets que a v3 descarta.
+
 Este documento define o processo operacional de geração de assets visuais para o sistema de avatar. Complementa o [doc 04 (Body Family & Template Spec)](04-body-family-and-template-spec.md) que define *o que* cada asset deve ser — este doc define *como* produzi-lo.
 
 ---

@@ -69,11 +69,17 @@ Antes de alterar qualquer bug/fluxo:
 - Se o prompt do usuário for ambíguo, incompleto ou puder ser melhorado, apontar antes de executar
 
 ## Verificação (rodar antes de concluir)
-- `npm run build`
+- `npm run typecheck` (tsc --noEmit)
 - `npm run lint`
-- `npm run verify:phase2` (gate de banco)
-- `npm run verify:seeds` (dados iniciais)
-- `npm run test:e2e` (quando mexer em UI/auth)
+- `npm test` (vitest)
+- `npm run build`
+- `npm run verify:all` (os 11 gates de banco/segurança — substitui rodar um a um)
+- `npm run test:e2e` (quando mexer em UI/auth) — **ATENÇÃO: bate no Supabase de
+  PRODUÇÃO**, cria e remove usuários reais. Rodar com intenção, nunca em CI.
+
+O CI (`.github/workflows/ci.yml`) roda tudo isso a cada push/PR **exceto o e2e**,
+pelo motivo acima. Os scripts de verify leem as credenciais de `process.env`
+quando não há `.env.local` — é assim que funcionam em CI.
 
 ## Estrutura-chave
 - src/app/ → rotas (App Router)
@@ -85,4 +91,7 @@ Antes de alterar qualquer bug/fluxo:
 
 ## Referências (ler antes de mudanças grandes)
 - Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md
-- Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md
+- Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md (a seção "Estado real" é a
+  única parte confiável — a Parte 1 é um guia de setup pré-projeto)
+- Avatar: **docs/avatar/10-avatar-v3-definitive.md é o plano vigente** e supersede
+  os docs 00–09 daquela pasta onde houver conflito

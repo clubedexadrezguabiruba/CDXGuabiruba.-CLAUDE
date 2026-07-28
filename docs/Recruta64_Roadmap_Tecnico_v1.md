@@ -1,7 +1,46 @@
 # 🛠️ Recruta 64 — Roadmap Técnico de Implementação v1.0
 
-> **Guia completo: setup do ambiente, workflow com Claude Code, MCPs e fases de desenvolvimento**
+> **Guia completo: setup do ambiente, workflow e fases de desenvolvimento**
 > Documento complementar à Visão do Produto | Fevereiro 2026
+
+---
+
+## Estado real (julho/2026)
+
+Este documento foi escrito **antes** do projeto começar. As estimativas de prazo e
+as escolhas de stack refletem aquele momento; o que foi construído diverge em
+pontos importantes. Use a tabela abaixo, não a Parte 1, para saber onde o projeto
+está.
+
+| fase | estado |
+|---|---|
+| 1. Setup | ✅ feita |
+| 2. Banco de Dados | ✅ feita |
+| 3. Autenticação | ✅ feita |
+| 4. Puzzles | ✅ feita — **50.001 puzzles** importados do Lichess |
+| 5. Aulas | ✅ feita — 30 aulas (15 recruta + 15 soldado) |
+| 6. Bots | ✅ feita — 10 bots, Stockfish WASM no browser |
+| 7. Gamificação | ✅ feita — missões, streak, 17 conquistas, baús, títulos |
+| 8. Avatar/Inventário | ✅ feita (v2) — **v3 é o plano vigente**, ver `docs/avatar/10-avatar-v3-definitive.md` |
+| 9. Painel do Professor | ✅ feita |
+| 10. Rankings | ✅ feita |
+| **11. Sound Design + PWA + Polish** | ❌ **não iniciada** — não existe manifest nem service worker |
+| **12. Testes Finais e Lançamento** | ❌ **não iniciada** |
+
+**Divergências de stack em relação ao que este doc previa:**
+
+- **Next.js 16.1.6**, não 15. Next 16 usa **`src/proxy.ts`**, não `middleware.ts`.
+- React 19.2, Tailwind CSS 4.
+- **O Supabase CLI não é usado.** Migrations são aplicadas por
+  `npx tsx scripts/apply-migration.ts <arquivo.sql>`, que conecta direto pela
+  connection string.
+- Testes: **Vitest** (unit) + **Playwright** (e2e). O e2e bate no Supabase de
+  **produção** e por isso fica fora do CI.
+- CI real: `.github/workflows/ci.yml` — typecheck, lint, test, build e os 11 gates
+  de `npm run verify:all`.
+
+**Só existem contas de teste no banco** — nenhum aluno real ainda. Decisões de
+balanceamento e migração de dados são baratas agora e caras depois do lançamento.
 
 ---
 
@@ -35,136 +74,17 @@ git --version     # qualquer versão recente
 
 ---
 
-## 2. Configuração dos MCP Servers
+## 2. Ferramentas de apoio
 
-MCPs (Model Context Protocol) permitem que o Claude no VS Code interaja diretamente com ferramentas externas — banco de dados, browser, documentação. São essenciais para produtividade.
-
-### 2.1 Onde configurar
-
-No VS Code, o arquivo de configuração de MCPs fica em:
-
-```
-~/.config/Code/User/globalStorage/anthropic.claude-code/settings/mcp_servers.json
-```
-
-Ou você pode configurar via interface:
-1. Abra o VS Code
-2. Cmd/Ctrl + Shift + P → "Claude: Configure MCP Servers"
-3. Edite o JSON
-
-### 2.2 MCP #1 — Supabase
-
-**Para quê:** Claude cria tabelas, executa queries SQL, configura RLS policies, faz debug de dados — tudo sem sair do VS Code.
-
-**Instalação:**
-
-```bash
-npm install -g @supabase/mcp-server-supabase
-```
-
-**Configuração:**
-
-Primeiro, gere um Personal Access Token no Supabase:
-1. Vá em https://supabase.com/dashboard/account/tokens
-2. Crie um novo token
-3. Copie o token (ele só aparece uma vez)
-
-Adicione ao `mcp_servers.json`:
-
-```json
-{
-  "supabase": {
-    "command": "npx",
-    "args": ["-y", "@supabase/mcp-server-supabase@latest", "--access-token", "SEU_TOKEN_AQUI"]
-  }
-}
-```
-
-**O que o Claude poderá fazer:**
-- Criar e alterar tabelas
-- Executar queries SQL diretamente
-- Configurar RLS policies
-- Criar Edge Functions
-- Ver dados em tempo real para debug
-
-### 2.3 MCP #2 — Playwright (Browser Testing)
-
-**Para quê:** Claude abre o browser, navega pelo site, clica em botões, tira screenshots, testa o frontend visualmente e faz debug de erros de layout.
-
-**Instalação:**
-
-```bash
-npm install -g @anthropic/mcp-server-playwright
-npx playwright install chromium
-```
-
-**Configuração no `mcp_servers.json`:**
-
-```json
-{
-  "supabase": { "..." },
-  "playwright": {
-    "command": "npx",
-    "args": ["-y", "@anthropic/mcp-server-playwright"]
-  }
-}
-```
-
-**O que o Claude poderá fazer:**
-- Abrir o site em http://localhost:3000
-- Navegar entre páginas
-- Clicar em botões e preencher formulários
-- Tirar screenshots para verificar layout
-- Inspecionar erros de console
-- Testar responsividade (mobile/tablet/desktop)
-
-### 2.4 MCP #3 — Context7 (Documentação Atualizada)
-
-**Para quê:** Puxa documentação oficial atualizada de qualquer biblioteca direto para o contexto do Claude. Essencial neste projeto porque usamos muitas libs (Next.js, Supabase, chessground, chess.js, Tailwind, Stockfish) e o Claude pode ter info desatualizada.
-
-**Configuração no `mcp_servers.json`:**
-
-```json
-{
-  "supabase": { "..." },
-  "playwright": { "..." },
-  "context7": {
-    "command": "npx",
-    "args": ["-y", "@context7/mcp-server"]
-  }
-}
-```
-
-**O que o Claude poderá fazer:**
-- Buscar a doc oficial do Next.js 15 antes de escrever código
-- Verificar a API do Supabase Auth atualizada
-- Consultar a API do chessground/chess.js
-- Evitar usar APIs deprecated ou métodos que mudaram
-
-### 2.5 Arquivo completo de configuração
-
-O arquivo `mcp_servers.json` final deve ficar assim:
-
-```json
-{
-  "supabase": {
-    "command": "npx",
-    "args": ["-y", "@supabase/mcp-server-supabase@latest", "--access-token", "SEU_SUPABASE_TOKEN"]
-  },
-  "playwright": {
-    "command": "npx",
-    "args": ["-y", "@anthropic/mcp-server-playwright"]
-  },
-  "context7": {
-    "command": "npx",
-    "args": ["-y", "@context7/mcp-server"]
-  }
-}
-```
-
-> **IMPORTANTE:** Nunca commite tokens no Git. O `mcp_servers.json` fica na configuração local do VS Code, não no repositório.
+> A versão original desta seção descrevia a configuração de três MCP servers
+> (Supabase, Playwright, Context7) num arquivo `mcp_servers.json`. Nada disso é
+> usado no projeto: o Supabase é acessado por `scripts/apply-migration.ts` e pelos
+> gates em `scripts/verify/`, o Playwright roda como dependência normal
+> (`npm run test:e2e`), e a documentação é consultada fora do repositório.
+> Removida por ser instrução obsoleta que induz a montar um ambiente inexistente.
 
 ---
+
 
 ## 3. Estrutura do Projeto
 
@@ -228,8 +148,8 @@ cdx-guabiruba/
 ├── CLAUDE.md                # Instruções para o Claude (ver seção 4)
 ├── .env.local               # Variáveis de ambiente (NÃO commitar)
 └── docs/
-    ├── VISAO_PRODUTO.md     # Documento de visão do produto
-    └── ROADMAP.md           # Este documento
+    ├── Recruta64_Visao_do_Produto_v1.md   # Documento de visão do produto
+    └── Recruta64_Roadmap_Tecnico_v1.md    # Este documento
 ```
 
 ### 3.3 Dependências principais
@@ -261,67 +181,13 @@ O `CLAUDE.md` é um arquivo que fica na raiz do projeto e serve como **instruç�
 
 Crie o arquivo `CLAUDE.md` na raiz do projeto com:
 
-```markdown
-# Recruta 64 — Plataforma Educacional de Xadrez
-
-## Sobre o Projeto
-Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba (Recruta 64).
-Mobile-first, responsivo, com gamificação completa.
-
-## Stack
-- Frontend: Next.js 15 (App Router) + TypeScript + Tailwind CSS
-- Backend: Supabase (PostgreSQL + Auth + RLS + Edge Functions)
-- Tabuleiro: chessground (lib do Lichess)
-- Engine: Stockfish WASM (via Web Worker no browser)
-- State: Zustand
-- Áudio: Howler.js
-- Deploy: Vercel (frontend) + Supabase (backend)
-
-## Princípios Fundamentais
-
-### Autoridade do Servidor
-TODA concessão de recompensa (XP, rating, missões, baús, conquistas) é feita
-exclusivamente no servidor via Supabase RPCs/Edge Functions.
-O client NUNCA decide se o aluno ganhou algo — apenas envia tentativas.
-O servidor valida e executa.
-
-### Anti-Trapaça
-- Client envia: puzzle_id + lances, lesson_id + lance, bot_id + PGN
-- Servidor valida: compara com solução correta, calcula rating, concede XP
-- RLS ativo em todas as tabelas (aluno só acessa seus dados)
-- Rate limiting em RPCs de puzzle e missão
-
-## Estrutura de Pastas
-- src/app/ → Rotas (App Router)
-- src/components/ → Componentes (ui/, chess/, gamification/, layout/)
-- src/lib/ → Lógica compartilhada (supabase/, chess/, glicko2/, gamification/)
-- src/hooks/ → React hooks customizados
-- supabase/migrations/ → SQL migrations versionadas
-- supabase/functions/ → Edge Functions
-
-## Convenções de Código
-- TypeScript strict mode sempre
-- Componentes: PascalCase (PuzzleBoard.tsx)
-- Hooks: camelCase com prefixo use (usePuzzleRating.ts)
-- Lib/utils: camelCase (calculateGlicko.ts)
-- Supabase types gerados com: npx supabase gen types typescript
-- Commits em português: "feat: adicionar modo rating de puzzles"
-
-## Regras Importantes
-- Sempre usar Server Components quando possível (Next.js App Router)
-- Client Components apenas quando necessário (interatividade, hooks)
-- Nunca expor chaves secretas do Supabase no client
-- Sempre usar @supabase/ssr para auth no server side
-- Puzzles são pré-importados do Lichess CSV, nunca API em tempo real
-- Stockfish WASM roda no browser via Web Worker, nunca no servidor
-- Todos os sons devem respeitar a configuração de mudo do usuário
-
-## Documentação de Referência
-- Visão do Produto: docs/VISAO_PRODUTO.md
-- Roadmap: docs/ROADMAP.md
-- Supabase: usar Context7 MCP para doc atualizada
-- Next.js: usar Context7 MCP para doc atualizada
-```
+> **O CLAUDE.md real está na raiz do repositório** — é a fonte da verdade e já
+> divergiu do exemplo que ficava aqui (que ainda dizia Next.js 15 e apontava para
+> `docs/VISAO_PRODUTO.md` e `docs/ROADMAP.md`, arquivos que nunca existiram: os
+> nomes reais são `docs/Recruta64_Visao_do_Produto_v1.md` e este documento).
+> Manter duas cópias garantia que uma ficasse errada — o exemplo foi removido.
+>
+> Leia [`CLAUDE.md`](../CLAUDE.md).
 
 > **Por que isso importa:** Sem o CLAUDE.md, o Claude começa cada tarefa "do zero" e pode tomar decisões inconsistentes (ex: colocar lógica no client que deveria estar no servidor). Com o CLAUDE.md, ele sempre sabe as regras do projeto.
 
@@ -339,10 +205,10 @@ O fluxo ideal para cada tarefa é:
 
 2. Claude lê o CLAUDE.md (automático) e entende o contexto
 
-3. Claude usa os MCPs conforme necessário:
-   → Context7: busca doc do Supabase para garantir sintaxe correta
-   → Supabase MCP: executa o SQL diretamente no banco
-   → Playwright: abre o browser e testa se a página renderizou
+3. Claude aplica no banco e valida:
+   → npx tsx scripts/apply-migration.ts <arquivo>.sql  (aplica a migration)
+   → npm run verify:all                               (11 gates contra o banco)
+   → npm run test:e2e                                 (Playwright — bate em produção)
 
 4. Claude escreve o código e aplica no projeto
 
@@ -358,7 +224,7 @@ O fluxo ideal para cada tarefa é:
 - ✅ "Crie o componente PuzzleBoard que usa chessground para renderizar um puzzle. O componente recebe FEN e sequência de lances como props. Use a seção 6.2 do documento de visão como referência."
 
 **Referencie o documento de visão:**
-- ✅ "Implemente o fluxo de Modo Rating conforme descrito na seção 6.2 da VISAO_PRODUTO.md"
+- ✅ "Implemente o fluxo de Modo Rating conforme descrito na seção 6.2 do Recruta64_Visao_do_Produto_v1.md"
 - ✅ "Crie as RPCs de validação conforme a seção 4.2 (Fluxo de Validação)"
 
 **Peça testes junto com o código:**
@@ -414,9 +280,8 @@ Conecte o repositório GitHub à Vercel:
 | 1.3 | Criar projeto Supabase | Dashboard acessível, URL e chaves disponíveis |
 | 1.4 | Configurar variáveis de ambiente (.env.local) | Supabase client conecta sem erros |
 | 1.5 | Criar estrutura de pastas (conforme seção 3.2) | Pastas criadas e organizadas |
-| 1.6 | Criar CLAUDE.md na raiz (conforme seção 4.1) | Arquivo existe e está completo |
-| 1.7 | Copiar VISAO_PRODUTO.md para docs/ | Documento acessível no projeto |
-| 1.8 | Configurar MCPs (Supabase, Playwright, Context7) | Claude consegue usar os 3 MCPs |
+| 1.6 | Criar CLAUDE.md na raiz | Arquivo existe e está completo |
+| 1.7 | Copiar a Visão do Produto para docs/ | Documento acessível no projeto |
 | 1.9 | Deploy inicial na Vercel | Site acessível em URL pública (página em branco ok) |
 | 1.10 | Instalar dependências (chess.js, chessground, etc.) | `npm install` sem erros |
 
