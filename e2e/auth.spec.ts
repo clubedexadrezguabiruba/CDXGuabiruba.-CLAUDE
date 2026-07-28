@@ -93,8 +93,12 @@ test.describe("fluxo autenticado", () => {
     // Email completo não deve aparecer na UI
     await expect(page.getByText(TEST_EMAIL)).toHaveCount(0);
 
-    // Navbar com nível visível (criado pelo trigger)
-    await expect(page.getByText("Nv. 1")).toBeVisible();
+    // Navbar com nível visível (criado pelo trigger).
+    // .first(): "Nv. 1" aparece duas vezes quando o dashboard termina de
+    // renderizar — uma na navbar, outra no card de progressão. Sem o .first()
+    // isto vira violação de modo estrito. Passava antes porque o helper de login
+    // retornava com o dashboard ainda em branco, e só a navbar existia.
+    await expect(page.getByText("Nv. 1").first()).toBeVisible();
   });
 
   test("signout redireciona para /login e bloqueia /dashboard", async ({

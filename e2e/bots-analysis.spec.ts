@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { settleAfterLogin } from "./helpers/auth-helpers";
-import { makeMove } from "./helpers/chess-helpers";
+import { makeMove, startBotGame } from "./helpers/chess-helpers";
 
 const TIMESTAMP = Date.now();
 const TEST_EMAIL = `bottest+${TIMESTAMP}@cdxguabiruba.test`;
@@ -126,6 +126,39 @@ async function getLatestAnalysis(userId: string) {
   return data?.[0] ?? null;
 }
 
+/**
+ * Busca a análise DA partida informada, esperando até ela existir.
+ *
+ * Por que não "a análise mais recente": o client grava a análise de forma
+ * assíncrona, depois do resultado. Perguntar pela mais recente logo após uma
+ * espera fixa devolvia a análise da partida ANTERIOR — o C4 falhava com
+ * `expect(analysis.bot_result_id).toBe(result.id)` recebendo 217 contra 218
+ * esperado. Não era bug de produto: era a consulta perguntando a coisa errada.
+ *
+ * Filtrar por bot_result_id e esperar a linha aparecer torna a asserção sobre a
+ * partida certa, e substitui a espera fixa de 3 s que só mascarava a corrida.
+ */
+async function waitForAnalysisOfResult(resultId: number, timeoutMs = 30_000) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/bot_game_analysis?bot_result_id=eq.${resultId}&limit=1`,
+      {
+        headers: {
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        },
+      }
+    );
+    const data = await res.json();
+    if (data?.[0]) return data[0];
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  return null;
+}
+
 /** Get latest bot result for a user */
 async function getLatestResult(userId: string) {
   const res = await fetch(
@@ -213,7 +246,7 @@ test.describe("Nível C: fluxo integrado real", () => {
     await expect(page).toHaveURL(/\/bots\//, { timeout: 10_000 });
 
     // 4. Start game
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
 
     // 5. Wait for board
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
@@ -274,7 +307,7 @@ test.describe("Nível C: fluxo integrado real", () => {
 
     const { bot1Id } = await getBotIds();
     await page.goto(`/bots/${bot1Id}`);
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
 
@@ -302,7 +335,7 @@ test.describe("Nível C: fluxo integrado real", () => {
 
     const { bot1Id } = await getBotIds();
     await page.goto(`/bots/${bot1Id}`);
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
 
@@ -326,7 +359,7 @@ test.describe("Nível C: fluxo integrado real", () => {
 
     const { bot1Id } = await getBotIds();
     await page.goto(`/bots/${bot1Id}`);
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
 
@@ -346,18 +379,20 @@ test.describe("Nível C: fluxo integrado real", () => {
       page.getByRole("button", { name: /Ver Análise|Analisando/i })
     ).toBeEnabled({ timeout: 60_000 });
 
-    // Give a moment for the save_bot_analysis RPC to complete
-    await page.waitForTimeout(3000);
-
     // Verify in database
     const result = await getLatestResult(userId);
     expect(result).not.toBeNull();
     expect(result.result).toBe("loss");
     expect(result.bot_id).toBe(bot1Id);
 
-    const analysis = await getLatestAnalysis(userId);
-    expect(analysis).not.toBeNull();
-    expect(analysis.bot_result_id).toBe(result.id);
+    // Espera a análise DESTA partida, em vez de dormir 3 s e pegar a mais
+    // recente — que podia ser a da partida anterior (C1/C2/C3 rodam antes com o
+    // mesmo usuário).
+    const analysis = await waitForAnalysisOfResult(result.id);
+    expect(
+      analysis,
+      `Nenhuma análise gravada para bot_result_id=${result.id} em 30 s`
+    ).not.toBeNull();
     expect(analysis.accuracy_percent).toBeGreaterThan(0);
   });
 });

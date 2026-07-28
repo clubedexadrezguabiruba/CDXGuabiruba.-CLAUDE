@@ -10,7 +10,7 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
-import { makeMove } from "./helpers/chess-helpers";
+import { makeMove, startBotGame } from "./helpers/chess-helpers";
 import { settleAfterLogin } from "./helpers/auth-helpers";
 
 // ---------------------------------------------------------------------------
@@ -347,7 +347,7 @@ test.describe("Audit C: Layout pré-jogo", () => {
     // No desktop, o botão deve estar à direita do board (sidebar)
     expect(button!.x).toBeGreaterThan(board!.x);
 
-    // [ACHADO P8] — Sidebar é lg:w-80 (320px). Screenshot para documentar se é apertado
+    // Sidebar é lg:w-80 (320px). Screenshot para documentar se é apertado.
     await takeAuditScreenshot(page, "C2-pregame-desktop");
   });
 
@@ -405,7 +405,7 @@ test.describe("Audit D: Layout da fase de jogo", () => {
     await page.goto(`/bots/${botIds.bot1Id}`);
 
     // Iniciar jogo
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
 
@@ -443,7 +443,7 @@ test.describe("Audit D: Layout da fase de jogo", () => {
     await login(page, EMAIL, PASSWORD);
     await page.goto(`/bots/${botIds.bot1Id}`);
 
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
 
@@ -490,7 +490,7 @@ test.describe("Audit E: GameOverModal", () => {
     await page.goto(`/bots/${botIds.bot1Id}`);
 
     // Iniciar, mover, render-se
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(2000);
     await makeMove(page, "e2", "e4", "white");
@@ -536,7 +536,7 @@ test.describe("Audit E: GameOverModal", () => {
     await login(page, EMAIL, PASSWORD);
     await page.goto(`/bots/${botIds.bot1Id}`);
 
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(2000);
     await makeMove(page, "e2", "e4", "white");
@@ -555,12 +555,12 @@ test.describe("Audit E: GameOverModal", () => {
     await takeAuditScreenshot(page, "E2-gameover-modal-desktop");
   });
 
-  test("E3: verificar label 'Revisão de Batalha' no modal [ACHADO P3]", async ({ page }) => {
+  test("E3: modal do fim de jogo oferece 'Ver Análise'", async ({ page }) => {
     test.setTimeout(90_000);
     await login(page, EMAIL, PASSWORD);
     await page.goto(`/bots/${botIds.bot1Id}`);
 
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(2000);
     await makeMove(page, "e2", "e4", "white");
@@ -600,7 +600,7 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     if (userId) await cleanupUser(userId);
   });
 
-  test("F1: fluxo completo — modal → post-game → verificar labels [ACHADOS P1, P2, P3]", async ({
+  test("F1: fluxo completo — modal → post-game, rótulos em português", async ({
     page,
   }) => {
     test.setTimeout(120_000);
@@ -609,7 +609,7 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     await page.goto(`/bots/${botIds.bot1Id}`);
 
     // Iniciar, fazer 2 lances, render-se
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
     await makeMove(page, "e2", "e4", "white");
@@ -627,28 +627,27 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     // depois deste clique. Esperar aqui pelo nome errado fazia o teste sempre
     // cair no catch e se auto-skipar como "análise não completou", escondendo
     // que a análise leva ~0,9 s.
+    // Sem try/catch + test.skip aqui.
+    //
+    // A versão anterior envolvia esta espera num catch que chamava
+    // test.skip(true, "limitação documentada"). Um teste que se auto-pula com uma
+    // explicação plausível é pior que um teste vermelho: some do relatório. E a
+    // explicação era falsa — o que derrubava este teste era a partida chegar ao
+    // modal com ZERO lances (makeMove era fire-and-forget), não uma "limitação"
+    // da análise. Se a análise não completar, isto agora falha e diz por quê.
     const reviewButton = page.getByRole("button", { name: /Ver Análise|Analisando/i });
-    try {
-      await expect(reviewButton).toBeEnabled({ timeout: 60_000 });
-    } catch {
-      await takeAuditScreenshot(page, "F1-analysis-timeout-modal");
-      test.skip(true, "Análise não completou em 60s — limitação documentada");
-      return;
-    }
+    await expect(reviewButton).toBeEnabled({ timeout: 60_000 });
 
-    // [ACHADO P2] — Verificar se "Best" aparece em inglês no modal
-    const modalText = await page.textContent("body");
-    const hasBestEnglish = modalText?.includes(">Best<") || false;
+    // P2 (já corrigido no produto) — o modal não usa mais rótulo em inglês.
+    // Guarda de regressão: GameOverModal.tsx não tem mais "Best".
+    await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+
     // Capturar estado: se analysis completou, pode ter quick stats
     await takeAuditScreenshot(page, "F1-gameover-with-analysis-mobile");
 
     // Navegar para BotPostGame
     await reviewButton.click();
     await page.waitForTimeout(1000);
-
-    // [ACHADO P1] — Verificar se "Blunder" aparece em inglês no BotPostGame
-    const postGameText = await page.textContent("body");
-    const hasBlunderEnglish = postGameText?.match(/\bBlunder\b/);
 
     // Screenshot do BotPostGame
     await takeAuditScreenshot(page, "F1-postGame-mobile");
@@ -657,43 +656,30 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     const svgGauge = page.locator("svg").first();
     await expect(svgGauge).toBeVisible();
 
-    // Verificar labels de categorias visíveis (pelo menos algumas)
-    const visibleCategories: string[] = [];
-    for (const cat of ["Brilhante", "Excelente", "Melhor", "Bom", "Imprecisão", "Erro", "Blunder", "Erro Grave"]) {
-      const isVis = await page.getByText(cat, { exact: true }).first().isVisible().catch(() => false);
-      if (isVis) visibleCategories.push(cat);
-    }
+    // P1 (já corrigido no produto) — a categoria "blunder" é rotulada
+    // "Erro Grave" (BotPostGame.tsx:25 e GameReview.tsx:27). Guarda de regressão
+    // contra o rótulo em inglês voltar.
+    await expect(page.getByText("Blunder", { exact: true })).toHaveCount(0);
 
-    // Documentar achados
-    // P1: "Blunder" (inglês) deveria ser "Erro Grave" (português)
-    if (hasBlunderEnglish) {
-      console.log("[ACHADO P1 CONFIRMADO] Label 'Blunder' em inglês no BotPostGame");
-    }
-    // P2: "Best" (inglês) no modal — pode não ter aparecido se quick stats não renderizou
-    if (hasBestEnglish) {
-      console.log("[ACHADO P2 CONFIRMADO] Label 'Best' em inglês no GameOverModal");
-    }
-    console.log(`[AUDIT F1] Categorias visíveis no BotPostGame: ${visibleCategories.join(", ")}`);
-
-    // [ACHADO P3] — Verificar se BotPostGame também tem botão "Revisão de Batalha"
-    const secondReviewButton = page.getByRole("button", { name: /Revisão de Batalha/i });
-    const hasSecondReview = await secondReviewButton.isVisible().catch(() => false);
-    if (hasSecondReview) {
-      console.log("[ACHADO P3 CONFIRMADO] Label 'Revisão de Batalha' duplicada no BotPostGame");
-    }
+    // P3 (já corrigido no produto) — os dois rótulos são distintos: o modal diz
+    // "Ver Análise" (GameOverModal.tsx:156) e o post-game diz "Revisão de
+    // Batalha" (BotPostGame.tsx:282). Não há duplicidade. Guarda: aqui, já no
+    // post-game, o botão do modal não deve mais existir.
+    await expect(page.getByRole("button", { name: /Revisão de Batalha/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Ver Análise$/i })).toHaveCount(0);
 
     // Sem overflow no mobile
     await checkNoHorizontalOverflow(page);
   });
 
-  test("F2: GameReview — eval bar e layout mobile [ACHADO P4]", async ({ page }) => {
+  test("F2: GameReview — eval bar escondida no mobile e nav visível", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize(MOBILE);
     await login(page, EMAIL, PASSWORD);
     await page.goto(`/bots/${botIds.bot1Id}`);
 
     // Jogo rápido + rendição
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
     await makeMove(page, "e2", "e4", "white");
@@ -704,27 +690,19 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     await page.locator('button:has-text("Sim"):visible').first().click();
     await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
 
-    // Esperar análise — botão do modal é "Ver Análise" (ver F1)
+    // Esperar análise — botão do modal é "Ver Análise" (ver F1).
+    // Sem try/catch + test.skip: ver a justificativa em F1.
     const reviewButton = page.getByRole("button", { name: /Ver Análise|Analisando/i });
-    try {
-      await expect(reviewButton).toBeEnabled({ timeout: 60_000 });
-    } catch {
-      await takeAuditScreenshot(page, "F2-analysis-timeout");
-      test.skip(true, "Análise não completou em 60s");
-      return;
-    }
+    await expect(reviewButton).toBeEnabled({ timeout: 60_000 });
 
     // Modal → PostGame
     await reviewButton.click();
     await page.waitForTimeout(1000);
 
-    // PostGame → Review (se segundo "Revisão de Batalha" existe)
+    // PostGame → Review. O botão "Revisão de Batalha" existe (BotPostGame.tsx:282);
+    // se sumir, é regressão — antes isto se auto-pulava e escondia o problema.
     const secondReview = page.getByRole("button", { name: /Revisão de Batalha/i });
-    const hasSecond = await secondReview.isVisible().catch(() => false);
-    if (!hasSecond) {
-      test.skip(true, "Botão de Review não encontrado no PostGame");
-      return;
-    }
+    await expect(secondReview).toBeVisible({ timeout: 5_000 });
 
     await secondReview.click();
     await page.waitForTimeout(1000);
@@ -732,15 +710,10 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     // GameReview deve ter board visível
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 5_000 });
 
-    // [ACHADO P4] — Eval bar deve estar ESCONDIDA no mobile (<640px = hidden sm:flex)
-    // A eval bar é um div com w-7 dentro de hidden sm:flex
-    // No mobile 375px, ela NÃO deve estar visível
-    const evalBarContainer = page.locator(".hidden.sm\\:flex").first();
-    const evalBarVisible = await evalBarContainer.isVisible().catch(() => false);
-    // Documentar: se eval bar está escondida no mobile, confirma achado P4
-    if (!evalBarVisible) {
-      console.log("[ACHADO P4 CONFIRMADO] Eval bar escondida no mobile 375px");
-    }
+    // P4 — a eval bar é intencionalmente escondida no mobile (`hidden sm:flex`).
+    // Isto não é achado de bug, é o comportamento desejado: vira asserção em vez
+    // de console.log, para que quebrar o breakpoint apareça no relatório.
+    await expect(page.locator(".hidden.sm\\:flex").first()).toBeHidden();
 
     // Botões de navegação visíveis (usam unicode ◀ ▶ etc.)
     const navButtons = page.locator("button").filter({ hasText: /[◀▶⏮⏭]/ });

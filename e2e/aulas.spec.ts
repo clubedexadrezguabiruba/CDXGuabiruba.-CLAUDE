@@ -194,8 +194,12 @@ test.describe("aulas — smoke tests", () => {
 
     const panel = desktopPanel(page);
 
-    // Lance errado: a2→a3
-    await makeMove(page, "a2", "a3", "white");
+    // Lance errado: a2→a3.
+    // expectLanded: false — LessonViewer.tsx:643-651 faz snap-back 800 ms depois
+    // de um lance errado. A verificação padrão de makeMove veria a peça no
+    // destino nos primeiros 800 ms e passaria, mas viraria corrida com a
+    // animação numa máquina carregada. O intento aqui é o lance NÃO valer.
+    await makeMove(page, "a2", "a3", "white", { expectLanded: false });
 
     // Feedback de erro no painel desktop
     await expect(panel.getByText("Tente novamente!")).toBeVisible({
@@ -348,6 +352,12 @@ test.describe("aulas — smoke tests", () => {
   });
 
   test("F2: review gate carrega após completar trilha", async ({ page }) => {
+    // O timeout global de 30 s (playwright.config.ts) não cobre este teste: ele
+    // limpa o progresso, força a conclusão das 15 aulas da trilha Recruta (15
+    // chamadas ao banco), faz login e ainda carrega o review gate. Estourava no
+    // page.goto sem que houvesse nada errado com a página.
+    test.setTimeout(90_000);
+
     await cleanupUserProgress(userId);
     await forceCompleteLessons(userId, RECRUTA_LESSONS);
 

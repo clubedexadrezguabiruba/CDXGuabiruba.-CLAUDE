@@ -834,6 +834,12 @@ test.describe("puzzles — revanche gameplay", () => {
     // This test verifies the REAL flow: fail a puzzle via actual gameplay,
     // then navigate to revanche and verify it appears.
     // Unlike D2 which inserts directly, this tests the full puzzle_attempt RPC.
+    //
+    // O timeout global de 30 s não cobre o fluxo: login, carregar puzzle de
+    // rating, tentar até 4 destinos errados, esperar o RPC puzzle_attempt, e
+    // navegar para a revanche. Estourava numa espera de 5 s no meio do caminho,
+    // sem que houvesse falha real.
+    test.setTimeout(120_000);
 
     const revEmail = `revtest+${TIMESTAMP}@cdxguabiruba.test`;
     const revPassword = `RevTest@${TIMESTAMP}`;
@@ -880,7 +886,12 @@ test.describe("puzzles — revanche gameplay", () => {
 
     let wrongMoveWorked = false;
     for (const wrongTo of wrongTargets) {
-      await makeMove(page, from, wrongTo, orientation);
+      // expectLanded: false — este loop TENTA destinos candidatos e conta com que
+      // alguns sejam ilegais para passar ao próximo ("If the move wasn't accepted
+      // (illegal), try next" abaixo). A verificação padrão de makeMove lançaria
+      // no primeiro candidato ilegal e mataria o loop. Quem verifica aqui é o
+      // teste, pelo texto "Incorreto".
+      await makeMove(page, from, wrongTo, orientation, { expectLanded: false });
       const failed = await page
         .getByText("Incorreto")
         .first()
@@ -999,8 +1010,21 @@ test.describe("puzzles — resistência gameplay", () => {
       // Solve this puzzle
       await solvePuzzle(page, moves, puzzle.fen);
 
-      // Wait for "Correto!" phase
-      await waitForPhase(page, "correct", 8_000);
+      // Confirma o acerto pelo SCORE, não pelo overlay "Correto!".
+      //
+      // O overlay é transitório: no modo resistência o app o mostra e avança
+      // sozinho para o próximo puzzle. Esperar por ele era uma corrida perdida —
+      // a falha capturada mostrava a tela já em "Score: 6" e "Puzzle 7 / 60",
+      // ou seja, o puzzle TINHA sido resolvido e o teste falhava só por não ter
+      // visto o overlay a tempo. Era o teste medindo a coisa errada, não o modo
+      // travando.
+      //
+      // O score é o sinal persistente e é o que o teste quer dizer de verdade:
+      // "este puzzle foi resolvido". O (?!\d) evita "Score: 1" casar com
+      // "Score: 10".
+      await expect(
+        page.getByText(new RegExp(`Score: ${i + 1}(?!\\d)`)).first()
+      ).toBeVisible({ timeout: 20_000 });
 
       // Wait for auto-advance to next puzzle
       await page.waitForTimeout(1000);

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { settleAfterLogin } from "./helpers/auth-helpers";
-import { makeMove } from "./helpers/chess-helpers";
+import { makeMove, startBotGame } from "./helpers/chess-helpers";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -131,7 +131,7 @@ test.describe("premove: múltiplos premoves contra bot", () => {
     // 4. Start game (white, no time)
     // dois botões (layout mobile + desktop), só um visível — mesmo padrão
     // usado em bots-analysis.spec.ts
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
 
     // 5. Wait for board
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
@@ -157,16 +157,20 @@ test.describe("premove: múltiplos premoves contra bot", () => {
     // a asserção de premove encontrava zero.
     // Emitimos os lances imediatamente, para cair dentro da janela de reflexão.
 
+    // expectLanded: false — estes cliques são premoves de propósito. A peça faz
+    // snap-back porque não é a vez do jogador, então a verificação padrão de
+    // makeMove (peça saiu da origem e chegou ao destino) falharia corretamente.
+
     // 10. Premove 1: Nb1→c3
-    await makeMove(page, "b1", "c3", "white");
+    await makeMove(page, "b1", "c3", "white", { expectLanded: false });
     await page.waitForTimeout(300);
 
     // 11. Premove 2: Bf1→c4 (or d3 — depends on position, try c4)
-    await makeMove(page, "f1", "c4", "white");
+    await makeMove(page, "f1", "c4", "white", { expectLanded: false });
     await page.waitForTimeout(300);
 
     // 12. Premove 3: Qd1→f3
-    await makeMove(page, "d1", "f3", "white");
+    await makeMove(page, "d1", "f3", "white", { expectLanded: false });
     await page.waitForTimeout(300);
 
     // 13. Verify: at least 1 premove enqueued (afterLogs should have entries)
@@ -183,18 +187,23 @@ test.describe("premove: múltiplos premoves contra bot", () => {
 
     // Asserção corrigida.
     //
-    // Antes exigia >= 1 log [PREMOVE:after] com "interactive":false, e isso é o
-    // sinal ERRADO: o caminho de premove passa pelo evento
-    // `premovable.events.set` do chessground (BotBoard), não pelo evento
-    // `after`. Na prática o filtro dava 0 mesmo quando os premoves
-    // funcionavam perfeitamente — enquanto os logs de enqueue/execute
-    // mostravam 3 enfileirados e 1 executado.
+    // Antes exigia >= 1 log [PREMOVE:after] com "interactive":false. Esse filtro
+    // dava 0 mesmo com os premoves funcionando, mas NÃO pelo motivo que o commit
+    // 4ff6cfa registrou: BotBoard.tsx:216 tem `premovable: { enabled: false }` e
+    // o comentário em BotBoard.tsx:176 diz que os premoves passam justamente por
+    // `movable.events.after` com snap-back — não por `premovable.events.set`. O
+    // que zerava a contagem era a espera de 500 ms antes dos cliques, que
+    // devolvia a vez ao jogador. Errata registrada aqui porque a mensagem de
+    // commit é permanente e induz a erro.
     //
     // O que de fato prova que a fila de premoves funciona:
     expect(enqueueLogs.length).toBeGreaterThanOrEqual(1);
-    expect(executeLogs.length).toBeGreaterThanOrEqual(1);
 
     // 14. Wait for bot to finish and premove to execute
+    //
+    // A execução só acontece depois que o bot responde, então a asserção de
+    // executeLogs vem DEPOIS desta espera. Antes ela era feita também acima,
+    // antes da espera — era a linha mais arriscada do arquivo, e redundante.
     await page.waitForTimeout(5000);
 
     // At least 1 tryExecuteFirst should have fired (proves execution works)
@@ -226,7 +235,7 @@ test.describe("premove: múltiplos premoves contra bot", () => {
     await expect(page).toHaveURL(/\/bots\//, { timeout: 10_000 });
     // dois botões (layout mobile + desktop), só um visível — mesmo padrão
     // usado em bots-analysis.spec.ts
-    await page.locator('button:has-text("Iniciar Duelo"):visible').click();
+    await startBotGame(page);
     await expect(page.locator("cg-board")).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1500);
 
@@ -236,10 +245,16 @@ test.describe("premove: múltiplos premoves contra bot", () => {
 
     // 3. Play another normal move
     await makeMove(page, "d2", "d4", "white");
-    await page.waitForTimeout(500); // Wait for bot to start thinking
 
-    // 4. Make a premove
-    await makeMove(page, "b1", "c3", "white");
+    // 4. Make a premove.
+    //
+    // SEM espera antes: é a mesma armadilha que 4ff6cfa removeu do teste irmão.
+    // Léo é o bot mais fraco (250 elo) e responde em poucas centenas de ms, então
+    // meio segundo de espera já devolvia a vez ao jogador e este "premove" virava
+    // lance normal — a fila ficava vazia e clearQueue retorna antes do log
+    // (useFutureMoveQueue.ts:78), zerando a asserção do passo 6. Passava por
+    // margem, não por garantia.
+    await makeMove(page, "b1", "c3", "white", { expectLanded: false });
     await page.waitForTimeout(300);
 
     // 5. Right-click on board to clear queue

@@ -367,8 +367,10 @@ test.describe("Lance errado", () => {
 
     await navigateToFirstExercise(page);
 
-    // Lance errado: d2→d3 em vez de d2→d4
-    await makeMove(page, "d2", "d3", "white");
+    // Lance errado: d2→d3 em vez de d2→d4.
+    // expectLanded: false — o snap-back de LessonViewer.tsx:643-651 desfaz o
+    // lance 800 ms depois; o intento do teste é justamente que ele não valha.
+    await makeMove(page, "d2", "d3", "white", { expectLanded: false });
 
     // Feedback de erro no painel desktop
     const panel = page.locator(".rounded-xl.bg-zinc-700 .bg-white");
