@@ -12,6 +12,14 @@ const supabase = createBrowserClient(
 export function useInventory() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [equipped, setEquipped] = useState<EquippedMap>({});
+  /**
+   * Tamanho do catálogo completo de itens — o denominador de "Coleção".
+   *
+   * Vem do banco porque era exatamente isto que estava hardcoded como 47 no
+   * perfil enquanto o catálogo já tinha 77 itens. `head: true` traz só o
+   * count, sem payload.
+   */
+  const [catalogTotal, setCatalogTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const didLoad = useRef(false);
@@ -34,6 +42,13 @@ export function useInventory() {
         .select("slot, item_id, items(id, name, rarity, image_url)");
 
       if (eqErr) throw new Error(eqErr.message);
+
+      // Total do catálogo (denominador de "Coleção")
+      const { count: totalItens, error: catErr } = await supabase
+        .from("items")
+        .select("id", { count: "exact", head: true });
+
+      if (catErr) throw new Error(catErr.message);
 
       // Montar mapa de equipados
       const eqMap: EquippedMap = {};
@@ -72,6 +87,7 @@ export function useInventory() {
       requestAnimationFrame(() => {
         setItems(inventoryItems);
         setEquipped(eqMap);
+        setCatalogTotal(totalItens ?? 0);
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao carregar inventário";
@@ -140,5 +156,5 @@ export function useInventory() {
     );
   }, []);
 
-  return { items, equipped, loading, error, equip, unequip, refresh: load };
+  return { items, equipped, catalogTotal, loading, error, equip, unequip, refresh: load };
 }

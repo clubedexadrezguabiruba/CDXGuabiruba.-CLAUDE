@@ -282,7 +282,7 @@ export default function PerfilClient({
   lessonsCompleted,
   puzzlesSolved,
 }: PerfilClientProps) {
-  const { items, equipped, loading, equip, unequip } = useInventory();
+  const { items, equipped, catalogTotal, loading, equip, unequip } = useInventory();
   const { achievements, loading: achievementsLoading } = useAchievements();
   const [avatarBase, setAvatarBase] = useState<AvatarBase>(
     (profile.avatarBase as AvatarBase) || "male"
@@ -376,7 +376,7 @@ export default function PerfilClient({
       stats: [
         { icon: <IconBook />, value: lessonsCompleted.toString(), label: "Aulas", accent: false },
         { icon: <IconBot />, value: `${botsDefeated}/10`, label: "Bots", accent: false },
-        { icon: <IconTrophy />, value: `${unlockedCount}/17`, label: "Insígnias", accent: false },
+        { icon: <IconTrophy />, value: `${unlockedCount}/${achievements.length}`, label: "Insígnias", accent: false },
       ],
     },
   ];
@@ -481,7 +481,7 @@ export default function PerfilClient({
               {/* Right stats — desktop only */}
               <div className="hidden flex-col gap-2 lg:flex">
                 <QuickStat icon={<IconBot />} value={`${botsDefeated}/10`} label="Bots" />
-                <QuickStat icon={<IconChest />} value={`${items.length}/47`} label="Coleção" />
+                <QuickStat icon={<IconChest />} value={`${items.length}/${catalogTotal}`} label="Coleção" />
               </div>
             </div>
 
@@ -490,7 +490,7 @@ export default function PerfilClient({
               <QuickStat icon={<IconRook />} value={profile.puzzleRating.toString()} label="Rating" />
               <QuickStat icon={<IconBolt />} value={profile.puzzleBestStreak > 0 ? profile.puzzleBestStreak.toString() : "—"} label="Sequência" />
               <QuickStat icon={<IconBot />} value={`${botsDefeated}/10`} label="Bots" />
-              <QuickStat icon={<IconChest />} value={`${items.length}/47`} label="Coleção" />
+              <QuickStat icon={<IconChest />} value={`${items.length}/${catalogTotal}`} label="Coleção" />
             </div>
 
             {/* --- XP + metadata (below avatar) --- */}
