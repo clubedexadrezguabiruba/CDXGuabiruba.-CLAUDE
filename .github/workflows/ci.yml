@@ -47,6 +47,13 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      # Confere a FORMA dos 4 secrets (nunca o valor) antes de qualquer coisa
+      # depender deles. Sem isto, um secret mal colado só estoura lá no
+      # verify:all, com erro de dentro do node_modules que não diz qual variável
+      # é a culpada.
+      - name: Conferir variáveis de ambiente
+        run: npx tsx scripts/verify/env-shape.ts
+
       - name: Typecheck
         run: npm run typecheck
 

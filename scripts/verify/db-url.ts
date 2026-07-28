@@ -15,8 +15,23 @@
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 
+/**
+ * Remove aspas em volta do valor.
+ *
+ * Copiar de um arquivo .env para um secret de CI leva as aspas junto, e uma
+ * aspa literal deixa a variável "presente" com valor inválido — o postgres()
+ * então falha com erro de parsing longe da causa. loadEnv() faz o mesmo; os
+ * gates de banco chamam getDbUrl() sem passar por ele.
+ */
+function semAspas(v: string | undefined): string | undefined {
+  if (!v) return v;
+  const aspado =
+    (v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"));
+  return aspado ? v.slice(1, -1) : v;
+}
+
 export function getDbUrl(): string {
-  const fromEnv = process.env.SUPABASE_DB_URL?.trim();
+  const fromEnv = semAspas(process.env.SUPABASE_DB_URL?.trim());
   if (fromEnv) return fromEnv;
 
   const envPath = resolve(process.cwd(), ".env.local");
