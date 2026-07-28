@@ -116,6 +116,20 @@ if (dbUrlBruta) {
     console.log(`  banco   : ${u.pathname.replace("/", "")}`);
     console.log(`  senha   : ${senha.length} caracteres`);
 
+    // Senha curta demais é truncamento, não escolha: o Supabase exige no mínimo
+    // 8 caracteres, então nenhuma senha real cabe aqui. Sem esta checagem o
+    // diagnóstico dizia "forma esperada" com uma senha de 5 caracteres — um
+    // falso "tudo certo" que empurrava a descoberta para o 28P01 dois gates
+    // adiante, sem dizer que o problema era a senha.
+    if (senha.length < 8) {
+      console.log(
+        `  [ERRO] senha com ${senha.length} caracteres é curta demais para ser real.\n` +
+          `         O Supabase exige no mínimo 8 — este valor foi truncado ao copiar.\n` +
+          `         Recopie a connection string INTEIRA, sem editar.`
+      );
+      problemas++;
+    }
+
     // O pooler exige usuário no formato postgres.<project-ref>, e o ref tem de
     // ser o mesmo do NEXT_PUBLIC_SUPABASE_URL. Divergência aqui é erro de cópia.
     const refDaUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
