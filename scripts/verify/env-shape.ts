@@ -94,6 +94,54 @@ for (const c of CHECKS) {
   }
 }
 
+// Detalhe da connection string. Usuário, host, porta e banco já aparecem em
+// claro nas mensagens de erro do Postgres, então mostrá-los aqui não expõe nada
+// novo — e é o que distingue "usuário errado" de "senha errada", que o
+// 28P01 ("password authentication failed") sozinho não diz.
+const dbUrlBruta = process.env.SUPABASE_DB_URL?.trim();
+if (dbUrlBruta) {
+  const semAspas =
+    (dbUrlBruta.startsWith('"') && dbUrlBruta.endsWith('"')) ||
+    (dbUrlBruta.startsWith("'") && dbUrlBruta.endsWith("'"))
+      ? dbUrlBruta.slice(1, -1)
+      : dbUrlBruta;
+
+  try {
+    const u = new URL(semAspas);
+    const senha = decodeURIComponent(u.password);
+    console.log("\nDetalhe da SUPABASE_DB_URL:");
+    console.log(`  usuário : ${u.username}`);
+    console.log(`  host    : ${u.hostname}`);
+    console.log(`  porta   : ${u.port}`);
+    console.log(`  banco   : ${u.pathname.replace("/", "")}`);
+    console.log(`  senha   : ${senha.length} caracteres`);
+
+    // O pooler exige usuário no formato postgres.<project-ref>, e o ref tem de
+    // ser o mesmo do NEXT_PUBLIC_SUPABASE_URL. Divergência aqui é erro de cópia.
+    const refDaUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+      .replace(/^https:\/\//i, "")
+      .split(".")[0];
+    const refDoUsuario = u.username.includes(".") ? u.username.split(".")[1] : null;
+
+    if (u.hostname.includes("pooler") && !refDoUsuario) {
+      console.log(
+        `  [ERRO] host é do pooler, mas o usuário não tem o sufixo do projeto.\n` +
+          `         esperado: postgres.${refDaUrl}`
+      );
+      problemas++;
+    } else if (refDoUsuario && refDaUrl && refDoUsuario !== refDaUrl) {
+      console.log(
+        `  [ERRO] o projeto no usuário não bate com o da NEXT_PUBLIC_SUPABASE_URL.\n` +
+          `         usuário aponta para "${refDoUsuario}", a URL para "${refDaUrl}"`
+      );
+      problemas++;
+    }
+  } catch {
+    console.log("\n  [ERRO] SUPABASE_DB_URL não é uma URL analisável.");
+    problemas++;
+  }
+}
+
 if (problemas > 0) {
   console.log(
     `\n${problemas} variável(is) com problema. Corrija em ` +
