@@ -6,7 +6,7 @@
  * O que valida:
  *   - 10 bots com nome, elo e unlock_order corretos
  *   - 17 achievements com key, titulo e XP
- *   - 47 itens distribuidos por slot e raridade
+ *   - 77 itens distribuidos por slot e raridade
  *   - RLS: anon nao acessa seeds, service_role acessa
  *
  * Pré-requisitos:

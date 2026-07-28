@@ -1,27 +1,37 @@
 /**
- * Helper: extrai a connection string PostgreSQL do .env.local.
+ * Helper: resolve a connection string PostgreSQL usada pelos gates de banco.
  *
- * O .env.local guarda a URL numa linha solta (sem prefixo CHAVE=), então
- * loadEnv() não a expõe em process.env. Mesma leitura usada por
- * scripts/apply-migration.ts.
+ * Ordem de precedência:
+ *   1. process.env.SUPABASE_DB_URL  — é assim que o CI fornece (secret).
+ *   2. .env.local na raiz           — é assim que a máquina local fornece.
+ *
+ * O .env.local guarda a URL numa **linha solta, sem prefixo CHAVE=**, então
+ * loadEnv() não a expõe em process.env e a leitura aqui varre o arquivo
+ * procurando por postgres://. Mesma leitura usada por scripts/apply-migration.ts.
  *
  * SEGURANÇA: uso exclusivo em scripts locais e CI. Nunca importar no client.
  */
 
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 
 export function getDbUrl(): string {
-  const envPath = resolve(process.cwd(), ".env.local");
-  const content = readFileSync(envPath, "utf-8");
+  const fromEnv = process.env.SUPABASE_DB_URL?.trim();
+  if (fromEnv) return fromEnv;
 
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("postgresql://") || trimmed.startsWith("postgres://")) {
-      return trimmed;
+  const envPath = resolve(process.cwd(), ".env.local");
+  if (existsSync(envPath)) {
+    for (const line of readFileSync(envPath, "utf-8").split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("postgresql://") || trimmed.startsWith("postgres://")) {
+        return trimmed;
+      }
     }
   }
 
-  console.error("Connection string PostgreSQL não encontrada no .env.local");
+  console.error(
+    "Connection string PostgreSQL não encontrada.\n" +
+      "Defina SUPABASE_DB_URL no ambiente (CI) ou inclua a URL postgres:// no .env.local."
+  );
   process.exit(1);
 }

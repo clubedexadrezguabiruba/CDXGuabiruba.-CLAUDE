@@ -5,7 +5,7 @@
  *
  * O que valida:
  *   1. Existência das 24 tabelas (2.1–2.11)
- *   2. Seed data: 10 bots, 17 achievements, 47 itens (2.19)
+ *   2. Seed data: 10 bots, 17 achievements, 77 itens (2.19)
  *   3. 9 RPCs core (2.14–2.16): existência e exigência de auth
  *   4. RLS: tabelas protegidas bloqueiam anon; catálogo requer auth
  *   5. View materializada user_public_profiles (2.12) via get_ranking
@@ -126,7 +126,7 @@ async function main() {
   const { data: items, error: itemsErr } = await supabase.from("items").select("id");
   if (itemsErr) nok("Items seed", itemsErr.message);
   else if (!items || items.length < 40)
-    nok("Items seed", `Esperado ~47, encontrado ${items?.length}`);
+    nok("Items seed", `Esperado >=40 (catálogo tem 77), encontrado ${items?.length}`);
   else ok(`Items seed: ${items.length} itens`);
 
   const { data: itemSlots } = await supabase.from("items").select("slot");

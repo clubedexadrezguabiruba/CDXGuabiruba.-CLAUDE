@@ -14,29 +14,10 @@
  * Uso: npm run verify:phase5
  */
 
-import { readFileSync } from "fs";
-import { resolve } from "path";
 import postgres from "postgres";
+import { getDbUrl } from "../db-url";
 
-const envPath = resolve(import.meta.dirname, "..", "..", "..", ".env.local");
-const envContent = readFileSync(envPath, "utf-8");
-let dbUrl = "";
-for (const line of envContent.split("\n")) {
-  const trimmed = line.trim();
-  if (
-    trimmed.startsWith("postgresql://") ||
-    trimmed.startsWith("postgres://")
-  ) {
-    dbUrl = trimmed;
-    break;
-  }
-}
-if (!dbUrl) {
-  console.error("Connection string nao encontrada no .env.local");
-  process.exit(1);
-}
-
-const db = postgres(dbUrl, { ssl: "require" });
+const db = postgres(getDbUrl(), { ssl: "require" });
 
 let passed = 0;
 let failed = 0;

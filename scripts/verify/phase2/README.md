@@ -26,7 +26,7 @@ npm run verify:seeds
 | Bloco | Verifica |
 |---|---|
 | 1. Tabelas | 24 tabelas existem e sao acessiveis |
-| 2. Seeds | 10 bots, 17 achievements, 47 itens |
+| 2. Seeds | 10 bots, 17 achievements, 77 itens |
 | 3. RPCs | 9 funcoes existem (puzzle_attempt, lesson_step_submit, bot_result, check_daily_missions, claim_chest, grant_xp, check_level_up, get_ranking, refresh_public_profiles) |
 | 4. RLS | Tabelas protegidas bloqueiam anon; catalogo requer `authenticated` |
 | 5. View | `user_public_profiles` funciona via `get_ranking` |
@@ -36,7 +36,7 @@ npm run verify:seeds
 |---|---|
 | Bots | 10 bots com nome, elo e unlock_order corretos |
 | Achievements | 17 conquistas com key, titulo e XP |
-| Items | 47 itens distribuidos por slot e raridade |
+| Items | 77 itens distribuidos por slot e raridade |
 | RLS | anon nao ve seeds, service_role ve |
 
 ## Exit codes

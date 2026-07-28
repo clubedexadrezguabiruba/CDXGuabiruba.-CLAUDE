@@ -1,0 +1,65 @@
+name: CI
+
+# Por que este workflow existe:
+#
+# O projeto tem 11 gates de verificação (npm run verify:all) que só rodavam se
+# alguém lembrasse de rodá-los. Foi exatamente assim que a curva de XP ficou
+# revertida por 4 meses em produção sem ninguém notar. O CI tira o "lembrar" da
+# equação.
+#
+# O e2e (npx playwright test) NÃO está aqui de propósito: ele cria e deleta
+# usuários reais no Supabase de PRODUÇÃO via admin API (e2e/puzzles.spec.ts,
+# e2e/helpers/class-helpers.ts). Rodar a cada push bateria em produção.
+# Pré-requisito para incluí-lo um dia: um projeto Supabase separado para teste.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Um run por ref: push seguido cancela o anterior em vez de enfileirar.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # O postinstall (scripts/setup-stockfish.ts) só COPIA de
+      # node_modules/stockfish/bin para public/stockfish/ — não baixa nada da
+      # rede, então não é ponto de flakiness.
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes unitários
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Os 11 gates. Tocam o banco remoto (leitura + fixtures próprias) e são a
+      # razão de existir deste workflow.
+      - name: Gates de verificação
+        run: npm run verify:all
