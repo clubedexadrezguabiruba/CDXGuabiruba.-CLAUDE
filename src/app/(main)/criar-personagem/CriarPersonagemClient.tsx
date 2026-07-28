@@ -10,18 +10,28 @@ export default function CriarPersonagemClient() {
   const router = useRouter();
   const [selected, setSelected] = useState<AvatarOption | null>(null);
   const [saving, setSaving] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   async function handleConfirm() {
     if (!selected || saving) return;
     setSaving(true);
+    setErro(null);
 
     const supabase = createClient();
     const { error } = await supabase.rpc("update_avatar_base", {
       p_base: selected,
     });
 
+    // O erro precisa aparecer. Antes este bloco só fazia setSaving(false) e
+    // return: o aluno clicava em "Confirmar", nada acontecia, e não havia nem
+    // mensagem nem log — o mesmo defeito que o commit 47fdf2c corrigiu em
+    // equipar/desequipar. Sem isso, um gate de avatar que falha é
+    // indistinguível de um botão que não responde.
     if (error) {
       setSaving(false);
+      setErro(
+        `Não foi possível salvar seu avatar. ${error.message} — tente novamente.`
+      );
       return;
     }
 
@@ -59,6 +69,15 @@ export default function CriarPersonagemClient() {
       >
         {saving ? "Salvando..." : "Confirmar"}
       </button>
+
+      {erro && (
+        <p
+          role="alert"
+          className="mt-4 max-w-sm rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700"
+        >
+          {erro}
+        </p>
+      )}
     </div>
   );
 }
