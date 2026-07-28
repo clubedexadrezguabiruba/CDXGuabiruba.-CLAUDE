@@ -42,3 +42,11 @@ public/stockfish/
 
 # Test artifacts
 /test-results/
+/playwright-report/
+
+# Screenshots de validação manual (val-*.png, validation-*.png).
+# Ficavam soltos na raiz do repositório, 2,8 MB, sem serem versionados nem
+# ignorados — apareciam em todo `git status` e mascaravam mudanças reais.
+/.validation-shots/
+/val-*.png
+/validation-*.png
