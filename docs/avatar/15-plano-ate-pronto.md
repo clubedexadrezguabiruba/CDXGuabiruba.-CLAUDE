@@ -28,9 +28,9 @@
 | **Ponte dos baús** | `items.renderable` filtra o sorteio. Medido: antes, 60 aberturas davam 36 itens distintos com **25 invisíveis**; agora dão 20 distintos com **0 invisíveis** |
 | **Manifesto de assets** | `public/items/` é uma lista consultável; o resolver pergunta a ela. `prebuild` quebra se o manifesto divergir do disco |
 | **Gates** | `npm run verify:all` roda **14** (eram 11). Três novos: catálogo×assets, banco do avatar, pool dos baús |
-| **Testes unitários** | **138** (eram 108). `src/lib/avatar/` tinha zero |
-| **Página de teste** | `/dev/avatar`, trancada em professor/admin |
-| **Protótipo de arte** | Boneco 1:3 em SVG, 8 tons de pele, 5 cabelos, 3 chapéus e 2 uniformes de teste, 1 pet animado por CSS |
+| **Testes unitários** | **164**. `src/lib/avatar/` tinha zero |
+| **Página de teste** | `/dev/avatar-base`, trancada em professor/admin (404 para aluno) |
+| **Boneco base** | Arte do usuário, vetorizada e **recolorível**: um arquivo serve aos 8 tons de pele por uma variável. 478 KB no disco, **83 KB em brotli**. O protótipo gerado em código foi apagado — ver a T0.10 do doc 14 |
 | **CI** | Verde. `env-shape`, typecheck, lint, test, build, `verify:all`, ~100 s |
 
 ## O que ainda está quebrado
@@ -313,7 +313,7 @@ nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
 - **3.1** Folha de contato (T0.9): renderiza **cada item sobre a base**, nos 4
   tamanhos, numa imagem só. Com 53 desenhos, revisar um a um é inviável.
 - **3.2** Teste unitário de ordem de camadas e z-index (T0.20).
-- **3.3** A `/dev/avatar` ganha um modo **"turma"**: 12 bonecos com
+- **3.3** A `/dev/avatar-base` ganha um modo **"turma"**: 12 bonecos com
   configurações diferentes lado a lado. Foi exatamente o caso que revelou a
   colisão de cor, e ele precisa ser permanente, não um teste de uma vez.
 - **3.4** Terceira conferência em `svgContrato.ts`: **animação que esconde**.
@@ -580,12 +580,40 @@ itera sozinho, sem você em cada volta. Validado nesta fase.
    que manda é o menor.**
 9. **Não julgar arte por descrição.** Renderizar e olhar.
 
+## 7b. Regras da arte de ORIGEM — o que pedir antes de desenhar
+
+*Escritas na fase da arte vetorizada, e cada uma custou uma rodada inteira. Valem
+para os 39 desenhos do Bloco 8, não só para a base.*
+
+10. **Pele e pano em matizes distantes.** O pipeline separa as duas famílias por
+    matiz, e a separação tem de ter vão. Na rodada em que o macacão saiu
+    creme-pêssego, pele e pano ficaram ambos em ~30° e o tronco saiu **salpicado
+    de manchas cor de pele**, que mudavam de cor junto com o tom do aluno. Com o
+    macacão em azul (200°) contra pele em 18–28°, a separação é limpa. **A cor do
+    pano na arte de origem é descartável** — ela é repintada por `--av-roupa`, e
+    existe só para o classificador saber onde termina a pele.
+11. **Pano sem textura.** Uma textura fina de tecido, quase invisível no PNG, o
+    traçador transforma em **regiões esfarrapadas do tamanho do tronco**. Nem
+    filtro de área nem menos degraus as separam da dobra real — só a amplitude
+    (`ZONA_MORTA_ROUPA`), e ela custa quase toda a sombra intermediária do pano.
+    Com uniforme sem textura, esse valor precisa **baixar**, senão apaga dobra
+    de verdade.
+12. **O SVG que o Canva exporta não é vetor.** É um PNG em base64 dentro de um
+    `<svg>`, com a transparência num SEGUNDO PNG cuja luminância vira o alfa.
+    Extrair só o de cor entrega fundo preto, e o traçador desenha esse preto
+    como forma.
+13. **Nem toda decisão de "de graça" sobrevive à arte traçada.** A **D8** prometia
+    4 expressões em runtime a custo zero, porque o rosto seria desenhado em paths
+    próprios. Rosto traçado não tem a forma da boca alegre no arquivo: a
+    expressão passou a custar **3 desenhos**. Antes de contar com uma decisão que
+    depende de *como* a arte foi feita, conferir se ela ainda foi feita assim.
+
 **Comandos:**
 
 ```
-npm run avatar:prototipo    regera todas as folhas de decisão em .scratch/
+npm run avatar:base         regera o boneco base e a folha de conferência
 npm run avatar:manifest     regera o manifesto depois de mexer em public/items/
-npm run dev                 e abrir /dev/avatar (professor/admin)
+npm run dev                 e abrir /dev/avatar-base (professor/admin)
 ```
 
 ---

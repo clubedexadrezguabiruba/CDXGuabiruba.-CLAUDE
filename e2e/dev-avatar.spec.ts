@@ -3,64 +3,59 @@ import { createTestUser, deleteTestUser, promoteToTeacher } from "./helpers/clas
 import { loginAndSettle } from "./helpers/auth-helpers";
 
 /**
- * T0.10 — a página de teste de tamanhos do avatar v4 renderiza e é trancada.
+ * A página de aprovação do boneco base renderiza e é trancada.
+ *
+ * Sucede o teste da `/dev/avatar`, que morreu com o boneco de protótipo. O que
+ * ele garantia e continua valendo é a TRANCA: rota de desenvolvimento não pode
+ * responder para aluno, e responde 404 em vez de redirect para não dar pista de
+ * que existe. O resto do teste antigo apontava para controles do boneco velho.
  *
  * Bate no Supabase de PRODUÇÃO como toda esta suíte: cria e apaga um usuário
  * real. Rodar com intenção, nunca em CI.
  */
 const SENHA = "TesteDevAvatar!2026";
+const ROTA = "/dev/avatar-base";
 
 function email(prefixo: string) {
   return `${prefixo}-${Date.now()}@teste-recruta64.local`;
 }
 
-test.describe("Página de teste do avatar v4", () => {
+test.describe("Página de aprovação do boneco base", () => {
   test("aluno não enxerga a rota", async ({ page }) => {
     const e = email("devavatar-aluno");
     const id = await createTestUser(e, SENHA);
     try {
       await loginAndSettle(page, e, SENHA);
-      const resposta = await page.goto("/dev/avatar");
+      const resposta = await page.goto(ROTA);
       expect(resposta?.status()).toBe(404);
     } finally {
       await deleteTestUser(id);
     }
   });
 
-  test("professor vê o boneco nos 4 tamanhos, e ele reage aos controles", async ({ page }) => {
+  test("professor vê o boneco nos 8 tons, e a cor troca pela variável", async ({ page }) => {
     const e = email("devavatar-prof");
     const id = await createTestUser(e, SENHA);
     try {
       await promoteToTeacher(id);
       await loginAndSettle(page, e, SENHA);
-      await page.goto("/dev/avatar");
+      await page.goto(ROTA);
 
-      await expect(page.locator("h1", { hasText: "Teste de tamanhos" })).toBeVisible();
+      await expect(page.locator("h1", { hasText: "Boneco base" })).toBeVisible();
 
-      // Um SVG do boneco por tamanho declarado.
-      const bonecos = page.locator("svg.est");
-      await expect(bonecos).toHaveCount(4);
+      // A folha de <symbol> é buscada em runtime. Se o fetch falhar, a página
+      // mostra o erro em vez do desenho — e nenhum <use> existe.
+      const usos = page.locator('use[href="#avatar-base-neutro"]');
+      await expect(usos).toHaveCount(20); // 4 tamanhos + 8 tons + 8 a 56 px
 
-      // O uniforme entra como camada nova sobre o traje da base.
-      const antes = await bonecos.first().locator("path").count();
-      await page.locator("select").nth(1).selectOption("general");
-      await expect
-        .poll(async () => bonecos.first().locator("path").count())
-        .toBeGreaterThan(antes);
+      // O recolorir é uma custom property: trocar o tom muda a variável, e o
+      // desenho é o mesmo arquivo. É a premissa inteira do v4 num assert.
+      const primeiro = usos.first().locator("xpath=..");
+      const antes = await primeiro.getAttribute("style");
+      await page.locator("select").first().selectOption("7");
+      await expect.poll(async () => primeiro.getAttribute("style")).not.toBe(antes);
 
-      // O pet é um SVG à parte, fora do character-root.
-      await page.locator('input[type="checkbox"]').first().check();
-      await expect(page.locator("svg.pet-peao").first()).toBeVisible();
-
-      await page.screenshot({ path: ".scratch/pagina-avatar-v4.png", fullPage: true });
-
-      // Pilha completa: fundo + boneco + uniforme + chapéu + pet + moldura.
-      await page.locator("select").nth(0).selectOption("coroa");
-      await page.locator("select").nth(2).selectOption("/items/bg/castelo.png");
-      await page.locator("select").nth(3).selectOption("legendary");
-      await page.locator('input[type="checkbox"]').nth(1).check();
-      await expect(page.locator("svg.est")).toHaveCount(5); // 4 tamanhos + a lupa
-      await page.screenshot({ path: ".scratch/pagina-avatar-v4-completo.png", fullPage: true });
+      await page.screenshot({ path: ".scratch/pagina-avatar-base.png", fullPage: true });
     } finally {
       await deleteTestUser(id);
     }

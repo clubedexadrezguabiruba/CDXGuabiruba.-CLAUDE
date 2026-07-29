@@ -35,8 +35,10 @@ Nada aqui depende de arte. Pode começar hoje.
 > (T0.20, T0.22). As duas decisões do usuário (T0.12, T0.14) foram delegadas e
 > estão tomadas, com a evidência renderizada.
 >
-> Para **ver o boneco**: `/dev/avatar` no app (professor/admin), ou
-> `npm run avatar:prototipo` para regerar as folhas em `.scratch/`.
+> Para **ver o boneco**: `/dev/avatar-base` no app (professor/admin), ou
+> `npm run avatar:base`, que regera o SVG e a folha de conferência em `.scratch/`.
+> A rota `/dev/avatar` e o `avatar:prototipo` foram apagados junto com o boneco
+> gerado em código — ver a T0.10.
 
 ## Detecção e integridade
 
@@ -80,14 +82,29 @@ um ovo de 72 h para receber um pet invisível.
 
 ## Pipeline de arte
 
-- [ ] **T0.6** 🤖 `scripts/avatar/vetorizar.ts`: raster → VTracer → encaixe na paleta → SVGO
-- [ ] **T0.7** 🤖 `src/lib/avatar/palette.ts`: rampas de pele (8), cabelo (5), destaque por raridade
-- [ ] **T0.8** 🤖 Validador de paleta: falha se duas cores estão próximas demais para não se fundirem
+- [x] **T0.6** 🤖 Pipeline de vetorização — **cumprida por outro caminho**
+      → não é `vetorizar.ts` com VTracer embutido: é `scripts/avatar/gerar-base-recolorivel.ts`
+      (`npm run avatar:base`), e a vetorização acontece **fora**, no conversor da Adobe.
+      O contrato de entrada e saída é o mesmo — raster entra, SVG recolorível sai —
+      mas quem traça é uma ferramenta externa, e o script existe para **devolver a cor**
+      ao traço: faixas de pele viram `var(--av-pele)`, pano vira `var(--av-roupa)`, e a
+      diferença de luminosidade entre faixas vira sombra por cima. Oito defeitos do
+      traçador estão documentados e medidos no cabeçalho do script
+- [x] **T0.7** 🤖 `src/lib/avatar/palette.ts`: rampas de pele (8), cabelo (5), destaque por raridade
+- [x] **T0.8** 🤖 Validador de paleta: falha se duas cores estão próximas demais para não se fundirem
+      → medido contra o boneco real: tinta contra o tom mais escuro dá **82,5** (mínimo 40),
+      roupa da base contra o tom mais próximo dá **47,7** (mínimo 25)
 - [ ] **T0.9** 🤖 Folha de contato: renderiza cada item sobre a base nos 4 tamanhos, gera 1 imagem
+      → **a metade da base está feita**: `avatar:base` emite `folha-recolor.png` com os 8 tons,
+      os 4 tamanhos, o corte de 56 px e o rosto de perto. Falta a versão com os itens
+      sobre a base, que é o 3.1 do doc 15. A `folha-contato.ts` antiga foi apagada:
+      renderizava o boneco de protótipo, que não existe mais
 - [x] **T0.10** 🤖 Página de teste de tamanhos: 56 / 100 / 200 / 340 px, com fundo, moldura e pet
-      → rota `/dev/avatar`, trancada em professor/admin (404 para aluno). Monta o SVG
-      ao vivo com proporção, 8 tons de pele, 5 cabelos, chapéu, uniforme, fundo, moldura,
-      pet e lupa de 6× no 56 px. Coberta por `e2e/dev-avatar.spec.ts`
+      → **a rota `/dev/avatar` foi apagada** junto com o boneco de protótipo. Sucedida por
+      `/dev/avatar-base`, que mostra o boneco real nos 4 tamanhos, nos 8 tons e a 56 px,
+      com a mesma tranca (professor/admin, 404 para aluno) e o mesmo e2e,
+      `e2e/dev-avatar.spec.ts`, reapontado. Os controles de chapéu, uniforme, fundo e
+      moldura morreram com o protótipo e voltam no Bloco 5, quando houver composição
 
 **Achado na T0.10, adiantando a T4.5:** os **8 backgrounds antigos destoam**.
 São pinturas suaves; o boneco novo é chapado com contorno duro. Lado a lado não
@@ -192,10 +209,33 @@ fundiu (`#4a3526` com `#3d2b1f`). Folha: `.scratch/proporcao/paleta/`.
 Bloqueia todo o resto da arte.
 
 - [ ] **T1.1** 🤖 Corpo base na proporção escolhida: rosto em **paths próprios** (habilita expressões), cabelo curto e traje de treino baked
+      → **corpo, mãos, pés e traje: feitos.** `avatar-base-neutro.svg`, 478 KB no disco e
+      83 KB em brotli, recolorível nos 8 tons por uma variável. Duas partes NÃO foram
+      feitas, e nenhuma é detalhe:
+      - **rosto em paths próprios: não.** O rosto é traçado, não desenhado — olho e
+        sobrancelha são 10 formas herdadas do traçador, juntas na camada `av-tinta`.
+        **Isso muda o preço da D8**: as 4 expressões em runtime prometiam "zero arquivo,
+        zero requisição" justamente porque o rosto seria authored. A forma da boca alegre
+        não existe no arquivo, então trocar classe não troca expressão. Custo novo:
+        **3 desenhos a mais** (o usuário desenha os 4 rostos, o traço de cada um é
+        extraído na região do rosto e empilhado como camada alternável). A D8 não morreu,
+        mas deixou de ser de graça
+      - **cabelo curto baked: não.** O boneco é careca, e a **D5** existe para que ninguém
+        apareça careca por um 404. Ou a base ganha cabelo assado, ou a D5 muda e careca
+        passa a ser estado de falha aceito. **Decisão do usuário, em aberto**
 - [ ] **T1.2** 🤖 Uniforme Soldado — prova do `garment` sobre o corpo
-- [ ] **T1.3** 👤 **Criticar e refinar** — principalmente o rosto, que é onde mora o carisma
-- [ ] **T1.4** 🤖 Aplicar os ajustes e regerar
+- [x] **T1.3** 👤 **Criticar e refinar** — principalmente o rosto, que é onde mora o carisma
+      → quatro rodadas de arte e oito defeitos do traçador corrigidos, cada um com a
+      medição no comentário do gerador. A pose foi refeita a pedido: palma virada para
+      dentro, dedos relaxados, e vão livre entre a mão e a coxa — requisito do slot `hand`
+- [x] **T1.4** 🤖 Aplicar os ajustes e regerar
 - [ ] 🔒 **Gate:** lê a 56 px · registra nos 8 tons sem vazar cor · paleta não funde nenhuma classe · passa na folha de contato
+      → **4 de 5 passam, todos medidos.** Lê a 56 px e o rosto até 32 px; registra nos 8
+      tons por uma variável; a paleta não funde (82,5 contra mínimo 40 na tinta, 47,7
+      contra 25 na roupa); o `hand` ancora na mão — âncoras medidas no alfa, em
+      **(795, 2565)** e **(1809, 2562)**, provadas com o Peão de Madeira do catálogo.
+      A folha de contato é a que falta, e é o 3.1 do doc 15. O contrato de SVG também
+      passa: o arquivo usa só `--av-pele` e `--av-roupa`, ambas congeladas
 
 ---
 
