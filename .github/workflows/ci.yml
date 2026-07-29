@@ -2,7 +2,7 @@ name: CI
 
 # Por que este workflow existe:
 #
-# O projeto tem 11 gates de verificação (npm run verify:all) que só rodavam se
+# O projeto tem 14 gates de verificação (npm run verify:all) que só rodavam se
 # alguém lembrasse de rodá-los. Foi exatamente assim que a curva de XP ficou
 # revertida por 4 meses em produção sem ninguém notar. O CI tira o "lembrar" da
 # equação.
@@ -66,7 +66,13 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Os 11 gates. Tocam o banco remoto (leitura + fixtures próprias) e são a
+      # Os 14 gates. Tocam o banco remoto (leitura + fixtures próprias) e são a
       # razão de existir deste workflow.
+      #
+      # verify:phase8 (avatar) abre 60 baús de verdade para provar que todo
+      # item sorteado aparece no boneco. Roda dentro de uma transação com
+      # ROLLBACK e personifica um usuário existente via request.jwt.claims —
+      # nenhuma linha sobrevive, por isso pode rodar em CI, ao contrário do
+      # e2e, que cria e apaga contas reais.
       - name: Gates de verificação
         run: npm run verify:all
