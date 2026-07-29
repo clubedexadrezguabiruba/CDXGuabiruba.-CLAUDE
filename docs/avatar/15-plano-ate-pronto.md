@@ -316,8 +316,34 @@ nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
 - **3.3** A `/dev/avatar` ganha um modo **"turma"**: 12 bonecos com
   configurações diferentes lado a lado. Foi exatamente o caso que revelou a
   colisão de cor, e ele precisa ser permanente, não um teste de uma vez.
+- **3.4** Terceira conferência em `svgContrato.ts`: **animação que esconde**.
+  As duas do Bloco 1 pegam defeito de cor; esta pega defeito de movimento, e é
+  a mesma classe de falha — renderiza, não avisa, e só se descobre olhando.
+  Duas regras:
+  - `@keyframes` que mexa em `opacity`, `visibility` ou `display` exige que a
+    regra que aplica aquela animação declare a mesma propriedade no estado
+    base. É a regra 6 da seção 7, virada em código: sem `opacity: 0` fora do
+    keyframe, a pálpebra cobre o olho onde a animação não roda.
+  - documento com `@keyframes` exige um `@media (prefers-reduced-motion:
+    reduce)` que desligue a animação. O item **10.4** já exige isso; hoje nada
+    confere.
 
-🔒 **Gate:** a folha de contato gera; o modo turma mostra 12 bonecos distintos.
+  **Não** vale a regra ampla "toda propriedade do keyframe declarada no estado
+  base". Ela reprovaria o pet **correto**: `.flutua` não declara `transform`, e
+  está certo, porque `transform: none` já é a pose de descanso. Só
+  `opacity`/`visibility`/`display` têm estado desligado diferente do inicial.
+
+  Hoje a disciplina existe em prosa (comentário do `pet.ts`) e num único
+  assert à mão — `scripts/avatar/__tests__/otimizar-svg.test.ts` testa
+  `peaozinho()` com a classe `.palpebra` escrita dentro do teste. É regressão
+  contra o SVGO, não contrato: os **39 desenhos do Bloco 8** e as **4
+  expressões do 10.1** não herdariam nada. Disciplina manual documentada em
+  comentário é exatamente o que falhou no `UPDATE` sem `UPSERT` e na curva de
+  XP.
+
+🔒 **Gate:** a folha de contato gera; o modo turma mostra 12 bonecos distintos;
+`conferirSvg` reprova um SVG com pálpebra sem estado base e outro com
+`@keyframes` sem `prefers-reduced-motion`, e continua aprovando `peaozinho()`.
 
 ---
 
@@ -480,7 +506,9 @@ abaixo de 1 MB.
 ## Bloco 10 — F5: polimento e lançamento
 
 - **10.1** **D8** — 4 expressões por classe CSS: neutra, vitória, concentração,
-  derrota. Zero asset novo, porque o rosto já sai em paths próprios.
+  derrota. Zero asset novo, porque o rosto já sai em paths próprios. *Nasce
+  coberto pelo **3.4**: expressão é animação que esconde, e sem estado base a
+  cara certa some onde a animação não roda.*
 - **10.2** **D29** — baú de escolha em marcos: a criança escolhe 1 entre 3. As
   3 opções vêm do servidor; escolher uma não permite pegar as outras.
 - **10.3** Capas `back` — as primeiras 3 ou 4.
@@ -510,6 +538,7 @@ abaixo de 1 MB.
 | Pets orgânicos ficarem fracos | Bloco 8 assume refino seu | aceito |
 | Uniforme não registrar nos 8 tons | Testar só no Soldado antes dos outros 6 | mitigado |
 | Cores da paleta se fundirem | Validador do Bloco 1 | mitigado |
+| Animação esconder elemento em silêncio (pálpebra sem estado base) | Hoje só o pet é conferido, à mão, no teste do SVGO. O **3.4** vira contrato antes dos 39 desenhos | **aberto até o Bloco 3** |
 | `complete_lesson_step` regredir | Extrair do banco vivo; `verify:no-dup-rpc` é ratchet | mitigado |
 | 30 avatares numa lista pesarem | Folha de estilo única (5.7) + medição (10.6) | **aberto até medir** |
 | Trilhas crescerem e quebrarem títulos de novo | Gate T0.17 | mitigado |
@@ -543,6 +572,8 @@ itera sozinho, sem você em cada volta. Validado nesta fase.
    escuro por baixo, fino colorido por cima.
 6. **Estado inicial explícito em tudo que a animação esconde.** Pálpebra só com
    `opacity: 0` dentro do `@keyframes` apaga os olhos quando a animação não roda.
+   *Deixa de ser disciplina manual no **3.4**, que a confere junto com o
+   `prefers-reduced-motion` exigido pelo 10.4.*
 7. **Pele escura precisa de esclera** — uma amêndoa branca fina nas laterais.
    Esclera cheia dá olho arregalado.
 8. **Renderizar sempre nos dois extremos** (56 e 340 px) antes de julgar. **O

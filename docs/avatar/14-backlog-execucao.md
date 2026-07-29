@@ -175,6 +175,15 @@ fundiu (`#4a3526` com `#3d2b1f`). Folha: `.scratch/proporcao/paleta/`.
 - [x] **T0.21** 🤖 Encaixe na paleta (incluindo o caso de cores próximas)
       → medição de distância roda dentro de `npm run avatar:prototipo`
 - [ ] **T0.22** 🤖 Offset de anchor por item *(depende da F2, que reescreve os anchors)*
+- [ ] **T0.23** 🤖 Contrato de animação em `svgContrato.ts` *(Bloco 3.4 do doc 15)*
+      → `@keyframes` que mexe em `opacity`/`visibility`/`display` exige a mesma
+      propriedade declarada no estado base da regra que aplica a animação; e
+      documento com `@keyframes` exige `@media (prefers-reduced-motion: reduce)`.
+      **Não** vale a regra ampla para toda propriedade: `transform` reprovaria o
+      `peaozinho()` correto, porque `transform: none` já é a pose de descanso.
+      Hoje isso é conferido em 1 asset, com a classe escrita à mão em
+      `scripts/avatar/__tests__/otimizar-svg.test.ts` — os 39 desenhos da F4 e as
+      4 expressões da F5 não herdam. **Antes da F4**, não depois
 
 ---
 
@@ -346,13 +355,13 @@ Soldado no backfill, e o ranking já mostra.
 
 | fase | tarefas | depende de você? |
 |---|---|---|
-| F0 | 22 — **13 fechadas** | T0.12 e T0.14 delegadas e decididas |
+| F0 | 23 — **13 fechadas** | T0.12 e T0.14 delegadas e decididas |
 | F1 | 4 | T1.3 (crítica da arte) |
 | F2 | 16 | não |
 | F3 | 6 — **5 fechadas** (F3a) | não |
 | F4 | 12 | T4.5, T4.7, T4.8 (refino) |
 | F5 | 6 | T5.5 (medir no celular) |
-| **total** | **63** | **7 pontos** |
+| **total** | **64** | **7 pontos** |
 
 ---
 
