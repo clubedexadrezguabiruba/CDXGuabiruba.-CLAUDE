@@ -27,6 +27,9 @@ const HELPERS_INTERNOS = [
   "handle_new_user",
   "update_updated_at",
   "debug_puzzle_state",
+  // Recebe user_id arbitrário. Exposta ao client, deixaria qualquer aluno
+  // disparar reconciliação de patente para outro usuário.
+  "recompute_user_title",
 ];
 
 let passed = 0;

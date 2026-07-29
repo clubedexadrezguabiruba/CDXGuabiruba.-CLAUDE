@@ -47,13 +47,35 @@
 O render de produção continua sendo o **v2**: PNG, variante por gênero,
 knockout de cabeça, canvas 5:7, `body_family` `recruta_v1`.
 
-## O achado mais grave desta fase
+## O achado mais grave desta fase — e a correção do diagnóstico
 
-**O sistema de patente está morto, não apenas limitado.** `complete_lesson_step`
-compara a trilha concluída contra um array de 7 trilhas; o banco tem 2. Todos os
-17 usuários estão em "Aprendiz". Isso não é conteúdo faltando — é a espinha do
-avatar v4, porque **o uniforme por patente é o maior ROI de produto do plano
-inteiro** e ele não concede nada hoje. Ver decisão **D-A** na seção 4.
+**O sistema de patente estava morto, e não pelo motivo que este documento
+afirmava.** A versão original desta seção dizia que a causa era a régua:
+`complete_lesson_step` comparava a trilha concluída contra um array de 7
+trilhas, e o banco tem 2.
+
+**Medido em 2026-07-29, é outra coisa.** `teacherdoug001` concluiu as 15 aulas da
+trilha `recruta` organicamente, a última em 2026-07-29 01:10:27 pela RPC. E
+`recruta` é a **posição 1** do array — a régua teria funcionado. Ele é o **único
+dos 18 usuários sem linha em `user_titles`** (cadastro em 2026-02-17, anterior à
+tabela). O bloco fazia `UPDATE ... WHERE user_id` sem `UPSERT`: casou zero
+linhas, e "Soldado" foi calculado e descartado **sem erro**.
+
+O "7 usuários com 46 aulas" que este documento citava também estava inflado: 22
+daquelas aulas são de um usuário de e2e, cujo progresso entra direto por
+service_role sem passar pela RPC.
+
+Eram **três defeitos**, e o plano enxergava só o terceiro:
+
+| | defeito | efeito |
+|---|---|---|
+| 1 | `UPDATE` sem `UPSERT` | 0 de 1 elegível real recebeu. Falha silenciosa |
+| 2 | Concessão *event-only*, sem reconciliação | Quem concluiu antes da feature, quem teve o UPDATE falhar e quem tiver aula acrescentada à trilha depois nunca recebem |
+| 3 | Régua de 7 contra banco de 2 | 5 títulos inalcançáveis |
+
+Nenhum gate cobria 1 nem 2 — por isso passou 4 meses despercebido, a mesma
+história da curva de XP. **Os três foram fechados no Bloco 7a**, em
+`20260729120000_patente_por_marcos.sql`. Ver **D-A** na seção 3.
 
 ---
 
@@ -80,27 +102,34 @@ Sem uma definição, "polido" não fecha nunca. Proponho estas seis:
 
 Nenhuma delas eu devo tomar sozinho — todas mudam escopo de forma cara.
 
-## D-A — A régua da patente (a mais importante)
+## D-A — A régua da patente ✅ **DECIDIDA em 2026-07-29**
 
-**O problema:** 7 títulos, 2 trilhas, 0 alunos promovidos. Escrever as 5 trilhas
-que faltam são ~75 aulas novas — meses de conteúdo. Sem elas, 5 dos 7 uniformes
-que a F4 mandaria desenhar **nunca seriam vestidos por ninguém**.
+**Decisão do usuário:** a patente vem de concluir uma **trilha de nível**, e cada
+nível são **30 aulas** — Iniciante 1–30, Intermediário 31–60, e assim por diante.
+Os nomes dos níveis acima do Intermediário ficam para depois.
 
-| opção | o que custa | o que entrega |
-|---|---|---|
-| **1. Escrever as 5 trilhas** | ~75 aulas. Meses | O plano original, intacto |
-| **2. Patente por aulas concluídas** (o D25 original) | 1 migration. Horas | Os 7 uniformes alcançáveis **hoje**, com 30 aulas: marcos em 2, 6, 12, 18, 24, 28, 30 |
-| **3. Só 3 patentes no lançamento** | 1 migration + 3 desenhos em vez de 7 | Menos ambição, some o problema |
+Mecanicamente é marco por contagem de aulas, com uma narrativa melhor: a criança
+entende "terminei o Iniciante", não "cheguei em 30".
 
-**Recomendo a 2.** O doc 14 reverteu o D25 dizendo "as trilhas vão crescer para
-7", mas isso é uma promessa de conteúdo, não um fato — e o custo de estar errado
-é desenhar 5 uniformes mortos. A opção 2 também dá progresso contínuo e visível:
-a criança vê quanto falta para a próxima patente. As trilhas continuam existindo
-como organização de conteúdo, e quando crescerem a régua pode voltar a ser por
-trilha sem perder nada.
+**Implementado como contagem de aulas concluídas, não como "as 30 primeiras
+aulas".** São equivalentes hoje (o desbloqueio é sequencial), mas "as 30
+primeiras" quebra se uma trilha for inserida no meio do currículo.
 
-**Se escolher a 2**, o gate T0.17 muda de "títulos alcançáveis" para "todo marco
-de aulas existe no banco", e o backlog perde a nota que reverteu o D25.
+**A régua vive em `title_tiers`, não no código.** Mudar marco ou acrescentar
+patente é `UPDATE`/`INSERT`; nunca editar função. Era código carregando uma
+premissa sobre o conteúdo sem ter como saber que ela mudou — a mesma família da
+curva de XP.
+
+**Duas consequências que valem registro:**
+
+1. Com **30 aulas no banco**, só a patente 1 (Soldado) é alcançável. A primeira
+   patente exige 100% do conteúdo existente, e o aluno mais avançado tem 15
+   aulas — ninguém é promovido hoje. Baixar o primeiro marco é um `UPDATE` de
+   uma linha, quando você quiser.
+2. Por isso a F4 desenha **1 uniforme, não 7**. O Bloco 8 cai de 44 para **38
+   desenhos**, e o gate falha se alguém atrelar uniforme a marco inalcançável.
+
+O gate T0.17 foi reescrito para essa forma.
 
 ## D-B — O pipeline de vetorização é escopo morto?
 
@@ -150,8 +179,11 @@ aponte o que estiver claramente errado.
 | 2 | Orçamento de arte é **53 desenhos**, não 45 | Os 8 backgrounds antigos **destoam** — confirmado visualmente na `/dev/avatar`. Eram "verificar"; agora são certeza |
 | 3 | Cor vai em **custom property**, não embutida na regra CSS | Medido: com a cor na regra, dois bonecos na mesma página colidem e o último pinta todos. Inviabilizava o D30 inteiro |
 | 4 | Renderizador headless é **Chromium**, não `sharp` | O destino é o navegador; `sharp` usa librsvg, com suporte diferente. E o Playwright já é dependência |
-| 5 | A régua da patente volta a ser questão aberta | Ver D-A |
+| 5 | ~~A régua da patente volta a ser questão aberta~~ **Decidida:** trilha de nível de 30 aulas, régua em `title_tiers` | Ver D-A |
 | 6 | **Mãos** entram no orçamento do boneco base | Os braços do protótipo terminam em cápsula. O slot `hand` tem 6 relíquias para segurar |
+| 7 | A causa da patente morta **não era a régua** — era `UPDATE` sem `UPSERT` | Medido contra produção em 2026-07-29. Ver seção 1 |
+| 8 | O Bloco 7 vira **7a** (concessão, feito) e **7b** (uniforme, espera o render) | 7a não depende de arte e entrega valor hoje; 7b entregaria item invisível |
+| 9 | Orçamento de arte do Bloco 8 cai de 44 para **38 desenhos** | Com marcos de 30 aulas e 30 aulas no banco, só 1 uniforme é alcançável. Os outros 6 esperam conteúdo |
 
 ---
 
@@ -297,31 +329,53 @@ diferentes saem **diferentes** · nenhum salto de layout ao carregar.
 
 ---
 
-## Bloco 7 — F3: patente → uniforme
+## Bloco 7a — F3: a concessão da patente ✅ **FEITO em 2026-07-29**
 
-*Bloqueado pela decisão **D-A**. Não comece antes de resolvê-la.*
+*Puxado para antes do Bloco 5 porque não depende de arte nem do render novo, e
+porque `user_public_profiles.title` já alimenta navbar, dashboard e ranking —
+entrega valor visível e prova a régua da D-A antes de comprometer arte.*
 
-- **7.1** `complete_lesson_step`: ao atingir o marco, **concede e auto-equipa**
-  o uniforme do tier.
-- **7.2** Backfill idempotente para quem já passou do marco — hoje são 7
-  usuários com 46 aulas concluídas.
-- **7.3** Capa `back` junto, a partir de Comandante (slot existe; arte depois).
-- **7.4** O gate T0.17 muda de forma conforme a D-A.
+Migration `20260729120000_patente_por_marcos.sql`:
 
-⚠️ Mesma regra: extrair de `pg_get_functiondef` do banco vivo. Foi recolando
-corpo antigo que a curva de XP ficou 4 meses errada.
+- **7a.1** `title_tiers` — a régua vira dado, com RLS, leitura para aluno logado
+  e escrita para ninguém.
+- **7a.2** `user_titles.achieved_tier` — marca d'água **monotônica**. O modo
+  retry de `complete_lesson_step` zera `completed` antes de reconcluir, então a
+  contagem cai por um instante; sem marca d'água o aluno seria rebaixado durante
+  o próprio retry e promovido de novo, com evento no mural das duas vezes.
+- **7a.3** `recompute_user_title(uuid)` — idempotente, com UPSERT.
+  `complete_lesson_step` passa a delegar. `EXECUTE` revogado de
+  anon/authenticated: recebe `user_id` arbitrário.
+- **7a.4** Backfill de todos os usuários.
 
-🔒 **Gate e2e:** completar o marco veste o uniforme, e ele aparece no ranking.
+⚠️ Corpo extraído de `pg_get_functiondef` do banco vivo, com dois pontos
+alterados (as variáveis do DECLARE e o bloco virando `PERFORM`) e o `;` final
+acrescentado à mão.
+
+🔒 **Gate:** `verify:avatar-db` — falhava antes, passa depois. Cinco cenários
+provados em transação revertida contra produção: 29 aulas não promove, 30
+promove, chamar de novo não duplica evento, retry não rebaixa, e **linha ausente
+em `user_titles` recria e concede** (o defeito original).
+
+## Bloco 7b — F3: o uniforme por patente
+
+*Depois do Bloco 5. Hoje `items` tem 8 uniformes e **0 renderáveis** — conceder
+agora entregaria item invisível.*
+
+- **7b.1** Preencher `title_tiers.outfit_item_id` e conceder + auto-equipar.
+- **7b.2** Capa `back` junto, a partir de Comandante (slot existe; arte depois).
+
+🔒 **Gate e2e:** atingir o marco veste o uniforme, e ele aparece no ranking.
 
 ---
 
-## Bloco 8 — F4 arte: os 44 desenhos restantes
+## Bloco 8 — F4 arte: os 38 desenhos restantes
 
 *O bloco mais longo. Várias sessões. Ordem por valor.*
 
 | ordem | o quê | quantos | quem refina |
 |---|---|---|---|
-| 1 | Uniformes Aspirante → Lenda | 6 | eu, silhueta constante |
+| 1 | ~~Uniformes Aspirante → Lenda~~ **cortado** — com marcos de 30 aulas, essas 6 patentes são inalcançáveis até o conteúdo crescer. Desenhar agora é arte morta, e o gate reprova | ~~6~~ **0** | — |
 | 2 | Cabelos | 5 | eu |
 | 3 | Chapéus | 6 | eu |
 | 4 | Relíquias (2 famílias × 3 tiers) | 6 | eu |
@@ -329,8 +383,8 @@ corpo antigo que a curva de XP ficou 4 meses errada.
 | 6 | **Pets** | 20 | **você refina bastante** |
 
 **Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
-seguinte começar. Quarenta e quatro desenhos revisados só no fim é como se
-descobre, tarde, que a régua de estilo derivou.
+seguinte começar. Trinta e oito desenhos revisados só no fim é como se descobre,
+tarde, que a régua de estilo derivou.
 
 🔒 **Gate:** manifesto 100% coberto · folha de contato revisada · nenhum item
 invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo dos
@@ -385,7 +439,8 @@ abaixo de 1 MB.
 
 | risco | mitigação | estado |
 |---|---|---|
-| A régua da patente não resolvida deixa 5 uniformes mortos | Decisão **D-A** antes do Bloco 7 | **aberto** |
+| A régua da patente não resolvida deixa 5 uniformes mortos | Decisão **D-A** tomada; gate reprova uniforme em patente inalcançável | mitigado |
+| Concessão de patente falhar em silêncio de novo | `recompute_user_title` é idempotente e faz UPSERT; o gate confere que todo usuário tem linha | mitigado |
 | Minha arte sair genérica | O Bloco 2 é ponto de crítica **antes** dos outros 44 | mitigado |
 | Pets orgânicos ficarem fracos | Bloco 8 assume refino seu | aceito |
 | Uniforme não registrar nos 8 tons | Testar só no Soldado antes dos outros 6 | mitigado |

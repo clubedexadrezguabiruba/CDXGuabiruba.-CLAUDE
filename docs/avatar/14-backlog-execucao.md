@@ -14,9 +14,13 @@
 > **Convenções:** 🤖 = eu faço · 👤 = você faz · 🔒 = gate que precisa passar.
 >
 > **Decisões que mudaram depois do doc 12:**
-> - **D25 revertida:** as trilhas vão crescer para 7, então a patente volta a ser
->   por **trilha completa** (mais significativa que contagem de aulas). O defeito
->   real não era a régua — era nada verificar a premissa. Vira gate (T1.6).
+> - ~~**D25 revertida:** as trilhas vão crescer para 7, então a patente volta a
+>   ser por **trilha completa**.~~ **Revogado em 2026-07-29.** A patente passou a
+>   ser por **trilha de nível de 30 aulas**, e a régua virou dado
+>   (`title_tiers`). Ver F3a. O motivo: o levantamento contra produção mostrou
+>   que o defeito não era a régua nem a premissa não verificada — era um
+>   `UPDATE` sem `UPSERT` que perdia a concessão em silêncio para quem não
+>   tinha linha em `user_titles`.
 > - **Arte:** eu gero a primeira passada dos 45 assets em SVG; você refina.
 > - **Sem piloto** antes do redesenho — decisão do usuário, registrada.
 
@@ -152,10 +156,13 @@ fundiu (`#4a3526` com `#3d2b1f`). Folha: `.scratch/proporcao/paleta/`.
       → mais: confere que a lista de slots hard-coded dentro de `unequip_slot` bate com o CHECK.
       São duas cópias da mesma verdade, e na F2 esquecer uma deixa `hair`/`back` impossíveis de desequipar
 - [x] **T0.16** 🤖 **No mesmo gate:** assertar que `inventory_select_classmate` e `equipped_select_classmate` **NÃO existem**
-- [x] **T0.17** 🤖 Gate da premissa: nº de trilhas no banco = nº de títulos no mapa
-      → falha se aparecer título inalcançável NOVO, ou trilha no banco fora do mapa
-      (esse caso faz concluir a trilha não conceder patente alguma, em silêncio).
-      Os 5 conhecidos ficam registrados; quando a 3ª trilha entrar, o gate manda encolher a lista
+- [x] **T0.17** 🤖 Gate da premissa da patente
+      → **reescrito em 2026-07-29**, junto com a F3a. A versão antiga lia os
+      `ARRAY[...]` de dentro de `complete_lesson_step`; esses arrays não existem
+      mais. Agora confere a régua em `title_tiers` (escada contígua e crescente),
+      a wiring (a função chama `recompute_user_title`), o estado dos usuários
+      (todo mundo tem linha; ninguém abaixo do que a contagem lhe dá) e o alcance
+      (uniforme só em patente que o conteúdo alcança)
 - [x] **T0.18** 🤖 Adicionar `verify:phase8` ao `verify:all` e ao CI
       → `verify:all` foi de 11 para 14 gates. O CI já roda `verify:all`, então não precisou de passo novo
 
@@ -222,11 +229,41 @@ Bloqueia todo o resto da arte.
 
 # F3 — Patente → uniforme
 
-- [ ] **T3.1** 🤖 `complete_lesson_step`: ao completar trilha, concede + auto-equipa uniforme do tier
+> **Partida em duas.** A F3a (a concessão da patente) não depende de arte nem do
+> render v4 e foi feita em 2026-07-29. A F3b (o uniforme) espera o Bloco 5,
+> porque hoje `items` tem 8 uniformes e **0 renderáveis** — conceder agora seria
+> entregar item invisível.
+
+## F3a — a concessão (feita)
+
+- [x] **T3.0** 🤖 Régua vira dado: tabela `title_tiers` (tier, título, nome do
+      nível, marco em aulas, uniforme). Substitui o `ARRAY[...]` de 7 trilhas
+      hard-coded dentro de `complete_lesson_step`
+- [x] **T3.1a** 🤖 `recompute_user_title(uuid)` idempotente, com **UPSERT** e
+      marca d'água monotônica. `complete_lesson_step` passa a delegar
+- [x] **T3.3** 🤖 Backfill idempotente de todos os usuários
+- [x] ⚠️ Corpo extraído de `pg_get_functiondef` do banco vivo; o `;` final
+      acrescentado à mão
+- [x] 🔒 **Gate T0.17 reescrito** (`verify:avatar-db`): régua é escada, todo
+      usuário tem linha, reconciliação em dia, wiring presente, e **uniforme só
+      em patente alcançável**. Falhava antes da migration, passa depois
+
+**Régua decidida em 2026-07-29 (decisão do usuário):** a patente vem de concluir
+uma trilha de nível, e cada nível são **30 aulas** — Iniciante 1–30,
+Intermediário 31–60, e assim por diante. Os níveis acima do Intermediário ainda
+não foram nomeados (`level_name` NULL de propósito). Mudar marco ou acrescentar
+patente é `UPDATE`/`INSERT` em `title_tiers`, nunca editar função.
+
+**Com 30 aulas no banco, só a patente 1 (Soldado) é alcançável.** Por isso a F4
+desenha **1** uniforme, não 7 — as outras 6 esperam conteúdo, e o gate falha se
+alguém atrelar uniforme a marco inalcançável.
+
+## F3b — o uniforme (espera o Bloco 5)
+
+- [ ] **T3.1b** 🤖 Preencher `title_tiers.outfit_item_id` e conceder +
+      auto-equipar o uniforme ao atingir a patente
 - [ ] **T3.2** 🤖 Capa `back` junto, a partir de Comandante (slot existe; arte depois)
-- [ ] **T3.3** 🤖 Backfill idempotente para quem já passou do marco
-- [ ] ⚠️ Extrair de `pg_get_functiondef` do banco vivo. `pg_get_functiondef` **não emite o `;` final** depois de `$function$`
-- [ ] 🔒 **Gate e2e:** completar trilha veste o uniforme, e ele aparece no ranking
+- [ ] 🔒 **Gate e2e:** atingir o marco veste o uniforme, e ele aparece no ranking
 
 ---
 
@@ -285,7 +322,8 @@ Bloqueia todo o resto da arte.
 | Uniforme não registrar nos 8 tons | testar **só no Soldado** (F1) antes dos outros 6 |
 | Cores da paleta se fundirem | validador T0.8 |
 | `complete_lesson_step` regredir | extrair do banco vivo; `verify:no-dup-rpc` é ratchet |
-| Trilhas crescerem e quebrarem títulos de novo | gate T0.17 |
+| Trilhas crescerem e quebrarem títulos de novo | gate T0.17 — e a régua saiu do código para `title_tiers` |
+| Concessão de patente falhar em silêncio de novo | `recompute_user_title` é idempotente e faz UPSERT; o gate confere que todo usuário tem linha |
 
 ---
 
@@ -296,7 +334,7 @@ Bloqueia todo o resto da arte.
 | F0 | 22 — **13 fechadas** | T0.12 e T0.14 delegadas e decididas |
 | F1 | 4 | T1.3 (crítica da arte) |
 | F2 | 16 | não |
-| F3 | 3 | não |
+| F3 | 6 — **5 fechadas** (F3a) | não |
 | F4 | 12 | T4.5, T4.7, T4.8 (refino) |
 | F5 | 6 | T5.5 (medir no celular) |
 | **total** | **63** | **7 pontos** |

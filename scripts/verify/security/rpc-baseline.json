@@ -4,8 +4,8 @@
   "grant_xp": 9,
   "bot_result": 6,
   "end_rush": 6,
+  "complete_lesson_step": 6,
   "claim_chest": 5,
-  "complete_lesson_step": 5,
   "start_rush": 4,
   "get_revanche_due": 4,
   "check_achievements": 4,
@@ -48,5 +48,6 @@
   "_create_specific_pet_egg": 1,
   "get_eggs": 1,
   "hatch_egg": 1,
-  "update_avatar_base": 1
+  "update_avatar_base": 1,
+  "recompute_user_title": 1
 }

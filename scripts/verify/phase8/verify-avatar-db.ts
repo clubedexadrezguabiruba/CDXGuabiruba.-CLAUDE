@@ -14,11 +14,17 @@
  *     dos colegas de turma. Foram dropadas nas migrations 20260318100000 e
  *     20260320200000. Nada impedia alguém de recriá-las; agora impede.
  *
- *  3. PREMISSA DAS PATENTES (T0.17) — `complete_lesson_step` compara a trilha
- *     concluída contra um array de 7 trilhas para decidir o título. O banco
- *     tem 2. Resultado: 5 dos 7 títulos são inalcançáveis em produção, e o
- *     avatar v4 ia mandar desenhar 5 uniformes que ninguém vestiria. O
- *     defeito não foi a régua — foi nada verificar a premissa.
+ *  3. PATENTES (T0.17) — a régua vive em `title_tiers`, não mais num array
+ *     dentro de `complete_lesson_step`. Três coisas travadas aqui:
+ *
+ *     (a) todo usuário tem linha em `user_titles`. Foi a ausência dessa linha
+ *         — e não a régua — que fez o `teacherdoug001` concluir a trilha
+ *         inteira em 2026-07-29 e continuar "Aprendiz": o UPDATE antigo
+ *         casava zero linhas e não reclamava.
+ *     (b) a reconciliação está em dia: ninguém abaixo da patente que a
+ *         contagem de aulas concluídas já lhe dá.
+ *     (c) patente com uniforme atrelado é patente alcançável. É o que impede
+ *         mandar desenhar uniforme para marco que o conteúdo não alcança.
  *
  * Uso: npm run verify:avatar-db
  */
@@ -45,19 +51,6 @@ const RPCS_ESPERADOS = [
 /** Policies que vazavam dados entre colegas de turma. Não podem voltar. */
 const POLICIES_PROIBIDAS = ["inventory_select_classmate", "equipped_select_classmate"];
 
-/**
- * Títulos que hoje não têm trilha correspondente no banco.
- *
- * Levantado em 2026-07-29: `lessons` tem apenas as trilhas `recruta` e
- * `soldado`, mas o mapa de títulos em `complete_lesson_step` prevê 7. Estes 5
- * são inalcançáveis até o conteúdo existir.
- *
- * O backlog do avatar v4 (doc 14) decidiu fazer as trilhas crescerem para 7 em
- * vez de mudar a régua. Quando a 3ª trilha entrar, este gate manda encolher a
- * lista — é o ponto todo dele.
- */
-const TITULOS_SEM_TRILHA_CONHECIDOS = ["Capitão", "Comandante", "General", "Grão-Mestre", "Lenda"];
-
 let passed = 0;
 let failed = 0;
 
@@ -70,14 +63,6 @@ function nok(msg: string, detalhe: string) {
   console.log(`  [FAIL] ${msg}`);
   console.log(`         ${detalhe}`);
   failed++;
-}
-
-/** Extrai os elementos de um ARRAY['a','b'] do corpo de uma função. */
-function extrairArraySql(def: string, variavel: string): string[] | null {
-  const re = new RegExp(`${variavel}[^=]*:=\\s*ARRAY\\[([^\\]]+)\\]`, "i");
-  const m = def.match(re);
-  if (!m) return null;
-  return [...m[1].matchAll(/'([^']*)'/g)].map((x) => x[1]);
 }
 
 async function main() {
@@ -213,76 +198,131 @@ async function main() {
       }
     }
 
-    // --- 5. Premissa das patentes (T0.17) ---
-    console.log("\n5. Premissa: trilhas do banco x mapa de títulos");
+    // --- 5. Patentes (T0.17) ---
+    console.log("\n5. Patentes: régua, reconciliação e alcance");
 
-    const defLesson = await sql<{ def: string }[]>`
-      select pg_get_functiondef(p.oid) as def
-      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname='public' and p.prokind='f' and p.proname='complete_lesson_step'`;
+    const [{ existe }] = await sql<{ existe: boolean }[]>`
+      select to_regclass('public.title_tiers') is not null as existe`;
 
-    if (defLesson.length === 0) {
-      nok("complete_lesson_step não existe", "é ela que concede o título ao concluir trilha");
+    const tiers = existe
+      ? await sql<
+          { tier: number; title: string; level_name: string | null; lessons_required: number; outfit_item_id: string | null }[]
+        >`select tier, title, level_name, lessons_required, outfit_item_id
+          from title_tiers order by tier`
+      : [];
+
+    if (!existe) {
+      nok(
+        "tabela title_tiers não existe",
+        "a régua da patente ainda está hard-coded dentro de complete_lesson_step — aplicar 20260729120000_patente_por_marcos.sql",
+      );
+    } else if (tiers.length === 0) {
+      nok("title_tiers vazia", "sem régua, recompute_user_title não concede nada");
     } else {
-      const def = defLesson[0].def;
-      const ordemTrilhas = extrairArraySql(def, "v_trail_order_arr");
-      const mapaTitulos = extrairArraySql(def, "v_title_map");
+      ok(`title_tiers com ${tiers.length} patentes`);
 
-      const trilhasDb = (
-        await sql<{ trail: string }[]>`select distinct trail from lessons order by trail`
-      ).map((r) => r.trail);
+      // (a) A régua precisa ser uma escada: tier contíguo desde 0 e marco
+      //     estritamente crescente. Um marco fora de ordem torna a patente
+      //     do meio inalcançável sem ninguém perceber.
+      const contigua = tiers.every((t, i) => t.tier === i);
+      if (!contigua) {
+        nok("tiers não são contíguos a partir de 0", `tiers: ${tiers.map((t) => t.tier).join(", ")}`);
+      } else {
+        ok("tiers contíguos a partir de 0");
+      }
 
-      if (!ordemTrilhas || !mapaTitulos) {
+      const crescente = tiers.every((t, i) => i === 0 || t.lessons_required > tiers[i - 1].lessons_required);
+      if (!crescente) {
         nok(
-          "não consegui ler os arrays de trilha/título de complete_lesson_step",
-          "a função foi reescrita e este gate precisa acompanhar",
-        );
-      } else if (ordemTrilhas.length !== mapaTitulos.length) {
-        nok(
-          "mapa de títulos e ordem de trilhas têm tamanhos diferentes",
-          `${ordemTrilhas.length} trilhas x ${mapaTitulos.length} títulos — array_position devolveria título errado`,
+          "lessons_required não é estritamente crescente",
+          `marcos: ${tiers.map((t) => t.lessons_required).join(", ")} — patente do meio fica inalcançável`,
         );
       } else {
-        ok(`mapa consistente: ${ordemTrilhas.length} trilhas, ${mapaTitulos.length} títulos`);
-
-        // (a) Trilha que existe no banco e não está no mapa: concluir a trilha
-        //     não concede título nenhum, e ninguém percebe.
-        const foraDoMapa = trilhasDb.filter((t) => !ordemTrilhas.includes(t));
-        if (foraDoMapa.length > 0) {
-          nok(
-            `${foraDoMapa.length} trilha(s) do banco fora do mapa de títulos`,
-            `${foraDoMapa.join(", ")} — concluir essas trilhas não concede patente alguma`,
-          );
-        } else {
-          ok(`as ${trilhasDb.length} trilhas do banco estão no mapa (${trilhasDb.join(", ")})`);
-        }
-
-        // (b) Título cuja trilha não existe: patente inalcançável.
-        const inalcancaveis = mapaTitulos.filter((_, i) => !trilhasDb.includes(ordemTrilhas[i]));
-        const novos = inalcancaveis.filter((t) => !TITULOS_SEM_TRILHA_CONHECIDOS.includes(t));
-        const resolvidos = TITULOS_SEM_TRILHA_CONHECIDOS.filter((t) => !inalcancaveis.includes(t));
-
-        if (novos.length > 0) {
-          nok(
-            `${novos.length} título(s) NOVOS inalcançáveis`,
-            `${novos.join(", ")} — o mapa cresceu sem a trilha correspondente existir`,
-          );
-        } else if (inalcancaveis.length > 0) {
-          ok(
-            `${inalcancaveis.length} títulos inalcançáveis, todos conhecidos ` +
-              `(${inalcancaveis.join(", ")}) — esperam as trilhas 3–7`,
-          );
-        } else {
-          ok("todos os títulos do mapa são alcançáveis");
-        }
-
-        if (resolvidos.length > 0) {
-          console.log(
-            `  [INFO] ${resolvidos.length} título(s) deixaram de ser inalcançáveis: ${resolvidos.join(", ")}.\n` +
-              "         Encolha TITULOS_SEM_TRILHA_CONHECIDOS neste arquivo.",
-          );
-        }
+        ok(`marcos crescentes: ${tiers.map((t) => t.lessons_required).join(" → ")}`);
       }
+
+      // (b) A wiring. Se alguém reescrever complete_lesson_step a partir de
+      //     migration antiga, a chamada some e a patente volta a morrer em
+      //     silêncio — que é exatamente o que aconteceu com a curva de XP.
+      const defLesson = await sql<{ def: string }[]>`
+        select pg_get_functiondef(p.oid) as def
+        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname='public' and p.prokind='f' and p.proname='complete_lesson_step'`;
+
+      if (defLesson.length === 0) {
+        nok("complete_lesson_step não existe", "é ela que dispara a reconciliação da patente");
+      } else if (!defLesson[0].def.includes("recompute_user_title")) {
+        nok(
+          "complete_lesson_step não chama recompute_user_title",
+          "concluir aula deixou de reconciliar a patente — provável recolagem de corpo antigo",
+        );
+      } else {
+        ok("complete_lesson_step chama recompute_user_title");
+      }
+
+      // (c) Todo usuário tem linha. É o defeito original: sem linha, o UPDATE
+      //     casa zero e a patente evapora sem erro.
+      const semLinha = await sql<{ display_name: string }[]>`
+        select u.display_name from users u
+        left join user_titles t on t.user_id = u.id
+        where t.user_id is null`;
+
+      if (semLinha.length > 0) {
+        nok(
+          `${semLinha.length} usuário(s) sem linha em user_titles`,
+          `${semLinha.map((u) => u.display_name).join(", ")} — a concessão de patente falharia em silêncio para eles`,
+        );
+      } else {
+        ok("todo usuário tem linha em user_titles");
+      }
+
+      // (d) Reconciliação em dia: ninguém abaixo do que já conquistou.
+      const atrasados = await sql<{ display_name: string; current_title: string; concluidas: number; devido: string }[]>`
+        with progresso as (
+          select u.id, u.display_name, t.current_title,
+                 (select count(*) from user_lesson_progress p where p.user_id = u.id and p.completed) as concluidas
+          from users u join user_titles t on t.user_id = u.id
+        )
+        select p.display_name, p.current_title, p.concluidas,
+               (select tt.title from title_tiers tt
+                where tt.lessons_required <= p.concluidas order by tt.tier desc limit 1) as devido
+        from progresso p
+        where p.current_title is distinct from
+              (select tt.title from title_tiers tt
+               where tt.lessons_required <= p.concluidas order by tt.tier desc limit 1)`;
+
+      if (atrasados.length > 0) {
+        nok(
+          `${atrasados.length} usuário(s) com patente desatualizada`,
+          atrasados
+            .map((a) => `${a.display_name}: ${a.concluidas} aulas, tem "${a.current_title}", devia ter "${a.devido}"`)
+            .join(" | "),
+        );
+      } else {
+        ok("nenhum usuário abaixo da patente que a contagem de aulas lhe dá");
+      }
+
+      // (e) Uniforme só para patente alcançável. É o gate que impede gastar
+      //     arte em marco que o conteúdo não alcança.
+      const [{ total }] = await sql<{ total: number }[]>`select count(*)::int as total from lessons`;
+      const alcancaveis = tiers.filter((t) => t.lessons_required <= total);
+      const mortos = tiers.filter((t) => t.outfit_item_id !== null && t.lessons_required > total);
+
+      if (mortos.length > 0) {
+        nok(
+          `${mortos.length} patente(s) com uniforme atrelado e inalcançável`,
+          `${mortos.map((t) => `${t.title} (${t.lessons_required} aulas)`).join(", ")} — ` +
+            `o banco tem ${total} aulas; esse uniforme nunca seria vestido`,
+        );
+      } else {
+        ok(`nenhum uniforme atrelado a patente inalcançável`);
+      }
+
+      console.log(
+        `  [INFO] ${alcancaveis.length} de ${tiers.length} patentes alcançáveis com ${total} aulas no banco ` +
+          `(${alcancaveis.map((t) => t.title).join(", ")}).\n` +
+          "         As demais esperam conteúdo — desenhar uniforme para elas é arte morta.",
+      );
     }
   } finally {
     await sql.end();
