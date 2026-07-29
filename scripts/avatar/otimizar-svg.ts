@@ -45,6 +45,12 @@ export const CONFIG: Config = {
           // Sem isto o preset remove atributos que "parecem" default e leva
           // junto coisas de que o CSS global depende.
           removeUnknownsAndDefaults: { keepAriaAttrs: true, keepRoleAttr: true },
+          // MEDIDO na arte recolorível: o sombreado é um `<g opacity>` por
+          // nível, com várias sub-formas irmãs de atributos idênticos. O
+          // `mergePaths` funde exatamente isso num `<path>` só — e aí
+          // sub-formas de winding oposto se CANCELAM no fill-rule, trocando a
+          // sombra por anéis de contorno no rosto. O ganho de bytes não paga.
+          mergePaths: false,
         },
       },
     },
