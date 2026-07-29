@@ -12,26 +12,11 @@
  * placa de armadura).
  */
 
-/** Paleta de trabalho. Vira src/lib/avatar/palette.ts na T0.7. */
-export const PELE = [
-  "#FFE2C7", "#F7CBA4", "#E9B183", "#D69763",
-  "#BC7B4A", "#9E6238", "#834E2C", "#6B3C22",
-];
+// As cores vêm de palette.ts, que é a fonte única e a que o validador do
+// Bloco 1 confere. Antes viviam soltas aqui, duplicadas com pet.ts.
+import { CABELO, LINHA, PELE, TRAJE_BASE } from "../palette";
 
-export const CABELO = ["#453733", "#6E4326", "#C9924A", "#B4552A", "#D8D2CB"];
-
-/**
- * Contorno. Precisa ficar longe de TODA cor de preenchimento, senão o
- * encaixe na paleta funde as duas e a cor deixa de ser recolorível — foi o
- * que aconteceu com #4a3526 colando em #3d2b1f (doc 12, §2.4).
- */
-export const LINHA = "#241610";
-
-const TRAJE = {
-  camiseta: "#C9BFA8",
-  short: "#4F5A46",
-  sapato: "#3A3A3C",
-};
+export { CABELO, LINHA, PELE };
 
 type Ponto = [number, number];
 
@@ -75,7 +60,7 @@ export interface OpcoesBoneco {
   cabecas: number;
   /** Índice na rampa de pele (0–7). */
   pele?: number;
-  /** Índice na rampa de cabelo (0–4). */
+  /** Índice na rampa de cabelo (0–7). */
   cabelo?: number;
   /** Espessura do contorno, em unidades do viewBox. */
   traco?: number;
@@ -211,7 +196,7 @@ export function boneco({
         [CX + wCab * 0.54, cyCab - hCab * 0.09],
         [CX + wCab * 0.54, cyCab - hCab * 0.20],
       ], hCab * 0.05);
-      return `${peca("c-cha-a", dome)}\n${peca("c-cha-b", aba)}`;
+      return `${peca("c-item-a", dome)}\n${peca("c-item-b", aba)}`;
     }
     if (chapeu === "elmo") {
       const casco = poligono([
@@ -231,7 +216,7 @@ export function boneco({
         [CX + wCab * 0.05, cyCab - hCab * 0.40],
         [CX + wCab * 0.05, topo - hCab * 0.16],
       ], wCab * 0.04);
-      return `${peca("c-cha-b", crista)}\n${peca("c-cha-a", casco)}\n${peca("c-cha-a", nasal)}`;
+      return `${peca("c-item-b", crista)}\n${peca("c-item-a", casco)}\n${peca("c-item-a", nasal)}`;
     }
     const banda = poligono([
       [CX - wCab * 0.46, cyCab - hCab * 0.30],
@@ -248,7 +233,7 @@ export function boneco({
       [CX + wCab * 0.34, cyCab - hCab * 0.52],
       [CX + wCab * 0.46, cyCab - hCab * 0.28],
     ], hCab * 0.03);
-    return `${peca("c-cha-a", pontas)}\n${peca("c-cha-b", banda)}`;
+    return `${peca("c-item-a", pontas)}\n${peca("c-item-b", banda)}`;
   })();
 
   const svgUniforme = !uniforme ? "" : (() => {
@@ -272,14 +257,18 @@ export function boneco({
       [CX + wT * 0.74, yPeito - hTronco * 0.07],
     ], 3);
     const extra = uniforme === "general"
-      ? peca("c-uni-b", poligono([
+      ? peca("c-detalhe", poligono([
           [CX - wT * 0.74, yPeito - hTronco * 0.07],
           [CX - wT * 0.74, yPeito + hTronco * 0.03],
           [CX - wT * 0.30, yPeito + hTronco * 0.03],
           [CX - wT * 0.30, yPeito - hTronco * 0.07],
         ], 3))
       : "";
-    return `${peca("c-uni-a", poligono(camisa, 16))}\n${peca("c-uni-b", gola)}\n${peca("c-uni-b", cinto)}\n${peca("c-uni-b", divisa)}\n${extra}`;
+    // A camada redesenha a camisa com a MESMA classe `c-roupa` da base. Como
+    // ela redeclara `--av-roupa` no próprio <g>, a cor da patente ganha por
+    // cascata — e um boneco sem uniforme cai sozinho no traje da base, que é
+    // o fallback do 5.9 sem precisar de código nenhum.
+    return `${peca("c-roupa", poligono(camisa, 16))}\n${peca("c-detalhe", gola)}\n${peca("c-detalhe", cinto)}\n${peca("c-detalhe", divisa)}\n${extra}`;
   })();
 
   const rosto = semRosto
@@ -297,7 +286,7 @@ export function boneco({
     <path class="traco-fino" d="M ${t(CX - wCab * 0.09)} ${t(yBoca)} Q ${CX} ${t(yBoca + hCab * 0.06)} ${t(CX + wCab * 0.09)} ${t(yBoca)}"/>
   </g>`;
 
-  // As cores vão em CUSTOM PROPERTIES no <svg>, não embutidas nas regras.
+  // As cores vão em CUSTOM PROPERTIES, não embutidas nas regras.
   //
   // Por quê: o `<style>` de um SVG inline é global à página. Com as cores
   // dentro das regras, dois bonecos diferentes na mesma página colidem e o
@@ -305,23 +294,31 @@ export function boneco({
   // coroa de um herdaria a cor do boné do outro. Medido, não suposto.
   //
   // Com `var()`, todo `<style>` emitido diz exatamente a mesma coisa (então
-  // duplicá-los é inofensivo) e a cor vem da variável de cada instância, que
-  // é herdada só pelos filhos daquele <svg>. O SVG continua autossuficiente
-  // se aberto sozinho, e o D30 (avatar em ranking, mural, navbar) passa a ser
-  // possível.
+  // duplicá-los é inofensivo) e a cor vem da variável de cada instância.
+  //
+  // DOIS ESCOPOS, e a diferença importa (ver PROPRIEDADES em palette.ts):
+  // o `<svg>` carrega o padrão da composição inteira; cada camada redeclara
+  // no próprio `<g>` o que é dela. Sem isso, um chapéu e um pet na mesma
+  // composição brigariam pelas mesmas variáveis.
   const vars = [
+    `--av-traco:${traco}`,
     `--av-linha:${LINHA}`,
     `--av-pele:${PELE[pele]}`,
     `--av-cabelo:${CABELO[cabelo]}`,
-    `--av-roupa:${TRAJE.camiseta}`,
-    `--av-calca:${TRAJE.short}`,
-    `--av-sapato:${TRAJE.sapato}`,
-    `--av-traco:${traco}`,
-    `--av-cha-a:${chapeu === "coroa" ? "#E8B23A" : chapeu === "elmo" ? "#9AA6B0" : "#3D6B8F"}`,
-    `--av-cha-b:${chapeu === "coroa" ? "#B8801E" : chapeu === "elmo" ? "#C0362C" : "#284860"}`,
-    `--av-uni-a:${uniforme === "general" ? "#2B3A5C" : "#5C6E3F"}`,
-    `--av-uni-b:${uniforme === "general" ? "#E0B44A" : "#38452A"}`,
+    `--av-roupa:${TRAJE_BASE.roupa}`,
+    `--av-calca:${TRAJE_BASE.calca}`,
+    `--av-sapato:${TRAJE_BASE.sapato}`,
   ].join(";");
+
+  const varsChapeu = !chapeu
+    ? ""
+    : ` style="--av-item-a:${chapeu === "coroa" ? "#E8B23A" : chapeu === "elmo" ? "#9AA6B0" : "#3D6B8F"};` +
+      `--av-item-b:${chapeu === "coroa" ? "#B8801E" : chapeu === "elmo" ? "#C0362C" : "#284860"}"`;
+
+  const varsUniforme = !uniforme
+    ? ""
+    : ` style="--av-roupa:${uniforme === "general" ? "#2B3A5C" : "#5C6E3F"};` +
+      `--av-detalhe:${uniforme === "general" ? "#E0B44A" : "#38452A"}"`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" class="est" style="${vars}">
 <style>
@@ -332,12 +329,11 @@ export function boneco({
   .est .c-roupa    { fill: var(--av-roupa); }
   .est .c-calca    { fill: var(--av-calca); }
   .est .c-sapato   { fill: var(--av-sapato); }
+  .est .c-detalhe  { fill: var(--av-detalhe); }
   .est .c-tinta    { fill: var(--av-linha); }
   .est .c-brilho   { fill: #FFFFFF; }
-  .est .c-cha-a    { fill: var(--av-cha-a); }
-  .est .c-cha-b    { fill: var(--av-cha-b); }
-  .est .c-uni-a    { fill: var(--av-uni-a); }
-  .est .c-uni-b    { fill: var(--av-uni-b); }
+  .est .c-item-a   { fill: var(--av-item-a); }
+  .est .c-item-b   { fill: var(--av-item-b); }
 </style>
 <g class="personagem">
 ${peca("c-pele", poligono([
@@ -384,7 +380,7 @@ ${peca("c-pele", poligono([
     [CX + wCab * 0.15, baseCab - hCab * 0.10],
   ], 8))}
 ${peca("c-roupa", poligono(camisa, 16))}
-${svgUniforme}
+${svgUniforme ? `<g class="camada-outfit"${varsUniforme}>\n${svgUniforme}\n</g>` : ""}
 ${peca("c-pele", poligono([
     [CX - wCab * 0.55, yOrelha - hCab * 0.09],
     [CX - wCab * 0.55, yOrelha + hCab * 0.09],
@@ -400,7 +396,7 @@ ${peca("c-pele", poligono([
 ${peca("c-pele", poligono(cranio, hCab * 0.14))}
 ${peca("c-cabelo", poligono(cabeloPts, hCab * 0.055))}
 ${rosto}
-${svgChapeu}
+${svgChapeu ? `<g class="camada-head"${varsChapeu}>\n${svgChapeu}\n</g>` : ""}
 </g>
 </svg>`;
 }

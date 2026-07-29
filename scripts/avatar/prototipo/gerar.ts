@@ -11,8 +11,11 @@
  */
 
 import { readFileSync, statSync } from "fs";
-import { boneco, PELE, CABELO, LINHA, type OpcoesBoneco } from "../../../src/lib/avatar/prototipo/boneco";
+import { boneco, type OpcoesBoneco } from "../../../src/lib/avatar/prototipo/boneco";
 import { peaozinho } from "../../../src/lib/avatar/prototipo/pet";
+import { CABELO, LINHA, PELE, menorDistancia } from "../../../src/lib/avatar/palette";
+import { exigirSvgValido } from "../../../src/lib/avatar/svgContrato";
+import { otimizar } from "../otimizar-svg";
 import {
   abrirNavegador,
   renderizarSvg,
@@ -45,18 +48,13 @@ function b64(caminho: string): string {
   return "data:image/png;base64," + readFileSync(caminho).toString("base64");
 }
 
-/** Distância euclidiana em RGB. Aproximação suficiente para triagem. */
-function distancia(a: string, b: string): number {
-  const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-  const [r1, g1, b1] = p(a);
-  const [r2, g2, b2] = p(b);
-  return Math.round(Math.hypot(r1 - r2, g1 - g2, b1 - b2));
-}
-
 async function folhaProporcoes(nav: Awaited<ReturnType<typeof abrirNavegador>>) {
   for (const n of VARIANTES) {
     const svg = boneco({ cabecas: n });
-    salvar(`${DIR}/boneco-${n}.svg`, svg);
+    // Confere o contrato ANTES de gravar: comentário dentro do <style> e
+    // variável fora da lista congelada falham em silêncio no navegador.
+    exigirSvgValido(svg, `boneco 1:${n}`);
+    salvar(`${DIR}/boneco-${n}.svg`, otimizar(svg));
     for (const t of TAMANHOS) {
       await renderizarSvg(nav, svg, t.w, t.h, `${DIR}/${n}-${t.nome}.png`, "#EFEAE2");
     }
@@ -127,17 +125,13 @@ async function folhaVestidos(nav: Awaited<ReturnType<typeof abrirNavegador>>) {
 }
 
 async function folhaPaleta(nav: Awaited<ReturnType<typeof abrirNavegador>>) {
-  console.log(`\nDistância de cada cor até o contorno ${LINHA}`);
-  console.log("(o encaixe na paleta fundiu #4a3526 com #3d2b1f, que distam 18)");
-  let minimo = Infinity;
+  // O veredito de aprovado/reprovado é do validador em palette.ts, coberto por
+  // `npm test`. Aqui só mostramos a folga que sobrou, porque é o número que
+  // encolhe quando alguém acrescenta uma cor sem perceber.
+  console.log(`\nFolga da paleta (contorno ${LINHA}, mínimo exigido 25)`);
   for (const [nome, lista] of [["pele", PELE], ["cabelo", CABELO]] as const) {
-    for (const c of lista) {
-      const d = distancia(c, LINHA);
-      minimo = Math.min(minimo, d);
-      console.log(`  ${nome.padEnd(7)} ${c}  ->  ${String(d).padStart(3)}${d < 30 ? "   <-- PERIGO" : ""}`);
-    }
+    console.log(`  ${nome.padEnd(7)} menor distância entre irmãos: ${menorDistancia(lista).toFixed(1)}`);
   }
-  console.log(`  menor distância: ${minimo} ${minimo < 30 ? "(REPROVA)" : "(ok)"}`);
 
   for (let i = 0; i < PELE.length; i++) {
     const svg = boneco({ cabecas: CABECAS_ESCOLHIDA, pele: i });
@@ -160,7 +154,7 @@ async function folhaPaleta(nav: Awaited<ReturnType<typeof abrirNavegador>>) {
      <table style="border-spacing:8px;margin:4px"><tr>${sm}</tr></table>
      <p style="margin:20px 20px 2px">Os mesmos 8 a 200 px.</p>
      <table style="border-spacing:8px;margin:4px"><tr>${lg}</tr></table>
-     <p style="margin:20px 20px 2px"><b>5 cabelos</b> &mdash; preto, castanho, loiro, ruivo, prata.</p>
+     <p style="margin:20px 20px 2px"><b>${CABELO.length} cabelos</b> &mdash; preto, castanho, castanho claro, loiro, ruivo, grisalho, roxo, azul.</p>
      <table style="border-spacing:8px;margin:4px"><tr>${cab}</tr></table>
      </body></html>`,
     1420,
@@ -170,7 +164,7 @@ async function folhaPaleta(nav: Awaited<ReturnType<typeof abrirNavegador>>) {
 
 async function folhaPet(nav: Awaited<ReturnType<typeof abrirNavegador>>) {
   const svg = peaozinho();
-  salvar(`${DIR_PET}/peaozinho.svg`, svg);
+  salvar(`${DIR_PET}/peaozinho.svg`, otimizar(svg));
 
   const kb = (c: string) => (statSync(c).size / 1024).toFixed(1);
   const apngPng = statSync(APNG).size + statSync(PNG).size;

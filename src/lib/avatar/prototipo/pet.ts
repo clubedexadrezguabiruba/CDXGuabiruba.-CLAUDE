@@ -13,12 +13,31 @@
  * base, para o teste medir só o que devia medir.
  */
 
+// O contorno vem da paleta: se o pet mantivesse cópia própria, ele derivaria
+// do boneco na primeira vez que alguém ajustasse um dos dois. As cores de
+// madeira e folha ficam aqui porque são deste item, não do elenco.
+import { LINHA } from "../palette";
+
 const MADEIRA_CLARA = "#C9954E";
 const MADEIRA = "#A9743A";
 const MADEIRA_ESCURA = "#8A5A2B";
 const FOLHA = "#6E9B45";
-const LINHA = "#241610";
 
+/**
+ * NENHUM COMENTÁRIO DENTRO DO `<style>` ABAIXO. Um `/* ... <path> ... *​/` fez
+ * o navegador descartar em silêncio todas as regras seguintes; `conferirSvg`
+ * reprova. As explicações que estavam lá vivem aqui:
+ *
+ *  - `braco-l` + `braco`: braço é linha, e linha não tem contorno. São duas
+ *    passadas — traço grosso escuro por baixo, madeira fina por cima. Um path
+ *    só não consegue ter preenchimento E contorno quando a forma é uma linha.
+ *  - `palpebra` nasce com `opacity: 0` no estado base, não só dentro do
+ *    `@keyframes`. Se a animação não rodar (motor pausado,
+ *    `prefers-reduced-motion`, screenshot), a pálpebra não pode ficar cobrindo
+ *    o olho — o pet apareceria cego.
+ *  - O `@media (prefers-reduced-motion)` entrega o pet parado a quem pede
+ *    menos movimento.
+ */
 export function peaozinho(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="pet-peao">
 <style>
@@ -27,9 +46,6 @@ export function peaozinho(): string {
   .pet-peao .m2    { fill: ${MADEIRA}; }
   .pet-peao .m3    { fill: ${MADEIRA_ESCURA}; }
   .pet-peao .folha { fill: ${FOLHA}; }
-  /* Braço = duas passadas: contorno grosso escuro por baixo, madeira por
-     cima. Um path sozinho nao tem como ter preenchimento E contorno quando a
-     forma é uma linha. */
   .pet-peao .braco-l { stroke: ${LINHA};  stroke-width: 26; stroke-linecap: round; fill: none; }
   .pet-peao .braco   { stroke: ${MADEIRA}; stroke-width: 14; stroke-linecap: round; fill: none; }
   .pet-peao .tinta { fill: ${LINHA}; }
@@ -38,9 +54,6 @@ export function peaozinho(): string {
   .pet-peao .flutua  { animation: peao-flutua 3.2s ease-in-out infinite; transform-origin: 100px 178px; }
   .pet-peao .acena   { animation: peao-acena 3.2s ease-in-out infinite;  transform-origin: 142px 120px; }
   .pet-peao .broto   { animation: peao-broto 3.2s ease-in-out infinite;  transform-origin: 104px 44px; }
-  /* opacity: 0 no estado base, não só no keyframe. Se a animação não rodar
-     (motor pausado, prefers-reduced-motion, screenshot), a pálpebra não pode
-     ficar cobrindo o olho. */
   .pet-peao .palpebra{ opacity: 0; animation: peao-pisca 4.6s steps(1, end) infinite; }
 
   @keyframes peao-flutua {
@@ -61,7 +74,6 @@ export function peaozinho(): string {
     98%, 100% { opacity: 0; }
   }
 
-  /* Acessibilidade: quem pede menos movimento recebe o pet parado. */
   @media (prefers-reduced-motion: reduce) {
     .pet-peao .flutua, .pet-peao .acena, .pet-peao .broto, .pet-peao .palpebra { animation: none; }
     .pet-peao .palpebra { opacity: 0; }

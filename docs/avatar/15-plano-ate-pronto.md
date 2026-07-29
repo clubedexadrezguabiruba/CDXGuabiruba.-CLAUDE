@@ -98,9 +98,7 @@ Sem uma definição, "polido" não fecha nunca. Proponho estas seis:
 
 ---
 
-# 3. Quatro decisões abertas
-
-Nenhuma delas eu devo tomar sozinho — todas mudam escopo de forma cara.
+# 3. As quatro decisões — todas fechadas em 2026-07-29
 
 ## D-A — A régua da patente ✅ **DECIDIDA em 2026-07-29**
 
@@ -147,43 +145,73 @@ curva de XP.
 
 O gate T0.17 foi reescrito para essa forma.
 
-## D-B — O pipeline de vetorização é escopo morto?
+## D-B — O pipeline de vetorização ✅ **CORTADO**
 
-O T0.6 (`raster → VTracer → encaixe na paleta → SVGO`) existe porque a arte viria
-de IA geradora de imagem, em raster. **Eu escrevo SVG direto — não há passo
-raster.** Ele só faz sentido se você pretende desenhar em raster, ou usar outra
-IA que gera imagem, e converter.
+O T0.6 (`raster → VTracer → encaixe na paleta → SVGO`) existia porque a arte
+viria de IA geradora de imagem, em raster. Não há passo raster: eu escrevo SVG
+direto.
 
-- **Se sim:** T0.6 fica, e o `@neplex/vectorizer` + SVGO entram como dependência.
-- **Se não:** somem T0.6 e a §2.5 do doc 12. Sobra o SVGO como passo de limpeza,
-  que é barato e vale de qualquer jeito.
+**Decisão do usuário:** a arte antiga vai quase toda ser descartada — foi feita
+para o layout antigo. A nova nasce com identidade nova, e o fluxo é **referência
+visual, não conversão**:
 
-**Recomendo perguntar-se antes:** você quer poder desenhar por conta própria em
-qualquer ferramenta? Se a resposta for sim, mantenha.
+```
+você gera a imagem na IA  →  me manda no chat  →  eu olho e escrevo o SVG
+   →  Chromium renderiza a 56 e 340 px  →  eu leio o PNG e critico  →  refino
+```
 
-## D-C — Ordem: arte antes ou depois da reescrita do render?
+Some o T0.6 e a §2.5 do doc 12. **Fica o SVGO** como faxina dos arquivos de
+saída, que é barata e vale de qualquer jeito.
 
-O backlog manda F1 (arte) → F2 (render). **Recomendo F1 curta → F2 → F4.**
+Continua valendo a saída de escape: se alguma arte ficar melhor em raster, ela
+entra **como PNG**, sem conversão — o resolver já lê o manifesto e o
+`public/items/` de hoje é todo PNG. O limite é que PNG serve para `pet` e
+`background`, e **não** para nada que precise trocar de cor em tempo de execução
+(pele, cabelo), porque custom property só alcança SVG inline.
+
+## D-C — Ordem ✅ **DECIDIDA: F1 curta → F2 → F4**
+
+O backlog mandava F1 (arte) → F2 (render). Vale a ordem nova.
 
 O motivo é concreto: o bug de colisão de cor entre bonecos só apareceu quando
 pus vários avatares diferentes na mesma página — coisa que a `/dev/avatar` não
 faz. A F2 tem mais defeitos dessa família esperando (anchors, remoção do
 knockout, recorte de cabeça para foto de perfil, canvas 4:5, 30 avatares numa
-lista). **Achá-los com arte quase pronta é barato; achá-los depois dos 53
+lista). **Achá-los com arte quase pronta é barato; achá-los depois dos 39
 desenhos é caro**, porque cada correção obriga a recortar arte.
 
 "F1 curta" = só o boneco base e o uniforme de Soldado, refinados até você
 aprovar. O resto da arte vem na F4, sobre um sistema já provado.
 
-## D-D — Onde você concentra sua revisão
+O Bloco 7a já validou o princípio: foi puxado para antes da arte pelo mesmo
+raciocínio, e o resultado foi a primeira patente concedida no mesmo dia.
+
+**Ordem resultante:** 1 (paleta) → 2 (boneco base) → 4 (migration) → 5 (render)
+→ 6 (alcance) → 3 (QA da arte) → 7b (uniforme) → 8 (39 desenhos) → 9 (catálogo)
+→ 10 (polimento).
+
+## D-D — Revisão ✅ **DECIDIDA: rosto a fundo + 3 pets a fundo + resto em lote**
 
 Meu limite, dito com honestidade: estrutura, geometria, legibilidade e
 consistência eu resolvo sozinho e verifico renderizando. **Carisma facial e
 bicho orgânico é onde seu olho decide.**
 
+Você revisa a fundo **o rosto do boneco base** (uma vez, no Bloco 2) e **3
+pets** (no Bloco 8). Dos 3 sai o acordo de estilo — tamanho do olho em relação à
+cabeça, quanto detalhe, que pose, espessura do contorno — que eu aplico nos
+outros 17. Os 20 você confere de uma vez na folha de contato e aponta só o que
+estiver fora.
+
+Cerca de 3 sessões suas, em vez de ~20 rodadas de ida e volta.
+
+<details>
+<summary>Texto original da recomendação (antes de decidir)</summary>
+
 **Recomendo:** você revisa a fundo **o rosto do boneco base** (uma vez, na F1) e
 **os 20 pets** (na F4). Nos outros 32 desenhos, aceite a primeira passada e só
 aponte o que estiver claramente errado.
+
+</details>
 
 ---
 
@@ -210,24 +238,45 @@ Dez blocos. Cada um cabe numa sessão de trabalho e fecha com um gate.
 
 ---
 
-## Bloco 1 — Paleta como módulo de verdade
+## Bloco 1 — Paleta como módulo de verdade ✅ **FEITO em 2026-07-29**
 
-*Sem arte. Bloqueia a F1, porque a arte consome a paleta.*
+*Sem arte. Bloqueava a F1, porque a arte consome a paleta.*
 
-- **1.1** `src/lib/avatar/palette.ts`: rampas de pele (8), cabelo (5), cores de
-  fundo escolhíveis (D27), e o destaque por raridade. Hoje as cores vivem
-  soltas dentro de `prototipo/boneco.ts`.
-- **1.2** Validador de paleta (T0.8): falha se duas cores estão perto demais
-  para não se fundirem no encaixe. A régua já existe — o caso documentado que
-  fundiu (`#4a3526` com `#3d2b1f`) dista **18**; a menor distância da paleta
-  atual é **58**.
-- **1.3** Nome das custom properties congelado (`--av-pele`, `--av-cabelo`, …)
-  e documentado, porque tanto o SVG quanto o CSS global vão depender dele.
-- **1.4** SVGO no pipeline de saída, com a regra **"nenhum comentário dentro do
-  `<style>`"** — um `/* … <path> … */` fez o navegador descartar em silêncio
-  todas as regras seguintes.
+- **1.1** `src/lib/avatar/palette.ts`: pele (8), cabelo (**8**, não 5 — o D27
+  pede 5 modelos × 8 cores), fundos escolhíveis (8), traje da base, e a cor por
+  raridade **espelhando `RARITY_STYLES`**, senão o mesmo item sairia de uma cor
+  no inventário e de outra no ranking. `prototipo/boneco.ts` e `pet.ts` agora
+  consomem; antes cada um tinha a sua cópia do contorno.
+- **1.2** Validador (T0.8). A régua original era "não se fundir no encaixe da
+  paleta" — o encaixe morreu junto com o T0.6 (D-B), mas o validador continua
+  valendo por outro motivo, mais direto: **duas cores próximas não se
+  distinguem a 56 px**. Duas distâncias: 25 entre irmãos de um conjunto
+  escolhível, 40 entre o contorno e qualquer preenchimento.
+- **1.3** Custom properties congeladas em `PROPRIEDADES`, com **dois escopos**:
+  o `<svg>` carrega o padrão da composição, cada camada redeclara no próprio
+  `<g>` o que é dela. Sem isso, chapéu, relíquia e pet na mesma composição
+  brigariam pelas mesmas variáveis — e é o mesmo defeito de colisão já medido
+  entre bonecos. De brinde, o fallback do 5.9 sai de graça: a camada do
+  uniforme redeclara `--av-roupa`, e sem uniforme o traje da base aparece
+  sozinho, por cascata.
+- **1.4** SVGO no pipeline, com `inlineStyles` **desligado**. Medido: com o
+  default, ele apagou `.c-roupa`, `.c-cabelo`, `.c-calca` e `.c-sapato` do
+  `<style>` e escreveu `style="fill:var(--av-sapato)"` no elemento. Funciona
+  hoje e inviabiliza o 5.7 amanhã.
+- **1.5** `svgContrato.ts`: as duas conferências que falham em silêncio no
+  navegador — comentário dentro do `<style>` e custom property fora do
+  contrato (`var(--av-pelle)` não é erro de sintaxe; o elemento só sai preto).
+  **Pegou um caso real na primeira execução:** `pet.ts` tinha três comentários
+  dentro do `<style>`.
 
-🔒 **Gate:** `npm test` cobre o validador; injetar duas cores próximas quebra.
+🔒 **Gate:** `npm test` — 172 testes (eram 138). O validador reprova duas cores
+injetadas a 18 de distância, e o teste do SVGO reprova cada plugin que
+desmontaria o recolorir.
+
+Duas decisões minhas que você pode vetar em uma linha: as duas últimas cores de
+cabelo são **roxo e azul**, fantasia deliberada (o D27 existe para 30 alunos não
+saírem iguais); e o preto do cabelo é `#3A2F2A`, não preto de verdade — contra o
+contorno `#241610`, um preto real apagaria a silhueta.
 
 ---
 
