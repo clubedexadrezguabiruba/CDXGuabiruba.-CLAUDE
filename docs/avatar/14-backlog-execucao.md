@@ -1,5 +1,10 @@
 # Avatar / Arte / Baús — Backlog de Execução
 
+> **O plano de execução vigente é o `15-plano-ate-pronto.md`.** Este documento
+> continua sendo onde o **progresso** fica marcado, tarefa a tarefa, mas a
+> ordem e o escopo daqui para a frente vêm do 15 — inclusive seis divergências
+> deliberadas em relação a este arquivo, todas listadas lá com o motivo.
+
 > Lista completa de tarefas para refazer o subsistema. Ordenada por dependência:
 > nada numa fase começa antes de a anterior fechar o gate.
 >

@@ -93,5 +93,12 @@ quando não há `.env.local` — é assim que funcionam em CI.
 - Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md
 - Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md (a seção "Estado real" é a
   única parte confiável — a Parte 1 é um guia de setup pré-projeto)
-- Avatar: **docs/avatar/10-avatar-v3-definitive.md é o plano vigente** e supersede
-  os docs 00–09 daquela pasta onde houver conflito
+- Avatar: **o plano vigente é o v4**, e são quatro documentos com papéis distintos:
+  - `docs/avatar/15-plano-ate-pronto.md` — **comece por aqui.** O plano de
+    execução do estado atual até pronto, em 10 blocos com gate. Onde divergir
+    dos outros, ele vence
+  - `docs/avatar/12-avatar-v4-plano-completo.md` — as 30 decisões e o porquê
+  - `docs/avatar/13-checklist-de-verificacao.md` — os ~90 itens de auditoria
+  - `docs/avatar/14-backlog-execucao.md` — as 63 tarefas, **é onde o progresso
+    fica marcado**
+  - O v4 supersede o `10-avatar-v3-definitive.md` e os docs 00–09 daquela pasta

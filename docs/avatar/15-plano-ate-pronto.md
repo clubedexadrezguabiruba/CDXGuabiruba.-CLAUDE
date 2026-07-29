@@ -1,0 +1,499 @@
+# Avatar v4 — Plano do estado atual até pronto
+
+> **Para quem abre este documento numa sessão nova.** Ele é autossuficiente:
+> diz onde o projeto está (medido, não estimado), o que falta, em que ordem, e
+> com que gate cada coisa fecha.
+>
+> **Relação com os outros documentos:**
+> - `12-avatar-v4-plano-completo.md` — as 30 decisões e o **porquê** de cada uma.
+>   Continua valendo. Consulte quando precisar entender a razão de algo.
+> - `13-checklist-de-verificacao.md` — os ~90 itens de auditoria. É a lista de
+>   conferência, não o plano.
+> - `14-backlog-execucao.md` — o backlog original, com o progresso marcado
+>   tarefa a tarefa. **Continue marcando lá.**
+> - **Este documento (15)** é o plano de execução daqui até o fim. Onde ele
+>   divergir dos anteriores, ele vence — as divergências estão todas listadas
+>   na seção 4, com o motivo.
+>
+> Levantado em **2026-07-29** contra o banco de produção e o código real.
+
+---
+
+# 1. Onde estamos
+
+## O que já está feito e em produção
+
+| | |
+|---|---|
+| **Ponte dos baús** | `items.renderable` filtra o sorteio. Medido: antes, 60 aberturas davam 36 itens distintos com **25 invisíveis**; agora dão 20 distintos com **0 invisíveis** |
+| **Manifesto de assets** | `public/items/` é uma lista consultável; o resolver pergunta a ela. `prebuild` quebra se o manifesto divergir do disco |
+| **Gates** | `npm run verify:all` roda **14** (eram 11). Três novos: catálogo×assets, banco do avatar, pool dos baús |
+| **Testes unitários** | **138** (eram 108). `src/lib/avatar/` tinha zero |
+| **Página de teste** | `/dev/avatar`, trancada em professor/admin |
+| **Protótipo de arte** | Boneco 1:3 em SVG, 8 tons de pele, 5 cabelos, 3 chapéus e 2 uniformes de teste, 1 pet animado por CSS |
+| **CI** | Verde. `env-shape`, typecheck, lint, test, build, `verify:all`, ~100 s |
+
+## O que ainda está quebrado
+
+| fato medido | número |
+|---|---|
+| Itens do catálogo que **não** vestem o boneco | **45 de 77** |
+| Itens sem miniatura no inventário | **30 de 77** (todos pets) |
+| Telas onde o avatar aparece | **2**, nenhuma social |
+| Peso de `public/items/` | **7,0 MB**, dos quais 4,0 MB são **um** pet |
+| Usuários com título acima de "Aprendiz" | **0 de 17** — mesmo com 46 aulas concluídas por 7 deles |
+| Uniformes equipados em produção que não renderizam | 1 de 1 (Camiseta do Clube) |
+
+O render de produção continua sendo o **v2**: PNG, variante por gênero,
+knockout de cabeça, canvas 5:7, `body_family` `recruta_v1`.
+
+## O achado mais grave desta fase
+
+**O sistema de patente está morto, não apenas limitado.** `complete_lesson_step`
+compara a trilha concluída contra um array de 7 trilhas; o banco tem 2. Todos os
+17 usuários estão em "Aprendiz". Isso não é conteúdo faltando — é a espinha do
+avatar v4, porque **o uniforme por patente é o maior ROI de produto do plano
+inteiro** e ele não concede nada hoje. Ver decisão **D-A** na seção 4.
+
+---
+
+# 2. O que "pronto" significa
+
+Sem uma definição, "polido" não fecha nunca. Proponho estas seis:
+
+1. **Todo item que a criança pode receber aparece no boneco.** `renderable` é
+   `true` para 100% do catálogo, e o gate prova.
+2. **O avatar é visto.** Aparece em navbar, ranking geral, ranking de turma,
+   mural e Companhia — não só nas duas telas de perfil.
+3. **O boneco conta a história do aluno.** Uniforme por mérito, alcançável,
+   concedido e vestido automaticamente.
+4. **Lê a 56 px.** Todo item se distingue dos irmãos de slot no tamanho `sm`.
+5. **Aguenta uma turma.** Ranking com 30 alunos pinta rápido num celular fraco,
+   sem salto de layout.
+6. **Não exclui ninguém.** 8 tons de pele, `alt` com nome, contraste,
+   navegação por teclado, `prefers-reduced-motion`, e raridade sinalizada por
+   mais que cor.
+
+---
+
+# 3. Quatro decisões abertas
+
+Nenhuma delas eu devo tomar sozinho — todas mudam escopo de forma cara.
+
+## D-A — A régua da patente (a mais importante)
+
+**O problema:** 7 títulos, 2 trilhas, 0 alunos promovidos. Escrever as 5 trilhas
+que faltam são ~75 aulas novas — meses de conteúdo. Sem elas, 5 dos 7 uniformes
+que a F4 mandaria desenhar **nunca seriam vestidos por ninguém**.
+
+| opção | o que custa | o que entrega |
+|---|---|---|
+| **1. Escrever as 5 trilhas** | ~75 aulas. Meses | O plano original, intacto |
+| **2. Patente por aulas concluídas** (o D25 original) | 1 migration. Horas | Os 7 uniformes alcançáveis **hoje**, com 30 aulas: marcos em 2, 6, 12, 18, 24, 28, 30 |
+| **3. Só 3 patentes no lançamento** | 1 migration + 3 desenhos em vez de 7 | Menos ambição, some o problema |
+
+**Recomendo a 2.** O doc 14 reverteu o D25 dizendo "as trilhas vão crescer para
+7", mas isso é uma promessa de conteúdo, não um fato — e o custo de estar errado
+é desenhar 5 uniformes mortos. A opção 2 também dá progresso contínuo e visível:
+a criança vê quanto falta para a próxima patente. As trilhas continuam existindo
+como organização de conteúdo, e quando crescerem a régua pode voltar a ser por
+trilha sem perder nada.
+
+**Se escolher a 2**, o gate T0.17 muda de "títulos alcançáveis" para "todo marco
+de aulas existe no banco", e o backlog perde a nota que reverteu o D25.
+
+## D-B — O pipeline de vetorização é escopo morto?
+
+O T0.6 (`raster → VTracer → encaixe na paleta → SVGO`) existe porque a arte viria
+de IA geradora de imagem, em raster. **Eu escrevo SVG direto — não há passo
+raster.** Ele só faz sentido se você pretende desenhar em raster, ou usar outra
+IA que gera imagem, e converter.
+
+- **Se sim:** T0.6 fica, e o `@neplex/vectorizer` + SVGO entram como dependência.
+- **Se não:** somem T0.6 e a §2.5 do doc 12. Sobra o SVGO como passo de limpeza,
+  que é barato e vale de qualquer jeito.
+
+**Recomendo perguntar-se antes:** você quer poder desenhar por conta própria em
+qualquer ferramenta? Se a resposta for sim, mantenha.
+
+## D-C — Ordem: arte antes ou depois da reescrita do render?
+
+O backlog manda F1 (arte) → F2 (render). **Recomendo F1 curta → F2 → F4.**
+
+O motivo é concreto: o bug de colisão de cor entre bonecos só apareceu quando
+pus vários avatares diferentes na mesma página — coisa que a `/dev/avatar` não
+faz. A F2 tem mais defeitos dessa família esperando (anchors, remoção do
+knockout, recorte de cabeça para foto de perfil, canvas 4:5, 30 avatares numa
+lista). **Achá-los com arte quase pronta é barato; achá-los depois dos 53
+desenhos é caro**, porque cada correção obriga a recortar arte.
+
+"F1 curta" = só o boneco base e o uniforme de Soldado, refinados até você
+aprovar. O resto da arte vem na F4, sobre um sistema já provado.
+
+## D-D — Onde você concentra sua revisão
+
+Meu limite, dito com honestidade: estrutura, geometria, legibilidade e
+consistência eu resolvo sozinho e verifico renderizando. **Carisma facial e
+bicho orgânico é onde seu olho decide.**
+
+**Recomendo:** você revisa a fundo **o rosto do boneco base** (uma vez, na F1) e
+**os 20 pets** (na F4). Nos outros 32 desenhos, aceite a primeira passada e só
+aponte o que estiver claramente errado.
+
+---
+
+# 4. Onde este plano diverge dos documentos anteriores
+
+| # | o que muda | por quê |
+|---|---|---|
+| 1 | Catálogo final é **60 itens**, não 52 | O doc 12 diz os dois. 7+6+5+6+20+8+8 = 60. O "52" é anterior à revisão que levou pets de 12 para 20 |
+| 2 | Orçamento de arte é **53 desenhos**, não 45 | Os 8 backgrounds antigos **destoam** — confirmado visualmente na `/dev/avatar`. Eram "verificar"; agora são certeza |
+| 3 | Cor vai em **custom property**, não embutida na regra CSS | Medido: com a cor na regra, dois bonecos na mesma página colidem e o último pinta todos. Inviabilizava o D30 inteiro |
+| 4 | Renderizador headless é **Chromium**, não `sharp` | O destino é o navegador; `sharp` usa librsvg, com suporte diferente. E o Playwright já é dependência |
+| 5 | A régua da patente volta a ser questão aberta | Ver D-A |
+| 6 | **Mãos** entram no orçamento do boneco base | Os braços do protótipo terminam em cápsula. O slot `hand` tem 6 relíquias para segurar |
+
+---
+
+# 5. O plano
+
+Dez blocos. Cada um cabe numa sessão de trabalho e fecha com um gate.
+**Nada começa antes de o gate anterior passar.**
+
+---
+
+## Bloco 1 — Paleta como módulo de verdade
+
+*Sem arte. Bloqueia a F1, porque a arte consome a paleta.*
+
+- **1.1** `src/lib/avatar/palette.ts`: rampas de pele (8), cabelo (5), cores de
+  fundo escolhíveis (D27), e o destaque por raridade. Hoje as cores vivem
+  soltas dentro de `prototipo/boneco.ts`.
+- **1.2** Validador de paleta (T0.8): falha se duas cores estão perto demais
+  para não se fundirem no encaixe. A régua já existe — o caso documentado que
+  fundiu (`#4a3526` com `#3d2b1f`) dista **18**; a menor distância da paleta
+  atual é **58**.
+- **1.3** Nome das custom properties congelado (`--av-pele`, `--av-cabelo`, …)
+  e documentado, porque tanto o SVG quanto o CSS global vão depender dele.
+- **1.4** SVGO no pipeline de saída, com a regra **"nenhum comentário dentro do
+  `<style>`"** — um `/* … <path> … */` fez o navegador descartar em silêncio
+  todas as regras seguintes.
+
+🔒 **Gate:** `npm test` cobre o validador; injetar duas cores próximas quebra.
+
+---
+
+## Bloco 2 — F1 curta: o boneco base
+
+*Aqui mora o carisma. É o único bloco que depende do seu olho.*
+
+O protótipo lê bem, mas é rígido. O que precisa mudar, concretamente:
+
+- **2.1 Rosto.** Hoje são dois pontos e uma curva. Precisa de sobrancelhas com
+  forma, insinuação de nariz, e uma boca com caráter. O rosto sai em **paths
+  próprios com classes**, que é o que torna as 4 expressões (D8) gratuitas.
+- **2.2 Mãos.** Os braços terminam em cápsula. Sem mão não há onde ancorar as 6
+  relíquias do slot `hand`.
+- **2.3 Silhueta.** Tudo é retângulo arredondado. Falta peso: um quadril
+  levemente mais largo, ombro com queda, pescoço encaixado.
+- **2.4 Um degrau de sombra.** Chapado com contorno duro ainda comporta uma
+  segunda tonalidade — sob o queixo, dentro da manga, embaixo da franja. É o
+  que separa "clipart vetorial" de "storybook".
+- **2.5 Cabelo.** Hoje é uma tampa. Precisa de silhueta, porque ele também é o
+  primeiro dos 5 modelos do slot `hair`.
+- **2.6 Uniforme de Soldado**, como prova do `garment` sobre o corpo.
+- **2.7 Você critica** — principalmente 2.1. Eu regero.
+
+🔒 **Gate:** lê a 56 px · registra nos 8 tons sem vazar cor · a paleta não funde
+nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
+
+---
+
+## Bloco 3 — Ferramentas de QA da arte
+
+*Sem arte nova. Fica pronto antes dos 44 desenhos restantes, não depois.*
+
+- **3.1** Folha de contato (T0.9): renderiza **cada item sobre a base**, nos 4
+  tamanhos, numa imagem só. Com 53 desenhos, revisar um a um é inviável.
+- **3.2** Teste unitário de ordem de camadas e z-index (T0.20).
+- **3.3** A `/dev/avatar` ganha um modo **"turma"**: 12 bonecos com
+  configurações diferentes lado a lado. Foi exatamente o caso que revelou a
+  colisão de cor, e ele precisa ser permanente, não um teste de uma vez.
+
+🔒 **Gate:** a folha de contato gera; o modo turma mostra 12 bonecos distintos.
+
+---
+
+## Bloco 4 — F2 banco: a migration
+
+- **4.1** Migration `avatar_v4`, **aditiva**:
+  - `items.slot` e `user_equipped.slot` CHECK **+= `hair`, `back`**
+  - `user_inventory.source` CHECK **+= `title`**
+  - `users.avatar_skin` (8 tons, default `medio`)
+  - `users.avatar_hair`, `avatar_hair_color`, `avatar_bg_color` (D27)
+  - `update_avatar_identity` substitui `update_avatar_base`
+  - **recriar `user_public_profiles`** com os campos novos — hoje ela tem
+    `avatar_base` e nenhum dos novos, e é dela que o ranking lê
+  - `users.avatar_base` **deprecada, não dropada**
+- **4.2** Migração suave: os 17 usuários existentes recebem tom default,
+  mantêm `avatar_chosen = true`, sem re-onboarding forçado.
+- **4.3** `unequip_slot` passa a aceitar `hair` e `back` — a lista dentro da
+  função é uma segunda cópia do CHECK, e o gate já confere que as duas batem.
+
+⚠️ **Extrair o corpo de qualquer função existente de `pg_get_functiondef` do
+banco vivo, nunca de migration antiga.** E ele **não emite o `;`** depois de
+`$function$`.
+
+🔒 **Gate:** `verify:phase8` passa com os slots novos; `verify:privileges` e
+`verify:no-dup-rpc` continuam verdes.
+
+---
+
+## Bloco 5 — F2 render: a reescrita
+
+- **5.1** `constants.ts`: canvas 4:5, `SIZE_CONFIG` novo (56×70, 100×125,
+  200×250, 340×425), z-order das 8 camadas.
+- **5.2** `bodyFamilies.ts`: `ESTRATEGISTA_V2`, anchors **sem gênero** +
+  **offset por item** (D24 — chapéu alto e boné não assentam no mesmo ponto).
+- **5.3** `types.ts`: remove `GenderVariant`, `dressed_base`, `head_swap`.
+- **5.4** `renderModes.ts`: `garment`, `head_attach`, `back_attach`.
+- **5.5** `resolvedAvatar.ts`: **deletar todo o knockout**.
+- **5.6** `AvatarDisplay.tsx`: nova pilha de camadas, sem `clipPath`, head-group
+  com tilt.
+- **5.7** **Folha de estilo única.** Trinta avatares numa lista hoje emitiriam
+  30 blocos `<style>` idênticos. As regras sobem para o CSS global; cada `<svg>`
+  carrega só as custom properties. Sem isso o D30 fica pesado.
+- **5.8** `assetResolver.ts` sem variante de gênero.
+- **5.9** Fallback: uniforme ausente cai para o traje da base, nunca boneco pelado.
+- **5.10** `criar-personagem`: male/female → **tom de pele + cabelo + cor**.
+- **5.11** `viewBox` de cabeça, para o avatar servir de foto de perfil.
+
+🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` 14/14 · gate de assets
+100% · avatar antigo degrada sem erro · **nenhum código per-gender restante**
+(grep por `male`/`female` em `src/lib/avatar/` volta vazio).
+
+---
+
+## Bloco 6 — F2 alcance: o D30
+
+*É aqui que o investimento inteiro passa a motivar alguém.*
+
+| tela | vira | custo |
+|---|---|---|
+| navbar | cabeça, 32 px | UI (hoje mostra iniciais) |
+| ranking geral | cabeça + moldura, 40 px | **só UI** — `get_ranking` já devolve `avatar_config` |
+| ranking de turma | cabeça + moldura | UI + conferir RPC |
+| mural | cabeça, 32 px | UI + incluir no feed |
+| Companhia | corpo inteiro (`sm`) | UI + conferir RPC |
+
+- **6.1** Um componente `<AvatarCabeca>` reutilizável, para as quatro telas que
+  usam o recorte quadrado.
+- **6.2** A moldura de raridade no ranking. **É o melhor retorno do plano
+  inteiro:** CSS puro, custo de arte zero, e é onde raridade vira status social.
+- **6.3** Opt-out de ranking respeitado também no avatar (LGPD).
+
+🔒 **Gate e2e:** o avatar aparece no ranking · 12 alunos com configurações
+diferentes saem **diferentes** · nenhum salto de layout ao carregar.
+
+---
+
+## Bloco 7 — F3: patente → uniforme
+
+*Bloqueado pela decisão **D-A**. Não comece antes de resolvê-la.*
+
+- **7.1** `complete_lesson_step`: ao atingir o marco, **concede e auto-equipa**
+  o uniforme do tier.
+- **7.2** Backfill idempotente para quem já passou do marco — hoje são 7
+  usuários com 46 aulas concluídas.
+- **7.3** Capa `back` junto, a partir de Comandante (slot existe; arte depois).
+- **7.4** O gate T0.17 muda de forma conforme a D-A.
+
+⚠️ Mesma regra: extrair de `pg_get_functiondef` do banco vivo. Foi recolando
+corpo antigo que a curva de XP ficou 4 meses errada.
+
+🔒 **Gate e2e:** completar o marco veste o uniforme, e ele aparece no ranking.
+
+---
+
+## Bloco 8 — F4 arte: os 44 desenhos restantes
+
+*O bloco mais longo. Várias sessões. Ordem por valor.*
+
+| ordem | o quê | quantos | quem refina |
+|---|---|---|---|
+| 1 | Uniformes Aspirante → Lenda | 6 | eu, silhueta constante |
+| 2 | Cabelos | 5 | eu |
+| 3 | Chapéus | 6 | eu |
+| 4 | Relíquias (2 famílias × 3 tiers) | 6 | eu |
+| 5 | Backgrounds | 8 | eu |
+| 6 | **Pets** | 20 | **você refina bastante** |
+
+**Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
+seguinte começar. Quarenta e quatro desenhos revisados só no fim é como se
+descobre, tarde, que a régua de estilo derivou.
+
+🔒 **Gate:** manifesto 100% coberto · folha de contato revisada · nenhum item
+invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo dos
+45 itens acaba).
+
+---
+
+## Bloco 9 — F4 dados: o catálogo novo
+
+- **9.1** Reseed: **77 → 60 itens** (7 uniforme + 6 head + 5 hair + 6 hand +
+  20 pet + 8 background + 8 frame).
+- **9.2** Pirâmide de raridade **40/30/20/10** (hoje 19/20/20/18 — um quarto do
+  catálogo é lendário, então lendário não quer dizer nada).
+- **9.3** **D16** — pool de baú só com estético (`head`, `hair`, `background`,
+  `pet`, `back`). **Nunca** uniforme nem relíquia: esses são mérito, e sorteá-los
+  faz o boneco parar de contar a história do aluno.
+- **9.4** **D27** — escolha de cor de cabelo e fundo, validada no servidor
+  contra a paleta.
+- **9.5** Limpeza: remover os PNG órfãos de `public/items/` (hoje 7,0 MB, dos
+  quais 4,0 MB são um único pet), regerar manifesto, zerar baseline.
+
+🔒 **Gate:** `verify:phase8` verde com o catálogo novo · a distribuição bate a
+pirâmide · abrir 60 baús não devolve uniforme nem relíquia · `public/items/`
+abaixo de 1 MB.
+
+---
+
+## Bloco 10 — F5: polimento e lançamento
+
+- **10.1** **D8** — 4 expressões por classe CSS: neutra, vitória, concentração,
+  derrota. Zero asset novo, porque o rosto já sai em paths próprios.
+- **10.2** **D29** — baú de escolha em marcos: a criança escolhe 1 entre 3. As
+  3 opções vêm do servidor; escolher uma não permite pegar as outras.
+- **10.3** Capas `back` — as primeiras 3 ou 4.
+- **10.4** Acessibilidade: `alt` com o nome do aluno, contraste do nome sobre o
+  fundo equipado, botões de equipar alcançáveis por teclado,
+  `prefers-reduced-motion` no `character-root`, e **raridade sinalizada por mais
+  que cor**.
+- **10.5** Sons de equipar e de abrir baú — hoje são placeholder, e o loop de
+  recompensa sem som fica pela metade.
+- **10.6** **Medir no celular mais fraco disponível**: ranking com 30 alunos,
+  número de requisições e tempo até pintar.
+- **10.7** e2e novos: concessão por patente, baú de escolha, escolha de cor
+  persiste, avatar no ranking, duplicata vira XP.
+- **10.8** **D21** string canônica — só se a medição do 10.6 pedir.
+
+🔒 **Gate:** as 6 definições de "pronto" da seção 2, uma a uma.
+
+---
+
+# 6. Riscos vivos
+
+| risco | mitigação | estado |
+|---|---|---|
+| A régua da patente não resolvida deixa 5 uniformes mortos | Decisão **D-A** antes do Bloco 7 | **aberto** |
+| Minha arte sair genérica | O Bloco 2 é ponto de crítica **antes** dos outros 44 | mitigado |
+| Pets orgânicos ficarem fracos | Bloco 8 assume refino seu | aceito |
+| Uniforme não registrar nos 8 tons | Testar só no Soldado antes dos outros 6 | mitigado |
+| Cores da paleta se fundirem | Validador do Bloco 1 | mitigado |
+| `complete_lesson_step` regredir | Extrair do banco vivo; `verify:no-dup-rpc` é ratchet | mitigado |
+| 30 avatares numa lista pesarem | Folha de estilo única (5.7) + medição (10.6) | **aberto até medir** |
+| Trilhas crescerem e quebrarem títulos de novo | Gate T0.17 | mitigado |
+
+---
+
+# 7. Método de trabalho da arte
+
+**A Anthropic não tem API de geração de imagem.** Não é lacuna temporária, é
+decisão. O que existe, e funciona:
+
+```
+escrever SVG  →  Chromium renderiza a 56 e 340 px  →  LER o PNG  →  criticar  →  refinar
+```
+
+O terceiro passo é o que importa: **o agente enxerga o próprio resultado** e
+itera sozinho, sem você em cada volta. Validado nesta fase.
+
+**Regras que custaram tempo real e vão se repetir:**
+
+1. **Nada de comentário dentro do `<style>` do SVG.** Um `/* … <path> … */` fez
+   o navegador descartar em silêncio **todas as regras seguintes**. Comentário
+   fica no gerador; o SVGO removeria de qualquer jeito.
+2. **Cor em custom property, nunca embutida na regra.** Senão dois bonecos na
+   mesma página colidem e o último pinta todos.
+3. **Classe CSS ganha de atributo de apresentação.** `class="l"` com
+   `stroke-width: 7` vence `stroke-width="15"` escrito no elemento.
+4. **Contorno e preenchimento no mesmo elemento, pintados de trás para a
+   frente.** Fills primeiro e strokes depois cria costura dupla.
+5. **Braço é linha, e linha não tem contorno.** Duas passadas: traço grosso
+   escuro por baixo, fino colorido por cima.
+6. **Estado inicial explícito em tudo que a animação esconde.** Pálpebra só com
+   `opacity: 0` dentro do `@keyframes` apaga os olhos quando a animação não roda.
+7. **Pele escura precisa de esclera** — uma amêndoa branca fina nas laterais.
+   Esclera cheia dá olho arregalado.
+8. **Renderizar sempre nos dois extremos** (56 e 340 px) antes de julgar. **O
+   que manda é o menor.**
+9. **Não julgar arte por descrição.** Renderizar e olhar.
+
+**Comandos:**
+
+```
+npm run avatar:prototipo    regera todas as folhas de decisão em .scratch/
+npm run avatar:manifest     regera o manifesto depois de mexer em public/items/
+npm run dev                 e abrir /dev/avatar (professor/admin)
+```
+
+---
+
+# 8. Armadilhas do projeto
+
+*Para quem abre uma sessão nova. Todas já custaram caro.*
+
+- **O e2e bate no Supabase de PRODUÇÃO** e cria/apaga usuários reais. Rodar com
+  intenção, nunca em CI.
+- **Antes de medir a suíte e2e completa, reinicie o `npm run dev`.** Servidor
+  usado entre runs degrada e derruba dezenas de testes que passam sozinhos.
+  **Não aumente o timeout — isso piora.**
+- **Nunca copie corpo de função SQL de migration antiga.** Extraia de
+  `pg_get_functiondef` do banco vivo. Ele **não emite o `;`** depois de
+  `$function$`. Foi assim que a curva de XP ficou 4 meses errada.
+- **`getByRole` do Playwright é caro** em página pesada; use localizador CSS.
+- **`.first()` pega elemento escondido** quando o componente é renderizado duas
+  vezes (mobile + desktop). Use `filter({ visible: true })`.
+- **O Supabase CLI não está instalado.** Aplicar migration com
+  `npx tsx scripts/apply-migration.ts <arquivo.sql>`.
+- **O usuário não consegue dar push.** Quando os commits estiverem prontos,
+  peça que ele rode `git push origin main`.
+- **Toda correção precisa de um gate que falha antes e passa depois.** Regra do
+  `CLAUDE.md`, e a razão de o passivo ter parado de crescer.
+
+---
+
+# 9. O que não está neste plano
+
+Fronteiras deliberadas, para não haver surpresa:
+
+| item | por quê |
+|---|---|
+| **Fase 11 (PWA)** e **Fase 12 (lançamento)** | São fases próprias do roadmap. O avatar não depende delas nem elas dele |
+| **Revisão do conteúdo das aulas** | Prioridade sua: depois do avatar. Mas a decisão **D-A** encosta nisso |
+| **Loja, moeda, passe de temporada** | Público infantil de clube escolar, LGPD, e o avatar conta mérito, não gasto |
+| **Rosto composível, barba, micro-slots** | Invisíveis a 56 px |
+| **Motor de animação (Rive/Lottie)** | Dependência nova; CSS já resolve o respiro e o idle do pet |
+| **Composição no servidor (D22)** | Com SVG, compor é concatenar string. Revisitar só se a medição do 10.6 pedir |
+| **Repositório público com dados de menores** | Decisão de lançamento, não de avatar — mas **precisa ser revisitada antes** |
+
+---
+
+# 10. Checklist final de pronto
+
+Marque só com evidência medida, não com impressão.
+
+- [ ] `asset-baseline.json` zerado — 60 de 60 itens vestem o boneco
+- [ ] `npm run verify:all` verde, incluindo `verify:phase8`
+- [ ] `public/items/` abaixo de 1 MB
+- [ ] Avatar em navbar, ranking geral, ranking de turma, mural e Companhia
+- [ ] 12 alunos diferentes numa lista saem **visualmente diferentes**
+- [ ] Uniforme concedido e vestido ao atingir a patente, visível no ranking
+- [ ] Baú não sorteia uniforme nem relíquia
+- [ ] Distribuição de raridade em 40/30/20/10
+- [ ] Os 8 tons de pele registram com todos os 7 uniformes
+- [ ] Cada slot: os itens irmãos se distinguem a 56 px na folha de contato
+- [ ] Ranking com 30 alunos medido em celular fraco
+- [ ] `alt`, contraste, teclado, `prefers-reduced-motion`, raridade não só por cor
+- [ ] e2e completo verde, com os 5 testes novos
+- [ ] `docs/avatar/14-backlog-execucao.md` com as 63 tarefas marcadas
