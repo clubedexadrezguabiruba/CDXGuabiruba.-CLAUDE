@@ -21,10 +21,13 @@
 
 Nada aqui depende de arte. Pode começar hoje.
 
-> **Estado em 2026-07-29:** 12 das 22 tarefas fechadas. Falta o pipeline de
-> vetorização (T0.6–T0.10) e os testes unitários de ordem de camadas e offset
+> **Estado em 2026-07-29:** 13 das 22 tarefas fechadas. Falta o pipeline de
+> vetorização (T0.6–T0.9) e os testes unitários de ordem de camadas e offset
 > (T0.20, T0.22). As duas decisões do usuário (T0.12, T0.14) foram delegadas e
 > estão tomadas, com a evidência renderizada.
+>
+> Para **ver o boneco**: `/dev/avatar` no app (professor/admin), ou
+> `npm run avatar:prototipo` para regerar as folhas em `.scratch/`.
 
 ## Detecção e integridade
 
@@ -72,7 +75,15 @@ um ovo de 72 h para receber um pet invisível.
 - [ ] **T0.7** 🤖 `src/lib/avatar/palette.ts`: rampas de pele (8), cabelo (5), destaque por raridade
 - [ ] **T0.8** 🤖 Validador de paleta: falha se duas cores estão próximas demais para não se fundirem
 - [ ] **T0.9** 🤖 Folha de contato: renderiza cada item sobre a base nos 4 tamanhos, gera 1 imagem
-- [ ] **T0.10** 🤖 Página de teste de tamanhos: 56 / 100 / 200 / 340 px, com fundo, moldura e pet
+- [x] **T0.10** 🤖 Página de teste de tamanhos: 56 / 100 / 200 / 340 px, com fundo, moldura e pet
+      → rota `/dev/avatar`, trancada em professor/admin (404 para aluno). Monta o SVG
+      ao vivo com proporção, 8 tons de pele, 5 cabelos, chapéu, uniforme, fundo, moldura,
+      pet e lupa de 6× no 56 px. Coberta por `e2e/dev-avatar.spec.ts`
+
+**Achado na T0.10, adiantando a T4.5:** os **8 backgrounds antigos destoam**.
+São pinturas suaves; o boneco novo é chapado com contorno duro. Lado a lado não
+lêem como um sistema só. Provável **+8 desenhos** no orçamento — confirmar na F1,
+mas a evidência já existe em `.scratch/pagina-avatar-v4-completo.png`.
 
 ## Decisões que dependem de ver
 
@@ -277,7 +288,7 @@ Bloqueia todo o resto da arte.
 
 | fase | tarefas | depende de você? |
 |---|---|---|
-| F0 | 22 — **12 fechadas** | T0.12 e T0.14 delegadas e decididas |
+| F0 | 22 — **13 fechadas** | T0.12 e T0.14 delegadas e decididas |
 | F1 | 4 | T1.3 (crítica da arte) |
 | F2 | 16 | não |
 | F3 | 3 | não |

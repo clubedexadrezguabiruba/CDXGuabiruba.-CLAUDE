@@ -11,8 +11,8 @@
  */
 
 import { readFileSync, statSync } from "fs";
-import { boneco, PELE, CABELO, LINHA, type OpcoesBoneco } from "./boneco";
-import { peaozinho } from "./pet";
+import { boneco, PELE, CABELO, LINHA, type OpcoesBoneco } from "../../../src/lib/avatar/prototipo/boneco";
+import { peaozinho } from "../../../src/lib/avatar/prototipo/pet";
 import {
   abrirNavegador,
   renderizarSvg,
