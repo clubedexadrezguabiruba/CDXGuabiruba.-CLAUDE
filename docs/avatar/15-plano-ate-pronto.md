@@ -105,11 +105,27 @@ Nenhuma delas eu devo tomar sozinho — todas mudam escopo de forma cara.
 ## D-A — A régua da patente ✅ **DECIDIDA em 2026-07-29**
 
 **Decisão do usuário:** a patente vem de concluir uma **trilha de nível**, e cada
-nível são **30 aulas** — Iniciante 1–30, Intermediário 31–60, e assim por diante.
-Os nomes dos níveis acima do Intermediário ficam para depois.
+nível são **15 aulas**. Os níveis usam a nomenclatura do método holandês
+(Stappenmethode): **Passo 1** a **Passo 7**.
 
 Mecanicamente é marco por contagem de aulas, com uma narrativa melhor: a criança
-entende "terminei o Iniciante", não "cheguei em 30".
+entende "terminei o Passo 1", não "cheguei em 15".
+
+A régua encaixa no conteúdo que existe: o Passo 1 é a trilha `recruta` (15
+aulas) e o Passo 2 é a `soldado` (30 acumuladas). O nível é o rótulo pedagógico;
+a patente (Soldado, Aspirante, …) é a recompensa temática. São coisas diferentes
+de propósito.
+
+| tier | patente | nível | aulas |
+|---|---|---|---|
+| 0 | Aprendiz | — | 0 |
+| 1 | Soldado | Passo 1 | 15 |
+| 2 | Aspirante | Passo 2 | 30 |
+| 3 | Capitão | Passo 3 | 45 |
+| 4 | Comandante | Passo 4 | 60 |
+| 5 | General | Passo 5 | 75 |
+| 6 | Grão-Mestre | Passo 6 | 90 |
+| 7 | Lenda | Passo 7 | 105 |
 
 **Implementado como contagem de aulas concluídas, não como "as 30 primeiras
 aulas".** São equivalentes hoje (o desbloqueio é sequencial), mas "as 30
@@ -122,12 +138,12 @@ curva de XP.
 
 **Duas consequências que valem registro:**
 
-1. Com **30 aulas no banco**, só a patente 1 (Soldado) é alcançável. A primeira
-   patente exige 100% do conteúdo existente, e o aluno mais avançado tem 15
-   aulas — ninguém é promovido hoje. Baixar o primeiro marco é um `UPDATE` de
-   uma linha, quando você quiser.
-2. Por isso a F4 desenha **1 uniforme, não 7**. O Bloco 8 cai de 44 para **38
-   desenhos**, e o gate falha se alguém atrelar uniforme a marco inalcançável.
+1. Com 30 aulas no banco, **2 das 7 patentes são alcançáveis** (Soldado e
+   Aspirante). E a régua deixou de ser teórica: o `teacherdoug001` tem 15 aulas
+   concluídas e foi promovido a **Soldado** no backfill — a primeira patente
+   concedida na história deste banco. O ranking já mostra.
+2. Por isso a F4 desenha **2 uniformes, não 7**. As 5 patentes acima esperam
+   conteúdo, e o gate falha se alguém atrelar uniforme a marco inalcançável.
 
 O gate T0.17 foi reescrito para essa forma.
 
@@ -179,11 +195,11 @@ aponte o que estiver claramente errado.
 | 2 | Orçamento de arte é **53 desenhos**, não 45 | Os 8 backgrounds antigos **destoam** — confirmado visualmente na `/dev/avatar`. Eram "verificar"; agora são certeza |
 | 3 | Cor vai em **custom property**, não embutida na regra CSS | Medido: com a cor na regra, dois bonecos na mesma página colidem e o último pinta todos. Inviabilizava o D30 inteiro |
 | 4 | Renderizador headless é **Chromium**, não `sharp` | O destino é o navegador; `sharp` usa librsvg, com suporte diferente. E o Playwright já é dependência |
-| 5 | ~~A régua da patente volta a ser questão aberta~~ **Decidida:** trilha de nível de 30 aulas, régua em `title_tiers` | Ver D-A |
+| 5 | ~~A régua da patente volta a ser questão aberta~~ **Decidida:** trilha de nível de 15 aulas (Passo 1–7), régua em `title_tiers` | Ver D-A |
 | 6 | **Mãos** entram no orçamento do boneco base | Os braços do protótipo terminam em cápsula. O slot `hand` tem 6 relíquias para segurar |
 | 7 | A causa da patente morta **não era a régua** — era `UPDATE` sem `UPSERT` | Medido contra produção em 2026-07-29. Ver seção 1 |
 | 8 | O Bloco 7 vira **7a** (concessão, feito) e **7b** (uniforme, espera o render) | 7a não depende de arte e entrega valor hoje; 7b entregaria item invisível |
-| 9 | Orçamento de arte do Bloco 8 cai de 44 para **38 desenhos** | Com marcos de 30 aulas e 30 aulas no banco, só 1 uniforme é alcançável. Os outros 6 esperam conteúdo |
+| 9 | Orçamento de arte do Bloco 8 cai de 44 para **39 desenhos** | Com marcos de 15 aulas e 30 aulas no banco, 2 uniformes são alcançáveis. Os outros 5 esperam conteúdo |
 
 ---
 
@@ -369,13 +385,13 @@ agora entregaria item invisível.*
 
 ---
 
-## Bloco 8 — F4 arte: os 38 desenhos restantes
+## Bloco 8 — F4 arte: os 39 desenhos restantes
 
 *O bloco mais longo. Várias sessões. Ordem por valor.*
 
 | ordem | o quê | quantos | quem refina |
 |---|---|---|---|
-| 1 | ~~Uniformes Aspirante → Lenda~~ **cortado** — com marcos de 30 aulas, essas 6 patentes são inalcançáveis até o conteúdo crescer. Desenhar agora é arte morta, e o gate reprova | ~~6~~ **0** | — |
+| 1 | Uniforme do **Aspirante** só — Capitão → Lenda ficam de fora, são inalcançáveis até o conteúdo crescer. Desenhar agora é arte morta, e o gate reprova | ~~6~~ **1** | eu, silhueta constante |
 | 2 | Cabelos | 5 | eu |
 | 3 | Chapéus | 6 | eu |
 | 4 | Relíquias (2 famílias × 3 tiers) | 6 | eu |
@@ -383,7 +399,7 @@ agora entregaria item invisível.*
 | 6 | **Pets** | 20 | **você refina bastante** |
 
 **Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
-seguinte começar. Trinta e oito desenhos revisados só no fim é como se descobre,
+seguinte começar. Trinta e nove desenhos revisados só no fim é como se descobre,
 tarde, que a régua de estilo derivou.
 
 🔒 **Gate:** manifesto 100% coberto · folha de contato revisada · nenhum item

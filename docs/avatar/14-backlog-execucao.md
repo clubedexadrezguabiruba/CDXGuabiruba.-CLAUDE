@@ -249,14 +249,29 @@ Bloqueia todo o resto da arte.
       em patente alcançável**. Falhava antes da migration, passa depois
 
 **Régua decidida em 2026-07-29 (decisão do usuário):** a patente vem de concluir
-uma trilha de nível, e cada nível são **30 aulas** — Iniciante 1–30,
-Intermediário 31–60, e assim por diante. Os níveis acima do Intermediário ainda
-não foram nomeados (`level_name` NULL de propósito). Mudar marco ou acrescentar
-patente é `UPDATE`/`INSERT` em `title_tiers`, nunca editar função.
+uma trilha de nível, e cada nível são **15 aulas**. Os níveis usam a
+nomenclatura do método holandês (Stappenmethode): **Passo 1** a **Passo 7**.
+Mudar marco ou acrescentar patente é `UPDATE`/`INSERT` em `title_tiers`, nunca
+editar função.
 
-**Com 30 aulas no banco, só a patente 1 (Soldado) é alcançável.** Por isso a F4
-desenha **1** uniforme, não 7 — as outras 6 esperam conteúdo, e o gate falha se
-alguém atrelar uniforme a marco inalcançável.
+| tier | patente | nível | aulas |
+|---|---|---|---|
+| 0 | Aprendiz | — | 0 |
+| 1 | Soldado | Passo 1 | 15 |
+| 2 | Aspirante | Passo 2 | 30 |
+| 3 | Capitão | Passo 3 | 45 |
+| 4 | Comandante | Passo 4 | 60 |
+| 5 | General | Passo 5 | 75 |
+| 6 | Grão-Mestre | Passo 6 | 90 |
+| 7 | Lenda | Passo 7 | 105 |
+
+A régua encaixa no conteúdo existente: Passo 1 = trilha `recruta`, Passo 2 =
+trilha `soldado`. **Com 30 aulas no banco, 2 das 7 patentes são alcançáveis.**
+Por isso a F4 desenha **2** uniformes, não 7 — as outras 5 esperam conteúdo, e o
+gate falha se alguém atrelar uniforme a marco inalcançável.
+
+**Primeira concessão real:** `teacherdoug001` (15 aulas concluídas) virou
+Soldado no backfill, e o ranking já mostra.
 
 ## F3b — o uniforme (espera o Bloco 5)
 
