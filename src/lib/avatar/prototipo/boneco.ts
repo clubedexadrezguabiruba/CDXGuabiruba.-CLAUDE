@@ -297,21 +297,47 @@ export function boneco({
     <path class="traco-fino" d="M ${t(CX - wCab * 0.09)} ${t(yBoca)} Q ${CX} ${t(yBoca + hCab * 0.06)} ${t(CX + wCab * 0.09)} ${t(yBoca)}"/>
   </g>`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" class="est">
+  // As cores vão em CUSTOM PROPERTIES no <svg>, não embutidas nas regras.
+  //
+  // Por quê: o `<style>` de um SVG inline é global à página. Com as cores
+  // dentro das regras, dois bonecos diferentes na mesma página colidem e o
+  // último pinta todos — quatro alunos de um ranking sairiam idênticos, e a
+  // coroa de um herdaria a cor do boné do outro. Medido, não suposto.
+  //
+  // Com `var()`, todo `<style>` emitido diz exatamente a mesma coisa (então
+  // duplicá-los é inofensivo) e a cor vem da variável de cada instância, que
+  // é herdada só pelos filhos daquele <svg>. O SVG continua autossuficiente
+  // se aberto sozinho, e o D30 (avatar em ranking, mural, navbar) passa a ser
+  // possível.
+  const vars = [
+    `--av-linha:${LINHA}`,
+    `--av-pele:${PELE[pele]}`,
+    `--av-cabelo:${CABELO[cabelo]}`,
+    `--av-roupa:${TRAJE.camiseta}`,
+    `--av-calca:${TRAJE.short}`,
+    `--av-sapato:${TRAJE.sapato}`,
+    `--av-traco:${traco}`,
+    `--av-cha-a:${chapeu === "coroa" ? "#E8B23A" : chapeu === "elmo" ? "#9AA6B0" : "#3D6B8F"}`,
+    `--av-cha-b:${chapeu === "coroa" ? "#B8801E" : chapeu === "elmo" ? "#C0362C" : "#284860"}`,
+    `--av-uni-a:${uniforme === "general" ? "#2B3A5C" : "#5C6E3F"}`,
+    `--av-uni-b:${uniforme === "general" ? "#E0B44A" : "#38452A"}`,
+  ].join(";");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" class="est" style="${vars}">
 <style>
-  .est .contorno   { stroke: ${LINHA}; stroke-width: ${traco}; stroke-linejoin: round; }
-  .est .traco-fino { fill: none; stroke: ${LINHA}; stroke-width: ${traco * 0.85}; stroke-linecap: round; }
-  .est .c-pele     { fill: ${PELE[pele]}; }
-  .est .c-cabelo   { fill: ${CABELO[cabelo]}; }
-  .est .c-roupa    { fill: ${TRAJE.camiseta}; }
-  .est .c-calca    { fill: ${TRAJE.short}; }
-  .est .c-sapato   { fill: ${TRAJE.sapato}; }
-  .est .c-tinta    { fill: ${LINHA}; }
+  .est .contorno   { stroke: var(--av-linha); stroke-width: var(--av-traco); stroke-linejoin: round; }
+  .est .traco-fino { fill: none; stroke: var(--av-linha); stroke-width: calc(var(--av-traco) * 0.85); stroke-linecap: round; }
+  .est .c-pele     { fill: var(--av-pele); }
+  .est .c-cabelo   { fill: var(--av-cabelo); }
+  .est .c-roupa    { fill: var(--av-roupa); }
+  .est .c-calca    { fill: var(--av-calca); }
+  .est .c-sapato   { fill: var(--av-sapato); }
+  .est .c-tinta    { fill: var(--av-linha); }
   .est .c-brilho   { fill: #FFFFFF; }
-  .est .c-cha-a    { fill: ${chapeu === "coroa" ? "#E8B23A" : chapeu === "elmo" ? "#9AA6B0" : "#3D6B8F"}; }
-  .est .c-cha-b    { fill: ${chapeu === "coroa" ? "#B8801E" : chapeu === "elmo" ? "#C0362C" : "#284860"}; }
-  .est .c-uni-a    { fill: ${uniforme === "general" ? "#2B3A5C" : "#5C6E3F"}; }
-  .est .c-uni-b    { fill: ${uniforme === "general" ? "#E0B44A" : "#38452A"}; }
+  .est .c-cha-a    { fill: var(--av-cha-a); }
+  .est .c-cha-b    { fill: var(--av-cha-b); }
+  .est .c-uni-a    { fill: var(--av-uni-a); }
+  .est .c-uni-b    { fill: var(--av-uni-b); }
 </style>
 <g class="personagem">
 ${peca("c-pele", poligono([
