@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "avatar:manifest": "tsx scripts/avatar/gen-manifest.ts",
+    "avatar:prototipo": "tsx scripts/avatar/prototipo/gerar.ts",
     "prebuild": "tsx scripts/avatar/gen-manifest.ts --check",
     "build": "next build",
     "start": "next start",
