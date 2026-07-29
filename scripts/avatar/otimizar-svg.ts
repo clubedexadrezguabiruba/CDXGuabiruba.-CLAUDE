@@ -44,7 +44,15 @@ export const CONFIG: Config = {
           minifyStyles: false,
           // Sem isto o preset remove atributos que "parecem" default e leva
           // junto coisas de que o CSS global depende.
-          removeUnknownsAndDefaults: { keepAriaAttrs: true, keepRoleAttr: true },
+          //
+          // `defaultAttrs: false` porque a sombra da roupa é `fill="#000000"`, e
+          // preto é o VALOR INICIAL de `fill` — o plugin apagava o atributo. O
+          // desenho continuava preto por herança do valor inicial, e é aí que
+          // mora o risco: a partir do Bloco 5 as camadas são concatenadas num
+          // `<svg>` só, e um `fill` em qualquer `<g>` ancestral repintaria a
+          // sombra sem avisar. É a mesma classe de falha que o `conferirSvg`
+          // existe para pegar. MEDIDO: manter o atributo custa 0 KB.
+          removeUnknownsAndDefaults: { keepAriaAttrs: true, keepRoleAttr: true, defaultAttrs: false },
           // MEDIDO na arte recolorível: o sombreado é um `<g opacity>` por
           // nível, com várias sub-formas irmãs de atributos idênticos. O
           // `mergePaths` funde exatamente isso num `<path>` só — e aí

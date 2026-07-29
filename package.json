@@ -9,8 +9,6 @@
   "scripts": {
     "dev": "next dev",
     "avatar:manifest": "tsx scripts/avatar/gen-manifest.ts",
-    "avatar:prototipo": "tsx scripts/avatar/prototipo/gerar.ts",
-    "avatar:contato": "tsx scripts/avatar/folha-contato.ts",
     "avatar:base": "tsx scripts/avatar/gerar-base-recolorivel.ts",
     "prebuild": "tsx scripts/avatar/gen-manifest.ts --check",
     "build": "next build",

@@ -6,8 +6,8 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "fs";
 import { conferirSvg, exigirSvgValido } from "../svgContrato";
-import { boneco } from "../prototipo/boneco";
 import { peaozinho } from "../prototipo/pet";
 
 describe("comentário dentro do <style>", () => {
@@ -55,13 +55,12 @@ describe("custom property fora do contrato", () => {
 });
 
 describe("o que o projeto emite hoje", () => {
-  it("o boneco passa em todas as combinações do protótipo", () => {
-    for (const chapeu of [undefined, "bone", "elmo", "coroa"] as const) {
-      for (const uniforme of [undefined, "soldado", "general"] as const) {
-        const svg = boneco({ cabecas: 3, chapeu, uniforme });
-        expect(conferirSvg(svg), `chapéu=${chapeu} uniforme=${uniforme}`).toEqual([]);
-      }
-    }
+  it("a base que a aplicação serve passa", () => {
+    // Antes a cobaia era o boneco do protótipo, gerado em código. Ele foi
+    // apagado quando a arte vetorizada chegou, e a cobaia passou a ser o
+    // arquivo de verdade — o mesmo que o navegador baixa.
+    const svg = readFileSync("public/items/base/avatar-base-neutro.svg", "utf8");
+    expect(conferirSvg(svg)).toEqual([]);
   });
 
   it("o pet passa", () => {
@@ -75,27 +74,18 @@ describe("o que o projeto emite hoje", () => {
   });
 });
 
-describe("escopo de camada", () => {
-  it("o uniforme redeclara --av-roupa no próprio <g>, não no <svg>", () => {
-    // É o que faz a patente ganhar por cascata e o boneco sem uniforme cair
-    // sozinho no traje da base — o fallback do 5.9, de graça.
-    const svg = boneco({ cabecas: 3, uniforme: "general" });
-    const camada = svg.match(/<g class="camada-outfit"[^>]*style="([^"]*)"/);
-    expect(camada?.[1]).toContain("--av-roupa:");
-    expect(camada?.[1]).toContain("--av-detalhe:");
-  });
-
-  it("o chapéu traz as suas cores na própria camada", () => {
-    const svg = boneco({ cabecas: 3, chapeu: "coroa" });
-    const camada = svg.match(/<g class="camada-head"[^>]*style="([^"]*)"/);
-    expect(camada?.[1]).toContain("--av-item-a:");
-    expect(camada?.[1]).toContain("--av-item-b:");
-  });
-
-  it("dois bonecos com chapéus diferentes não compartilham cor de item", () => {
-    const coroa = boneco({ cabecas: 3, chapeu: "coroa" });
-    const bone = boneco({ cabecas: 3, chapeu: "bone" });
-    const cor = (s: string) => s.match(/--av-item-a:([^;"]+)/)?.[1];
-    expect(cor(coroa)).not.toBe(cor(bone));
-  });
-});
+/*
+ * DÍVIDA REGISTRADA — escopo de camada.
+ *
+ * Aqui viviam três testes que provavam o desenho de cascata do protótipo: o
+ * uniforme redeclarando `--av-roupa` no PRÓPRIO `<g>` em vez de no `<svg>`, o
+ * chapéu trazendo as cores na própria camada, e dois chapéus diferentes não
+ * brigando pela mesma variável. É o que fazia a patente ganhar por cascata e o
+ * boneco sem uniforme cair sozinho no traje da base — o fallback do 5.9, de
+ * graça.
+ *
+ * Eles foram apagados com o protótipo porque o alvo deixou de existir: a base
+ * de hoje não tem camada de item nenhuma. A GARANTIA continua necessária, e
+ * volta a ser testável no Bloco 5, quando a composição empilhar as camadas.
+ * Sem isto escrito, ela desapareceria em silêncio junto com o código morto.
+ */

@@ -57,6 +57,28 @@ const OUT = ".scratch/recolor";
 /** Id do <symbol>. A página do app referencia este nome. */
 export const SYMBOL_ID = "avatar-base-neutro";
 
+/**
+ * Pontos de encaixe da arte, em unidades do viewBox.
+ *
+ * MEDIDOS no canal alfa do PNG mestre, não estimados no olho: `mao` é o
+ * centroide da pele isolada de cada lado, abaixo do punho; `cabeca` sai da
+ * mesma varredura que achou o pescoço (a linha mais estreita da silhueta).
+ * `recorteCabeca` é o `viewBox` de foto de perfil, da coroa ao pescoço.
+ *
+ * Vivem aqui porque este é o módulo que conhece a geometria desta arte. O
+ * Bloco 5 os move para `bodyFamilies.ts` quando a composição existir — e aí
+ * eles vêm daqui, não de uma nova medição no olho.
+ */
+export const ANCORAS = {
+  maoEsquerda: [795, 2565] as const,
+  maoDireita: [1809, 2562] as const,
+  /** Topo do crânio, no eixo do corpo. */
+  cabeca: [1278, 470] as const,
+  /** Pescoço: a linha mais estreita da silhueta na metade de cima. */
+  pescoco: 1554,
+  recorteCabeca: "664 410 1311 1224",
+} as const;
+
 /** Canvas da arte de origem. */
 const W = 2556;
 const H = 3840;

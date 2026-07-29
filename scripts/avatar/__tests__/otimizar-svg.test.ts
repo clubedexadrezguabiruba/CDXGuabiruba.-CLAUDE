@@ -2,49 +2,70 @@
  * O SVGO precisa passar a arte pela faxina sem desmontar o que o recolorir e
  * a composição dependem. Cada teste aqui corresponde a um plugin do
  * preset-default que, ligado, quebraria alguma coisa em silêncio.
+ *
+ * As duas cobaias são as duas formas de arte que o projeto emite hoje, e elas
+ * se complementam de propósito:
+ *
+ *  - o **pet** é desenhado em código, com `<style>`, classes e animação;
+ *  - a **base** vem da arte vetorizada, sem `<style>`, com `var(--av-*)` em
+ *    atributo e as camadas em `<g class>`.
+ *
+ * Antes elas eram o boneco do protótipo, que foi apagado quando a arte de
+ * verdade chegou. O que cada teste guarda continua igual.
  */
 
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "fs";
 import { otimizar } from "../otimizar-svg";
-import { boneco } from "../../../src/lib/avatar/prototipo/boneco";
 import { peaozinho } from "../../../src/lib/avatar/prototipo/pet";
 import { conferirSvg } from "../../../src/lib/avatar/svgContrato";
 
-const vestido = () => boneco({ cabecas: 3, chapeu: "coroa", uniforme: "general" });
+/** O arquivo que a aplicação serve. Já sai otimizado do `avatar:base`. */
+const base = () => readFileSync("public/items/base/avatar-base-neutro.svg", "utf8");
 
 describe("o que a faxina não pode levar junto", () => {
   it("mantém as regras dentro do <style> em vez de inliná-las nos elementos", () => {
-    // MEDIDO: com `inlineStyles` ligado (o default), o SVGO apagou .c-roupa,
-    // .c-cabelo, .c-calca e .c-sapato do <style> e escreveu
-    // style="fill:var(--av-sapato)" no elemento. Isso inviabiliza o 5.7, em
-    // que as regras sobem para a folha global.
-    const out = otimizar(vestido());
-    for (const classe of [".c-pele", ".c-cabelo", ".c-roupa", ".c-calca", ".c-sapato"]) {
+    // MEDIDO: com `inlineStyles` ligado (o default), o SVGO apaga as regras do
+    // <style> e escreve style="fill:..." no elemento. Isso inviabiliza o 5.7,
+    // em que as regras sobem para a folha global.
+    const out = otimizar(peaozinho());
+    for (const classe of [".m1", ".m2", ".m3", ".folha", ".tinta"]) {
       expect(out, `regra ${classe}`).toContain(classe);
     }
     expect(out).not.toMatch(/style="fill:/);
   });
 
   it("preserva o viewBox, de que dependem os 4 tamanhos", () => {
-    expect(otimizar(vestido())).toMatch(/viewBox="0 0 400 500"/);
+    expect(otimizar(peaozinho())).toMatch(/viewBox="0 0 200 200"/);
+    expect(base()).toMatch(/viewBox="0 0 2556 3840"/);
   });
 
-  it("preserva as camadas e as variáveis que elas declaram", () => {
+  it("preserva as camadas da base", () => {
     // `collapseGroups` funde um <g> nos filhos quando o julga vazio de
-    // conteúdo. As camadas só carregam custom properties — se sumirem, o
-    // chapéu e o uniforme voltam a brigar pelas mesmas variáveis.
-    const out = otimizar(vestido());
-    expect(out).toContain("camada-head");
-    expect(out).toContain("camada-outfit");
-    expect(out).toMatch(/--av-item-a:/);
-    expect(out).toMatch(/--av-roupa:[^;"]+;--av-detalhe:/);
+    // conteúdo. As camadas da base só carregam a classe — se sumirem, o Bloco 5
+    // perde o gancho por onde a folha global recolore cada uma.
+    const out = base();
+    for (const camada of ["av-forro", "av-pele", "av-roupa", "av-tinta"]) {
+      expect(out, camada).toContain(camada);
+    }
   });
 
-  it("preserva as custom properties do <svg>", () => {
-    const out = otimizar(vestido());
-    for (const v of ["--av-traco", "--av-linha", "--av-pele", "--av-cabelo"]) {
-      expect(out, v).toContain(v);
-    }
+  it("preserva a leitura das custom properties", () => {
+    // Se o SVGO resolvesse `var(--av-pele)` para um valor, o recolorir morria
+    // sem nenhum erro: o boneco sairia sempre do mesmo tom.
+    const out = base();
+    expect(out).toContain("var(--av-pele)");
+    expect(out).toContain("var(--av-roupa)");
+  });
+
+  it("preserva o fill preto da sombra da roupa", () => {
+    // Preto é o VALOR INICIAL de `fill`, e `removeUnknownsAndDefaults` apagava
+    // o atributo por parecer redundante. O desenho continuava preto por herança
+    // do valor inicial — até o Bloco 5 concatenar as camadas num <svg> só, onde
+    // um `fill` em qualquer <g> ancestral repintaria a sombra em silêncio.
+    // O SVGO iça o atributo para o <g> do nível, o que é melhor ainda: a cor
+    // fica declarada uma vez por camada de sombra. O que importa é ela existir.
+    expect(base()).toContain('fill="#000"');
   });
 
   it("preserva animação e @media do pet", () => {
@@ -58,13 +79,13 @@ describe("o que a faxina não pode levar junto", () => {
   });
 
   it("a saída continua passando no contrato", () => {
-    expect(conferirSvg(otimizar(vestido()))).toEqual([]);
     expect(conferirSvg(otimizar(peaozinho()))).toEqual([]);
+    expect(conferirSvg(base())).toEqual([]);
   });
 
   it("encolhe de verdade", () => {
-    const antes = vestido().length;
-    const depois = otimizar(vestido()).length;
+    const antes = peaozinho().length;
+    const depois = otimizar(peaozinho()).length;
     expect(depois).toBeLessThan(antes);
   });
 });
