@@ -17,7 +17,8 @@
  * omissão.
  */
 
-import { peca, poligono, type Ponto } from "./formas";
+import { peca, type Ponto } from "./formas";
+import { curvaFechada } from "./curvas";
 
 export interface GeometriaCranio {
   /** Ponto no crânio por fração de largura/altura. */
@@ -66,26 +67,40 @@ function modelo1({ q, hCranio }: GeometriaCranio): string {
   // Costeleta: desce na frente da orelha. Sem ela o cabelo lê como capacete
   // pousado, porque nada o conecta ao rosto abaixo da linha dos olhos.
   const costeleta = (lado: 1 | -1): Ponto[] => [
-    q(lado * 0.58, -0.16),
-    q(lado * 0.62, 0.10),
-    q(lado * 0.50, 0.06),
-    q(lado * 0.48, -0.14),
+    q(lado * 0.56, -0.18),
+    q(lado * 0.61, 0.02),
+    q(lado * 0.56, 0.12),
+    q(lado * 0.48, 0.02),
+    q(lado * 0.47, -0.16),
   ];
 
+  // RODADA 7: a massa era sólida e lia como capacete. A referência tem MECHAS
+  // separadas por dentro — é o que faz o olho ler "cabelo" em vez de "peça de
+  // armadura". Três linhas acompanhando a varrida bastam; mais que isso vira
+  // ruído a 56 px.
+  const mecha = (a: Ponto, c: Ponto, b: Ponto): string =>
+    `<path class="mecha" d="M ${a[0].toFixed(1)} ${a[1].toFixed(1)} ` +
+    `Q ${c[0].toFixed(1)} ${c[1].toFixed(1)} ${b[0].toFixed(1)} ${b[1].toFixed(1)}"/>`;
+
+  void hCranio;
+
   return (
-    peca("c-cabelo contorno", poligono(massa, hCranio * 0.05)) +
-    peca("c-cabelo contorno", poligono(costeleta(-1), hCranio * 0.04)) +
-    peca("c-cabelo contorno", poligono(costeleta(1), hCranio * 0.04))
+    peca("c-cabelo contorno", curvaFechada(massa, 0.9)) +
+    peca("c-cabelo contorno", curvaFechada(costeleta(-1), 0.9)) +
+    peca("c-cabelo contorno", curvaFechada(costeleta(1), 0.9)) +
+    mecha(q(-0.34, -0.52), q(-0.10, -0.44), q(0.06, -0.26)) +
+    mecha(q(-0.02, -0.60), q(0.20, -0.48), q(0.30, -0.24)) +
+    mecha(q(0.30, -0.54), q(0.46, -0.44), q(0.50, -0.24))
   );
 }
 
 /** Sombra do modelo: um degrau só, na massa que fica atrás da varrida. */
-function sombra1({ q, hCranio }: GeometriaCranio): string {
+function sombra1({ q }: GeometriaCranio): string {
   return peca(
     "c-cabelo-s",
-    poligono(
-      [q(-0.62, -0.44), q(-0.40, -0.64), q(-0.10, -0.72), q(-0.14, -0.50), q(-0.44, -0.34)],
-      hCranio * 0.04,
+    curvaFechada(
+      [q(-0.60, -0.34), q(-0.44, -0.56), q(-0.12, -0.66), q(-0.18, -0.44), q(-0.46, -0.28)],
+      0.9,
     ),
   );
 }
