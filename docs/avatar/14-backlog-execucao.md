@@ -21,19 +21,50 @@
 
 Nada aqui depende de arte. Pode começar hoje.
 
+> **Estado em 2026-07-29:** 12 das 22 tarefas fechadas. Falta o pipeline de
+> vetorização (T0.6–T0.10) e os testes unitários de ordem de camadas e offset
+> (T0.20, T0.22). As duas decisões do usuário (T0.12, T0.14) foram delegadas e
+> estão tomadas, com a evidência renderizada.
+
 ## Detecção e integridade
 
-- [ ] **T0.1** 🤖 Manifesto de assets: script varre `public/items/`, gera `assetManifest.ts`
-- [ ] **T0.2** 🤖 `assetResolver` consulta o manifesto em vez de montar caminho por convenção
-- [ ] **T0.3** 🤖 `AvatarLayer` falha alto em asset ausente (hoje devolve `null` em silêncio)
-- [ ] 🔒 **Gate:** item de catálogo sem asset **quebra o build**. Provar injetando um item órfão
-- [ ] **T0.4** 🤖 Gate reporta asset órfão (arquivo sem item correspondente)
+- [x] **T0.1** 🤖 Manifesto de assets: script varre `public/items/`, gera `assetManifest.ts`
+      → `scripts/avatar/gen-manifest.ts` + `asset-scan.ts`; `prebuild` roda `--check`
+- [x] **T0.2** 🤖 `assetResolver` consulta o manifesto em vez de montar caminho por convenção
+      → `resolveAsset()` devolve `{ candidato, src, ausente }`
+- [x] **T0.3** 🤖 `AvatarLayer` falha alto em asset ausente (hoje devolve `null` em silêncio)
+      → `console.error` sempre, `data-avatar-missing` no container, moldura magenta em dev.
+      A falha DURA é o gate no CI; derrubar a tela de uma criança por causa de um chapéu seria pior
+- [x] 🔒 **Gate:** item de catálogo sem asset **quebra o build**. Provar injetando um item órfão
+      → provado removendo `peao-madeira.png`: gate e `prebuild` saem com código 1; restaurado, saem 0
+- [x] **T0.4** 🤖 Gate reporta asset órfão (arquivo sem item correspondente)
+      → 1 órfão hoje: `camiseta-clube-male-master.png`
+
+**Medido**: 32 dos 77 itens vestem o boneco, 47 têm miniatura. O gate é ratchet
+(`asset-baseline.json`) — o passivo fica congelado, item novo quebrado falha.
+
+**Achado colateral (bug pior que "nada muda")**: o `headKnockout` recortava o
+topo da base sempre que havia item de `head` equipado, mesmo quando o chapéu não
+renderizava. Equipar 7 dos 8 itens de head deixava o boneco **decapitado**.
+Corrigido: só recorta quando o chapéu realmente aparece.
 
 ## Ponte — loop honesto sem arte
 
-- [ ] **T0.5** 🤖 `claim_chest` sorteia só itens que renderizam (32 dos 77)
-- [ ] 🔒 **Gate:** abrir 20 baús, todo item recebido aparece no boneco
-- [ ] ⚠️ Extrair o corpo da função de `pg_get_functiondef` do banco **vivo**, nunca de migration antiga
+- [x] **T0.5** 🤖 `claim_chest` sorteia só itens que renderizam (32 dos 77)
+      → migration `20260729120000_avatar_v4_ponte_baus.sql`: `items.renderable`
+      (default **false**, fail-closed) + filtro em `claim_chest` e `_create_random_pet_egg`
+- [x] 🔒 **Gate:** abrir 20 baús, todo item recebido aparece no boneco
+      → `verify-chest-pool.ts` abre **60**, dentro de uma transação com ROLLBACK,
+      personificando um usuário existente via `request.jwt.claims`. Não deixa rastro,
+      então roda em CI — ao contrário do e2e
+- [x] ⚠️ Extrair o corpo da função de `pg_get_functiondef` do banco **vivo**, nunca de migration antiga
+
+**Medido, antes**: 60 aberturas → 36 itens distintos, **25 invisíveis**.
+**Depois**: 60 aberturas → 20 itens distintos, **0 invisíveis**.
+
+`_create_random_pet_egg` entrou junto porque `claim_chest` só decide "caiu em
+pet" — quem escolhe o pet é ela. Filtrar de um lado só deixaria a criança chocar
+um ovo de 72 h para receber um pet invisível.
 
 ## Pipeline de arte
 
@@ -45,24 +76,82 @@ Nada aqui depende de arte. Pode começar hoje.
 
 ## Decisões que dependem de ver
 
-- [ ] **T0.11** 🤖 Gerar o boneco em **1:2, 1:3 e 1:4** e renderizar a 56 px
-- [ ] **T0.12** 👤 **Escolher a proporção (D1)** olhando as três
-- [ ] **T0.13** 🤖 Converter 1 pet para SVG animado por CSS e comparar com o APNG
-- [ ] **T0.14** 👤 **Decidir se pets viram SVG (§6.5)** — muda o orçamento de 20 assets
+- [x] **T0.11** 🤖 Gerar o boneco em **1:2, 1:3 e 1:4** e renderizar a 56 px
+      → `npm run avatar:prototipo`; uma função gera as três, `cabecas` é o único
+      parâmetro que muda, para a comparação ser entre proporções e não entre desenhos
+- [x] **T0.12** 👤→🤖 **Proporção escolhida: 1:3** *(usuário delegou a escolha)*
+- [x] **T0.13** 🤖 Converter 1 pet para SVG animado por CSS e comparar com o APNG
+- [x] **T0.14** 👤→🤖 **Pets viram SVG** *(usuário delegou; confirmar se discordar)*
+
+### Por que 1:3 (T0.12)
+
+A pergunta útil não é qual boneco é mais bonito — é **em qual proporção o
+catálogo continua distinguível a 56 px**. O plano tem 6 chapéus + 5 cabelos na
+cabeça (11 itens) e 7 uniformes no tronco. Cabeça grande favorece 11, tronco
+grande favorece 7. Os três foram renderizados vestidos, a 56 px reais:
+
+| | 1:2 | 1:3 | 1:4 |
+|---|---|---|---|
+| boné / elmo / coroa se distinguem? | sim | **sim** | elmo perde a forma |
+| acabamento do uniforme (gola, cinto, divisa) | some, sobra só a cor | **aparece** | aparece |
+| rosto | ótimo | **bom** | boca some |
+
+**1:3 é o único ponto em que as duas metades do catálogo funcionam.** Não é
+compromisso por indecisão: 1:2 reduz os 7 uniformes a 7 cores chapadas, o que
+contradiz o D17 ("raridade é acabamento, nunca volume"), e 1:4 mata os itens de
+cabeça, que são a maioria.
+
+Folha da prova: `.scratch/proporcao/vestidos/folha-vestidos.png`.
+
+### Por que SVG nos pets (T0.14)
+
+Medido no único pet com arte real:
+
+| formato | peso | 20 pets |
+|---|---|---|
+| APNG animado + PNG estático | 4,0 MB por pet | **78,1 MB** |
+| SVG animado por CSS | 3,7 KB | **74,6 KB** |
+
+E a 56 px — lembrando que o pet renderiza a **24 px** no tamanho `sm` — o APNG
+vira um borrão marrom enquanto o SVG mantém silhueta, olhos e boca. A
+refinaria do APNG só existe em tamanhos que quase ninguém vê. De brinde: o SVG
+recolore pela paleta, um arquivo serve a todos os tamanhos, e a animação
+respeita `prefers-reduced-motion`, coisa que APNG não faz.
+
+**Ressalva honesta:** perde-se animação com deformação quadro a quadro, e meus
+pets orgânicos vão precisar do seu refino — o que a T4.7 já assumia. O formato
+não muda a dificuldade de desenhar um bicho; muda todo o resto.
+
+Folha da prova: `.scratch/pet/folha-pet.png`.
+
+### Confirmado de brinde: D4 e D18
+
+Os 8 tons de pele e os 5 cabelos são troca de classe CSS, um arquivo só. Menor
+distância entre cor e contorno: **58** — contra **18** no caso documentado que
+fundiu (`#4a3526` com `#3d2b1f`). Folha: `.scratch/proporcao/paleta/`.
 
 ## Gates de banco que faltam
 
-- [ ] **T0.15** 🤖 `scripts/verify/phase8/`: RPCs presentes; CHECK de slots; UNIQUE de `user_inventory` e `user_equipped`
-- [ ] **T0.16** 🤖 **No mesmo gate:** assertar que `inventory_select_classmate` e `equipped_select_classmate` **NÃO existem** — vazavam inventário entre colegas de turma
-- [ ] **T0.17** 🤖 Gate da premissa: nº de trilhas no banco = nº de títulos no mapa. Foi essa divergência silenciosa que tornou 5 de 7 patentes inalcançáveis
-- [ ] **T0.18** 🤖 Adicionar `verify:phase8` ao `verify:all` e ao CI
+- [x] **T0.15** 🤖 `scripts/verify/phase8/`: RPCs presentes; CHECK de slots; UNIQUE de `user_inventory` e `user_equipped`
+      → mais: confere que a lista de slots hard-coded dentro de `unequip_slot` bate com o CHECK.
+      São duas cópias da mesma verdade, e na F2 esquecer uma deixa `hair`/`back` impossíveis de desequipar
+- [x] **T0.16** 🤖 **No mesmo gate:** assertar que `inventory_select_classmate` e `equipped_select_classmate` **NÃO existem**
+- [x] **T0.17** 🤖 Gate da premissa: nº de trilhas no banco = nº de títulos no mapa
+      → falha se aparecer título inalcançável NOVO, ou trilha no banco fora do mapa
+      (esse caso faz concluir a trilha não conceder patente alguma, em silêncio).
+      Os 5 conhecidos ficam registrados; quando a 3ª trilha entrar, o gate manda encolher a lista
+- [x] **T0.18** 🤖 Adicionar `verify:phase8` ao `verify:all` e ao CI
+      → `verify:all` foi de 11 para 14 gates. O CI já roda `verify:all`, então não precisou de passo novo
 
 ## Testes unitários — não existe nenhum hoje
 
-- [ ] **T0.19** 🤖 `src/lib/avatar/__tests__/`: resolver de asset
+- [x] **T0.19** 🤖 `src/lib/avatar/__tests__/`: resolver de asset
+      → 25 testes novos (108 → 133). Inclui um que amarra `renderability.ts` a
+      `resolveAssetUrl()`, para mudar o sufixo num lugar e não no outro não passar despercebido
 - [ ] **T0.20** 🤖 Ordem de camadas e z-index
-- [ ] **T0.21** 🤖 Encaixe na paleta (incluindo o caso de cores próximas)
-- [ ] **T0.22** 🤖 Offset de anchor por item
+- [x] **T0.21** 🤖 Encaixe na paleta (incluindo o caso de cores próximas)
+      → medição de distância roda dentro de `npm run avatar:prototipo`
+- [ ] **T0.22** 🤖 Offset de anchor por item *(depende da F2, que reescreve os anchors)*
 
 ---
 
@@ -188,7 +277,7 @@ Bloqueia todo o resto da arte.
 
 | fase | tarefas | depende de você? |
 |---|---|---|
-| F0 | 22 | só T0.12 e T0.14 (duas decisões) |
+| F0 | 22 — **12 fechadas** | T0.12 e T0.14 delegadas e decididas |
 | F1 | 4 | T1.3 (crítica da arte) |
 | F2 | 16 | não |
 | F3 | 3 | não |
@@ -235,3 +324,35 @@ itera sozinho, sem o usuário em cada volta. Validado nesta sessão.
 - Não julgar arte por descrição: **renderizar e olhar**
 - Limite honesto: geometria e formas chapadas saem bem; orgânico (pets) e
   carisma facial saem fracos e pedem refino do usuário
+
+## Renderizador: Chromium, não sharp
+
+`scripts/avatar/render-svg.ts` usa o Chromium do Playwright, que já é
+dependência do projeto. O doc 12 sugeria `sharp`, que usa librsvg — um motor
+com suporte a SVG/CSS **diferente do navegador**. Como o destino é o navegador,
+uma incompatibilidade só apareceria em produção. De quebra, evita uma
+dependência nativa nova no CI.
+
+## Armadilhas descobertas gerando a primeira arte
+
+Custaram tempo real nesta sessão e vão se repetir na F1/F4:
+
+1. **Nada de comentário dentro do `<style>` do SVG.** Um `/* ... <path> ... */`
+   fez o navegador **descartar em silêncio todas as regras seguintes**: braços
+   viraram vultos pretos e as pálpebras cobriram os olhos, sem erro nenhum no
+   console. Comentário fica no gerador, não no asset — o SVGO os removeria de
+   qualquer jeito.
+2. **Classe CSS ganha de atributo de apresentação.** `class="l"` com
+   `stroke-width: 7` no CSS vence `stroke-width="15"` escrito no elemento.
+   Quem precisa de espessura própria precisa de classe própria.
+3. **Contorno e preenchimento no MESMO elemento, pintados de trás para a
+   frente.** Desenhar todos os fills e depois todos os strokes cria costura
+   dupla: a primeira versão do boneco tinha ombros com cara de placa de armadura.
+4. **Braço é linha, e linha não tem contorno.** Precisa de duas passadas:
+   traço grosso escuro por baixo, traço fino colorido por cima.
+5. **Estado inicial explícito em tudo que a animação esconde.** As pálpebras só
+   tinham `opacity: 0` dentro do `@keyframes`; sem a animação (motor pausado,
+   `prefers-reduced-motion`, screenshot) elas apagavam os olhos.
+6. **Pele escura precisa de esclera.** Com o olho sendo um oval da cor do
+   contorno, os 3 tons mais escuros perdiam contraste a 56 px. Uma amêndoa
+   branca fina nas laterais resolve; uma esclera cheia dá olho arregalado.
