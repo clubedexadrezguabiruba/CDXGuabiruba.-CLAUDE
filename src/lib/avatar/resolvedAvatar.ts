@@ -23,12 +23,17 @@ import { SIZE_CONFIG } from "./constants";
 import { SLOT_DEFINITION_MAP } from "./slotDefinitions";
 import { DEFAULT_BODY_FAMILY } from "./bodyFamilies";
 import { GLOBAL_IDLE, HEAD_TILT, isAnimated } from "./animationProfiles";
-import { resolveAssetUrl } from "./assetResolver";
+import { resolveAsset } from "./assetResolver";
 import { baseSkinPath } from "./fallbacks";
 
 // --- Resolved Types ---
 
-export type SlotStatus = "equipped" | "fallback" | "empty";
+/**
+ * `missing` = há item equipado, mas o arquivo não está no manifesto.
+ * Antes esse caso era indistinguível de `empty`, e era exatamente por isso
+ * que 45 itens sumiam sem sintoma. Quem consome tem que tratá-lo alto.
+ */
+export type SlotStatus = "equipped" | "fallback" | "missing" | "empty";
 
 export interface ResolvedLayer {
   slot: AvatarSlot;
@@ -36,6 +41,8 @@ export interface ResolvedLayer {
   renderMode: RenderMode;
   src: string | null;
   animatedSrc: string | null;
+  /** Caminho que o item exigia quando `status === "missing"`. */
+  missingSrc: string | null;
   zIndex: number;
   insideCharacterRoot: boolean;
   localAnimation: AnimationMode;
@@ -46,6 +53,12 @@ export interface ResolvedLayer {
 export interface ResolvedAvatar {
   /** Src do body layer (base skin ou dressed_base) */
   bodySrc: string;
+  /**
+   * Caminho do uniforme equipado que não existe em public/items/.
+   * null quando não há uniforme ou quando o arquivo existe. Quem consome
+   * reporta; o render já caiu para a base skin (nunca boneco pelado).
+   */
+  bodyMissingSrc: string | null;
   /** Gender variant em uso */
   gender: GenderVariant;
   /** Avatar size */
@@ -104,10 +117,12 @@ export function resolveAvatar(
   const sizeConfig = SIZE_CONFIG[size];
   const anchors = bodyFamily.anchors[gender];
 
-  // Body: dressed_base se outfit equipado, senão base skin
-  const bodySrc = equipped.outfit?.image_url
-    ? resolveAssetUrl(equipped.outfit.image_url, gender, "dressed_base") ?? baseSkinPath(gender)
-    : baseSkinPath(gender);
+  // Body: dressed_base se outfit equipado, senão base skin.
+  // O manifesto decide: uniforme sem arquivo cai para a base em vez de
+  // apontar para um 404 e deixar o BodyImage descobrir no onError.
+  const outfitResolvido = resolveAsset(equipped.outfit?.image_url, gender, "dressed_base");
+  const bodySrc = outfitResolvido.src ?? baseSkinPath(gender);
+  const bodyMissingSrc = outfitResolvido.ausente ? outfitResolvido.candidato : null;
 
   // Resolver cada slot
   const layers: Partial<Record<AvatarSlot, ResolvedLayer>> = {};
@@ -119,15 +134,22 @@ export function resolveAvatar(
     if (!def) continue;
 
     const item: EquippedItem | undefined = equipped[slot];
-    const status: SlotStatus = item ? "equipped" : "empty";
 
-    const src = item
-      ? resolveAssetUrl(item.image_url, gender, def.renderMode, false)
-      : null;
+    const estatico = resolveAsset(item?.image_url, gender, def.renderMode, false);
 
-    const animatedSrc = item && def.hasAnimatedVariant
-      ? resolveAssetUrl(item.image_url, gender, def.renderMode, true)
+    // Frame não tem arquivo no render stack: é CSS por raridade.
+    // Sem esta exceção ele seria reportado como ausente em todo render.
+    const ehFrame = def.renderMode === "frame_ui";
+    const ausente = !ehFrame && estatico.ausente;
+
+    const status: SlotStatus = !item ? "empty" : ausente ? "missing" : "equipped";
+    const src = ehFrame ? estatico.candidato : estatico.src;
+
+    // Variante animada é opcional: sem o APNG o pet ainda aparece estático.
+    const animado = item && def.hasAnimatedVariant
+      ? resolveAsset(item.image_url, gender, def.renderMode, true)
       : null;
+    const animatedSrc = animado?.src ?? null;
 
     // Anchor: head e hand têm AnchorProfile, pet tem PetAnchor
     let anchor: AnchorProfile | PetAnchor | null = null;
@@ -141,6 +163,7 @@ export function resolveAvatar(
       renderMode: def.renderMode,
       src,
       animatedSrc,
+      missingSrc: ausente ? estatico.candidato : null,
       zIndex: def.zIndex,
       insideCharacterRoot: def.insideCharacterRoot,
       localAnimation: def.localAnimation,
@@ -156,8 +179,13 @@ export function resolveAvatar(
     male:   { factorY: 0.71, side: 0.05 },
     female: { factorY: 0.66, side: 0.05 },
   } as const;
+  //
+  // Condição corrigida: knockout só quando o chapéu REALMENTE renderiza.
+  // Antes bastava `equipped.head` existir. Como 7 dos 8 itens de head não têm
+  // as variantes -swap-*, equipar um deles recortava o topo da base e não
+  // desenhava nada por cima — o boneco ficava decapitado, não "sem mudança".
   let headKnockout: ResolvedAvatar["headKnockout"] = null;
-  if (equipped.head) {
+  if (layers.head?.status === "equipped" && layers.head.src) {
     const { factorY, side } = KNOCKOUT_BY_GENDER[gender];
     const headAnchor = anchors.head;
     const canvasH = sizeConfig.h;
@@ -173,6 +201,7 @@ export function resolveAvatar(
 
   return {
     bodySrc,
+    bodyMissingSrc,
     gender,
     size,
     sizeConfig,

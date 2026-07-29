@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import type { EquippedMap } from "@/types/inventory";
 import type { AnchorProfile, PetAnchor, MotionProfile } from "@/lib/avatar/types";
 import type { Easing } from "motion/react";
+import type { ResolvedAvatar } from "@/lib/avatar/resolvedAvatar";
 import { resolveAvatar } from "@/lib/avatar/resolvedAvatar";
 import { Z_INDEX } from "@/lib/avatar/constants";
 import { getFrameStyle, FRAME_BORDER_WIDTH } from "@/lib/avatar/frameStyles";
@@ -32,6 +33,9 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
   const resolved = resolveAvatar(equipped, avatarBase, size);
   const { sizeConfig: cfg, animated, bodySrc, bodyScale, globalMotion, layers, headKnockout } = resolved;
 
+  const ausentes = coletarAusentes(resolved);
+  useReportarAusentes(ausentes);
+
   const bg = layers.background;
   const head = layers.head;
   const hand = layers.hand;
@@ -50,6 +54,9 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
           !bg?.src ? "bg-linear-to-b from-zinc-100 to-zinc-200" : ""
         }`}
         style={{ width: cfg.w, height: cfg.h }}
+        // Marcação legível por teste e por monitoramento em QUALQUER ambiente.
+        // O <img> some quando o arquivo não existe; este atributo não.
+        data-avatar-missing={ausentes.length > 0 ? ausentes.map((a) => a.caminho).join(" ") : undefined}
       >
         {/* z:0 — Background (FORA do character-root) */}
         {bg?.src && (
@@ -157,6 +164,17 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
           </div>
         )}
 
+        {/* Marcador de asset ausente — só em desenvolvimento. */}
+        {/* Em produção a criança não vê chrome de debug; o sinal fica no */}
+        {/* console.error e no data-avatar-missing acima. */}
+        {process.env.NODE_ENV !== "production" && ausentes.length > 0 && (
+          <div
+            className="pointer-events-none absolute inset-0 border-2 border-dashed border-fuchsia-500 bg-fuchsia-500/15"
+            style={{ zIndex: Z_INDEX.frame + 1 }}
+            title={`Asset ausente: ${ausentes.map((a) => a.caminho).join(", ")}`}
+          />
+        )}
+
         {/* z:10 — Frame (CSS decorativo, FORA do render stack) */}
         {frameStyle && (
           <div
@@ -167,6 +185,62 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
       </div>
     </div>
   );
+}
+
+// ============================================================
+// T0.3 — asset ausente falha ALTO
+// ============================================================
+// Antes: <img onError> escondia a camada e devolvia null. O item entrava no
+// inventário, a criança equipava e o boneco não mudava — sem erro em lugar
+// nenhum. Era o sintoma dos 45 itens invisíveis.
+//
+// A falha DURA continua sendo o gate (npm run verify:phase8), que roda no CI
+// e impede o item de chegar em produção. Em runtime, o objetivo é ser
+// impossível de não notar em desenvolvimento e auditável em produção — não
+// derrubar a tela de uma criança por causa de um chapéu.
+
+interface AssetAusente {
+  slot: string;
+  caminho: string;
+}
+
+function coletarAusentes(resolved: ResolvedAvatar): AssetAusente[] {
+  const fora: AssetAusente[] = [];
+
+  if (resolved.bodyMissingSrc) {
+    fora.push({ slot: "outfit", caminho: resolved.bodyMissingSrc });
+  }
+
+  for (const camada of Object.values(resolved.layers)) {
+    if (camada.status === "missing" && camada.missingSrc) {
+      fora.push({ slot: camada.slot, caminho: camada.missingSrc });
+    }
+  }
+
+  // Ordem estável para o atributo não oscilar entre renders.
+  return fora.sort((a, b) => a.caminho.localeCompare(b.caminho));
+}
+
+/**
+ * Reporta cada asset ausente uma vez por combinação, via efeito.
+ *
+ * Em efeito e não no corpo do render por causa do StrictMode do React 19:
+ * o corpo roda duas vezes e duplicaria todo log.
+ */
+function useReportarAusentes(ausentes: AssetAusente[]) {
+  const chave = ausentes.map((a) => `${a.slot}:${a.caminho}`).join("|");
+
+  useEffect(() => {
+    if (!chave) return;
+    for (const par of chave.split("|")) {
+      const [slot, caminho] = par.split(/:(.+)/);
+      console.error(
+        `[avatar] asset ausente no slot "${slot}": ${caminho} não está em public/items/. ` +
+          `O item foi equipado e não aparece no boneco. ` +
+          `Rode "npm run avatar:manifest" e "npm run verify:phase8" para localizar a origem.`,
+      );
+    }
+  }, [chave]);
 }
 
 // ============================================================

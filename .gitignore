@@ -44,6 +44,11 @@ public/stockfish/
 /test-results/
 /playwright-report/
 
+# Rascunhos de trabalho (renders de arte, consultas ao banco, comparações).
+# Ficam no repositório para que os scripts enxerguem node_modules, mas nunca
+# são versionados.
+/.scratch/
+
 # Screenshots de validação manual (val-*.png, validation-*.png).
 # Ficavam soltos na raiz do repositório, 2,8 MB, sem serem versionados nem
 # ignorados — apareciam em todo `git status` e mascaravam mudanças reais.
