@@ -159,14 +159,40 @@ export function escurecer(hex: string, fator = 0.82): string {
 /**
  * Nomes congelados. Mudar qualquer um destes exige mudar a folha global junto.
  *
+ * **SÓ PELE E CABELO RECOLOREM.** Decisão do usuário, permanente, mais restrita
+ * que a D27 original — que também dava cor à escolha para o fundo. Roupa,
+ * uniforme, chapéu, relíquia, pet e fundo têm **cor fixa, assada no desenho**.
+ * A cor do uniforme é o que sinaliza a patente, e patente não é gosto.
+ *
+ * Por isso esta lista encolheu, e o encolhimento é o gate: `conferirSvg` reprova
+ * qualquer SVG que leia uma propriedade fora daqui. Um desenho que tente
+ * recolorir roupa **não passa** — a decisão deixou de depender de disciplina.
+ *
+ * O que sobrou, e por quê:
+ *
+ *  - `--av-pele` e `--av-cabelo` (com as sombras): os dois eixos de escolha.
+ *  - `--av-traco` e `--av-linha`: não são escolha do aluno, são o traço do
+ *    sistema. Existem para os 60 desenhos terem um contorno só, definido num
+ *    lugar só.
+ *
+ * `--av-cabelo` é de escopo **avatar**, não de camada, e isso é deliberado:
+ * quem lê essa cor não é só o cabelo, é também a **sobrancelha**, que mora na
+ * base. Cabelo loiro com sobrancelha preta não lê como loiro — é o detalhe que
+ * separa "trocou de cabelo" de "colocou uma peruca". Se a cor vivesse no `<g>`
+ * do cabelo, a base não a alcançaria.
+ *
+ * O que saiu: `--av-roupa`, `--av-roupa-s`, `--av-detalhe`, `--av-calca`,
+ * `--av-sapato`, `--av-item-a`, `--av-item-b`, `--av-fundo` e `--av-raridade`.
+ * A moldura de raridade saiu porque ela é `frame_ui` — CSS na camada z=10, fora
+ * do SVG (§2.3). Se um dia precisar entrar num desenho, é uma linha aqui, e o
+ * gate vai exigir que se declare.
+ *
  * **ESCOPO IMPORTA.** Compor o avatar é concatenar camadas num único `<svg>`
- * (D22), e um chapéu, uma relíquia e um pet podem estar na mesma composição.
- * Se as cores de item fossem todas do `<svg>`, a última camada pintaria as
- * outras — é o mesmo defeito de colisão que já foi medido entre bonecos
- * diferentes na mesma página.
+ * (D22), e um chapéu, uma relíquia e um pet podem estar na mesma composição. A
+ * pele é do `<svg>` inteiro; o cabelo vive na camada dele.
  *
  *  - `avatar`: vai no `<svg>`. Vale para a composição inteira.
- *  - `camada`: vai no `<g>` daquela camada. Cada item traz as suas.
+ *  - `camada`: vai no `<g>` daquela camada.
  */
 export const PROPRIEDADES = {
   avatar: [
@@ -174,20 +200,15 @@ export const PROPRIEDADES = {
     "--av-linha", // cor do contorno
     "--av-pele",
     "--av-pele-s", // sombra da pele
-    "--av-cabelo",
+    "--av-cabelo", // lido pelo cabelo E pela sobrancelha da base
     "--av-cabelo-s",
-    "--av-fundo", // cor de fundo escolhida
   ],
-  camada: [
-    "--av-roupa", // peça principal do traje ou uniforme
-    "--av-roupa-s",
-    "--av-detalhe", // gola, cinto, divisa
-    "--av-calca",
-    "--av-sapato",
-    "--av-item-a", // cor principal do item da camada
-    "--av-item-b", // cor secundária
-    "--av-raridade", // moldura
-  ],
+  /**
+   * VAZIO, e isto é a decisão em forma de código: nada mais é escopado por
+   * camada porque nenhum item recolore. O escopo continua existindo para o dia
+   * em que voltar a fazer falta, com o motivo escrito acima.
+   */
+  camada: [] as readonly string[],
 } as const;
 
 // ---------------------------------------------------------------------------

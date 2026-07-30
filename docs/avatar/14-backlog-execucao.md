@@ -247,7 +247,10 @@ Bloqueia todo o resto da arte.
   - `items.slot` e `user_equipped.slot` CHECK += `hair`, `back`
   - `user_inventory.source` CHECK += `title`
   - `users.avatar_skin` (8 tons, default `medio`)
-  - `users.avatar_hair_color`, `avatar_bg_color` (D27)
+  - `users.avatar_hair_color` — **`avatar_bg_color` NÃO entra.** A emenda à D27
+    restringiu o recolorir a pele e cabelo; o fundo passou a ter cor fixa. Criar a
+    coluna seria criar dívida: campo que ninguém escreve e que a próxima pessoa
+    tenta usar
   - `update_avatar_identity` substitui `update_avatar_base`
   - recriar `user_public_profiles` com os campos novos
   - `users.avatar_base` **deprecada, não dropada**
@@ -265,7 +268,9 @@ Bloqueia todo o resto da arte.
 
 ## Identidade e telas
 
-- [ ] **T2.10** 🤖 `criar-personagem`: male/female → **tom de pele + cabelo + cor**
+- [ ] **T2.10** 🤖 `criar-personagem`: male/female → **tom de pele + modelo de cabelo + cor do cabelo**
+      → três escolhas, não quatro: a cor de fundo saiu com a emenda à D27. A cor do
+      cabelo move também a sobrancelha, que já é camada própria (`av-sobrancelha`) na base
 - [ ] **T2.11** 🤖 `viewBox` de cabeça para uso como foto de perfil
 - [ ] **T2.12** 🤖 **D30** — avatar na **navbar** (32 px, cabeça)
 - [ ] **T2.13** 🤖 **D30** — avatar no **ranking geral** + moldura de raridade *(dados já chegam: `get_ranking` devolve `avatar_config`)*

@@ -44,8 +44,8 @@
  *     meio do rosto. Desempata por posição.
  */
 
-import { readFileSync } from "fs";
-import { PELE, TRAJE_BASE, LINHA } from "../../src/lib/avatar/palette";
+import { existsSync, readFileSync } from "fs";
+import { PELE, CABELO, TRAJE_BASE, LINHA } from "../../src/lib/avatar/palette";
 import { otimizar } from "./otimizar-svg";
 import { abrirNavegador, renderizarSvg, renderizarHtml, salvar } from "./render-svg";
 
@@ -195,6 +195,12 @@ const Y_QUEIXO = 1554;
  * a ser classificado por matiz e vira sombra de pele, que é o que ele é.
  */
 const Y_TINTA = 1300;
+
+/**
+ * Fronteira entre SOBRANCELHA e OLHO dentro da tinta. Ver o comentário em
+ * `gerar`: sobrancelha de y=918 a 964, olho de 1065 a 1187, 100 unidades de vão.
+ */
+const Y_SOBRANCELHA = 1020;
 const MIN_AREA = W * H * 0.00035;
 const MIN_AREA_ROSTO = MIN_AREA / 10;
 /** Piso da tinta. Ver o comentário em `olhos`: separa olho de lasca de trace. */
@@ -453,9 +459,34 @@ export function gerar(): Resultado {
   // borda da orelha direita — sozinhas seriam invisíveis, mas com solda grossa
   // viraram uma mancha preta na orelha. Elas ficam de fora porque não moram
   // dentro de semente nenhuma.
-  const olhos = tinta
-    .map((p) => `<path fill="${LINHA}" stroke="${LINHA}" ${SOLDA_TINTA} d="${p.d}"/>`)
-    .join("");
+  //
+  // A TINTA SE PARTE EM DUAS, e a linha do corte é medida.
+  //
+  // A SOBRANCELHA segue a cor do cabelo. Cabelo loiro com sobrancelha preta não
+  // lê como loiro — é o detalhe que separa trocar de cabelo de pôr uma peruca. O
+  // OLHO fica em `LINHA`, que é a única cor que `validarPaleta()` garante a 40 de
+  // distância de todos os 8 tons: é o que faz o olho continuar existindo na pele
+  // mais escura.
+  //
+  // MEDIDO nesta fonte: sobrancelha ocupa de y=918 a y=964, olho de y=1065 a
+  // y=1187 — 100 unidades de vão vazio entre as duas. O corte mora no meio.
+  //
+  // O `var()` leva FALLBACK. Sem ele, um documento que não declare `--av-cabelo`
+  // renderiza a sobrancelha com o valor inicial de `fill`, que é preto — e preto
+  // aqui é quase certo passar despercebido, porque é perto da cor certa. Falha
+  // silenciosa é o que este projeto mais paga caro.
+  const desenhar = (ps: Peca[], cor: string) =>
+    ps.map((p) => `<path fill="${cor}" stroke="${cor}" ${SOLDA_TINTA} d="${p.d}"/>`).join("");
+
+  const corCabelo = `var(--av-cabelo, ${CABELO[0]})`;
+  const sobrancelhas = desenhar(
+    tinta.filter((p) => centroY(p.d) < Y_SOBRANCELHA),
+    corCabelo,
+  );
+  const olhos = desenhar(
+    tinta.filter((p) => centroY(p.d) >= Y_SOBRANCELHA),
+    LINHA,
+  );
 
   // FORRO — a silhueta inteira, por baixo de tudo.
   //
@@ -492,8 +523,18 @@ export function gerar(): Resultado {
     // O pano é o contrário: lá o que é pequeno é granulado da pintura, e passá-lo
     // para a sombra suja o macacão.
     `<g class="av-pele">${camada(porFam.pele, "var(--av-pele)", MIN_AREA_ROSTO, COR_SOMBRA, 0)}</g>` +
-    `<g class="av-roupa">${camada(porFam.roupa, "var(--av-roupa)", MIN_AREA, COR_SOMBRA_ROUPA, ZONA_MORTA_ROUPA)}</g>` +
-    `<g class="av-tinta">${olhos}</g>`;
+    // O macacão leva a cor ASSADA, não uma variável.
+    //
+    // Decisão do usuário, permanente: só pele e cabelo recolorem. Roupa, uniforme,
+    // chapéu, relíquia e fundo têm cor fixa — a cor do uniforme é o que sinaliza a
+    // patente, e patente não é gosto. `--av-roupa` foi tirada de `PROPRIEDADES`,
+    // então o `conferirSvg` agora REPROVA qualquer desenho que tente recolorir pano.
+    //
+    // A cor vem de `TRAJE_BASE`, no `palette.ts`: a paleta continua sendo a fonte
+    // de verdade, só que agora ela é lida na geração em vez de em runtime.
+    `<g class="av-roupa">${camada(porFam.roupa, TRAJE_BASE.roupa, MIN_AREA, COR_SOMBRA_ROUPA, ZONA_MORTA_ROUPA)}</g>` +
+    `<g class="av-sobrancelha">${sobrancelhas}</g>` +
+    `<g class="av-olho">${olhos}</g>`;
 
   return {
     corpo,
@@ -507,9 +548,14 @@ export function gerar(): Resultado {
   };
 }
 
-/** Um SVG autônomo, para renderizar fora do app. */
-function autonomo(corpo: string, pele: number, vb = `0 0 ${W} ${H}`): string {
-  const vars = `--av-pele:${PELE[pele]};--av-roupa:${TRAJE_BASE.roupa}`;
+/**
+ * Um SVG autônomo, para renderizar fora do app.
+ *
+ * Declara só as duas propriedades que sobraram no contrato. A roupa não entra
+ * mais aqui: ela é cor assada no desenho.
+ */
+function autonomo(corpo: string, pele: number, cabelo = CABELO[0], vb = `0 0 ${W} ${H}`): string {
+  const vars = `--av-pele:${PELE[pele]};--av-cabelo:${cabelo}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" style="${vars}">${corpo}</svg>`;
 }
 
@@ -550,22 +596,39 @@ async function main() {
     // Recorte da cabeça, da coroa ao pescoço, medido no alfa do PNG mestre.
     const CAB = "664 410 1311 1224";
     const RAZAO = W / H;
+    const ALTO = Math.round(300 * (1224 / 1311));
     for (let i = 0; i < PELE.length; i++) {
       await renderizarSvg(nav, otimizar(autonomo(corpo, i)), Math.round(234 * RAZAO), 234, `${OUT}/pele-${i}.png`, "#EFEAE2");
-      await renderizarSvg(nav, otimizar(autonomo(corpo, i, CAB)), 300, Math.round(300 * (1224 / 1311)), `${OUT}/cab-${i}.png`, "#EFEAE2");
+      await renderizarSvg(nav, otimizar(autonomo(corpo, i, CABELO[0], CAB)), 300, ALTO, `${OUT}/cab-${i}.png`, "#EFEAE2");
+    }
+    // A sobrancelha segue `--av-cabelo`. As 5 cores sobre o MESMO tom de pele:
+    // se ela não mudar aqui, o corte em `Y_SOBRANCELHA` errou o alvo.
+    for (let i = 0; i < CABELO.length; i++) {
+      await renderizarSvg(nav, otimizar(autonomo(corpo, 3, CABELO[i], CAB)), 300, ALTO, `${OUT}/cabelo-${i}.png`, "#EFEAE2");
     }
     await renderizarSvg(nav, otimizar(autonomo(corpo, 2)), Math.round(497 * RAZAO), 497, `${OUT}/xl.png`, "#EFEAE2");
     await renderizarSvg(nav, otimizar(autonomo(corpo, 2)), Math.round(82 * RAZAO), 82, `${OUT}/sm.png`, "#EFEAE2");
 
     const tiras = PELE.map((_, i) => `<img src="${b64(`${OUT}/pele-${i}.png`)}" height="234">`).join("");
     const caras = PELE.map((_, i) => `<img src="${b64(`${OUT}/cab-${i}.png`)}" height="186">`).join("");
+    const cenhos = CABELO.map((c, i) =>
+      `<figure style="margin:0"><img src="${b64(`${OUT}/cabelo-${i}.png`)}" height="186">` +
+      `<figcaption style="text-align:center;color:#666;font-size:12px">${c}</figcaption></figure>`,
+    ).join("");
 
     await renderizarHtml(
       nav,
       `<!doctype html><html><body style="margin:0;background:#fff;font:14px system-ui;color:#333">
        <p style="margin:14px 18px 6px"><b>Boneco base recolorível</b> &mdash; arte do Doug, reconstruída. Original ao lado.</p>
        <div style="display:flex;gap:16px;padding:0 18px;align-items:flex-end">
-         <figure style="margin:0"><img src="${b64(REF_PNG)}" height="497" style="background:#EFEAE2"><figcaption style="text-align:center;color:#666">original (PNG)</figcaption></figure>
+         ${
+           // O PNG mestre vive fora do repositório, na pasta de downloads de quem
+           // desenhou. A folha é material de decisão, não build: se ele não estiver
+           // lá, o resto continua valendo e a comparação some.
+           existsSync(REF_PNG)
+             ? `<figure style="margin:0"><img src="${b64(REF_PNG)}" height="497" style="background:#EFEAE2"><figcaption style="text-align:center;color:#666">original (PNG)</figcaption></figure>`
+             : ""
+         }
          <figure style="margin:0"><img src="${b64(`${OUT}/xl.png`)}" height="497"><figcaption style="text-align:center;color:#666">reconstruído (SVG)</figcaption></figure>
          <figure style="margin:0"><img src="${b64(`${OUT}/sm.png`)}" height="492" style="image-rendering:pixelated;border:1px solid #ccc"><figcaption style="text-align:center;color:#666">56 px, 6&times;</figcaption></figure>
        </div>
@@ -573,6 +636,10 @@ async function main() {
        <div style="display:flex;gap:8px;padding:0 18px;flex-wrap:wrap">${tiras}</div>
        <p style="margin:18px 18px 6px">O rosto de perto em cada tom &mdash; é onde os defeitos apareceram.</p>
        <div style="display:flex;gap:8px;padding:0 18px;flex-wrap:wrap">${caras}</div>
+       <p style="margin:18px 18px 6px"><b>A sobrancelha segue a cor do cabelo.</b>
+         Mesmo tom de pele, as 5 cores. O olho fica na cor do traço, para continuar
+         existindo na pele mais escura.</p>
+       <div style="display:flex;gap:8px;padding:0 18px;flex-wrap:wrap">${cenhos}</div>
        </body></html>`,
       1780,
       `${OUT}/folha-recolor.png`,

@@ -64,10 +64,41 @@ invisíveis. Distribuídos pela pirâmide de raridade do D28.
 | D17 | O que raridade significa | **acabamento, nunca volume**: material e detalhe melhores no mesmo espaço. Sem espinhos, sem penduricalho. Brilho só na moldura, que é CSS e não toca o boneco |
 | **D25** | **Régua da patente** | **aulas concluídas**, não trilhas — 30 aulas → 7 tiers. Ver §9.1: só existem 2 trilhas, então a régua atual torna 5 dos 7 uniformes inalcançáveis |
 | **D26** | **Mérito × gosto** | separação **sem exceção**: uniforme, relíquia e itens de conquista são determinísticos e legíveis; cabelo, fundo, cor e pets comuns são sorteados e não significam nada. Hoje estão no mesmo pote |
-| **D27** | **Cor escolhida pelo aluno** | cabelo e fundo com **cor à escolha** (5 modelos × 8 cores = 40 visuais de 5 arquivos). **Uniforme com cor fixa** — ele sinaliza patente |
+| **D27** | **Cor escolhida pelo aluno** | ~~cabelo e fundo~~ → **só pele e cabelo**. Ver a emenda abaixo |
 | **D28** | **Pirâmide de raridade** | 40% comum, 30% raro, 20% épico, **10% lendário**. Hoje é 19/20/20/**18** — um quarto do catálogo é lendário, então lendário não quer dizer nada |
 | **D29** | **Baú de escolha** | em marcos (trilha completa, tier de bots): a criança escolhe **1 entre 3**. Sem moeda e sem loja, transforma "torcer" em "decidir" |
 | **D30** | **Avatar em toda superfície social** | hoje aparece em **2 telas**, nenhuma social (§10). Passa a ser a identidade em navbar, ranking, mural e Companhia. **O avatar É a foto de perfil** — mesmo SVG, `viewBox` recortado na cabeça |
+
+### Emenda à D27 — só pele e cabelo recolorem
+
+**Decisão do usuário, permanente.** A D27 original dava cor à escolha para
+**cabelo e fundo**. O escopo encolheu:
+
+> **Recolorem: pele (8 tons) e cabelo (rampa da paleta).**
+> **Cor fixa, assada no desenho: roupa, uniforme, chapéu, relíquia, pet e fundo.**
+
+A razão é a mesma da D26 — mérito não é gosto. A cor do uniforme **é** o sinal da
+patente; deixá-la escolhível apagaria o sinal. Cor de olho foi considerada e
+recusada: a 56 px o olho ocupa 2×3 px, e o eixo custaria uma classe no SVG, uma
+coluna no banco e uma escolha na tela para não ser visto onde o avatar é visto.
+
+**A sobrancelha segue `--av-cabelo`.** Não é um eixo novo, é o mesmo eixo
+aplicado onde ele faz falta: cabelo loiro com sobrancelha preta não lê como
+loiro. É o que separa "trocou de cabelo" de "colocou uma peruca". Na base ela é
+uma camada própria, `av-sobrancelha`, separada de `av-olho` por um corte medido
+(sobrancelha de y=918 a 964, olho de 1065 a 1187 — 100 unidades de vão).
+
+**Consequências, todas já aplicadas ou registradas:**
+
+| onde | o que muda |
+|---|---|
+| `palette.ts` | `PROPRIEDADES` encolheu para `--av-traco`, `--av-linha`, `--av-pele`, `--av-pele-s`, `--av-cabelo`, `--av-cabelo-s`. `camada` ficou **vazia** — nada mais é escopado por camada porque nada mais recolore |
+| `svgContrato.ts` | o gate passa a **reprovar** desenho que leia `--av-roupa`, `--av-fundo`, `--av-item-a/b`, `--av-detalhe`, `--av-calca`, `--av-sapato` ou `--av-raridade`. A decisão deixou de depender de disciplina |
+| Boneco base | o macacão leva `TRAJE_BASE.roupa` (**`#C9BFA8`**) assado. A paleta continua a fonte de verdade, só que lida na geração |
+| Migration (T2.1) | **`users.avatar_bg_color` não entra.** Sobram `avatar_skin`, `avatar_hair`, `avatar_hair_color` |
+| `criar-personagem` (T2.10) | **três** escolhas, não quatro: tom de pele, modelo de cabelo, cor do cabelo |
+| §9.5 | perde um eixo. Fica 8 tons × 5 modelos × 8 cores de cabelo = **320 combinações** com 5 arquivos de cabelo |
+| `--av-raridade` | a moldura é `frame_ui` — CSS na camada z=10, fora do SVG (§2.3). Se um dia precisar entrar num desenho, é uma linha no contrato, e o gate vai exigir |
 
 ## Arquitetura
 
@@ -132,7 +163,15 @@ Chapéu esconde cabelo por padrão; válvula `showsHair` por item na config TS.
 - `palette.ts` define rampas: **pele (8)**, cabelo (5), destaque por raridade.
 - A vetorização (§2.5) marca cada preenchimento com uma **classe de paleta**
   (`c-pele`, `c-roupa`, `c-linha`, `c-metal`…).
-- **Recolorir é CSS.** Trocar `.c-roupa` muda a cor sem gerar arquivo nenhum.
+- **Recolorir é CSS** — mas só onde recolorir existe. Pela **emenda à D27**, os
+  únicos eixos recoloríveis são **pele** e **cabelo** (e a sobrancelha, que segue
+  o cabelo). Roupa, uniforme, chapéu, relíquia, pet e fundo têm a cor **assada no
+  desenho**, e o `conferirSvg` reprova quem tentar recolori-los. O exemplo
+  original desta seção — *"trocar `.c-roupa` muda a cor sem gerar arquivo"* — não
+  vale mais: `.c-roupa` é cor fixa.
+- **O que a classe de paleta ainda serve:** identificar qual preenchimento é
+  pele, para o pipeline saber o que trocar. Por isso a arte de origem precisa de
+  **matizes distantes entre pele e pano** — ver a regra 10 da §7b do doc 15.
 - **Regra de paleta obrigatória:** cores precisam de separação visual suficiente
   entre si. Medido no experimento: um cabelo `#4a3526` perto demais do contorno
   `#3d2b1f` foi **fundido** na mesma classe e deixou de ser recolorível. Cor que

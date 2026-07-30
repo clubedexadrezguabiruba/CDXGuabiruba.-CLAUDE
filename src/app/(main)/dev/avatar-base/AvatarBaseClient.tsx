@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PELE, TRAJE_BASE, FUNDO } from "@/lib/avatar/palette";
+import { PELE, CABELO, FUNDO } from "@/lib/avatar/palette";
 
 /**
  * O `<symbol>` é buscado UMA vez e reusado por `<use>`.
@@ -15,8 +15,11 @@ import { PELE, TRAJE_BASE, FUNDO } from "@/lib/avatar/palette";
 const FOLHA = "/items/base/avatar-base-neutro.svg";
 const SYMBOL_ID = "avatar-base-neutro";
 
-/** Canvas da arte de origem: 1037×1516. NÃO é o 4:5 do resto do v4. */
-const RAZAO = 1037 / 1516;
+/** Canvas da arte de origem. NÃO é o 4:5 do resto do v4 — a D2 rebaixou a
+ *  proporção para ajustável, e o `viewBox` reenquadra no Bloco 5. */
+const W = 2556;
+const H = 3840;
+const RAZAO = W / H;
 
 /** Alturas dos 4 tamanhos do plano. A largura sai da razão da arte. */
 const TAMANHOS = [
@@ -30,12 +33,12 @@ const NOME_PELE = ["1 mais clara", "2", "3", "4", "5", "6", "7", "8 mais escura"
 
 function Boneco({
   pele,
-  roupa,
+  cabelo,
   altura,
   fundo,
 }: {
   pele: string;
-  roupa: string;
+  cabelo: string;
   altura: number;
   fundo: string;
 }) {
@@ -43,17 +46,20 @@ function Boneco({
     <svg
       width={Math.round(altura * RAZAO)}
       height={altura}
-      viewBox={`0 0 1037 1516`}
+      viewBox={`0 0 ${W} ${H}`}
       style={
         {
           "--av-pele": pele,
-          "--av-roupa": roupa,
+          "--av-cabelo": cabelo,
           background: fundo,
           borderRadius: 6,
         } as React.CSSProperties
       }
     >
-      <use href={`#${SYMBOL_ID}`} />
+      {/* Com x/y/width/height o símbolo ocupa o canvas em escala 1:1, e o
+          `viewBox` de fora é que recorta. Sem eles, o símbolo se encaixa na
+          viewport e qualquer recorte é ignorado. */}
+      <use href={`#${SYMBOL_ID}`} x={0} y={0} width={W} height={H} />
     </svg>
   );
 }
@@ -62,9 +68,9 @@ export default function AvatarBaseClient() {
   const [folha, setFolha] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [pele, setPele] = useState(2);
-  // `TRAJE_BASE` é `as const`, então sem o tipo explícito o estado ficaria
-  // preso ao literal "#C9BFA8" e não aceitaria a cor de uniforme.
-  const [roupa, setRoupa] = useState<string>(TRAJE_BASE.roupa);
+  // `CABELO` é `as const`, então sem o tipo explícito o estado ficaria preso ao
+  // primeiro literal da rampa.
+  const [cabelo, setCabelo] = useState<string>(CABELO[0]);
   const [fundo, setFundo] = useState("transparent");
 
   useEffect(() => {
@@ -95,7 +101,8 @@ export default function AvatarBaseClient() {
 
       <h1 className="text-xl font-bold text-zinc-900">Boneco base — aprovação</h1>
       <p className="mt-1 text-sm text-zinc-600">
-        Sua arte, reconstruída como SVG recolorível. A pele e o macacão são variáveis; o
+        Sua arte, reconstruída como SVG. <b>Só pele e cabelo mudam de cor</b> — a
+        sobrancelha segue o cabelo, e o macacão tem cor fixa, assada no desenho. O
         sombreado é camada por cima e não conhece a cor de baixo.
       </p>
 
@@ -121,16 +128,21 @@ export default function AvatarBaseClient() {
             </label>
 
             <label className="text-sm">
-              <span className="mb-1 block font-medium text-zinc-700">Macacão</span>
+              <span className="mb-1 block font-medium text-zinc-700">Cor do cabelo</span>
               <select
                 className="rounded border border-zinc-300 px-2 py-1"
-                value={roupa}
-                onChange={(e) => setRoupa(e.target.value)}
+                value={cabelo}
+                onChange={(e) => setCabelo(e.target.value)}
               >
-                <option value={TRAJE_BASE.roupa}>traje da base</option>
-                <option value="#5C6E3F">uniforme Soldado</option>
-                <option value="#2B3A5C">uniforme General</option>
+                {CABELO.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
+              <span className="mt-1 block text-xs text-zinc-500">
+                move a sobrancelha, não o olho
+              </span>
             </label>
 
             <label className="text-sm">
@@ -160,7 +172,7 @@ export default function AvatarBaseClient() {
           <div className="mt-3 flex flex-wrap items-end gap-6 rounded-lg border border-zinc-200 p-4">
             {TAMANHOS.map((t) => (
               <figure key={t.nome} className="m-0 text-center">
-                <Boneco pele={PELE[pele]} roupa={roupa} altura={t.h} fundo={fundo} />
+                <Boneco pele={PELE[pele]} cabelo={cabelo} altura={t.h} fundo={fundo} />
                 <figcaption className="mt-1 text-xs text-zinc-500">
                   {t.nome} · {Math.round(t.h * RAZAO)}×{t.h}
                   <br />
@@ -181,7 +193,7 @@ export default function AvatarBaseClient() {
           <div className="mt-3 flex flex-wrap gap-3 rounded-lg border border-zinc-200 p-4">
             {PELE.map((c, i) => (
               <figure key={c} className="m-0 text-center">
-                <Boneco pele={c} roupa={roupa} altura={190} fundo={fundo} />
+                <Boneco pele={c} cabelo={cabelo} altura={190} fundo={fundo} />
                 <figcaption className="mt-1 text-xs text-zinc-500">{i + 1}</figcaption>
               </figure>
             ))}
@@ -194,13 +206,14 @@ export default function AvatarBaseClient() {
           </p>
           <div className="mt-3 flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 p-4">
             {PELE.map((c) => (
-              <Boneco key={c} pele={c} roupa={roupa} altura={70} fundo={fundo} />
+              <Boneco key={c} pele={c} cabelo={cabelo} altura={70} fundo={fundo} />
             ))}
           </div>
 
           <p className="mt-8 text-xs text-zinc-500">
-            Canvas da arte: 1037×1516 (razão {RAZAO.toFixed(3)}). O resto do v4 usa 4:5
-            (0,800) — os dois precisam convergir antes de ligar isto no avatar de produção.
+            Canvas da arte: {W}×{H} (razão {RAZAO.toFixed(3)}). O resto do v4 usa 4:5
+            (0,800), e a D2 rebaixou a proporção de crítica para ajustável — o{" "}
+            <code>viewBox</code> reenquadra no Bloco 5, sem regerar arte.
           </p>
         </>
       )}

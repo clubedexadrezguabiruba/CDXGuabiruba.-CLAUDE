@@ -353,7 +353,8 @@ nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
   - `items.slot` e `user_equipped.slot` CHECK **+= `hair`, `back`**
   - `user_inventory.source` CHECK **+= `title`**
   - `users.avatar_skin` (8 tons, default `medio`)
-  - `users.avatar_hair`, `avatar_hair_color`, `avatar_bg_color` (D27)
+  - `users.avatar_hair`, `avatar_hair_color` — **sem `avatar_bg_color`**: pela
+    emenda à D27, só pele e cabelo recolorem, e o fundo passou a ter cor fixa
   - `update_avatar_identity` substitui `update_avatar_base`
   - **recriar `user_public_profiles`** com os campos novos — hoje ela tem
     `avatar_base` e nenhum dos novos, e é dela que o ranking lê
@@ -388,7 +389,9 @@ banco vivo, nunca de migration antiga.** E ele **não emite o `;`** depois de
   carrega só as custom properties. Sem isso o D30 fica pesado.
 - **5.8** `assetResolver.ts` sem variante de gênero.
 - **5.9** Fallback: uniforme ausente cai para o traje da base, nunca boneco pelado.
-- **5.10** `criar-personagem`: male/female → **tom de pele + cabelo + cor**.
+- **5.10** `criar-personagem`: male/female → **tom de pele + modelo de cabelo +
+  cor do cabelo**. Três escolhas, não quatro: a cor de fundo saiu com a emenda à
+  D27. A cor do cabelo move também a **sobrancelha**, que é camada própria na base.
 - **5.11** `viewBox` de cabeça, para o avatar servir de foto de perfil.
 
 🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` 14/14 · gate de assets
@@ -589,9 +592,14 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     matiz, e a separação tem de ter vão. Na rodada em que o macacão saiu
     creme-pêssego, pele e pano ficaram ambos em ~30° e o tronco saiu **salpicado
     de manchas cor de pele**, que mudavam de cor junto com o tom do aluno. Com o
-    macacão em azul (200°) contra pele em 18–28°, a separação é limpa. **A cor do
-    pano na arte de origem é descartável** — ela é repintada por `--av-roupa`, e
-    existe só para o classificador saber onde termina a pele.
+    macacão em azul (200°) contra pele em 18–28°, a separação é limpa.
+
+    O motivo da regra **não** é que o pano será repintado — pela emenda à D27, só
+    pele e cabelo recolorem, e a cor do pano é definitiva. O motivo é que o
+    pipeline precisa saber **o que é pele**, porque é a pele que troca de cor. Uma
+    bota marrom não seria "pano de cor trocável": seria **entendida como pele** e
+    mudaria de cor junto com o aluno. A regra fica mais estrita, não menos: nada
+    que não seja pele pode morar em 18–28°, nem no cinto, nem na gola.
 11. **Pano sem textura.** Uma textura fina de tecido, quase invisível no PNG, o
     traçador transforma em **regiões esfarrapadas do tamanho do tronco**. Nem
     filtro de área nem menos degraus as separam da dobra real — só a amplitude
@@ -607,6 +615,11 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     próprios. Rosto traçado não tem a forma da boca alegre no arquivo: a
     expressão passou a custar **3 desenhos**. Antes de contar com uma decisão que
     depende de *como* a arte foi feita, conferir se ela ainda foi feita assim.
+14. **A cor que você escolher para roupa e acessório é definitiva.** Pela emenda à
+    D27, só pele e cabelo recolorem. Então a cor do uniforme na arte de origem
+    **é a cor final** — e ela é o sinal da patente. Duas peças da mesma patente
+    precisam sair na mesma cor entre pedidos diferentes, porque nada as harmoniza
+    depois.
 
 **Comandos:**
 

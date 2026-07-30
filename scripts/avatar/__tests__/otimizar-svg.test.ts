@@ -19,6 +19,7 @@ import { readFileSync } from "fs";
 import { otimizar } from "../otimizar-svg";
 import { peaozinho } from "../../../src/lib/avatar/prototipo/pet";
 import { conferirSvg } from "../../../src/lib/avatar/svgContrato";
+import { TRAJE_BASE } from "../../../src/lib/avatar/palette";
 
 /** O arquivo que a aplicação serve. Já sai otimizado do `avatar:base`. */
 const base = () => readFileSync("public/items/base/avatar-base-neutro.svg", "utf8");
@@ -43,9 +44,9 @@ describe("o que a faxina não pode levar junto", () => {
   it("preserva as camadas da base", () => {
     // `collapseGroups` funde um <g> nos filhos quando o julga vazio de
     // conteúdo. As camadas da base só carregam a classe — se sumirem, o Bloco 5
-    // perde o gancho por onde a folha global recolore cada uma.
+    // perde o gancho por onde a folha global alcança cada uma.
     const out = base();
-    for (const camada of ["av-forro", "av-pele", "av-roupa", "av-tinta"]) {
+    for (const camada of ["av-forro", "av-pele", "av-roupa", "av-sobrancelha", "av-olho"]) {
       expect(out, camada).toContain(camada);
     }
   });
@@ -55,7 +56,20 @@ describe("o que a faxina não pode levar junto", () => {
     // sem nenhum erro: o boneco sairia sempre do mesmo tom.
     const out = base();
     expect(out).toContain("var(--av-pele)");
-    expect(out).toContain("var(--av-roupa)");
+    // Com fallback, porque a sobrancelha sem `--av-cabelo` declarada cairia no
+    // valor inicial de `fill` — preto, que é perto o bastante do certo para
+    // ninguém notar.
+    expect(out).toMatch(/var\(--av-cabelo,\s*#[0-9A-Fa-f]{3,6}\)/);
+  });
+
+  it("a roupa tem cor ASSADA, não variável", () => {
+    // A emenda à D27 é permanente: só pele e cabelo recolorem. Este assert é a
+    // decisão em forma de teste — se alguém devolver `--av-roupa` ao desenho,
+    // isto falha antes de o boneco chegar na tela.
+    const out = base();
+    expect(out).not.toContain("var(--av-roupa)");
+    expect(out).not.toContain("var(--av-fundo)");
+    expect(out).toContain(TRAJE_BASE.roupa.toLowerCase());
   });
 
   it("preserva o fill preto da sombra da roupa", () => {
