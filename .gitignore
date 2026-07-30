@@ -31,8 +31,11 @@ Thumbs.db
 !.vscode/extensions.json
 .idea
 
-# Claude Code (local settings)
-.claude/
+# Claude Code — o que é do projeto entra, o que é da máquina fica de fora.
+# O settings.local.json guarda caminho absoluto e permissões pessoais.
+.claude/*
+!.claude/commands/
+!.claude/settings.json
 
 # Supabase CLI (local state)
 supabase/.temp/

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(npm run test:e2e:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(*apply-migration*)",
+      "Read(./.env.local)"
+    ],
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm test)",
+      "Bash(npm run build)",
+      "Bash(npm run verify:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  }
+}
