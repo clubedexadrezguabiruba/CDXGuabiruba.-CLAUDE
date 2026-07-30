@@ -13,6 +13,7 @@ import {
   CORRIGE_X,
   MATIZ_PANO,
   VARIANTES,
+  corBota,
   corMedia,
   ehPano,
   formasDe,
@@ -145,6 +146,39 @@ describe("cor média do fundo de segurança", () => {
 
   it("cai para todas as formas quando nenhuma passa o filtro", () => {
     expect(() => corMedia([f("#1B1C0A", 100)])).not.toThrow();
+  });
+});
+
+describe("cor de oclusão do pé", () => {
+  const f = (fill: string, cy: number, a = 5000): Forma => ({ fill, d: "", a, bb: [0, cy - 5, 10, cy + 5] });
+  const fig = [0, 0, 100, 1000] as [number, number, number, number];
+
+  it("vem da BOTA, não do uniforme inteiro", () => {
+    // Preencher a folga da bota com o oliva médio do uniforme recria o PEDESTAL
+    // VERDE — o defeito oposto, que já custou uma rodada. A cor tem de ser escura.
+    const pano = [f("#78833B", 500, 200000), f("#1B1C0A", 950, 30000)];
+    const u = { pano, fig, corFundo: "#78833B" };
+    expect(corBota(u)).not.toBe(corMedia(pano));
+    expect(hsl(corBota(u)).lum).toBeLessThan(hsl(corMedia(pano)).lum);
+  });
+
+  it("olha só os 15% de baixo da figura", () => {
+    const u = { pano: [f("#78833B", 100, 90000), f("#1B1C0A", 960, 9000)], fig, corFundo: "#78833B" };
+    expect(corBota(u)).toBe("#1b1c0a");
+  });
+
+  it("ignora forma pequena, para o cadarço claro não clarear a média", () => {
+    const u = {
+      pano: [f("#1B1C0A", 950, 30000), f("#FFFFFF", 950, 100)],
+      fig,
+      corFundo: "#78833B",
+    };
+    expect(corBota(u)).toBe("#1b1c0a");
+  });
+
+  it("cai na cor de fundo quando não há bota", () => {
+    const u = { pano: [f("#78833B", 100, 50000)], fig, corFundo: "#78833B" };
+    expect(corBota(u)).toBe("#78833B");
   });
 });
 

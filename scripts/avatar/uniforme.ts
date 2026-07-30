@@ -176,6 +176,37 @@ export function corMedia(pano: Forma[]): string {
   return `#${hx(soma[0])}${hx(soma[1])}${hx(soma[2])}`;
 }
 
+/**
+ * Cor de OCLUSÃO DO PÉ: a cor média do pano na parte de baixo da figura.
+ *
+ * Existe para um defeito específico, que a folha visual pegou e nenhum gate viu: a
+ * pele do pé da base aparecia por baixo da sola, porque o asset fica transparente
+ * ali. O pé precisa ser ocluído.
+ *
+ * E NÃO PODE SER a cor média do uniforme inteiro. Preencher a folga da bota com o
+ * oliva médio recria o **pedestal verde** — o defeito oposto, que já custou uma
+ * rodada. A cor tem de vir da própria bota, que é escura, e a camada fica ATRÁS
+ * da arte real: ela só aparece onde a bota não cobre.
+ *
+ * Os 15% de baixo da figura são a bota nesta família de arte. Formas pequenas
+ * ficam de fora para o cadarço claro não clarear a média.
+ */
+export function corBota(u: Pick<Uniforme, "pano" | "fig" | "corFundo">): string {
+  const altura = u.fig[3] - u.fig[1];
+  const limite = u.fig[1] + altura * 0.85;
+  const naBota = u.pano.filter((p) => (p.bb[1] + p.bb[3]) / 2 >= limite && p.a > 500);
+  if (!naBota.length) return u.corFundo;
+  const soma = naBota.reduce(
+    (acc, p) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(p.fill.slice(i, i + 2), 16));
+      return [acc[0] + r * p.a, acc[1] + g * p.a, acc[2] + b * p.a, acc[3] + p.a];
+    },
+    [0, 0, 0, 0],
+  );
+  const hx = (v: number) => Math.round(v / soma[3]).toString(16).padStart(2, "0");
+  return `#${hx(soma[0])}${hx(soma[1])}${hx(soma[2])}`;
+}
+
 export function lerUniforme(svg: string): Uniforme {
   const vb = svg.match(/viewBox="([^"]+)"/);
   if (!vb) throw new Error("SVG do uniforme sem viewBox");

@@ -56,6 +56,14 @@ export interface MascarasBase {
   cobertura: Mascara;
   peleFrente: Mascara;
   corpoVestido: Mascara;
+  /**
+   * Os PÉS: a pele abaixo do tornozelo.
+   *
+   * Fica de fora de `peleFrente` de propósito — o pé vai por BAIXO da bota, não
+   * na frente dela. Mas então ele precisa ser OCLUÍDO, senão aparece por baixo da
+   * sola: foi o defeito que a folha visual pegou e nenhum gate viu.
+   */
+  pes: Mascara;
   marcos: Marcos;
 }
 
@@ -150,6 +158,13 @@ export function dilatar(m: Mascara, dim: Dim, raioPx: number, so?: (y: number) =
 export function subtrair(a: Mascara, b: Mascara): Mascara {
   const out = new Uint8Array(a.length);
   for (let p = 0; p < a.length; p++) out[p] = a[p] && !b[p] ? 1 : 0;
+  return out;
+}
+
+/** `a` e `b` ao mesmo tempo. */
+export function intersecao(a: Mascara, b: Mascara): Mascara {
+  const out = new Uint8Array(a.length);
+  for (let p = 0; p < a.length; p++) out[p] = a[p] && b[p] ? 1 : 0;
   return out;
 }
 
@@ -269,6 +284,10 @@ export async function derivarMascaras(
   // PELE FRONTAL: pele acima da faixa da bota. O pé fica de fora — vai por baixo.
   const peleFrente = faixa(pele.m, dim, 0, yBota - 1);
 
+  // PÉS: a pele do tornozelo para baixo. O macacão da base termina no tornozelo,
+  // então tudo que é pele abaixo dali é pé.
+  const pes = faixa(pele.m, dim, tornozelo, dim.h - 1);
+
   return {
     w: dim.w,
     h: dim.h,
@@ -276,6 +295,7 @@ export async function derivarMascaras(
     cobertura,
     peleFrente,
     corpoVestido: traje.m,
+    pes,
     marcos: { topoTraje, tornozelo, yGola, yBota },
   };
 }

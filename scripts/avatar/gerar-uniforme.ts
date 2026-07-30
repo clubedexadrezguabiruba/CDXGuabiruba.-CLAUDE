@@ -42,13 +42,15 @@ import {
   BASE_W,
   area,
   derivarMascaras,
+  dilatar,
+  intersecao,
   paraPngAlfa,
   recortes,
   subtrair,
   type Mascara,
   type MascarasBase,
 } from "./mascara-base";
-import { VARIANTES, larguraDe, lerUniforme, registro, type Uniforme } from "./uniforme";
+import { VARIANTES, corBota, larguraDe, lerUniforme, registro, type Uniforme } from "./uniforme";
 
 /**
  * A fonte é COMMITADA, como a da base.
@@ -86,10 +88,23 @@ function composicao(u: Uniforme, m: MascarasBase): string {
   const mask = (id: string, href: string) =>
     `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${BASE_W}" height="${BASE_H}" style="mask-type:alpha">` +
     `<image href="${href}" x="0" y="0" width="${BASE_W}" height="${BASE_H}"/></mask>`;
+  // OCLUSÃO DO PÉ: a máscara do pé dentro do envelope permitido da bota.
+  //
+  // Sem ela a pele do pé aparece por baixo da sola, porque o asset fica
+  // transparente ali — medido, 2696 px. E a correção NÃO é preencher a folga da
+  // bota com a cor média do uniforme: isso recria o pedestal verde. A cor vem da
+  // própria bota, e esta camada fica ATRÁS da arte, então só aparece onde a bota
+  // não cobre.
+  // Dilatada em 2 px antes de intersectar: sem isso sobram 2 px de antialiasing
+  // na borda da máscara, e o gate é de tolerância zero. A dilatação fica presa
+  // dentro do envelope da bota pela interseção, então não vira orla escura.
+  const oclusaoPe = intersecao(dilatar(m.pes, { w: m.w, h: m.h }, 2), m.cobertura);
   return (
-    `<defs>${mask("mp", b64png(paraPngAlfa(pano, dim)))}${mask("mf", b64png(paraPngAlfa(fundo, dim)))}</defs>` +
+    `<defs>${mask("mp", b64png(paraPngAlfa(pano, dim)))}${mask("mf", b64png(paraPngAlfa(fundo, dim)))}` +
+    `${mask("mo", b64png(paraPngAlfa(oclusaoPe, dim)))}</defs>` +
     // FUNDO primeiro, limitado ao corpo vestido. Ver a armadilha 1.
     `<g mask="url(#mf)"><rect x="0" y="0" width="${BASE_W}" height="${BASE_H}" fill="${u.corFundo}"/></g>` +
+    `<g mask="url(#mo)"><rect x="0" y="0" width="${BASE_W}" height="${BASE_H}" fill="${corBota(u)}"/></g>` +
     `<g mask="url(#mp)"><g transform="${registro(u).transform}">` +
     u.pano.map((p) => `<path fill="${p.fill}" stroke="${p.fill}" ${SOLDA} d="${p.d}"/>`).join("") +
     `</g></g>`
@@ -487,6 +502,43 @@ async function benchmark(pg: Page, folha: string, dentro: string, quantos = 30) 
   return { msIguais, msDistintos, bitmapMiB: (quantos * larguraDe(128) * 128 * 4) / 1048576 };
 }
 
+/**
+ * Conta pixels de uma máscara onde o asset está TRANSPARENTE.
+ *
+ * É o gate do pé aparecendo por baixo da bota, e ele é o INVERSO do gate do
+ * pedestal. O pedestal era fundo verde invadindo a folga da bota; aqui a folga
+ * fica transparente e deixa a pele da base aparecer sob a sola. Um não pega o
+ * outro, e a folha visual achou este quando os gates diziam que estava tudo bem.
+ */
+async function contarVazado(pg: Page, asset: Buffer, m: MascarasBase, mascara: Mascara): Promise<number> {
+  return pg.evaluate(
+    async ([b64, mask, mw, mh]) => {
+      const img = new Image();
+      img.src = "data:image/png;base64," + (b64 as string);
+      await img.decode();
+      const c = document.createElement("canvas");
+      c.width = img.width;
+      c.height = img.height;
+      const cx = c.getContext("2d", { willReadFrequently: true })!;
+      cx.drawImage(img, 0, 0);
+      const d = cx.getImageData(0, 0, c.width, c.height).data;
+      const W = c.width, H = c.height;
+      const M = mask as number[];
+      let n = 0;
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+          const mx = Math.min((mw as number) - 1, Math.floor((x / W) * (mw as number)));
+          const my = Math.min((mh as number) - 1, Math.floor((y / H) * (mh as number)));
+          if (!M[my * (mw as number) + mx]) continue;
+          // alfa baixo = a base aparece por ali
+          if (d[(y * W + x) * 4 + 3] < 128) n++;
+        }
+      return n;
+    },
+    [asset.toString("base64"), Array.from(mascara), m.w, m.h] as [string, number[], number, number],
+  );
+}
+
 interface Violacao {
   gate: string;
   detalhe: string;
@@ -622,6 +674,21 @@ async function main() {
         violacoes.push({
           gate: "memória do ranking",
           detalhe: `${mib30.toFixed(1)} MiB para 30 avatares, teto ${TETO_RANKING_MIB} MiB`,
+        });
+
+      // PÉ VISÍVEL POR BAIXO DA BOTA. Uniforme com bota tem de ocluir o pé
+      // inteiro: a máscara do pé, dentro do envelope da bota, não pode ter um
+      // pixel transparente no asset. Tolerância zero — não é questão de grau.
+      const peNoEnvelope = intersecao(m.pes, m.cobertura);
+      const peVisivel = await contarVazado(pg, master, m, peNoEnvelope);
+      console.log(`  pé sob a bota: ${peVisivel} px transparentes de ${area(peNoEnvelope)} na região`);
+      if (peVisivel > 0)
+        violacoes.push({
+          gate: "pé visível sob a bota",
+          detalhe:
+            `${peVisivel} px da pele do pé aparecem por baixo da sola. ` +
+            `A oclusão do pé não está cobrindo — e NÃO se conserta preenchendo a folga da bota ` +
+            `com a cor média, que recriaria o pedestal verde.`,
         });
 
       // Borda em pré-multiplicado, na variante grande e na do ranking.
