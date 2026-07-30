@@ -93,11 +93,16 @@ quando não há `.env.local` — é assim que funcionam em CI.
 - Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md
 - Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md (a seção "Estado real" é a
   única parte confiável — a Parte 1 é um guia de setup pré-projeto)
-- Avatar: **o plano vigente é o v4**, e são quatro documentos com papéis distintos:
+- Avatar: **o plano vigente é o v4**, e são cinco documentos com papéis distintos:
   - `docs/avatar/15-plano-ate-pronto.md` — **comece por aqui.** O plano de
     execução do estado atual até pronto, em 10 blocos com gate. Onde divergir
-    dos outros, ele vence
-  - `docs/avatar/12-avatar-v4-plano-completo.md` — as 30 decisões e o porquê
+    dos outros, ele vence. As §7, §7b e §7c são as regras de arte e de composição
+  - `docs/avatar/16-uniformes-runbook.md` — **antes de gerar arte de uniforme,
+    leia este.** O processo de ponta a ponta: o que pedir ao gerador, a tabela de
+    matiz, as três camadas do asset, as variantes por DPR, os oito gates e o que
+    cada reprovação significa
+  - `docs/avatar/12-avatar-v4-plano-completo.md` — as 30 decisões e o porquê,
+    mais a **emenda à D27**: só pele e cabelo recolorem
   - `docs/avatar/13-checklist-de-verificacao.md` — os ~90 itens de auditoria
   - `docs/avatar/14-backlog-execucao.md` — as 63 tarefas, **é onde o progresso
     fica marcado**
