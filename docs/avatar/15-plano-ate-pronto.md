@@ -620,14 +620,53 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     **é a cor final** — e ela é o sinal da patente. Duas peças da mesma patente
     precisam sair na mesma cor entre pedidos diferentes, porque nada as harmoniza
     depois.
+15. **Peça o uniforme FOLGADO, nunca justo.** A silhueta pertence ao sistema: o
+    uniforme é recortado pelas máscaras derivadas da base, então sobra se remove
+    de forma determinística e falta exigiria inventar desenho. Ombro, manga,
+    calça e bota alguns por cento maiores é o pedido certo — e é o que fez a arte
+    do Recruta servir sem rodada nova, depois de duas tentativas de encaixe justo
+    que falharam.
+
+## 7c. Restrições de composição — aprendidas no `avatar:garment`
+
+16. **`<style>` dentro de `<svg>` inline tem escopo de DOCUMENTO, não de SVG.**
+    A regra que esconde o macacão da base num avatar vestido **escapa e esconde o
+    de todos os avatares da página**. Numa lista de turma isso desnuda a turma
+    inteira porque um aluno tem uniforme. Descoberto ao montar a folha visual, em
+    que o painel "sem uniforme" apareceu sem o macacão. Toda regra da composição
+    precisa de **escopo por classe de ancestral**.
+17. **Máscara é ferramenta de BUILD, não de runtime.** O ranking mostra 30
+    avatares; máscara e filtro forçam composição fora da tela por instância. O
+    recorte, o fundo de segurança e o vazado de cabeça e mãos são assados no alfa
+    do asset, e em runtime sobra `<use>` da base mais **um** `<image>`.
+18. **Peso de arquivo não é memória.** A variante de 1920 tem 265 KB comprimidos
+    e **9,36 MiB decodificados**; 30 uniformes distintos chegariam a 281 MiB de
+    bitmap. Daí as cinco variantes, e daí a regra: **a variante é escolhida por
+    altura CSS × devicePixelRatio**, não por altura CSS — a 70 px com DPR 2 o
+    navegador precisa de 140, e servir a de 128 seria ampliar.
+19. **Benchmark com asset repetido mede cache, não memória.** O navegador
+    compartilha o bitmap decodificado de uma URL só. Medido: 30 cópias do mesmo
+    asset levam 481 ms; **30 assets distintos levam 893 ms** — quase o dobro.
+20. **Ao medir alfa, olhe a faixa de TRANSIÇÃO.** Contar "RGB escuro em pixel
+    transparente" no quadro inteiro dá 99% e não quer dizer nada: o fundo vazio é
+    85% da imagem e nunca se mistura com a figura. O que a interpolação puxa é o
+    pixel com 8 < alfa < 255, comparado com os vizinhos opacos **em espaço
+    pré-multiplicado** — comparar RGB desassociado com alfa baixo amplifica ruído.
+    Assim o contorno escuro legítimo passa, porque os vizinhos também são escuros.
 
 **Comandos:**
 
 ```
 npm run avatar:base         regera o boneco base e a folha de conferência
+npm run avatar:garment      assa um uniforme vestível, com as 5 variantes e os gates
 npm run avatar:manifest     regera o manifesto depois de mexer em public/items/
 npm run dev                 e abrir /dev/avatar-base (professor/admin)
 ```
+
+O `avatar:garment` sai com código 1 se algum gate reprovar, e escreve a folha
+visual em `.scratch/uniforme/folha.png` — quatro fundos a 425 px, os 56 px
+ampliados com pixel visível, e os quatro closes de fronteira. Para assar outra
+peça: `UNIFORME=caminho.svg UNIFORME_NOME=nome npm run avatar:garment`.
 
 ---
 

@@ -272,6 +272,221 @@ async function contarCor(
   );
 }
 
+/**
+ * O gate da BORDA, em espaço pré-multiplicado.
+ *
+ * O QUE ELE NÃO OLHA: pixel totalmente transparente. Alfa zero com RGB escuro é
+ * inofensivo em composição pré-multiplicada, e medir o quadro inteiro dá 99% de
+ * "RGB escuro" contando o fundo vazio — que é 85% da imagem e nunca se mistura
+ * com nada. Foi o meu primeiro gate, e ele media o fenômeno errado.
+ *
+ * O QUE ELE OLHA: a faixa de TRANSIÇÃO, 8 < alfa < 255. Para cada pixel dela,
+ * acha a cor de referência nos vizinhos OPACOS — que é a cor que aquele ponto da
+ * borda deveria ter — e compara em pré-multiplicado.
+ *
+ * POR QUE PRÉ-MULTIPLICADO: comparar RGB desassociado com alfa baixo é instável,
+ * porque diferenças pequenas viram números enormes ao dividir por alfa. Em
+ * pré-multiplicado a diferença é ponderada pelo alfa, então um pixel de alfa 10
+ * pesa 10/255 do que um de alfa 250.
+ *
+ * POR QUE O CONTORNO ESCURO PASSA: onde a arte tem contorno preto, os vizinhos
+ * opacos também são escuros, então a referência é escura e a diferença é zero. O
+ * gate reprova halo — borda muito mais escura que o interior correspondente — e
+ * não estilo.
+ */
+async function conferirBorda(pg: Page, asset: Buffer) {
+  return pg.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = "data:image/png;base64," + b64;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const cx = c.getContext("2d", { willReadFrequently: true })!;
+    cx.drawImage(img, 0, 0);
+    const d = cx.getImageData(0, 0, c.width, c.height).data;
+    const W = c.width, H = c.height;
+    let n = 0, somaDif = 0, piores = 0, semReferencia = 0;
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const i = (y * W + x) * 4;
+        const a = d[i + 3];
+        if (a <= 8 || a === 255) continue;
+        // referência: média dos vizinhos OPACOS, preferindo para dentro da forma
+        let r = 0, g = 0, b = 0, k = 0;
+        for (let dy = -2; dy <= 2; dy++)
+          for (let dx = -2; dx <= 2; dx++) {
+            const yy = y + dy, xx = x + dx;
+            if (yy < 0 || yy >= H || xx < 0 || xx >= W) continue;
+            const j = (yy * W + xx) * 4;
+            if (d[j + 3] < 200) continue;
+            r += d[j]; g += d[j + 1]; b += d[j + 2]; k++;
+          }
+        n++;
+        if (!k) { semReferencia++; continue; }
+        r /= k; g /= k; b /= k;
+        // pré-multiplicado: a diferença é ponderada pelo alfa do próprio pixel
+        const p = a / 255;
+        const dif = (Math.abs(d[i] - r) + Math.abs(d[i + 1] - g) + Math.abs(d[i + 2] - b)) / 3 * p;
+        somaDif += dif;
+        if (dif > 40) piores++;
+      }
+    return {
+      transicao: n,
+      semReferencia,
+      difMedia: n ? Number((somaDif / n).toFixed(2)) : 0,
+      pctPiores: n ? Number(((piores / n) * 100).toFixed(2)) : 0,
+    };
+  }, asset.toString("base64"));
+}
+
+/**
+ * A FOLHA VISUAL. É o que o gate não pega: gates provam estrutura, não leitura.
+ *
+ * Os quatro fundos existem porque cada um revela um defeito diferente. Claro
+ * esconde buraco, porque a pele e o creme são claros. Magenta revela buraco.
+ * Escuro revela halo claro. Quadriculado revela alfa parcial, que os outros três
+ * escondem.
+ */
+async function folhaVisual(pg: Page, folha: string, assetPorAltura: Map<number, string>) {
+  const XADREZ =
+    "background-image:linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%)," +
+    "linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%);" +
+    "background-size:16px 16px;background-position:0 0,8px 8px;background-color:#fff";
+  const USO = `<use href="#avatar-base-neutro" x="0" y="0" width="${BASE_W}" height="${BASE_H}"/>`;
+  const semUniforme = USO;
+  const comUniforme = (altura: number) =>
+    USO + `<image href="${assetPorAltura.get(altura)}" x="0" y="0" width="${BASE_W}" height="${BASE_H}"/>`;
+
+  /**
+   * A REGRA QUE ESCONDE O MACACÃO PRECISA DE ESCOPO, e descobri isso aqui.
+   *
+   * `<style>` dentro de um `<svg>` inline num documento HTML é de escopo do
+   * DOCUMENTO, não do SVG. Sem a classe de ancestral, a regra de um avatar
+   * vestido escapa e esconde o macacão de TODOS os avatares da página —
+   * inclusive dos alunos sem uniforme. Numa lista de turma isso desnudaria a
+   * turma inteira porque um aluno tem uniforme.
+   *
+   * Vale para o Bloco 5: a composição não pode emitir regra sem escopo.
+   */
+  const ESCOPO = `<style>.vestido .av-roupa,.vestido .av-forro-roupa{display:none}</style>`;
+
+  const cena = (dentro: string, h: number, fundo: string, vb = `0 0 ${BASE_W} ${BASE_H}`, vestido = true) => {
+    const [, , w0, h0] = vb.split(" ").map(Number);
+    const estilo = fundo === "xadrez" ? XADREZ : `background:${fundo}`;
+    return (
+      `<svg class="${vestido ? "vestido" : ""}" width="${Math.round((h * w0) / h0)}" height="${h}" viewBox="${vb}" ` +
+      `style="--av-pele:#E9B183;--av-cabelo:#3A2F2A;${estilo}">${dentro}</svg>`
+    );
+  };
+  const fig = (rot: string, dentro: string) =>
+    `<figure style="margin:0;text-align:center">${dentro}` +
+    `<figcaption style="font:11px system-ui;color:#666">${rot}</figcaption></figure>`;
+  // O de 56 px é RASTERIZADO no tamanho real e só depois ampliado como imagem,
+  // com pixel visível: é o pixel que o aluno vê. Ampliar o SVG com `transform`
+  // não serve — ele redesenha em vetor no tamanho grande e mente sobre a leitura.
+  const alturaSm = 70;
+  const larguraSm = Math.round((alturaSm * BASE_W) / BASE_H);
+  const tiros = new Map<string, string>();
+  for (const fundo of ["#EFEAE2", "#FF00FF", "#1B1B1F", "xadrez"]) {
+    await pg.setViewportSize({ width: larguraSm, height: alturaSm });
+    await pg.setContent(
+      `<body style="margin:0">` +
+        `<div aria-hidden style="position:absolute;width:0;height:0">${folha}</div>` +
+        ESCOPO +
+        cena(comUniforme(128), alturaSm, fundo) +
+        `</body>`,
+    );
+    tiros.set(fundo, (await pg.screenshot()).toString("base64"));
+  }
+  const px56 = (fundo: string) =>
+    `<img src="data:image/png;base64,${tiros.get(fundo)}" width="${larguraSm * 5}" height="${alturaSm * 5}" ` +
+    `style="image-rendering:pixelated;border:1px solid #ddd">`;
+
+  await pg.setViewportSize({ width: 1480, height: 1180 });
+  await pg.setContent(
+    `<body style="margin:0;background:#fff;padding:14px;font:12px system-ui;color:#555">` +
+      `<div aria-hidden style="position:absolute;width:0;height:0">${folha}</div>${ESCOPO}` +
+      `<p style="margin:0 0 6px"><b>425 px — os quatro fundos.</b> Claro esconde buraco; magenta revela; ` +
+      `escuro revela halo claro; xadrez revela alfa parcial.</p>` +
+      `<div style="display:flex;gap:10px">` +
+      ["#EFEAE2", "#FF00FF", "#1B1B1F", "xadrez"]
+        .map((f) => fig(f === "xadrez" ? "quadriculado" : f, cena(comUniforme(1024), 425, f)))
+        .join("") +
+      fig("sem uniforme", cena(semUniforme, 425, "#EFEAE2", undefined, false)) +
+      `</div>` +
+      `<p style="margin:14px 0 6px"><b>56 px, ampliado 5×</b> — o tamanho que manda</p>` +
+      `<div style="display:flex;gap:10px">` +
+      ["#EFEAE2", "#FF00FF", "#1B1B1F", "xadrez"].map((f) => fig(f === "xadrez" ? "quadriculado" : f, px56(f))).join("") +
+      `</div>` +
+      `<p style="margin:14px 0 6px"><b>As fronteiras de perto</b>, sobre magenta</p>` +
+      `<div style="display:flex;gap:10px">` +
+      (
+        [
+          ["gola", "950 1420 700 700"],
+          ["punho e mão", "500 2150 620 620"],
+          ["ombro e braço", "700 1500 900 900"],
+          ["bota e tornozelo", "820 3000 900 700"],
+        ] as [string, string][]
+      )
+        .map(([rot, vb]) => fig(rot, cena(comUniforme(1920), 300, "#FF00FF", vb)))
+        .join("") +
+      `</div></body>`,
+  );
+  await pg.screenshot({ path: `${DIAG}/folha.png` });
+}
+
+/**
+ * BENCHMARK com 30 assets DISTINTOS.
+ *
+ * Repetir o mesmo PNG trinta vezes mediria cache: o navegador compartilha o
+ * bitmap decodificado de uma URL só, e o resultado sairia otimista e não
+ * representaria uma turma com uniformes diferentes. Aqui cada avatar recebe um
+ * asset próprio, gerado com matiz rodado — trinta bitmaps de verdade.
+ */
+async function benchmark(pg: Page, folha: string, dentro: string, quantos = 30) {
+  const distintos: string[] = [];
+  for (let i = 0; i < quantos; i++) {
+    const giro = Math.round((360 / quantos) * i);
+    const comGiro =
+      `<defs><filter id="g" color-interpolation-filters="sRGB">` +
+      `<feColorMatrix type="hueRotate" values="${giro}"/></filter></defs>` +
+      `<g filter="url(#g)">${dentro}</g>`;
+    distintos.push(b64png(await rasterizar(pg, comGiro, 128)));
+  }
+  const USO = `<use href="#avatar-base-neutro" x="0" y="0" width="${BASE_W}" height="${BASE_H}"/>`;
+  const um = (asset: string) =>
+    `<svg width="${larguraDe(128)}" height="128" viewBox="0 0 ${BASE_W} ${BASE_H}" ` +
+    `class="vestido" style="--av-pele:#E9B183;--av-cabelo:#3A2F2A">` +
+    `${USO}<image href="${asset}" x="0" y="0" width="${BASE_W}" height="${BASE_H}"/></svg>`;
+
+  const medir = async (assets: string[], rotulo: string) => {
+    await pg.setViewportSize({ width: 1200, height: 700 });
+    const t0 = Date.now();
+    await pg.setContent(
+      `<body style="margin:0;display:flex;flex-wrap:wrap;gap:2px"><style>.vestido .av-roupa,.vestido .av-forro-roupa{display:none}</style>` +
+        `<div aria-hidden style="position:absolute;width:0;height:0">${folha}</div>` +
+        assets.map(um).join("") +
+        `</body>`,
+    );
+    await pg.evaluate(
+      () => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => ok(null)))),
+    );
+    const ms = Date.now() - t0;
+    const distintasUrls = new Set(assets).size;
+    const bytes = distintasUrls * larguraDe(128) * 128 * 4;
+    console.log(
+      `  ${rotulo}: ${ms} ms · ${distintasUrls} bitmaps distintos · ${(bytes / 1048576).toFixed(2)} MiB decodificados`,
+    );
+    return ms;
+  };
+
+  console.log(`\nbenchmark com ${quantos} avatares:`);
+  const msIguais = await medir(new Array(quantos).fill(distintos[0]), "o MESMO asset 30 vezes (mede cache)");
+  const msDistintos = await medir(distintos, "30 assets DISTINTOS (mede o caso real)");
+  return { msIguais, msDistintos, bitmapMiB: (quantos * larguraDe(128) * 128 * 4) / 1048576 };
+}
+
 interface Violacao {
   gate: string;
   detalhe: string;
@@ -408,6 +623,33 @@ async function main() {
           gate: "memória do ranking",
           detalhe: `${mib30.toFixed(1)} MiB para 30 avatares, teto ${TETO_RANKING_MIB} MiB`,
         });
+
+      // Borda em pré-multiplicado, na variante grande e na do ranking.
+      for (const altura of [1920, 128]) {
+        const buf = readFileSync(`${DESTINO}/${NOME}-${altura}.png`);
+        const b = await conferirBorda(pg, buf);
+        console.log(
+          `  borda ${altura} px: ${b.transicao} px de transição · diferença média ${b.difMedia} · ` +
+            `acima de 40: ${b.pctPiores}%${b.semReferencia ? ` · sem referência: ${b.semReferencia}` : ""}`,
+        );
+        if (b.pctPiores > 2)
+          violacoes.push({
+            gate: "halo na borda",
+            detalhe:
+              `variante ${altura}: ${b.pctPiores}% dos pixels de transição divergem mais de 40 ` +
+              `(pré-multiplicado) da cor dos vizinhos opacos`,
+          });
+      }
+      // Folha visual e benchmark. Não são gates: a folha é para o olho, e o
+      // benchmark é número que a gente compara entre rodadas.
+      const folhaBase = readFileSync("public/items/base/avatar-base-neutro.svg", "utf-8");
+      const porAltura = new Map<number, string>(
+        VARIANTES.map((h) => [h, b64png(readFileSync(`${DESTINO}/${NOME}-${h}.png`))]),
+      );
+      await folhaVisual(pg, folhaBase, porAltura);
+      const bench = await benchmark(pg, folhaBase, dentro);
+      writeFileSync(`${DIAG}/benchmark.json`, JSON.stringify(bench, null, 2));
+      console.log(`  ${DIAG}/folha.png`);
     } finally {
       await pg.close();
     }
