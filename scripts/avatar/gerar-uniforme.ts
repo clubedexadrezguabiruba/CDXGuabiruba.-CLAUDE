@@ -43,6 +43,7 @@ import {
   area,
   derivarMascaras,
   dilatar,
+  faixa,
   intersecao,
   paraPngAlfa,
   recortes,
@@ -50,7 +51,9 @@ import {
   type Mascara,
   type MascarasBase,
 } from "./mascara-base";
-import { VARIANTES, corBota, larguraDe, lerUniforme, registro, type Uniforme } from "./uniforme";
+import { VARIANTES, corDominante, larguraDe, lerUniforme, registro } from "./uniforme";
+import { SENTINELA, composicao } from "./composicao";
+import { distancia } from "../../src/lib/avatar/palette";
 
 /**
  * A fonte é COMMITADA, como a da base.
@@ -75,41 +78,6 @@ const DIAG = ".scratch/uniforme";
 
 /** Teto de memória decodificada da variante do ranking, com 30 na tela. */
 const TETO_RANKING_MIB = 4;
-
-/** A solda que fecha fresta de antialiasing entre formas vizinhas do traço. */
-const SOLDA = `stroke-width="1.6" stroke-linejoin="round"`;
-
-const b64png = (buf: Buffer) => "data:image/png;base64," + buf.toString("base64");
-
-/** A composição vetorial, pronta para rasterizar em qualquer tamanho. */
-function composicao(u: Uniforme, m: MascarasBase): string {
-  const { pano, fundo } = recortes(m);
-  const dim = { w: m.w, h: m.h };
-  const mask = (id: string, href: string) =>
-    `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${BASE_W}" height="${BASE_H}" style="mask-type:alpha">` +
-    `<image href="${href}" x="0" y="0" width="${BASE_W}" height="${BASE_H}"/></mask>`;
-  // OCLUSÃO DO PÉ: a máscara do pé dentro do envelope permitido da bota.
-  //
-  // Sem ela a pele do pé aparece por baixo da sola, porque o asset fica
-  // transparente ali — medido, 2696 px. E a correção NÃO é preencher a folga da
-  // bota com a cor média do uniforme: isso recria o pedestal verde. A cor vem da
-  // própria bota, e esta camada fica ATRÁS da arte, então só aparece onde a bota
-  // não cobre.
-  // Dilatada em 2 px antes de intersectar: sem isso sobram 2 px de antialiasing
-  // na borda da máscara, e o gate é de tolerância zero. A dilatação fica presa
-  // dentro do envelope da bota pela interseção, então não vira orla escura.
-  const oclusaoPe = intersecao(dilatar(m.pes, { w: m.w, h: m.h }, 2), m.cobertura);
-  return (
-    `<defs>${mask("mp", b64png(paraPngAlfa(pano, dim)))}${mask("mf", b64png(paraPngAlfa(fundo, dim)))}` +
-    `${mask("mo", b64png(paraPngAlfa(oclusaoPe, dim)))}</defs>` +
-    // FUNDO primeiro, limitado ao corpo vestido. Ver a armadilha 1.
-    `<g mask="url(#mf)"><rect x="0" y="0" width="${BASE_W}" height="${BASE_H}" fill="${u.corFundo}"/></g>` +
-    `<g mask="url(#mo)"><rect x="0" y="0" width="${BASE_W}" height="${BASE_H}" fill="${corBota(u)}"/></g>` +
-    `<g mask="url(#mp)"><g transform="${registro(u).transform}">` +
-    u.pano.map((p) => `<path fill="${p.fill}" stroke="${p.fill}" ${SOLDA} d="${p.d}"/>`).join("") +
-    `</g></g>`
-  );
-}
 
 async function rasterizar(pg: Page, dentro: string, altura: number): Promise<Buffer> {
   const largura = larguraDe(altura);
@@ -563,8 +531,29 @@ async function main() {
       `(anisotropia ${(((r.escY / r.escX) - 1) * 100).toFixed(1)}%), deslocamento (${r.dx.toFixed(0)}, ${r.dy.toFixed(0)})`,
   );
 
-  const nav: Browser = await chromium.launch();
   const violacoes: Violacao[] = [];
+
+  // FUNDO DE SEGURANÇA REPRESENTATIVO. Ele existe para ser invisível atrás da
+  // arte, então precisa ser a cor que a peça realmente veste. Quando não é, ele
+  // vira ORLA visível em toda a silhueta — medido no Aspirante: 5647 px da cor
+  // do fundo encostando na borda transparente, contra 7513 de 213422 (3,5%) no
+  // Recruta, que está certo.
+  //
+  // O teto de 40 é a mesma distância que a paleta usa para "contorno e
+  // preenchimento não se fundem", e o vão medido é de uma ordem de grandeza para
+  // cada lado: Recruta 7,7 · Aspirante 133,2.
+  const dominante = corDominante(u.pano);
+  const distFundo = distancia(u.corFundo, dominante);
+  console.log(`  cor dominante do pano ${dominante} · fundo dista ${distFundo.toFixed(1)} dela`);
+  if (distFundo > 40)
+    violacoes.push({
+      gate: "fundo de segurança representativo",
+      detalhe:
+        `o fundo (${u.corFundo}) dista ${distFundo.toFixed(1)} da cor dominante do pano (${dominante}), teto 40 — ` +
+        `ele vai aparecer como orla na silhueta inteira. A cor média pegou a peça errada.`,
+    });
+
+  const nav: Browser = await chromium.launch();
   try {
     const m = await derivarMascaras(nav);
     const { pano: recortePano, fundo: recorteFundo } = recortes(m);
@@ -617,7 +606,14 @@ async function main() {
           detalhe: `${fora.fora} px opacos fora da máscara (${pctFora.toFixed(2)}%) — o recorte não está sendo aplicado`,
         });
 
-      const naPele = await contarContra(pg, master, m, m.peleFrente);
+      // A PELE QUE PRECISA FICAR LIVRE é a que NÃO está sob roupa: rosto, orelhas
+      // e as mãos de verdade. `peleFrente` inteira inclui a costura em que a pele
+      // passa por baixo da gola e do punho — 2851 px que o macacão cobre por
+      // direito, e que o fundo de segurança agora pinta de propósito. Medir a
+      // `peleFrente` inteira contava essa costura e dava 0,91% num boneco de
+      // rosto perfeitamente limpo.
+      const peleDescoberta = subtrair(m.peleFrente, m.corpoVestido);
+      const naPele = await contarContra(pg, master, m, peleDescoberta);
       const pctNaPele = (naPele.dentro / (naPele.dentro + naPele.fora)) * 100;
       if (pctNaPele > 0.5)
         violacoes.push({
@@ -629,9 +625,30 @@ async function main() {
       // vestido — só o PANO pode estar. Fundo de segurança ali é o bloco verde
       // sob os pés, e CONTAR PIXELS NÃO BASTA: a bota ocupa essa região por
       // direito. O que denuncia o defeito é a cor ser a do fundo, que é chapada.
-      const folgaBota = subtrair(m.cobertura, m.corpoVestido);
+      // SÓ A FAIXA DA BOTA. `cobertura − corpoVestido` é o anel inteiro em volta
+      // do corpo, e o pedestal é um defeito do pé para baixo. Medir o anel todo
+      // fazia a sangria de 1 px do fundo — ~4 mil px de perímetro, invisível e de
+      // propósito — comer quase todo o teto de 5 mil, deixando o gate a um passo
+      // de reprovar um boneco limpo.
+      const folgaBota = faixa(
+        subtrair(m.cobertura, m.corpoVestido),
+        { w: m.w, h: m.h },
+        m.marcos.yBota,
+        m.h - 1,
+      );
       const naFolga = await contarContra(pg, master, m, folgaBota);
-      const pedestal = await contarCor(pg, master, m, folgaBota, u.corFundo);
+      // O PEDESTAL É MEDIDO NA COMPOSIÇÃO SENTINELA, não por cor no asset final.
+      //
+      // Contar "pixels da cor do fundo" só funcionava enquanto a cor do fundo era
+      // uma média que não batia com nenhuma forma da arte. Desde que ela passou a
+      // ser a cor DOMINANTE do pano, a barra da calça — que ocupa a folga da bota
+      // por direito — casa com ela dentro dos ±4 e é contada: 475 px viraram 5385
+      // sem nenhum defeito novo, e o gate reprovaria um boneco limpo.
+      //
+      // Com a sentinela não há colisão possível: o fundo é a única coisa amarela
+      // na composição, e o que se conta é a CAMADA, não uma coincidência de cor.
+      const sentinelaPng = await rasterizar(pg, composicao(u, m, true), 1920);
+      const pedestal = await contarCor(pg, sentinelaPng, m, folgaBota, SENTINELA.fundo);
       // O teto sai da MAGNITUDE do defeito, não de um número escolhido: quando o
       // pedestal existiu de verdade, o fundo cobria a folga inteira, uns 30 mil px.
       // O que passa por direito é a barra da calça, que cai nessa região e tem a
@@ -641,7 +658,7 @@ async function main() {
         violacoes.push({
           gate: "pedestal sob as botas",
           detalhe:
-            `${pedestal} px da cor do fundo (${u.corFundo}) na folga da bota — ` +
+            `${pedestal} px da CAMADA de fundo na folga da bota (medido na sentinela) — ` +
             `o fundo escorreu para fora do corpo vestido. As duas máscaras de recorte viraram uma?`,
         });
       console.log(

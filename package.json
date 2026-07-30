@@ -38,7 +38,9 @@
     "verify:phase8": "npm run verify:avatar-assets && npm run verify:avatar-db && npm run verify:chest-pool",
     "verify:all": "npm run verify:phase2 && npm run verify:seeds && npm run verify:revanche && npm run verify:rush && npm run verify:phase5 && npm run verify:phase6 && npm run verify:phase8 && npm run verify:turmas && npm run verify:privileges && npm run verify:xp-curve && npm run verify:no-dup-rpc && npm run verify:puzzle-authority",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "avatar:proveniencia": "tsx scripts/avatar/proveniencia.ts",
+    "avatar:base-sem-traje": "tsx scripts/avatar/gerar-base-sem-traje.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.70",

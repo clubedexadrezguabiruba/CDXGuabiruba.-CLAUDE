@@ -13,6 +13,7 @@ export const AVATAR_ASSETS: readonly string[] = [
   "/items/base/avatar-base-female.png",
   "/items/base/avatar-base-male.png",
   "/items/base/avatar-base-neutro.svg",
+  "/items/base/avatar-base-sem-traje.svg",
   "/items/bg/biblioteca.png",
   "/items/bg/castelo.png",
   "/items/bg/ceu-estrelado.png",

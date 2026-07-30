@@ -77,8 +77,19 @@ A **pele vive entre 17° e 29°**. O classificador separa pele de pano por matiz
 | verde-oliva `#7A8C55` | 80° | ✅ folga de 35° |
 | azul-acinzentado `#6B87A8` | 210° | ✅ folga enorme |
 | cinza-azulado | 200–220° | ✅ |
+| azul-ardósia `#3E5670` | 211° | ✅ o Aspirante |
 | creme-pêssego | ~30° | ❌ **grudado na pele** |
 | marrom, caramelo, couro | 20–30° | ❌ **vira pele** |
+| dourado `#C9B37E` | 42° | ❌ por 3° |
+| **cinza ou branco NEUTRO** (`R=G=B`) | **0°** | ❌ **matiz indefinido vira 0** |
+
+**Forma descartada não muda de cor: ela SOME.** Só o pano entra no asset, então um
+cinto reprovado deixa o fundo de segurança chapado no lugar do cinto.
+
+A última linha é a que ninguém antevê. Com `R=G=B` o delta é zero e o matiz sai
+**0°**, abaixo do corte. **Um galão branco ou um cinto cinza neutro desaparece.**
+Detalhe claro precisa ser *tingido* — `#D8DEE6` (214°) e `#B9C4D0` (211°) passam;
+`#F0F0F0` não.
 
 **Uma bota marrom não é "cor errada": ela é entendida como PELE** e muda de cor
 junto com o tom do aluno. Foi medido: numa rodada em que o macacão saiu
@@ -226,6 +237,7 @@ sempre da razão canônica, **nunca herdada** de outra variante.
 | gate | limite | se reprovar, a causa provável |
 |---|---|---|
 | máscaras distintas | pano > fundo | alguém unificou os dois recortes |
+| **fundo representativo** | dista ≤ 40 da cor dominante | a cor média pegou um detalhe em vez do pano — **vira orla na silhueta inteira** |
 | alfa fora da cobertura | ≤ 0,5% | o recorte não está sendo aplicado |
 | cabeça e mãos vazadas | ≤ 0,5% sobre `peleFrente` | o buraco não foi aberto; a gola cobriria o rosto |
 | pedestal sob as botas | ≤ 5.000 px da cor do fundo | o **fundo** escorreu para a folga da bota |
@@ -233,6 +245,39 @@ sempre da razão canônica, **nunca herdada** de outra variante.
 | caixa e centro entre variantes | ≤ 1 px | largura herdada em vez de canônica |
 | memória do ranking | ≤ 4 MiB | a variante de 128 cresceu |
 | halo na borda | ≤ 2% acima de 40 | resíduo de cor na faixa de transição |
+
+## 7.0 O fundo de segurança precisa ser a cor que a peça VESTE
+
+Ele é invisível atrás da arte. O único lugar onde ele erra em público é a
+**borda** — e ali erra na silhueta inteira.
+
+Descoberto no Aspirante, a primeira peça em família de cor diferente do oliva. A
+cor média filtrava `lum > 0.3` para o contorno preto não puxar o resultado, e
+esse **0,3 era o oliva** (lum 0,503). O azul-ardósia tem os três tons principais
+entre **0,260 e 0,279**: todos caíram fora. Sobrou uma forma só, a listra clara
+da calça, e ela virou o fundo da peça inteira.
+
+| | Recruta | Aspirante, antes |
+|---|---|---|
+| fundo | `#737e38` | **`#859dab`** — a listra, não a farda |
+| distância até a cor dominante do pano | **7,7** | **133,2** |
+| px do fundo encostando na borda transparente | 7.513 de 213.422 (3,5%) | **5.647 de 21.354 (26,4%)** |
+
+O teto de **40** é a mesma distância que a paleta usa para "contorno e
+preenchimento não se fundem", e o vão medido é de uma ordem de grandeza para cada
+lado.
+
+**A correção não foi baixar o corte, foi tirá-lo.** A cor do fundo passou a ser o
+**maior GRUPO de cores vizinhas** (raio 20 em RGB): o traçador quebra um pano
+chapado em vários tons quase iguais — o oliva do Recruta sai em cinco, nenhum com
+15% do pano — e somados eles ganham do contorno, que sozinho tem 12,2%. Separados,
+quase empatam. O Recruta continua dando exatamente `#737e38`, então a peça que já
+passava não mudou.
+
+**A lição geral:** todo número calibrado numa peça só é uma premissa sobre aquela
+peça. Aqui o gate de halo até reprovou, mas por tabela e raspando (3,31% contra
+teto de 2%, e só na variante de 128) — sintoma, não causa. **O gate que vale mede
+a causa e falha antes de rasterizar.**
 
 ## 7.1 Pedestal e pé visível são defeitos OPOSTOS
 
@@ -319,6 +364,16 @@ pulso, e a sola contra o chão. São as três fronteiras onde os defeitos morara
 - [ ] Folha visual lida nos quatro fundos, com atenção a gola, punho e sola
 - [ ] A 56 px o uniforme se distingue do traje de treino
 - [ ] A cor registrada aqui, para as outras patentes não repetirem
+
+## 10.2 Cores já usadas — não repetir
+
+| patente | fonte | dominante do pano | fundo | bota |
+|---|---|---|---|---|
+| **Soldado** (hoje nomeado `recruta`) | `fonte/uniformes/recruta.svg` | `#78833B` oliva, 69° | `#737e38` | `#2d3012` |
+| **Aspirante** | `fonte/uniformes/aspirante.svg` | `#384966` ardósia, 218° | `#354663` | `#1e2b44` |
+
+As duas distam 149° em matiz — a 56 px o uniforme é **só cor**, gola e cinto somem,
+então é a massa de cor que precisa separar as patentes.
 
 ## 10.1 Quando algo novo aparecer
 

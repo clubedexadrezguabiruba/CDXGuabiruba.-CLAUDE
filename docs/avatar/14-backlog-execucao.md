@@ -340,7 +340,12 @@ Soldado no backfill, e o ranking já mostra.
 
 ## Arte (primeira passada minha, refino seu)
 
-- [ ] **T4.1** 🤖 6 uniformes restantes (Aspirante → Lenda), silhueta constante
+- [x] **T4.1** 🤖 **Aspirante feito** — os 5 acima (Capitão → Lenda) ficam de fora,
+      são inalcançáveis até o conteúdo crescer, e o gate reprova uniforme em marco
+      inalcançável. Arte em `fonte/uniformes/aspirante.svg`, ardósia `#384966`,
+      9 de 9 gates. Expôs um defeito que o oliva escondia: o corte `lum > 0.3` da
+      cor de fundo era calibrado no oliva e apagava a peça inteira do Aspirante —
+      ver a §7.0 do doc 16
 - [ ] **T4.2** 🤖 5 cabelos
 - [ ] **T4.3** 🤖 6 chapéus
 - [ ] **T4.4** 🤖 6 relíquias (2 famílias × 3 tiers)

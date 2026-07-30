@@ -14,6 +14,7 @@ import {
   MATIZ_PANO,
   VARIANTES,
   corBota,
+  corDominante,
   corMedia,
   ehPano,
   formasDe,
@@ -25,6 +26,7 @@ import {
   type Forma,
 } from "../uniforme";
 import { BASE_H, BASE_W, Y_PESCOCO, Y_SOLA } from "../mascara-base";
+import { distancia } from "../../../src/lib/avatar/palette";
 
 describe("qual variante servir", () => {
   // Os oito casos obrigatórios: os quatro tamanhos do plano nos DPR que existem.
@@ -137,14 +139,25 @@ describe("cor média do fundo de segurança", () => {
     expect(media).toBe("#78833b");
   });
 
-  it("ignora o pano escuro do contorno e da bota", () => {
-    // Só o pano grande, claro e de matiz de oliva entra na média — senão o fundo
-    // sai quase preto e aparece como sombra onde o pano não alcança.
-    const media = corMedia([f("#78833B", 50000), f("#1B1C0A", 40000)]);
+  it("o contorno escuro perde do pano, por ÁREA e não por ser escuro", () => {
+    // O contorno forma o seu próprio grupo, longe do pano, e perde porque ocupa
+    // menos. Nada aqui olha luminosidade: era o corte absoluto que apagava a
+    // peça inteira do Aspirante, escura por desenho.
+    expect(corMedia([f("#78833B", 50000), f("#1B1C0A", 40000)])).toBe("#78833b");
+  });
+
+  it("os tons quase iguais que o traçador cria contam JUNTOS", () => {
+    // O oliva do Recruta saiu em cinco tons, nenhum com 15% do pano; somados,
+    // ganham do contorno, que sozinho tem 12%. Separados, quase empatam.
+    const media = corMedia([
+      f("#78833B", 12000), f("#6E7935", 11000), f("#737E38", 10000), f("#717C37", 9000),
+      f("#1B1C0A", 30000),
+    ]);
+    expect(hsl(media).h).toBeGreaterThanOrEqual(MATIZ_PANO);
     expect(hsl(media).lum).toBeGreaterThan(0.4);
   });
 
-  it("cai para todas as formas quando nenhuma passa o filtro", () => {
+  it("uma peça de uma cor só não quebra", () => {
     expect(() => corMedia([f("#1B1C0A", 100)])).not.toThrow();
   });
 });
@@ -234,9 +247,38 @@ describe("a arte real de uniforme que está commitada", () => {
     expect(u.pescoco).toBeLessThan((u.fig[1] + u.fig[3]) / 2);
   });
 
-  it("a cor de fundo é o oliva do pano, não preto nem pele", () => {
-    const { h, lum } = hsl(lerUniforme(svg).corFundo);
+  it("a cor de fundo é pano, não preto nem pele", () => {
+    // O `lum > 0.3` que este teste exigia era a premissa do OLIVA (lum 0,503).
+    // O Aspirante é azul-ardósia, com os três tons principais entre 0,260 e
+    // 0,279 — legitimamente escuro. O que vale para as duas peças é o matiz.
+    const { h } = hsl(lerUniforme(svg).corFundo);
     expect(h).toBeGreaterThanOrEqual(MATIZ_PANO);
-    expect(lum).toBeGreaterThan(0.3);
+  });
+});
+
+/**
+ * O FUNDO DE SEGURANÇA PRECISA SER A COR QUE A PEÇA VESTE.
+ *
+ * Ele é invisível atrás da arte, então o único lugar onde erra em público é a
+ * borda: quando o fundo do Aspirante saiu `#859dab` — a listra clara da calça,
+ * a única forma que sobrevivia ao corte de luminosidade calibrado no oliva — o
+ * resultado foi uma ORLA cinza-clara em volta da silhueta inteira, com 5647 px
+ * encostando na borda transparente contra 3,5% no Recruta.
+ *
+ * O vão medido justifica o teto: Recruta 7,7 · Aspirante 133,2 antes do
+ * conserto. As duas peças commitadas entram aqui porque uma sozinha não prova
+ * nada — foi exatamente uma peça só que calibrou o corte errado.
+ */
+describe("o fundo de segurança representa o pano", () => {
+  it.each(["recruta", "aspirante"])("%s", (nome) => {
+    const u = lerUniforme(readFileSync(`scripts/avatar/fonte/uniformes/${nome}.svg`, "utf-8"));
+    expect(distancia(u.corFundo, corDominante(u.pano))).toBeLessThanOrEqual(40);
+  });
+
+  it("a cor da bota é bem mais escura que o fundo, senão a oclusão vira pedestal", () => {
+    for (const nome of ["recruta", "aspirante"]) {
+      const u = lerUniforme(readFileSync(`scripts/avatar/fonte/uniformes/${nome}.svg`, "utf-8"));
+      expect(hsl(corBota(u)).lum).toBeLessThan(hsl(u.corFundo).lum);
+    }
   });
 });

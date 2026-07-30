@@ -8,6 +8,7 @@
  */
 
 import { BASE_H, BASE_W, Y_PESCOCO, Y_SOLA } from "./mascara-base";
+import { distancia } from "../../src/lib/avatar/palette";
 
 /**
  * Alturas das variantes. Cobrem os 4 tamanhos do plano até DPR 3.
@@ -79,6 +80,15 @@ export function hsl(hex: string): Cor {
  * é a razão da regra de arte "pele e pano em matizes distantes".
  */
 export const MATIZ_PANO = 45;
+
+/**
+ * Distância RGB até a qual dois tons do traçador são a MESMA cor de pano.
+ *
+ * É o mesmo 20 que a paleta usa como "irmãos de um conjunto se distinguem"; aqui
+ * ele vale ao contrário, para reunir o que o traçador separou. Os cinco olivas do
+ * Recruta distam menos de 12 entre si; o oliva e o contorno preto distam 116.
+ */
+const RAIO_FAMILIA = 20;
 
 export interface Forma {
   fill: string;
@@ -160,18 +170,65 @@ export function ehPano(p: Forma, pescoco: number): boolean {
   return false;
 }
 
-/** Cor média do pano grande, ponderada pela área. */
+/**
+ * A cor que MAIS OCUPA o pano, somando área por cor.
+ *
+ * É a referência contra a qual o fundo de segurança é conferido. Não tem
+ * calibração nenhuma dentro: só soma área e ordena, então ela vale igual para
+ * oliva, para azul-ardósia e para o que vier depois.
+ */
+export function corDominante(pano: Forma[]): string {
+  const porCor = new Map<string, number>();
+  for (const p of pano) porCor.set(p.fill, (porCor.get(p.fill) ?? 0) + p.a);
+  const ord = [...porCor].sort((a, b) => b[1] - a[1]);
+  if (!ord.length) throw new Error("cor dominante: nenhuma forma de pano");
+  return ord[0][0];
+}
+
+/**
+ * Cor do pano que MAIS OCUPA a peça — o fundo de segurança.
+ *
+ * O traçador quebra um pano chapado em vários tons quase iguais: o oliva do
+ * Recruta sai em cinco (#78833B, #6E7935, #737E38, #717C37, #76813A), nenhum
+ * deles com mais de 15% do pano. Por isso a conta é por GRUPO de cores vizinhas,
+ * e não por cor: somada, a família do pano ganha de longe; separada, ela quase
+ * empata com o contorno preto, que no Recruta tem 12,2% contra 14,5%.
+ *
+ * NÃO HÁ CORTE DE LUMINOSIDADE AQUI, e a ausência é o ponto. A versão anterior
+ * filtrava `lum > 0.3` para o contorno escuro não puxar a média — número
+ * calibrado no oliva (lum 0,503) que reprovava a peça inteira do Aspirante, cujos
+ * três tons principais vivem entre 0,260 e 0,279. Sobrava uma única forma clara,
+ * a listra da calça, e ela virava o fundo de toda a peça: uma ORLA cinza-clara em
+ * volta da silhueta, medida em 5647 px encostando na borda transparente.
+ *
+ * Agrupar resolve sem calibração nova: o contorno preto forma o seu próprio
+ * grupo e perde por área. Medido, dá `#737e38` no Recruta — o mesmo valor de
+ * antes, então a peça que já passava não muda — e `#354663` no Aspirante.
+ */
 export function corMedia(pano: Forma[]): string {
-  const grandes = pano.filter((p) => p.a > 2000 && hsl(p.fill).h >= MATIZ_PANO && hsl(p.fill).lum > 0.3);
-  const alvo = grandes.length ? grandes : pano;
-  const soma = alvo.reduce(
-    (acc, p) => {
-      const [r, g, b] = [1, 3, 5].map((i) => parseInt(p.fill.slice(i, i + 2), 16));
-      return [acc[0] + r * p.a, acc[1] + g * p.a, acc[2] + b * p.a, acc[3] + p.a];
+  const porCor = new Map<string, number>();
+  for (const p of pano) porCor.set(p.fill, (porCor.get(p.fill) ?? 0) + p.a);
+  // maior primeiro: o anchor de cada grupo é a cor de maior área dele
+  const cores = [...porCor].sort((a, b) => b[1] - a[1]);
+  if (!cores.length || !cores[0][1]) throw new Error("cor média: nenhuma forma com área");
+
+  const grupos: { anchor: string; membros: [string, number][]; area: number }[] = [];
+  for (const [cor, a] of cores) {
+    const g = grupos.find((g) => distancia(g.anchor, cor) <= RAIO_FAMILIA);
+    if (g) {
+      g.membros.push([cor, a]);
+      g.area += a;
+    } else grupos.push({ anchor: cor, membros: [[cor, a]], area: a });
+  }
+  grupos.sort((a, b) => b.area - a.area);
+
+  const soma = grupos[0].membros.reduce(
+    (acc, [cor, a]) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(cor.slice(i, i + 2), 16));
+      return [acc[0] + r * a, acc[1] + g * a, acc[2] + b * a, acc[3] + a];
     },
     [0, 0, 0, 0],
   );
-  if (!soma[3]) throw new Error("cor média: nenhuma forma com área");
   const hx = (v: number) => Math.round(v / soma[3]).toString(16).padStart(2, "0");
   return `#${hx(soma[0])}${hx(soma[1])}${hx(soma[2])}`;
 }

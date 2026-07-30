@@ -63,6 +63,18 @@ interface ItemDb {
 const ASSETS_ESTRUTURAIS = new Set([
   "/items/base/avatar-base-male.png",
   "/items/base/avatar-base-female.png",
+  // O CORPO NÃO É UM ITEM DE CATÁLOGO. Nenhuma linha de `items` aponta para ele,
+  // e nenhuma deve: ninguém equipa o próprio corpo.
+  //
+  // O neutro estava fora desta lista desde que a base virou SVG, e o gate
+  // reprovava por isso — descoberto ao acrescentar o sem-traje, não causado por
+  // ele. É a mesma família de falha que este gate existe para pegar, só que no
+  // gate.
+  "/items/base/avatar-base-neutro.svg",
+  // Derivado do neutro por `npm run avatar:base-sem-traje`. É o que o avatar
+  // VESTIDO usa: a ausência do macacão precisa ser estrutural, porque a regra de
+  // CSS que a fingia não alcança o conteúdo de `<use>`.
+  "/items/base/avatar-base-sem-traje.svg",
 ]);
 
 async function main() {

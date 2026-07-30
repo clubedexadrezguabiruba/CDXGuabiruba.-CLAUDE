@@ -64,6 +64,17 @@ export interface MascarasBase {
    * sola: foi o defeito que a folha visual pegou e nenhum gate viu.
    */
   pes: Mascara;
+  /**
+   * O VÃO ANATÔMICO: entre braço e tronco, e entre as pernas.
+   *
+   * Ali o resultado certo é o FUNDO DA PÁGINA. Nem uniforme, nem roupa da base,
+   * nem forro — é buraco de verdade, e fechá-lo engorda o boneco.
+   *
+   * Existe porque `cobertura` é dilatada em 40 unidades e essa dilatação FECHA o
+   * vão, que é estreito. A dilatação continua sendo teto; o vão é a exclusão
+   * explícita que impede o teto de virar piso.
+   */
+  vaoAnatomico: Mascara;
   marcos: Marcos;
 }
 
@@ -151,6 +162,22 @@ export function dilatar(m: Mascara, dim: Dim, raioPx: number, so?: (y: number) =
       }
     }
   }
+  return out;
+}
+
+/**
+ * Encolhe a máscara em `raioPx`. É o complemento da dilatação do complemento.
+ *
+ * Serve para usar uma máscara como REGIÃO DE TESTE sem encostar na própria borda:
+ * a silhueta da base é limiarizada, então 1 px de discordância na fronteira é
+ * inevitável e não é defeito de composição.
+ */
+export function erodir(m: Mascara, dim: Dim, raioPx: number): Mascara {
+  const fora = new Uint8Array(m.length);
+  for (let p = 0; p < m.length; p++) fora[p] = m[p] ? 0 : 1;
+  const cresceu = dilatar(fora, dim, raioPx);
+  const out = new Uint8Array(m.length);
+  for (let p = 0; p < m.length; p++) out[p] = m[p] && !cresceu[p] ? 1 : 0;
   return out;
 }
 
@@ -288,6 +315,26 @@ export async function derivarMascaras(
   // então tudo que é pele abaixo dali é pé.
   const pes = faixa(pele.m, dim, tornozelo, dim.h - 1);
 
+  // VÃO ANATÔMICO: o buraco entre braço e tronco, e entre as pernas.
+  //
+  // Sai da silhueta da BASE INTEIRA — pano mais pele. Derivá-lo só do macacão
+  // classificava a pele do próprio boneco como vão: medido, 7981 px de `av-pele`
+  // dentro de um "vão" que não era vão.
+  //
+  // E ele se declara pela TOPOLOGIA da linha, sem faixa de altura escolhida a
+  // dedo: uma linha na altura do braço tem três corridas acesas — braço, tronco,
+  // braço — e o espaço entre corridas é o vão. A primeira versão usava uma faixa
+  // de 36% a 62% e pegou o entalhe do pescoço, enquanto os resíduos reais moravam
+  // em y 1400–1560, fora dela.
+  const silhuetaToda = unir(unir(traje.m, pele.m), pes);
+  const vaoAnatomico = new Uint8Array(dim.w * dim.h);
+  for (let y = 0; y < dim.h; y++) {
+    const corridas = vaos(silhuetaToda, dim, y);
+    if (corridas.length < 2) continue;
+    for (let c = 0; c + 1 < corridas.length; c++)
+      for (let x = corridas[c][1] + 1; x < corridas[c + 1][0]; x++) vaoAnatomico[y * dim.w + x] = 1;
+  }
+
   return {
     w: dim.w,
     h: dim.h,
@@ -296,6 +343,7 @@ export async function derivarMascaras(
     peleFrente,
     corpoVestido: traje.m,
     pes,
+    vaoAnatomico,
     marcos: { topoTraje, tornozelo, yGola, yBota },
   };
 }
@@ -308,8 +356,39 @@ export async function derivarMascaras(
  */
 export function recortes(m: MascarasBase): { pano: Mascara; fundo: Mascara } {
   return {
-    pano: subtrair(m.cobertura, m.peleFrente),
-    fundo: subtrair(m.corpoVestido, m.peleFrente),
+    // O VÃO SAI DOS DOIS RECORTES. A dilatação de 40 unidades da `cobertura`
+    // fecha o vão entre braço e tronco, e sem esta subtração a arte pinta por
+    // cima dele — o boneco perde o vazado e engorda. Teto continua teto: o vão é
+    // exclusão explícita, não um piso disfarçado.
+    pano: subtrair(subtrair(m.cobertura, m.peleFrente), m.vaoAnatomico),
+    // O FUNDO NÃO SUBTRAI `peleFrente`, e isso custou um defeito.
+    //
+    // Subtraindo, as DUAS camadas abriam o mesmo buraco, e na costura em que a
+    // pele encosta no macacão nenhuma das duas pintava: 2851 px em que a base
+    // aparecia crua — bege do macacão na gola, no punho e no vão entre braço e
+    // tronco. `corpoVestido` é a silhueta do macacão e já exclui cabeça e mãos,
+    // então subtrair a pele dele não protegia rosto nenhum: só abria a costura.
+    //
+    // Onde a arte cobre, este fundo continua invisível — ele é fundo. Onde a arte
+    // falha, agora aparece a cor do pano, que é a resposta certa numa região que
+    // por definição é vestida.
+    //
+    // E DILATADO EM 1 px, que é sangria e não folga. A máscara é 1278×1920,
+    // desenhada em 2556×3840 e rasterizada de volta: duas reamostragens deixam
+    // colunas de 1 px de largura com alfa abaixo de 128 exatamente na borda.
+    // Medido: 66 px no Aspirante e 94 no Recruta, todos com 1 px de largura,
+    // 100% encostando na borda, e NAS MESMAS COORDENADAS nas duas peças — prova
+    // de que é geometria de máscara, não desenho. O 1 px extra fica sob a arte,
+    // que se estende 40 unidades além daqui.
+    // O vão sai do fundo EROÍDO em 1 px, e a assimetria é de propósito: a
+    // fronteira entre corpo e vão vale ±1 px pela limiarização da silhueta, então
+    // o que PREENCHE é generoso em 1 px e o que TESTA é estrito em 1 px. Sem
+    // isso, a mesma coluna de 1 px reabria na borda do vão — medida em 40 px,
+    // idênticos nas duas peças, o que prova geometria e não desenho.
+    fundo: subtrair(
+      dilatar(m.corpoVestido, { w: m.w, h: m.h }, 1),
+      erodir(m.vaoAnatomico, { w: m.w, h: m.h }, 1),
+    ),
   };
 }
 
