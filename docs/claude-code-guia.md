@@ -7,6 +7,10 @@
 Nada neste doc está instalado. Os blocos de configuração são para copiar quando
 você decidir — não mexi em `.claude/` nem em `settings.json`.
 
+> **Procurando o texto pronto para colar?** Está em
+> [claude-code-blocos.md](claude-code-blocos.md). Este aqui é para ler e entender;
+> aquele é para abrir, copiar e fechar.
+
 ---
 
 ## O diagnóstico primeiro
@@ -34,6 +38,87 @@ ferramenta, não só na disciplina.
 **4. Sua superfície de customização está vazia.** Existe só o
 `.claude/settings.local.json`, com 22 permissões acumuladas ao acaso. Zero slash
 commands, zero hooks, zero `settings.json` versionado. É onde tem mais ganho parado.
+
+---
+
+## 0. O diagnóstico medido
+
+> O diagnóstico acima saiu do **repositório** — commits, scripts, config. Ele
+> inferiu o seu comportamento pelo que sobrou no git. Esta seção é a versão
+> medida: saiu das **16 transcrições de sessão** em
+> `~/.claude/projects/c--Users-Lenovo-Desktop-cdxguabirubaCLAUDE/`, 131 MB, com
+> os 187 prompts que você digitou. Números medidos em 30/07/2026, não estimados.
+
+| Medida | Valor |
+|---|---|
+| Sessões / prompts digitados por você | 16 / 187 |
+| **Slash commands usados em toda a história** | **0** |
+| **Estouros de contexto** (auto-compact disparado) | **5** |
+| Sessão mais longa | 51,7 h — com 9 prompts e 483 chamadas de ferramenta |
+| Sessão maior | 50 MB, 21,3 h, 60 prompts, 503 chamadas |
+| Prompts de 60 caracteres ou menos | 85 de 187 (45%) |
+| Chamadas Bash | 1096 — dentre elas 113 `grep`, 91 `cat`, 88 `sed`, 55 `ls` |
+| Chamadas de subagente (delegação) | 17 |
+| Mesmo PNG relido numa única sessão | `folha-recolor.png` 11×, `cab-1.png` 9×, `xl.png` 8× |
+| Saídas de terminal coladas por você na mão | 4, de 1,5 mil a 8,9 mil caracteres |
+
+### O que fazer com cada número
+
+**1. Imagem é o seu maior custo de contexto — e é o que você mais usa.**
+O mesmo PNG relido 11 vezes numa sessão é o que produziu o arquivo de 50 MB e
+boa parte dos 5 estouros. Trabalho de arte exige verificação visual, então isso
+não vai desaparecer; o que dá para mudar é a forma. Peça a **folha de contato**
+(você mesmo inventou isso, commit `7687a87`) em vez de N imagens soltas, reduza a
+resolução antes de eu abrir, e quando eu já tiver descrito um defeito, peça que eu
+trabalhe **pela descrição** em vez de reabrir a imagem. Reler a mesma arte não me
+faz enxergar melhor — só reocupa o espaço.
+
+**2. Você nunca gerenciou contexto; o sistema fez por você, e pior.**
+Zero slash commands e 5 auto-compacts contam a mesma história: quando lotou, o
+sistema resumiu sozinho — e resumo cego é exatamente onde decisão de arte se
+perde. Numa sessão você escreveu um handoff à mão ("*Sessão anterior ficou longa;
+tudo relevante está com...*"). O instinto estava certo, a ferramenta é o
+`/compact <instrução>`. Ver §2.
+
+**3. Suas sessões duram de 21 a 52 horas.**
+Uma delas: 51,7 h para 9 prompts. Isso é uma janela aberta ao longo de dias, não
+uma sessão. Uma sessão deveria ser uma tarefa. Ver §3.
+
+**4. Aprovação em cascata.**
+45% dos seus prompts têm 60 caracteres ou menos, e boa parte é literalmente
+`"sim"`, `"prossiga"`, `"siga"`, `"tente de novo"`. Em algumas sessões isso dá
+~54 chamadas de ferramenta por prompt seu — eu corro muito, sozinho, e você
+carimba no fim. Um `"sim"` **depois de um plano** é ótimo: barato e informado. Um
+`"sim"` sem plano é cheque em branco, e se eu peguei a direção errada você só
+descobre 50 ferramentas depois. Plan mode (§4) move o seu esforço para antes,
+onde ele custa pouco e decide muito.
+
+**5. Você cola saída de terminal na mão.**
+Quatro vezes, uma delas com 8,9 mil caracteres do `verify:all`. Isso é você
+rodando num terminal, copiando e colando aqui — trabalho seu que não precisa
+existir. Peça que **eu** rode; as permissões para os comandos de verificação já
+estão em `.claude/settings.json`.
+
+**6. Das 1096 chamadas Bash, cerca de 350 fazem o que ferramenta dedicada faz
+melhor.** `cat`, `grep`, `sed`, `ls` despejam texto cru; Read, Grep e Glob
+devolvem resultado estruturado e mais barato. Esse é comportamento **meu**, não
+seu — mas se incomodar, uma linha no `CLAUDE.md` resolve: *"prefira Read/Grep/Glob
+a cat/grep/sed/ls no Bash"*.
+
+**7. Você quase não delega: 17 subagentes.**
+Quando a pergunta é "onde está X" ou "quais arquivos fazem Y", um subagente lê os
+30 arquivos e devolve cinco linhas — os 30 nunca entram na sua sessão. Ver §2.
+
+**8. Você digitou `--enable-auto-mode` no chat, três vezes.**
+Isso é flag de linha de comando, não prompt: no chat vira texto e não faz nada. O
+que você queria está no `Shift+Tab`, que alterna os modos de permissão dentro da
+sessão.
+
+### Se for mudar só dois hábitos
+
+`/clear` ao trocar de assunto, e **folha de contato em vez de imagem solta** nas
+rodadas de arte. Os dois juntos atacam os 5 estouros de contexto, que é o que mais
+degrada suas sessões longas.
 
 ---
 
