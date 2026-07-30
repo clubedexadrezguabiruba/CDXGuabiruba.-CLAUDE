@@ -10,6 +10,7 @@
     "dev": "next dev",
     "avatar:manifest": "tsx scripts/avatar/gen-manifest.ts",
     "avatar:base": "tsx scripts/avatar/gerar-base-recolorivel.ts",
+    "avatar:garment": "tsx scripts/avatar/gerar-uniforme.ts",
     "prebuild": "tsx scripts/avatar/gen-manifest.ts --check",
     "build": "next build",
     "start": "next start",

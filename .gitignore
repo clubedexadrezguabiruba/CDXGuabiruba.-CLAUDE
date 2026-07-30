@@ -55,3 +55,6 @@ public/stockfish/
 /.validation-shots/
 /val-*.png
 /validation-*.png
+
+# Saída do avatar:garment — regenerável, e sai daqui para public/items no Bloco 7b
+scripts/avatar/uniformes/
