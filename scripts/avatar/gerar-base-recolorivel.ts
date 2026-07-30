@@ -488,28 +488,41 @@ export function gerar(): Resultado {
     LINHA,
   );
 
-  // FORRO — a silhueta inteira, por baixo de tudo.
+  // FORRO — a silhueta por baixo de tudo, em DUAS camadas.
   //
-  // Cada família já é um path único, então não há costura DENTRO da pele nem
-  // DENTRO do macacão. Sobra a costura ENTRE as duas: punho, tornozelo e
-  // pescoço são fronteiras onde dois paths vizinhos se encostam, e a fresta de
-  // antialiasing deixava o fundo da página vazar num fiapo branco em volta das
-  // mãos e dos pés.
+  // POR QUE EXISTE: cada família é um path único, então não há costura DENTRO da
+  // pele nem DENTRO do macacão. Sobra a costura ENTRE as duas — punho, tornozelo
+  // e pescoço, onde dois paths vizinhos se encostam — e a fresta de antialiasing
+  // deixava o fundo da página vazar num fiapo branco em volta das mãos e dos pés.
+  // Com um forro embaixo, a fresta mostra o forro em vez do fundo.
   //
-  // Com um forro embaixo, a fresta passa a mostrar o forro em vez do fundo.
-  // Ele é pintado com `var(--av-pele)` porque as três fronteiras que existem
-  // neste boneco são justamente pele contra roupa — nas três, o que deveria
-  // aparecer ali é pele.
-  // Só as formas grandes: o forro precisa cobrir a SILHUETA, não repetir cada
-  // detalhe interno. Com os 552 paths ele custava 182 KB — quase o dobro do
-  // desenho inteiro — para tapar frestas de meio pixel.
+  // POR QUE DUAS: o forro era um só, pintado de pele. Isso resolve a fresta e
+  // cria um defeito pior quando entra UNIFORME: onde o uniforme não coincide
+  // exatamente com o corpo, o que aparece é uma orla de PELE por cima da roupa —
+  // medido, até 52 unidades no ombro. Forro cor de pele por baixo de roupa é
+  // fonte de halo, não solução.
   //
-  // E sem a família `fundo`: o retângulo `#000000` que o trace põe no lugar da
-  // transparência é a MAIOR forma do arquivo. Dentro do forro ele pintava a
-  // página inteira de cor de pele, com o boneco por cima.
+  // A ORDEM IMPORTA, e é roupa embaixo, pele em cima:
+  //  - nas três fronteiras deste boneco (punho, tornozelo, pescoço) o que deve
+  //    aparecer é pele, e a pele em cima garante isso;
+  //  - na borda EXTERNA do tronco e dos braços, quem responde é o forro de roupa.
+  //
+  // `av-forro-roupa` é escondido junto com `av-roupa` quando há uniforme: aí a
+  // cobertura daquela região passa a ser responsabilidade do próprio uniforme,
+  // que traz a sangria dele. O forro da base não tem como saber a cor do uniforme.
+  //
+  // Só as formas grandes: o forro cobre a SILHUETA, não repete detalhe interno.
+  // Com os 552 paths ele custava 182 KB — quase o dobro do desenho inteiro — para
+  // tapar frestas de meio pixel. E sem a família `fundo`: o retângulo `#000000` do
+  // trace é a maior forma do arquivo, e dentro do forro ele pintava a página toda.
+  const silhuetaDe = (ps: Peca[]) =>
+    ps.filter((p) => p.a >= MIN_AREA).map((p) => p.d).join(" ");
+
   const forro =
-    `<path class="av-forro" fill="var(--av-pele)" stroke="var(--av-pele)" ${SOLDA}` +
-    ` d="${todas.filter((p) => familia(p) !== "fundo" && p.a >= MIN_AREA).map((p) => p.d).join(" ")}"/>`;
+    `<path class="av-forro-roupa" fill="${TRAJE_BASE.roupa}" stroke="${TRAJE_BASE.roupa}" ${SOLDA}` +
+    ` d="${silhuetaDe(porFam.roupa)}"/>` +
+    `<path class="av-forro-pele" fill="var(--av-pele)" stroke="var(--av-pele)" ${SOLDA}` +
+    ` d="${silhuetaDe([...porFam.pele, ...tinta])}"/>`;
 
   const corpo =
     forro +
