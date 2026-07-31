@@ -22,7 +22,7 @@
 
 | # | Decisão | Escolha | Por quê, em uma linha |
 |---|---|---|---|
-| D1 | Proporção | **1:3 provisório — decidir por medição na F0** | eu afirmei que "1:2 não deixa torso para o uniforme", mas isso é opinião: Club Penguin e Habbo são bem cabeçudos e a roupa lê. Decidi o D19 medindo e o D1 opinando, sendo que o D1 é o mais caro de reverter. **Eu gero as três proporções em SVG e você escolhe olhando a 56 px** |
+| D1 | Proporção | ~~1:3~~ → **REVOGADA em 2026-07-31: a cabeça é 0,508 da figura (≈1:2)** | a T0.12 do doc 14 escolheu 1:3 para um boneco com pernas. O estilo kokeshi não tem pernas, e sem pernas a figura de três cabeças que o D1 media deixa de existir — a razão passa a ser cabeça↔tronco, medida em **0,508** na `referencia-base.png`. A régua de verdade é `src/lib/avatar/estilo/geometria.ts`; o custo é o item 8 da §2 do doc 15 (tudo que identifica o aluno cabe na cabeça), endereçado pelos slots `emblema` e `rosto` |
 | D2 | Canvas | **4:5 — `viewBox` 400×500** | com SVG o `viewBox` escala livremente, então errar a proporção do quadro **deixou de ser caro**. Decisão rebaixada de crítica para ajustável |
 | D3 | Pose | **frontal simétrica** | simetria é o que faz overlay simples funcionar; 3/4 recria o problema que quebrou 45 itens |
 | D4 | Tons de pele | **8** (era 5) | com classe de paleta, tom de pele é **uma linha de CSS** — 8 custam o mesmo que 3. O número 5 tinha sido calibrado contra custo de PNG, que não existe mais. Para clube de escola pública, representação melhor sai de graça |

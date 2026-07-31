@@ -116,7 +116,11 @@ mas a evidência já existe em `.scratch/pagina-avatar-v4-completo.png`.
 - [x] **T0.11** 🤖 Gerar o boneco em **1:2, 1:3 e 1:4** e renderizar a 56 px
       → `npm run avatar:prototipo`; uma função gera as três, `cabecas` é o único
       parâmetro que muda, para a comparação ser entre proporções e não entre desenhos
-- [x] **T0.12** 👤→🤖 **Proporção escolhida: 1:3** *(usuário delegou a escolha)*
+- [x] **T0.12** 👤→🤖 ~~**Proporção escolhida: 1:3**~~ *(usuário delegou a escolha)*
+      → **REVOGADA em 2026-07-31 pela troca de estilo (doc 15, Bloco 1).** A cabeça
+      passa a ser **0,508 da figura** (≈1:2), medida na `referencia-base.png`. O
+      boneco kokeshi não tem pernas, então a figura de três cabeças que a T0.11
+      comparou não existe mais. A régua é `src/lib/avatar/estilo/geometria.ts`
 - [x] **T0.13** 🤖 Converter 1 pet para SVG animado por CSS e comparar com o APNG
 - [x] **T0.14** 👤→🤖 **Pets viram SVG** *(usuário delegou; confirmar se discordar)*
 

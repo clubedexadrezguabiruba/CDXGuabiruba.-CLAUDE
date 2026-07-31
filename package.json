@@ -43,6 +43,8 @@
     "avatar:proveniencia": "tsx scripts/avatar/proveniencia.ts",
     "avatar:base-sem-traje": "tsx scripts/avatar/gerar-base-sem-traje.ts",
     "avatar:folha": "tsx scripts/avatar/folha-contato.ts",
+    "avatar:folha-base": "tsx scripts/avatar/estilo/folha-base.ts",
+    "avatar:animacao": "tsx scripts/avatar/estilo/medir-animacao.ts",
     "avatar:preview": "npm run avatar:garment && node -e \"require('fs').mkdirSync('public/dev/uniformes',{recursive:true});for(const f of require('fs').readdirSync('scripts/avatar/uniformes'))require('fs').copyFileSync('scripts/avatar/uniformes/'+f,'public/dev/uniformes/'+f)\""
   },
   "dependencies": {
