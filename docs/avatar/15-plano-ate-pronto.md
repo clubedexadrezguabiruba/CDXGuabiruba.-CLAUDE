@@ -469,7 +469,7 @@ agora entregaria item invisível.*
 
 | ordem | o quê | quantos | quem refina |
 |---|---|---|---|
-| 1 | Uniforme do **Aspirante** só — Capitão → Lenda ficam de fora, são inalcançáveis até o conteúdo crescer. Desenhar agora é arte morta, e o gate reprova | ~~6~~ **1** | eu, silhueta constante |
+| 1 | Uniformes: **Aspirante feito**. Restam **Capitão, Comandante, General e Mestre** — 4, não 5, porque o tier 7 (Lenda) saiu da escada. O **design das 4 já está pronto e travado por gate**: cor, bota, detalhe e o pedido colável em [17](17-patentes-uniformes-design.md) e [18](18-uniformes-blocos.md). Falta só gerar a imagem, e quem gera é o Doug | ~~6~~ **4** | Doug gera, eu asso |
 | 2 | Cabelos | 5 | eu |
 | 3 | Chapéus | 6 | eu |
 | 4 | Relíquias (2 famílias × 3 tiers) | 6 | eu |
@@ -629,12 +629,38 @@ para os 39 desenhos do Bloco 8, não só para a base.*
 
 ## 7c. Restrições de composição — aprendidas no `avatar:garment`
 
-16. **`<style>` dentro de `<svg>` inline tem escopo de DOCUMENTO, não de SVG.**
-    A regra que esconde o macacão da base num avatar vestido **escapa e esconde o
-    de todos os avatares da página**. Numa lista de turma isso desnuda a turma
-    inteira porque um aluno tem uniforme. Descoberto ao montar a folha visual, em
-    que o painel "sem uniforme" apareceu sem o macacão. Toda regra da composição
-    precisa de **escopo por classe de ancestral**.
+16. **Regra de CSS NÃO alcança o conteúdo de `<use>` — e este item já disse o
+    contrário.** ⚠️ *Corrigido; a versão anterior estava ao revés.*
+
+    A afirmação antiga era que `.vestido .av-roupa{display:none}` **escapava e
+    escondia o macacão de todos os avatares da página**, e que a proteção era pôr
+    escopo por classe de ancestral. O escopo já estava lá, e o problema era outro:
+    a regra **não faz absolutamente nada** quando a base entra por `<use>`, porque
+    o conteúdo referenciado mora numa árvore-sombra que o seletor do documento não
+    atravessa.
+
+    Medido, mesma base, mesmo viewport, hash do PNG:
+
+    | montagem | sem a regra | com a regra | |
+    |---|---|---|---|
+    | via `<use>` | `582078712a8ba94c` · 65037 B | `582078712a8ba94c` · 65037 B | **byte a byte idênticos** |
+    | inline | `582078712a8ba94c` · 65037 B | `d517a82e72187bfb` · 40798 B | o seletor **funciona** |
+
+    A segunda linha é o controle: o seletor está correto, e some com 24 KB de
+    macacão quando o elemento é inline. É a fronteira do `<use>` que ele não cruza.
+
+    **Por que a lição invertida era pior que nenhuma lição.** Ela protegia contra
+    um risco que não existe (desnudar a turma) e escondia o real: o macacão
+    continuava desenhado sob todo uniforme, e aparecia em cada vão que a arte não
+    cobre. A correção é **estrutural, não de CSS** — `avatar-base-sem-traje.svg`,
+    em que as camadas de roupa são REMOVIDAS do arquivo. Ausência estrutural se
+    confere procurando `av-roupa` no arquivo e não achando; ausência por CSS
+    depende de o navegador concordar, e ele não concordava.
+
+    A regra que sobra, e essa vale: **escopo por classe de ancestral continua
+    obrigatório** em qualquer `<style>` que a composição emita, porque `<style>`
+    dentro de `<svg>` inline é mesmo de escopo do DOCUMENTO. Só que sozinho ele
+    não resolvia nada aqui.
 17. **Máscara é ferramenta de BUILD, não de runtime.** O ranking mostra 30
     avatares; máscara e filtro forçam composição fora da tela por instância. O
     recorte, o fundo de segurança e o vazado de cabeça e mãos são assados no alfa
