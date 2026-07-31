@@ -10,13 +10,29 @@
  * e é o que transforma "acho que esse pixel claro é o macacão da base" em prova.
  */
 
-import { BASE_H, BASE_W, dilatar, intersecao, paraPngAlfa, recortes, subtrair, type MascarasBase } from "./mascara-base";
+import {
+  BASE_H,
+  BASE_W,
+  dilatar,
+  intersecao,
+  paraPngAlfa,
+  recortes,
+  subtrair,
+  type MascarasBase,
+  type Recorte,
+} from "./mascara-base";
 import { corBota, registro, type Uniforme } from "./uniforme";
 
 /** A solda que fecha fresta de antialiasing entre formas vizinhas do traço. */
 const SOLDA = `stroke-width="1.6" stroke-linejoin="round"`;
 
-const b64png = (buf: Buffer) => "data:image/png;base64," + buf.toString("base64");
+/**
+ * EXPORTADA porque `gerar-uniforme.ts` a chama em dois pontos e ela ficou para
+ * trás quando a composição mudou de arquivo. O `avatar:garment` morria com
+ * `b64png is not defined` DEPOIS de imprimir os nove gates verdes — o veredito
+ * nunca saía, e a saída era 1 sem que nenhuma violação tivesse sido encontrada.
+ */
+export const b64png = (buf: Buffer) => "data:image/png;base64," + buf.toString("base64");
 
 /** Cores sentinela das camadas do UNIFORME. As da base vivem em `baseSentinela`. */
 export const SENTINELA = {
@@ -28,14 +44,33 @@ export const SENTINELA = {
   arte: "#0000FF",
 } as const;
 
+/** O que dá para trocar na composição. Sem opções, é o caminho de produção. */
+export interface OpcoesComposicao {
+  /** Troca cada camada pela sua cor de prova. */
+  sentinela?: boolean;
+  /**
+   * Qual recorte usar. Existe para o gate poder montar a FIXTURE: a mesma
+   * composição, a mesma arte, o mesmo tudo — só com a geometria de `6e3feb6`,
+   * que vaza. Default: o canônico, então o caminho de produção não muda.
+   */
+  recortes?: (m: MascarasBase) => Recorte;
+}
+
 /**
  * A composição vetorial, pronta para rasterizar em qualquer tamanho.
  *
  * Com `sentinela`, cada camada sai chapada na sua cor de prova — mesma
  * geometria, mesmas máscaras, mesma ordem. Só a tinta muda.
  */
-export function composicao(u: Uniforme, m: MascarasBase, sentinela = false): string {
-  const { pano, fundo } = recortes(m);
+export function composicao(u: Uniforme, m: MascarasBase, op: OpcoesComposicao = {}): string {
+  const sentinela = op.sentinela ?? false;
+  // O tipo é EXPLÍCITO de propósito. Sem ele, o `??` infere a união dos dois
+  // tipos de função, e o retorno vira `Recorte | { pano; fundo }` — em que
+  // `oclusao` não existe. Rodava certo (em runtime dá `undefined`, e o `??`
+  // abaixo faz o certo), mas o tipo estava errado, e nem os 219 testes nem os
+  // dois gates viram. Quem viu foi o `tsconfig.scripts.json`.
+  const recorta: (m: MascarasBase) => Recorte = op.recortes ?? recortes;
+  const { pano, fundo, oclusao } = recorta(m);
   const dim = { w: m.w, h: m.h };
   const mask = (id: string, href: string) =>
     `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${BASE_W}" height="${BASE_H}" style="mask-type:alpha">` +
@@ -52,7 +87,10 @@ export function composicao(u: Uniforme, m: MascarasBase, sentinela = false): str
   // dentro do envelope da bota pela interseção, então não vira orla escura.
   // E SUBTRAI O VÃO: a dilatação de 2 px vaza para o vazio entre as pernas —
   // medido, 466 px de oclusão pintando onde tem de aparecer o fundo da página.
-  const oclusaoPe = subtrair(intersecao(dilatar(m.pes, { w: m.w, h: m.h }, 2), m.cobertura), m.vaoAnatomico);
+  // Quando o recorte traz a sua própria oclusão, ela manda: é o que deixa a
+  // fixture reproduzir o estado antigo INTEIRO, oclusão inclusive.
+  const oclusaoPe =
+    oclusao ?? subtrair(intersecao(dilatar(m.pes, { w: m.w, h: m.h }, 2), m.cobertura), m.vaoAnatomico);
   const corFundo = sentinela ? SENTINELA.fundo : u.corFundo;
   const corOclusao = sentinela ? SENTINELA.oclusao : corBota(u);
   return (

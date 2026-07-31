@@ -41,18 +41,21 @@ import {
   BASE_H,
   BASE_W,
   area,
+  closes,
   derivarMascaras,
   dilatar,
+  erodir,
   faixa,
   intersecao,
   paraPngAlfa,
   recortes,
   subtrair,
+  type Close,
   type Mascara,
   type MascarasBase,
 } from "./mascara-base";
 import { VARIANTES, corDominante, larguraDe, lerUniforme, registro } from "./uniforme";
-import { SENTINELA, composicao } from "./composicao";
+import { SENTINELA, b64png, composicao } from "./composicao";
 import { distancia } from "../../src/lib/avatar/palette";
 
 /**
@@ -63,8 +66,8 @@ import { distancia } from "../../src/lib/avatar/palette";
  * ele — impossível de rodar em máquina limpa ou em CI, e nesta sessão isso já
  * quebrou uma vez, quando o PNG mestre saiu da pasta de downloads.
  */
-const FONTE = process.env.UNIFORME ?? "scripts/avatar/fonte/uniformes/recruta.svg";
-const NOME = process.env.UNIFORME_NOME ?? "recruta";
+const FONTE = process.env.UNIFORME ?? "scripts/avatar/fonte/uniformes/soldado.svg";
+const NOME = process.env.UNIFORME_NOME ?? "soldado";
 
 /**
  * Pasta de ESTÁGIO, não `public/items/`.
@@ -78,6 +81,35 @@ const DIAG = ".scratch/uniforme";
 
 /** Teto de memória decodificada da variante do ranking, com 30 na tela. */
 const TETO_RANKING_MIB = 4;
+
+/**
+ * Tolerância do desvio de caixa e centro entre variantes, em px DA VARIANTE.
+ *
+ * Era 1.01, e era IMPOSSÍVEL DE CUMPRIR. A caixa é medida por limiar `alfa >= 8`
+ * sobre índices inteiros de pixel, então ela carrega dois erros que a geometria
+ * não controla:
+ *   - 1 px de ÍNDICE — a borda real cai dentro de um pixel, e a caixa arredonda
+ *     para o pixel que a contém, enquanto a referência escalada é fracionária;
+ *   - até 1 px de ALARGAMENTO — reduzindo 1920 → 128, um pixel de borda com 3%
+ *     de cobertura já passa de 8/255 e acende.
+ *
+ * Piso de 2 px, portanto, e nenhuma composição pode ficar abaixo disso.
+ *
+ * O MEDIDO, em duas peças de arte completamente diferente e com a proveniência
+ * limpa nas duas (0 px de camada proibida, 0 de furo):
+ *
+ *      128 px  1.07   |   256 px  0.80   |   512 px  0.60–0.67
+ *     1024 px  0.47   |  1920 px  0.00 (referência)
+ *
+ * Decrescente com o tamanho e IDÊNTICO entre as peças em 128, 256 e 1024 — as
+ * duas assinaturas de quantização. Um deslocamento real de registro faria o
+ * contrário: cresceria em px junto com a variante.
+ *
+ * O teto fica no piso físico, não no que faz passar. 2.01 deixa o observado
+ * (1.07) com quase o dobro de folga e ainda reprova qualquer deslocamento de
+ * registro, que apareceria em TODAS as variantes e em ordem de grandeza maior.
+ */
+const TOL_VARIANTE_PX = 2.01;
 
 async function rasterizar(pg: Page, dentro: string, altura: number): Promise<Buffer> {
   const largura = larguraDe(altura);
@@ -331,7 +363,12 @@ async function conferirBorda(pg: Page, asset: Buffer) {
  * Escuro revela halo claro. Quadriculado revela alfa parcial, que os outros três
  * escondem.
  */
-async function folhaVisual(pg: Page, folha: string, assetPorAltura: Map<number, string>) {
+async function folhaVisual(
+  pg: Page,
+  folha: string,
+  assetPorAltura: Map<number, string>,
+  recortesDeClose: Close[],
+) {
   const XADREZ =
     "background-image:linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%)," +
     "linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%);" +
@@ -402,17 +439,16 @@ async function folhaVisual(pg: Page, folha: string, assetPorAltura: Map<number, 
       `<div style="display:flex;gap:10px">` +
       ["#EFEAE2", "#FF00FF", "#1B1B1F", "xadrez"].map((f) => fig(f === "xadrez" ? "quadriculado" : f, px56(f))).join("") +
       `</div>` +
-      `<p style="margin:14px 0 6px"><b>As fronteiras de perto</b>, sobre magenta</p>` +
+      `<p style="margin:14px 0 6px"><b>As fronteiras de perto</b>, sobre magenta — ` +
+      `caixas DERIVADAS das máscaras, nenhuma escrita à mão</p>` +
       `<div style="display:flex;gap:10px">` +
-      (
-        [
-          ["gola", "950 1420 700 700"],
-          ["punho e mão", "500 2150 620 620"],
-          ["ombro e braço", "700 1500 900 900"],
-          ["bota e tornozelo", "820 3000 900 700"],
-        ] as [string, string][]
-      )
-        .map(([rot, vb]) => fig(rot, cena(comUniforme(1920), 300, "#FF00FF", vb)))
+      recortesDeClose
+        .map((c) =>
+          fig(
+            `${c.rotulo}<br><span style="color:#999">${c.origem}</span>`,
+            cena(comUniforme(1920), 300, "#FF00FF", c.vb),
+          ),
+        )
         .join("") +
       `</div></body>`,
   );
@@ -537,11 +573,11 @@ async function main() {
   // arte, então precisa ser a cor que a peça realmente veste. Quando não é, ele
   // vira ORLA visível em toda a silhueta — medido no Aspirante: 5647 px da cor
   // do fundo encostando na borda transparente, contra 7513 de 213422 (3,5%) no
-  // Recruta, que está certo.
+  // Soldado, que está certo.
   //
   // O teto de 40 é a mesma distância que a paleta usa para "contorno e
   // preenchimento não se fundem", e o vão medido é de uma ordem de grandeza para
-  // cada lado: Recruta 7,7 · Aspirante 133,2.
+  // cada lado: Soldado 7,7 · Aspirante 133,2.
   const dominante = corDominante(u.pano);
   const distFundo = distancia(u.corFundo, dominante);
   console.log(`  cor dominante do pano ${dominante} · fundo dista ${distFundo.toFixed(1)} dela`);
@@ -606,19 +642,36 @@ async function main() {
           detalhe: `${fora.fora} px opacos fora da máscara (${pctFora.toFixed(2)}%) — o recorte não está sendo aplicado`,
         });
 
-      // A PELE QUE PRECISA FICAR LIVRE é a que NÃO está sob roupa: rosto, orelhas
-      // e as mãos de verdade. `peleFrente` inteira inclui a costura em que a pele
-      // passa por baixo da gola e do punho — 2851 px que o macacão cobre por
-      // direito, e que o fundo de segurança agora pinta de propósito. Medir a
-      // `peleFrente` inteira contava essa costura e dava 0,91% num boneco de
-      // rosto perfeitamente limpo.
-      const peleDescoberta = subtrair(m.peleFrente, m.corpoVestido);
-      const naPele = await contarContra(pg, master, m, peleDescoberta);
-      const pctNaPele = (naPele.dentro / (naPele.dentro + naPele.fora)) * 100;
-      if (pctNaPele > 0.5)
+      // A PELE QUE PRECISA FICAR LIVRE é `peleExposta`: a camada `av-pele`
+      // sozinha, sem o forro que passa por baixo da gola e do punho.
+      //
+      // ESTE GATE ERA INCAPAZ DE REPROVAR, por duas razões somadas:
+      //
+      //  1. A REGIÃO era `peleFrente − corpoVestido`, que remove a costura
+      //     INTEIRA — e junto com ela a mão, que é onde o defeito morava. Estava
+      //     escrito que a costura era pintada "de propósito"; era, mas só a
+      //     metade dela, a do forro. A outra metade é mão à mostra.
+      //  2. O DENOMINADOR era `dentro + fora`, isto é, TODOS os px opacos do
+      //     asset — uns 373 mil, contra ~6 mil da região. O teto de 0,5% virava
+      //     ~1865 px, e por aritmética a porcentagem não passava de ~1,6% nem
+      //     com a região 100% coberta. Medido: 628 px, 0,17%, passando folgado
+      //     num boneco que tinha o fundo chapado sobre as duas mãos.
+      //
+      // Agora o denominador é a área da própria região, e a tolerância é ZERO
+      // sobre ela eroída em 2 px — 1 px pela limiarização da silhueta, 1 pela
+      // reamostragem dupla da máscara. É o mesmo molde do gate do pé sob a bota.
+      const regiaoPele = erodir(m.peleExposta, { w: m.w, h: m.h }, 2);
+      const naPele = await contarContra(pg, master, m, regiaoPele);
+      const areaPele = area(regiaoPele);
+      console.log(
+        `  pele exposta: ${naPele.dentro} px opacos do asset de ${areaPele} na região (tolerância 0)`,
+      );
+      if (naPele.dentro > 0)
         violacoes.push({
           gate: "cabeça e mãos vazadas",
-          detalhe: `${naPele.dentro} px opacos sobre a região de pele (${pctNaPele.toFixed(2)}%) — o buraco não foi aberto`,
+          detalhe:
+            `${naPele.dentro} px opacos do asset sobre a pele exposta, de ${areaPele} na região — ` +
+            `o buraco não foi aberto, ou o fundo de segurança escorreu para dentro dele`,
         });
 
       // PEDESTAL: na folga da bota — a região da cobertura que NÃO é corpo
@@ -647,7 +700,7 @@ async function main() {
       //
       // Com a sentinela não há colisão possível: o fundo é a única coisa amarela
       // na composição, e o que se conta é a CAMADA, não uma coincidência de cor.
-      const sentinelaPng = await rasterizar(pg, composicao(u, m, true), 1920);
+      const sentinelaPng = await rasterizar(pg, composicao(u, m, { sentinela: true }), 1920);
       const pedestal = await contarCor(pg, sentinelaPng, m, folgaBota, SENTINELA.fundo);
       // O teto sai da MAGNITUDE do defeito, não de um número escolhido: quando o
       // pedestal existiu de verdade, o fundo cobria a folga inteira, uns 30 mil px.
@@ -663,12 +716,18 @@ async function main() {
         });
       console.log(
         `\ngates: fora da cobertura ${fora.fora} px (${pctFora.toFixed(2)}%) · ` +
-          `sobre a pele ${naPele.dentro} px (${pctNaPele.toFixed(2)}%) · ` +
+          `sobre a pele ${naPele.dentro} px de ${areaPele} · ` +
           `na folga da bota ${naFolga.dentro} px, dos quais ${pedestal} da cor do fundo`,
       );
 
-      // Caixa e centro iguais entre variantes, tolerância de 1 px.
+      // Caixa e centro iguais entre variantes.
+      //
+      // A TABELA SAI SEMPRE, reprovando ou não. Sem a curva por variante não dá
+      // para separar defeito de composição de quantização da reamostragem, e um
+      // gate que só imprime a linha que reprovou obriga a adivinhar qual dos dois
+      // é — foi o que aconteceu quando este gate reapareceu.
       const ref = metricas[metricas.length - 1];
+      console.log(`\ncaixa e centro contra a variante de ${ref.altura} px:`);
       for (const x of metricas) {
         const k = x.altura / ref.altura;
         const desvioCaixa = Math.max(...x.caixaAlfa.map((v, i) => Math.abs(v - ref.caixaAlfa[i] * k)));
@@ -676,10 +735,16 @@ async function main() {
           Math.abs((x.centro[0] - ref.centro[0]) * x.largura),
           Math.abs((x.centro[1] - ref.centro[1]) * x.altura),
         );
-        if (desvioCaixa > 1.01 || desvioCentro > 1.01)
+        console.log(
+          `  ${String(x.altura).padStart(5)} px   caixa ${desvioCaixa.toFixed(2).padStart(5)} px` +
+            `   centro ${desvioCentro.toFixed(2).padStart(5)} px`,
+        );
+        if (desvioCaixa > TOL_VARIANTE_PX || desvioCentro > TOL_VARIANTE_PX)
           violacoes.push({
             gate: "caixa e centro entre variantes",
-            detalhe: `variante ${x.altura}: caixa desvia ${desvioCaixa.toFixed(1)} px, centro ${desvioCentro.toFixed(2)} px`,
+            detalhe:
+              `variante ${x.altura}: caixa desvia ${desvioCaixa.toFixed(2)} px, ` +
+              `centro ${desvioCentro.toFixed(2)} px, tolerância ${TOL_VARIANTE_PX} px`,
           });
       }
 
@@ -730,7 +795,11 @@ async function main() {
       const porAltura = new Map<number, string>(
         VARIANTES.map((h) => [h, b64png(readFileSync(`${DESTINO}/${NOME}-${h}.png`))]),
       );
-      await folhaVisual(pg, folhaBase, porAltura);
+      const recortesDeClose = closes(m);
+      console.log(`\nclosses derivados das máscaras:`);
+      for (const c of recortesDeClose)
+        console.log(`  ${c.rotulo.padEnd(14)} viewBox "${c.vb}"   ← ${c.origem}`);
+      await folhaVisual(pg, folhaBase, porAltura, recortesDeClose);
       const bench = await benchmark(pg, folhaBase, dentro);
       writeFileSync(`${DIAG}/benchmark.json`, JSON.stringify(bench, null, 2));
       console.log(`  ${DIAG}/folha.png`);

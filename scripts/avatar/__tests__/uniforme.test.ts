@@ -147,7 +147,7 @@ describe("cor média do fundo de segurança", () => {
   });
 
   it("os tons quase iguais que o traçador cria contam JUNTOS", () => {
-    // O oliva do Recruta saiu em cinco tons, nenhum com 15% do pano; somados,
+    // O oliva do Soldado saiu em cinco tons, nenhum com 15% do pano; somados,
     // ganham do contorno, que sozinho tem 12%. Separados, quase empatam.
     const media = corMedia([
       f("#78833B", 12000), f("#6E7935", 11000), f("#737E38", 10000), f("#717C37", 9000),
@@ -226,7 +226,7 @@ describe("registro", () => {
 });
 
 describe("a arte real de uniforme que está commitada", () => {
-  const svg = readFileSync("scripts/avatar/fonte/uniformes/recruta.svg", "utf-8");
+  const svg = readFileSync("scripts/avatar/fonte/uniformes/soldado.svg", "utf-8");
 
   it("é lida sem erro e tem pano", () => {
     const u = lerUniforme(svg);
@@ -263,20 +263,20 @@ describe("a arte real de uniforme que está commitada", () => {
  * borda: quando o fundo do Aspirante saiu `#859dab` — a listra clara da calça,
  * a única forma que sobrevivia ao corte de luminosidade calibrado no oliva — o
  * resultado foi uma ORLA cinza-clara em volta da silhueta inteira, com 5647 px
- * encostando na borda transparente contra 3,5% no Recruta.
+ * encostando na borda transparente contra 3,5% no Soldado.
  *
- * O vão medido justifica o teto: Recruta 7,7 · Aspirante 133,2 antes do
+ * O vão medido justifica o teto: Soldado 7,7 · Aspirante 133,2 antes do
  * conserto. As duas peças commitadas entram aqui porque uma sozinha não prova
  * nada — foi exatamente uma peça só que calibrou o corte errado.
  */
 describe("o fundo de segurança representa o pano", () => {
-  it.each(["recruta", "aspirante"])("%s", (nome) => {
+  it.each(["soldado", "aspirante"])("%s", (nome) => {
     const u = lerUniforme(readFileSync(`scripts/avatar/fonte/uniformes/${nome}.svg`, "utf-8"));
     expect(distancia(u.corFundo, corDominante(u.pano))).toBeLessThanOrEqual(40);
   });
 
   it("a cor da bota é bem mais escura que o fundo, senão a oclusão vira pedestal", () => {
-    for (const nome of ["recruta", "aspirante"]) {
+    for (const nome of ["soldado", "aspirante"]) {
       const u = lerUniforme(readFileSync(`scripts/avatar/fonte/uniformes/${nome}.svg`, "utf-8"));
       expect(hsl(corBota(u)).lum).toBeLessThan(hsl(u.corFundo).lum);
     }

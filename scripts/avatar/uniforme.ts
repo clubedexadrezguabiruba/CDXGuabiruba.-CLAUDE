@@ -86,7 +86,7 @@ export const MATIZ_PANO = 45;
  *
  * É o mesmo 20 que a paleta usa como "irmãos de um conjunto se distinguem"; aqui
  * ele vale ao contrário, para reunir o que o traçador separou. Os cinco olivas do
- * Recruta distam menos de 12 entre si; o oliva e o contorno preto distam 116.
+ * Soldado distam menos de 12 entre si; o oliva e o contorno preto distam 116.
  */
 const RAIO_FAMILIA = 20;
 
@@ -189,10 +189,10 @@ export function corDominante(pano: Forma[]): string {
  * Cor do pano que MAIS OCUPA a peça — o fundo de segurança.
  *
  * O traçador quebra um pano chapado em vários tons quase iguais: o oliva do
- * Recruta sai em cinco (#78833B, #6E7935, #737E38, #717C37, #76813A), nenhum
+ * Soldado sai em cinco (#78833B, #6E7935, #737E38, #717C37, #76813A), nenhum
  * deles com mais de 15% do pano. Por isso a conta é por GRUPO de cores vizinhas,
  * e não por cor: somada, a família do pano ganha de longe; separada, ela quase
- * empata com o contorno preto, que no Recruta tem 12,2% contra 14,5%.
+ * empata com o contorno preto, que no Soldado tem 12,2% contra 14,5%.
  *
  * NÃO HÁ CORTE DE LUMINOSIDADE AQUI, e a ausência é o ponto. A versão anterior
  * filtrava `lum > 0.3` para o contorno escuro não puxar a média — número
@@ -202,7 +202,7 @@ export function corDominante(pano: Forma[]): string {
  * volta da silhueta, medida em 5647 px encostando na borda transparente.
  *
  * Agrupar resolve sem calibração nova: o contorno preto forma o seu próprio
- * grupo e perde por área. Medido, dá `#737e38` no Recruta — o mesmo valor de
+ * grupo e perde por área. Medido, dá `#737e38` no Soldado — o mesmo valor de
  * antes, então a peça que já passava não muda — e `#354663` no Aspirante.
  */
 export function corMedia(pano: Forma[]): string {
@@ -283,9 +283,11 @@ export function lerUniforme(svg: string): Uniforme {
         `A arte está em matiz de pele? Ver a regra "pele e pano em matizes distantes".`,
     );
 
-  const fig = arte.reduce(
+  // O tipo do acumulador vai no GENÉRICO, não num `as` no valor inicial: com o
+  // `as`, o callback ainda devolve `number[]` e o tsc escolhe a sobrecarga errada.
+  const fig = arte.reduce<[number, number, number, number]>(
     (c, p) => [Math.min(c[0], p.bb[0]), Math.min(c[1], p.bb[1]), Math.max(c[2], p.bb[2]), Math.max(c[3], p.bb[3])],
-    [Infinity, Infinity, -Infinity, -Infinity] as [number, number, number, number],
+    [Infinity, Infinity, -Infinity, -Infinity],
   );
 
   return { arte, pano, fig, pescoco, corFundo: corMedia(pano), canvas: [cw, ch] };

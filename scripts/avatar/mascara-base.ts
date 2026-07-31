@@ -55,6 +55,26 @@ export interface MascarasBase {
   k: number;
   cobertura: Mascara;
   peleFrente: Mascara;
+  /**
+   * A PELE PRÓPRIA — a camada `av-pele` sozinha, acima da faixa da bota.
+   *
+   * NÃO é `peleFrente`. `peleFrente` sai da base com as duas camadas de pano
+   * escondidas, então inclui o FORRO DE PELE, que se estende por baixo da gola e
+   * do punho — e é justamente a costura que custou 2851 px quando as duas
+   * máscaras de recorte abriram o mesmo buraco.
+   *
+   * `peleExposta` é a pele de verdade: a que a base de PRODUÇÃO mostra ali.
+   * Medido — `avatar-base-sem-traje.svg` não tem `av-roupa` nem `av-forro-roupa`,
+   * as duas foram removidas do arquivo. Então a pergunta "o punho do macacão
+   * cobre a mão?" não se aplica à composição real: ali aquele pixel é mão.
+   *
+   * É o PISO do fundo de segurança. Onde ela está, o fundo chapado do uniforme
+   * não pode pintar, porque a resposta certa é a mão e o rosto do boneco.
+   *
+   * Contida em `peleFrente` POR CONSTRUÇÃO: mesma rasterização, mesmo limiar, um
+   * subconjunto estrito de camadas visíveis — esconder camada só clareia pixel.
+   */
+  peleExposta: Mascara;
   corpoVestido: Mascara;
   /**
    * Os PÉS: a pele abaixo do tornozelo.
@@ -161,6 +181,31 @@ export function dilatar(m: Mascara, dim: Dim, raioPx: number, so?: (y: number) =
         }
       }
     }
+  }
+  return out;
+}
+
+/**
+ * O VÃO: o espaço ENTRE corridas acesas, linha a linha.
+ *
+ * Extraída de `derivarMascaras` para poder ser testada sem navegador. É a
+ * geometria que já teve defeito de verdade: a primeira versão declarava o vão
+ * por uma FAIXA de altura escolhida a dedo (36% a 62%), e com isso pegou o
+ * entalhe do pescoço, enquanto os resíduos reais moravam em y 1400–1560, fora
+ * dela.
+ *
+ * Declarar por TOPOLOGIA resolve sozinho: uma linha na altura do braço tem três
+ * corridas — braço, tronco, braço — e o vão é o que fica entre elas. Uma linha de
+ * pescoço tem UMA corrida, e por isso não produz vão nenhum, por mais estreita
+ * que seja. Nenhum número escolhido a dedo entra aqui.
+ */
+export function vaoEntreCorridas(silhueta: Mascara, dim: Dim): Mascara {
+  const out = new Uint8Array(dim.w * dim.h);
+  for (let y = 0; y < dim.h; y++) {
+    const corridas = vaos(silhueta, dim, y);
+    if (corridas.length < 2) continue;
+    for (let c = 0; c + 1 < corridas.length; c++)
+      for (let x = corridas[c][1] + 1; x < corridas[c + 1][0]; x++) out[y * dim.w + x] = 1;
   }
   return out;
 }
@@ -282,6 +327,9 @@ export async function derivarMascaras(
   // O macacão sozinho, e a pele sozinha. As classes vêm do gerador da base.
   const traje = await silhueta(nav, folha, ["av-forro-pele", "av-pele", "av-sobrancelha", "av-olho"], k);
   const pele = await silhueta(nav, folha, ["av-forro-roupa", "av-roupa"], k);
+  // A PELE PRÓPRIA: como `pele`, mas escondendo TAMBÉM o forro de pele. É a única
+  // diferença entre "o corpo nu inteiro" e "a pele que a base de produção mostra".
+  const peleSo = await silhueta(nav, folha, ["av-forro-roupa", "av-roupa", "av-forro-pele"], k);
   const dim: Dim = { w: traje.w, h: traje.h };
 
   const topoTraje = primeiraLinha(traje.m, dim);
@@ -311,6 +359,27 @@ export async function derivarMascaras(
   // PELE FRONTAL: pele acima da faixa da bota. O pé fica de fora — vai por baixo.
   const peleFrente = faixa(pele.m, dim, 0, yBota - 1);
 
+  // PELE PRÓPRIA: a mesma faixa, sem o forro. A FAIXA É OBRIGATÓRIA — sem ela a
+  // máscara engole os pés, e o pé vai por BAIXO da bota: o fundo pararia de pintar
+  // ali e o defeito da pele sob a sola voltaria, com o gate de tolerância zero.
+  const peleExposta = faixa(peleSo.m, dim, 0, yBota - 1);
+
+  // DUAS TRAVAS, porque `silhueta` casa a PRIMEIRA ocorrência de cada classe: se a
+  // base ganhar um segundo `<g class="av-pele">`, a máscara encolhe em silêncio e
+  // o gate que depende dela passa a aprovar tudo.
+  const naoContida = area(subtrair(peleExposta, peleFrente));
+  if (naoContida > 0)
+    throw new Error(
+      `peleExposta saiu de peleFrente em ${naoContida} px — as camadas da base mudaram? ` +
+        `Ela é um subconjunto por construção: mesma rasterização, uma camada a menos visível.`,
+    );
+  const invasao = area(intersecao(peleExposta, traje.m));
+  if (invasao === 0 || invasao > area(traje.m) * 0.05)
+    throw new Error(
+      `peleExposta invade corpoVestido em ${invasao} px de ${area(traje.m)} — fora da banda esperada. ` +
+        `0 significa que a máscara não casou com a classe; muito significa que ela pegou o corpo inteiro.`,
+    );
+
   // PÉS: a pele do tornozelo para baixo. O macacão da base termina no tornozelo,
   // então tudo que é pele abaixo dali é pé.
   const pes = faixa(pele.m, dim, tornozelo, dim.h - 1);
@@ -327,13 +396,7 @@ export async function derivarMascaras(
   // de 36% a 62% e pegou o entalhe do pescoço, enquanto os resíduos reais moravam
   // em y 1400–1560, fora dela.
   const silhuetaToda = unir(unir(traje.m, pele.m), pes);
-  const vaoAnatomico = new Uint8Array(dim.w * dim.h);
-  for (let y = 0; y < dim.h; y++) {
-    const corridas = vaos(silhuetaToda, dim, y);
-    if (corridas.length < 2) continue;
-    for (let c = 0; c + 1 < corridas.length; c++)
-      for (let x = corridas[c][1] + 1; x < corridas[c + 1][0]; x++) vaoAnatomico[y * dim.w + x] = 1;
-  }
+  const vaoAnatomico = vaoEntreCorridas(silhuetaToda, dim);
 
   return {
     w: dim.w,
@@ -341,11 +404,25 @@ export async function derivarMascaras(
     k,
     cobertura,
     peleFrente,
+    peleExposta,
     corpoVestido: traje.m,
     pes,
     vaoAnatomico,
     marcos: { topoTraje, tornozelo, yGola, yBota },
   };
+}
+
+/**
+ * O que um recorte entrega.
+ *
+ * `oclusao` é OPCIONAL, e a opcionalidade é o ponto: ausente, `composicao` usa a
+ * oclusão canônica. É assim que o recorte legado reproduz também a oclusão antiga
+ * sem que `recortes` precise mudar de forma.
+ */
+export interface Recorte {
+  pano: Mascara;
+  fundo: Mascara;
+  oclusao?: Mascara;
 }
 
 /**
@@ -376,7 +453,7 @@ export function recortes(m: MascarasBase): { pano: Mascara; fundo: Mascara } {
     // E DILATADO EM 1 px, que é sangria e não folga. A máscara é 1278×1920,
     // desenhada em 2556×3840 e rasterizada de volta: duas reamostragens deixam
     // colunas de 1 px de largura com alfa abaixo de 128 exatamente na borda.
-    // Medido: 66 px no Aspirante e 94 no Recruta, todos com 1 px de largura,
+    // Medido: 66 px no Aspirante e 94 no Soldado, todos com 1 px de largura,
     // 100% encostando na borda, e NAS MESMAS COORDENADAS nas duas peças — prova
     // de que é geometria de máscara, não desenho. O 1 px extra fica sob a arte,
     // que se estende 40 unidades além daqui.
@@ -385,10 +462,270 @@ export function recortes(m: MascarasBase): { pano: Mascara; fundo: Mascara } {
     // o que PREENCHE é generoso em 1 px e o que TESTA é estrito em 1 px. Sem
     // isso, a mesma coluna de 1 px reabria na borda do vão — medida em 40 px,
     // idênticos nas duas peças, o que prova geometria e não desenho.
+    // E A PELE PRÓPRIA SAI DO FUNDO — a correção do defeito OPOSTO.
+    //
+    // Tirar o `− peleFrente` daqui (commit `1403143`) fechou a costura, e criou
+    // isto: `corpoVestido` é a silhueta das DUAS camadas de pano, e o forro de
+    // pano passa por TRÁS da mão. O fundo então pintava chapado, com a cor do
+    // uniforme, sobre a mão e sobre o pescoço — onde a arte tem buraco de
+    // propósito e a oclusão não alcança. Medido: 1889 px, o MESMO número nas duas
+    // peças, dos quais 557 na gola.
+    //
+    // `peleExposta`, e não `peleFrente`: a diferença entre as duas é o forro de
+    // pele, que passa por baixo da gola e do punho e continua coberto. É o que
+    // impede esta subtração de reabrir os 2851 px — e o gate de `av-forro-pele
+    // em corpoVestido`, tolerância zero, é quem prova isso a cada execução.
+    //
+    // SEM DILATAR. Um raio de 1 px aqui comeria 1 px do forro e reabriria a
+    // costura num anel — exatamente o que aquele gate proíbe. O raio é decidido
+    // por um gate que já existe, não por gosto.
     fundo: subtrair(
-      dilatar(m.corpoVestido, { w: m.w, h: m.h }, 1),
-      erodir(m.vaoAnatomico, { w: m.w, h: m.h }, 1),
+      subtrair(
+        dilatar(m.corpoVestido, { w: m.w, h: m.h }, 1),
+        erodir(m.vaoAnatomico, { w: m.w, h: m.h }, 1),
+      ),
+      m.peleExposta,
     ),
+  };
+}
+
+/**
+ * O RECORTE ANTIGO, o de `6e3feb6` — o estado anterior ao `1403143`.
+ *
+ * Existe para uma coisa só: ser a FIXTURE do gate de proveniência. Um gate sem
+ * fixture pode ficar cego em silêncio, e essa é literalmente a família de falha
+ * desta fase — foi assim que `verify:avatar-assets` passou meses vermelho sem
+ * ninguém saber. Guardar um PNG de referência não substitui: o que precisa ser
+ * conferido é que o INSTRUMENTO ainda mede, não que uma imagem antiga continua
+ * igual a si mesma.
+ *
+ * O DEFEITO, reproduzido literalmente: as duas máscaras subtraem `peleFrente`,
+ * então abrem o MESMO buraco, e na costura em que a pele encosta no macacão
+ * nenhuma das duas pinta. Por ali a base aparece crua — bege do macacão na gola,
+ * nos punhos e nos vãos. Medido no estado antigo: 2851 px.
+ *
+ * A oclusão do pé vem junto, e sem a subtração do vão, porque era assim: essa
+ * subtração só chegou no `3745c4f`. Reproduzir metade do estado antigo não
+ * reproduz o estado antigo.
+ *
+ * NÃO USAR EM PRODUÇÃO. O caminho canônico é `recortes`.
+ */
+export function recortesLegado(m: MascarasBase): Recorte {
+  return {
+    pano: subtrair(m.cobertura, m.peleFrente),
+    fundo: subtrair(m.corpoVestido, m.peleFrente),
+    oclusao: intersecao(dilatar(m.pes, { w: m.w, h: m.h }, 2), m.cobertura),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Closes derivados — recortes de conferência que saem de medição, não do olho
+// ---------------------------------------------------------------------------
+
+/** Caixa envolvente da máscara dentro de uma faixa de linhas. `null` se vazia. */
+export function caixaEm(
+  m: Mascara,
+  { w, h }: Dim,
+  y0 = 0,
+  y1 = h - 1,
+): [number, number, number, number] | null {
+  let x0 = w, yy0 = h, x1 = -1, yy1 = -1;
+  for (let y = Math.max(0, y0); y <= Math.min(h - 1, y1); y++)
+    for (let x = 0; x < w; x++) {
+      if (!m[y * w + x]) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < yy0) yy0 = y;
+      if (y > yy1) yy1 = y;
+    }
+  return x1 < 0 ? null : [x0, yy0, x1, yy1];
+}
+
+/** Componentes conectados por 4-vizinhos, maior primeiro. */
+export function componentes(
+  m: Mascara,
+  { w, h }: Dim,
+): { px: number; bb: [number, number, number, number] }[] {
+  const visto = new Uint8Array(w * h);
+  const fila = new Int32Array(w * h);
+  const out: { px: number; bb: [number, number, number, number] }[] = [];
+  for (let p0 = 0; p0 < w * h; p0++) {
+    if (visto[p0] || !m[p0]) continue;
+    let ini = 0, fim = 0;
+    fila[fim++] = p0;
+    visto[p0] = 1;
+    let n = 0, x0 = w, y0 = h, x1 = -1, y1 = -1;
+    while (ini < fim) {
+      const p = fila[ini++];
+      const x = p % w, y = (p / w) | 0;
+      n++;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+      const viz = [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1];
+      for (const q of viz) if (q >= 0 && !visto[q] && m[q]) { visto[q] = 1; fila[fim++] = q; }
+    }
+    out.push({ px: n, bb: [x0, y0, x1, y1] });
+  }
+  return out.sort((a, b) => b.px - a.px);
+}
+
+/** A linha com a MAIOR CORRIDA contígua acesa, e essa corrida. */
+export function linhaDaMaiorCorrida(
+  m: Mascara,
+  dim: Dim,
+  y0 = 0,
+  y1 = dim.h - 1,
+): { y: number; ini: number; fim: number } | null {
+  let melhor: { y: number; ini: number; fim: number } | null = null;
+  for (let y = Math.max(0, y0); y <= Math.min(dim.h - 1, y1); y++)
+    for (const [ini, fim] of vaos(m, dim, y))
+      if (!melhor || fim - ini > melhor.fim - melhor.ini) melhor = { y, ini, fim };
+  return melhor;
+}
+
+/** Um recorte de conferência, com a medição que o produziu. */
+export interface Close {
+  rotulo: string;
+  /** `viewBox` em unidades do canvas da base. */
+  vb: string;
+  /** De onde a caixa saiu. Vai impressa na folha, ao lado da figura. */
+  origem: string;
+}
+
+/**
+ * OS QUATRO CLOSES, DERIVADOS DAS MÁSCARAS.
+ *
+ * Eram literais — `"950 1420 700 700"` e mais três. Um recorte escolhido a olho
+ * produziu um antes/depois idêntico e uma conclusão errada nesta fase: a caixa
+ * simplesmente não continha o defeito, e "não mudou nada" virou "está consertado".
+ *
+ * Aqui nenhum número é escrito à mão. Cada caixa sai de um marco ou de uma
+ * medição sobre as máscaras, e acompanha o texto do que a produziu — para a folha
+ * poder ser conferida sem ler este arquivo.
+ *
+ * A MARGEM é a única escolha de enquadramento, e é relativa ao tamanho da própria
+ * região: ela decide o quanto de contexto entra em volta, nunca ONDE a caixa está.
+ */
+export function closes(m: MascarasBase): Close[] {
+  const dim: Dim = { w: m.w, h: m.h };
+  const corpo = caixaEm(m.corpoVestido, dim);
+  if (!corpo) return [];
+  const [cx0, , cx1] = corpo;
+  const largura = cx1 - cx0;
+
+  /**
+   * NO EIXO ou LADEANDO — o terço central do corpo decide, e é o que separa as
+   * regiões sem nenhum pixel escrito à mão:
+   *
+   *   vão entre as PERNAS    x=657   no eixo (eixo do corpo = 656)
+   *   vão de braço esq/dir   460/856  ladeando
+   *   gola                   x=661   no eixo
+   *   punho esq/dir          412/906  ladeando
+   *
+   * A separação medida é de ~196 px contra 1 px, então qualquer corte razoável
+   * dentro do terço funciona — não é um limiar em cima do fio da navalha.
+   */
+  const noEixo = (bb: [number, number, number, number]) => {
+    const cx = (bb[0] + bb[2]) / 2;
+    return cx > cx0 + largura / 3 && cx < cx1 - largura / 3;
+  };
+
+  /** Caixa quadrada de canvas em volta de uma caixa de máscara. */
+  const vbDe = (bb: [number, number, number, number], margem = 0.25): string => {
+    const [x0, y0, x1, y1] = bb;
+    const cx = (x0 + x1) / 2;
+    const cy = (y0 + y1) / 2;
+    const lado = Math.max(x1 - x0, y1 - y0) * (1 + 2 * margem);
+    const l = Math.round(lado * m.k);
+    return `${Math.round((cx - lado / 2) * m.k)} ${Math.round((cy - lado / 2) * m.k)} ${l} ${l}`;
+  };
+
+  const out: Close[] = [];
+  const costura = componentes(intersecao(m.corpoVestido, m.peleFrente), dim);
+
+  // GOLA — o maior pedaço de costura NO EIXO. É onde o pescoço encontra o macacão.
+  const gola = costura.find((c) => noEixo(c.bb));
+  if (gola)
+    out.push({
+      rotulo: "gola",
+      vb: vbDe(gola.bb),
+      origem: `costura no eixo, ${gola.px} px, y ${gola.bb[1]}–${gola.bb[3]}`,
+    });
+
+  // PUNHO — o maior pedaço de costura LADEANDO. É onde a mão sai da manga. Sem a
+  // separação por eixo, a "maior corrida" caía na gola: 49 px em y=836, que é
+  // pescoço, e o close do punho mostrava o queixo.
+  const punho = costura.find((c) => !noEixo(c.bb));
+  if (punho)
+    out.push({
+      rotulo: "punho",
+      vb: vbDe(punho.bb),
+      origem: `costura ladeando, ${punho.px} px, y ${punho.bb[1]}–${punho.bb[3]}`,
+    });
+
+  // OS DOIS VÃOS QUE LADEIAM O TRONCO — e não o de entre as pernas, que tem 47453
+  // px, quase dez vezes cada um deles, e engoliria o boneco inteiro no close.
+  const vaos = componentes(m.vaoAnatomico, dim).filter((c) => !noEixo(c.bb));
+  const eixoX = (cx0 + cx1) / 2;
+  for (const [rotulo, deste] of [
+    ["vão esquerdo", (cx: number) => cx < eixoX],
+    ["vão direito", (cx: number) => cx > eixoX],
+  ] as [string, (cx: number) => boolean][]) {
+    const c = vaos.find((k) => deste((k.bb[0] + k.bb[2]) / 2));
+    if (c) out.push({ rotulo, vb: vbDe(c.bb), origem: `componente de vaoAnatomico, ${c.px} px` });
+  }
+
+  // NÃO HÁ CLOSE SEPARADO DE "MÃO", e isto foi medido, não suposto.
+  //
+  // A ideia era que o close do punho enquadrasse a COSTURA (o forro sob a manga)
+  // e um close novo enquadrasse a MÃO, já que depois da correção do
+  // fundo-sobre-a-mão as duas regiões têm vereditos opostos. Só que
+  // `corpoVestido ∩ peleExposta` devolve ali o MESMO componente de 216 px em
+  // y 1207–1227 que `corpoVestido ∩ peleFrente`: no punho a costura já é pele
+  // própria, não forro. As duas caixas saíam idênticas — `1704 2326 216 216` — e
+  // a folha ganhava uma linha que repetia a de cima.
+  //
+  // Onde as duas de fato divergem é na GOLA, e o close da gola já cobre isso.
+
+  // BOTA — UM pé, com a bota por cima dele. A caixa sai do componente do pé e
+  // sobe até `yBota`: o defeito daqui foi a pele aparecendo por baixo da sola, e
+  // ele mora abaixo do fim do macacão.
+  const pe = componentes(m.pes, dim)[0];
+  if (pe)
+    out.push({
+      rotulo: "bota e sola",
+      vb: vbDe([pe.bb[0], Math.min(m.marcos.yBota, pe.bb[1]), pe.bb[2], pe.bb[3]], 0.15),
+      origem: `pé de ${pe.px} px, de yBota ${m.marcos.yBota} à sola ${pe.bb[3]}`,
+    });
+
+  return out;
+}
+
+/**
+ * O RECORTE de `1403143` — o fundo chapado por cima da mão.
+ *
+ * A segunda FIXTURE do gate de proveniência, e o par de `recortesLegado`. Aquela
+ * reproduz a base vazando para CIMA; esta reproduz o asset cobrindo o que não
+ * devia. São defeitos opostos, e cada uma é o controle negativo da outra: junto,
+ * elas provam que a correção não trocou um pelo outro — que é literalmente o que
+ * o `1403143` fez.
+ *
+ * O DEFEITO, reproduzido literalmente: o fundo sai de `corpoVestido` sem subtrair
+ * pele nenhuma. Como `corpoVestido` é a silhueta das DUAS camadas de pano, e o
+ * forro de pano passa por TRÁS da mão, o fundo pinta chapado sobre a mão e sobre
+ * o pescoço — onde a arte tem buraco de propósito e a oclusão não alcança.
+ * Medido no estado antigo: 1889 px, o MESMO número nas duas peças, dos quais 557
+ * na gola.
+ *
+ * NÃO USAR EM PRODUÇÃO. O caminho canônico é `recortes`.
+ */
+export function recortesFundoNaMao(m: MascarasBase): Recorte {
+  const dim = { w: m.w, h: m.h };
+  return {
+    pano: subtrair(subtrair(m.cobertura, m.peleFrente), m.vaoAnatomico),
+    fundo: subtrair(dilatar(m.corpoVestido, dim, 1), erodir(m.vaoAnatomico, dim, 1)),
   };
 }
 

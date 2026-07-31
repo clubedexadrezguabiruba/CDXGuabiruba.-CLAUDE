@@ -51,7 +51,18 @@ import { abrirNavegador, renderizarSvg, renderizarHtml, salvar } from "./render-
 
 const FONTE = "scripts/avatar/fonte/avatar-base-corpo-v3.svg";
 const DESTINO = "public/items/base/avatar-base-neutro.svg";
-const REF_PNG = "C:/Users/Lenovo/Downloads/avatar_base_macacao_azul_4k_transparente_v02.png";
+/**
+ * O PNG mestre da base, DENTRO do repositório.
+ *
+ * Ele apontava para `C:/Users/Lenovo/Downloads/`, e o arquivo mudou de pasta: a
+ * figura "original (PNG)" desta folha sumiu sem avisar, porque o uso é protegido
+ * por `existsSync`. Foi a segunda vez nesta fase que a mesma dependência mordeu.
+ *
+ * Não é só a folha que depende dele. É a imagem que se ANEXA ao gerador para
+ * pedir um uniforme novo (doc 18): sem ela o gerador desenha outro personagem em
+ * vez de editar o nosso, e isso não se corrige com prompt melhor.
+ */
+const REF_PNG = "scripts/avatar/fonte/referencia-base.png";
 const OUT = ".scratch/recolor";
 
 /** Id do <symbol>. A página do app referencia este nome. */
@@ -567,7 +578,15 @@ export function gerar(): Resultado {
  * Declara só as duas propriedades que sobraram no contrato. A roupa não entra
  * mais aqui: ela é cor assada no desenho.
  */
-function autonomo(corpo: string, pele: number, cabelo = CABELO[0], vb = `0 0 ${W} ${H}`): string {
+// `cabelo` é ANOTADO: sem a anotação o default `CABELO[0]` estreita o parâmetro
+// à literal `"#3A2F2A"`, e a folha de prova — que renderiza as cinco cores sobre
+// a mesma pele — não compilava.
+function autonomo(
+  corpo: string,
+  pele: number,
+  cabelo: (typeof CABELO)[number] = CABELO[0],
+  vb = `0 0 ${W} ${H}`,
+): string {
   const vars = `--av-pele:${PELE[pele]};--av-cabelo:${cabelo}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" style="${vars}">${corpo}</svg>`;
 }
