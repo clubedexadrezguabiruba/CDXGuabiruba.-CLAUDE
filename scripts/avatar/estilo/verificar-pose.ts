@@ -47,13 +47,19 @@
  * `verify:avatar-assets` ficou vermelho por meses sem ninguém saber.
  *
  * ---------------------------------------------------------------------------
- * AS TRÊS FIXTURES
+ * AS CINCO FIXTURES
  * ---------------------------------------------------------------------------
  *
- * Cada uma mata um gate diferente, e é isso que prova que os três medem coisas
- * distintas. A terceira é a que faz o teste de `id` deixar de ser teatro: com
- * geometrias idênticas a colisão resolve para o primeiro clip e **nada muda na
- * tela**, então só clips divergentes a tornam visível.
+ * Cada uma mata uma medida diferente, e é isso que prova que elas enxergam coisas
+ * distintas. As duas últimas entraram no Bloco 1c e são os DOIS DEFEITOS QUE
+ * PASSARAM VERDES no 1b — o rosto sem faceta esquerda e a orelha colada atrás. As
+ * duas têm a silhueta externa exatamente certa, então elas passam no perfil e
+ * reprovam nos marcos: é a demonstração, em código, de que a silhueta externa não
+ * era régua suficiente.
+ *
+ * A do `id` é a que faz o teste deixar de ser teatro: com geometrias idênticas a
+ * colisão resolve para o primeiro clip e **nada muda na tela**, então só clips
+ * divergentes a tornam visível.
  */
 
 import { readFileSync } from "fs";
@@ -63,23 +69,27 @@ import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import {
   CABECA,
   EIXO_CABECA,
+  FAIXA_FACETA,
+  FACETAS,
   FOLGA_PROJETO,
-  GIRO,
   OLHO,
   OLHO_CX_DIR,
   OLHO_CX_ESQ,
   OLHO_CY_DIR,
   OLHO_CY_ESQ,
-  ORELHA,
-  ORELHA_CX_DIR,
-  ORELHA_CX_ESQ,
+  ORELHA_DIR,
   SOMBRA_CHAO,
   TRACO,
   VIEWBOX,
+  fatorDeTom,
   pathCabeca,
+  pathConchaEsq,
   pathEspecular,
-  pathPlanoLateralCabeca,
+  pathFacetaDir,
+  pathFacetaEsq,
+  pathOrelhaDir,
   pathPlanoLateralTronco,
+  pathSombraQueixoTronco,
   pathTronco,
 } from "../../../src/lib/avatar/estilo/geometria";
 import { LINHA, PELE, TRAJE_BASE, escurecer } from "../../../src/lib/avatar/palette";
@@ -136,10 +146,49 @@ interface Mutacao {
   escalaCabecaX?: number;
   /** Põe os olhos no eixo da cabeça e no mesmo nível. */
   olhosCentrados?: boolean;
-  /** Dá às duas orelhas a mesma saliência. */
+  /** Dá à orelha direita a saliência da esquerda. */
   orelhasEspelhadas?: boolean;
-  /** Não desenha nenhum plano lateral. */
-  semPlanoLateral?: boolean;
+  /** Não desenha plano lateral nenhum no tronco. */
+  semPlanoTronco?: boolean;
+  /**
+   * **A base do Bloco 1b, em uma linha.** Sem faceta esquerda, e a direita de tom
+   * chapado em vez de gradiente. A silhueta fica exatamente certa.
+   */
+  rostoChapado?: boolean;
+  /**
+   * **O outro defeito do Bloco 1b.** A orelha esquerda vira elipse separada ATRÁS
+   * da cabeça, com a borda da cabeça passando reta por trás dela — dois traços onde
+   * a referência tem um. A silhueta externa fica idêntica.
+   */
+  orelhaColada?: boolean;
+}
+
+/**
+ * O contorno da cabeça SEM a saliência da orelha esquerda.
+ *
+ * A borda passa reta por trás, ligando os dois pontos onde a orelha começa e acaba.
+ * É o desenho do Bloco 1b, e serve à fixture `orelhaColada` — que põe uma elipse por
+ * cima disto para reproduzir os dois traços.
+ */
+function contornoSemOrelhaEsq(): { x: number; y: number }[] {
+  return CABECA.contorno.filter((p) => !(p.x < 90 && p.y > 205 && p.y < 285)).map((p) => ({ ...p }));
+}
+
+function pathDePontos(pts: { x: number; y: number }[]): string {
+  const N = pts.length;
+  const em = (i: number) => pts[(i + N) % N];
+  let d = `M ${pts[0].x} ${pts[0].y} `;
+  for (let i = 0; i < N; i++) {
+    const p0 = em(i - 1);
+    const p1 = em(i);
+    const p2 = em(i + 1);
+    const p3 = em(i + 2);
+    d +=
+      `C ${(p1.x + (p2.x - p0.x) / 6).toFixed(1)} ${(p1.y + (p2.y - p0.y) / 6).toFixed(1)} ` +
+      `${(p2.x - (p3.x - p1.x) / 6).toFixed(1)} ${(p2.y - (p3.y - p1.y) / 6).toFixed(1)} ` +
+      `${p2.x.toFixed(1)} ${p2.y.toFixed(1)} `;
+  }
+  return d + "Z";
 }
 
 /**
@@ -151,33 +200,57 @@ interface Mutacao {
  * nos dois e não provaria nada sobre qual gate enxerga o quê.
  */
 function fixture(mut: Mutacao): string {
-  const salEsq = GIRO.saliencia.esq;
-  const salDir = mut.orelhasEspelhadas ? GIRO.saliencia.esq : GIRO.saliencia.dir;
-  const cxOrE = CABECA.x0 - salEsq + ORELHA.rx;
-  const cxOrD = CABECA.x1 + salDir - ORELHA.rx;
   const cxOlhoE = mut.olhosCentrados ? EIXO_CABECA - OLHO.separacao / 2 : OLHO_CX_ESQ;
   const cxOlhoD = mut.olhosCentrados ? EIXO_CABECA + OLHO.separacao / 2 : OLHO_CX_DIR;
   const cyOlhoE = mut.olhosCentrados ? OLHO.cy : OLHO_CY_ESQ;
   const cyOlhoD = mut.olhosCentrados ? OLHO.cy : OLHO_CY_DIR;
   const k = mut.escalaCabecaX ?? 1;
   const pele = PELE[2];
-  const peleS = escurecer(pele, 0.88);
+  const tom = (delta: number) => escurecer(pele, fatorDeTom(delta, FACETAS.PLATO_PELE));
   const traco = `fill="none" stroke="${LINHA}" stroke-width="${TRACO}" stroke-linejoin="round" stroke-linecap="round"`;
-  const orelha = (cx: number, fill: string) =>
-    `<ellipse cx="${cx}" cy="${ORELHA.cy}" rx="${ORELHA.rx}" ry="${ORELHA.ry}" fill="${fill}"/>`;
   const olho = (cx: number, cy: number) =>
     `<rect x="${cx - OLHO.w / 2}" y="${cy - OLHO.h / 2}" width="${OLHO.w}" height="${OLHO.h}" ` +
     `rx="${OLHO.r}" fill="${LINHA}"/>`;
 
+  /** A mesma aresta do queixo que o compositor emite. Ver `FAIXA_FACETA`. */
+  const tQ = Number(
+    (
+      (FAIXA_FACETA.yQueixo - FAIXA_FACETA.yAmostraTopo) /
+      (FAIXA_FACETA.yFundo - FAIXA_FACETA.yAmostraTopo)
+    ).toFixed(3),
+  );
+  const dCabeca = mut.orelhaColada ? pathDePontos(contornoSemOrelhaEsq()) : pathCabeca();
+  const salDir = mut.orelhasEspelhadas ? 24 : ORELHA_DIR.xPonta - ORELHA_DIR.xBorda;
+  const dOrelhaDir = mut.orelhasEspelhadas
+    ? pathOrelhaDir().replace(
+        new RegExp(String(ORELHA_DIR.xPonta), "g"),
+        String(ORELHA_DIR.xBorda + salDir),
+      )
+    : pathOrelhaDir();
+
+  // A elipse colada: no lugar da saliência que o contorno perdeu, e por BAIXO da
+  // cabeça — que é onde o 1b a punha, e a razão de ela ler como adesivo.
+  const elipseColada = mut.orelhaColada
+    ? `<ellipse cx="66" cy="246" rx="26" ry="37" fill="${tom(FACETAS.esq.deltaBase)}"/>` +
+      `<ellipse cx="66" cy="246" rx="26" ry="37" ${traco}/>`
+    : "";
+
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}">` +
-    `<defs><clipPath id="fx-cabeca"><path d="${pathCabeca()}"/></clipPath>` +
+    `<defs><clipPath id="fx-cabeca"><path d="${dCabeca}"/></clipPath>` +
     `<clipPath id="fx-tronco"><path d="${pathTronco()}"/></clipPath>` +
     `<radialGradient id="fx-sombra">` +
     SOMBRA_CHAO.paradas
       .map((p) => `<stop offset="${p.em}" stop-color="${LINHA}" stop-opacity="${p.opacidade}"/>`)
       .join("") +
-    `</radialGradient></defs>` +
+    `</radialGradient>` +
+    `<linearGradient id="fx-fe" gradientUnits="userSpaceOnUse" x1="0" ` +
+    `y1="${FAIXA_FACETA.yAmostraTopo}" x2="0" y2="${FAIXA_FACETA.yFundo}">` +
+    `<stop offset="0" stop-color="${tom(FACETAS.esq.deltaTopo)}"/>` +
+    `<stop offset="${tQ}" stop-color="${tom(FACETAS.esq.deltaBase)}"/>` +
+    `<stop offset="${tQ}" stop-color="${tom(FACETAS.queixo.delta)}"/>` +
+    `<stop offset="1" stop-color="${tom(FACETAS.queixo.delta)}"/></linearGradient>` +
+    `</defs>` +
     // A sombra do chão entra igual à da base de propósito. Sem ela a fixture
     // reprovaria TAMBÉM nos marcos da sombra, e aí ela deixaria de isolar o que
     // se quer provar — que é o gate enxergar pose errada com silhueta certa.
@@ -185,24 +258,27 @@ function fixture(mut: Mutacao): string {
     `ry="${SOMBRA_CHAO.ry}" fill="url(#fx-sombra)"/>` +
     `<g clip-path="url(#fx-tronco)">` +
     `<path d="${pathTronco()}" fill="${TRAJE_BASE.roupa}"/>` +
-    (mut.semPlanoLateral
+    `<path d="${pathSombraQueixoTronco()}" fill="${escurecer(TRAJE_BASE.roupa, fatorDeTom(FACETAS.sombraQueixo.delta, FACETAS.PLATO_TRONCO))}"/>` +
+    (mut.semPlanoTronco
       ? ""
       : `<path d="${pathPlanoLateralTronco()}" fill="${escurecer(TRAJE_BASE.roupa, 0.9)}" opacity=".42"/>`) +
     `</g>` +
     `<path d="${pathTronco()}" ${traco}/>` +
     `<g transform="translate(${EIXO_CABECA} 0) scale(${k} 1) translate(${-EIXO_CABECA} 0)">` +
-    orelha(cxOrE, peleS) +
-    orelha(cxOrD, peleS) +
-    `<ellipse cx="${cxOrE}" cy="${ORELHA.cy}" rx="${ORELHA.rx}" ry="${ORELHA.ry}" ${traco}/>` +
-    `<ellipse cx="${cxOrD}" cy="${ORELHA.cy}" rx="${ORELHA.rx}" ry="${ORELHA.ry}" ${traco}/>` +
-    `<path d="${pathCabeca()}" fill="${pele}"/>` +
+    elipseColada +
+    `<path d="${dOrelhaDir}" fill="${tom(FACETAS.dir.deltaBase)}"/>` +
+    `<path d="${dOrelhaDir}" ${traco}/>` +
+    `<path d="${dCabeca}" fill="${pele}"/>` +
     `<g clip-path="url(#fx-cabeca)">` +
-    (mut.semPlanoLateral
-      ? ""
-      : `<path d="${pathPlanoLateralCabeca()}" fill="${peleS}" opacity=".40"/>`) +
+    (mut.rostoChapado
+      ? // Sem faceta esquerda; a direita de tom chapado. A base do 1b.
+        `<path d="${pathFacetaDir()}" fill="${tom(FACETAS.dir.deltaTopo)}"/>`
+      : `<path d="${pathFacetaEsq()}" fill="url(#fx-fe)"/>` +
+        `<path d="${pathFacetaDir()}" fill="${tom(FACETAS.dir.deltaBase)}"/>` +
+        `<path d="${pathConchaEsq()}" fill="${tom(FACETAS.concha.delta)}"/>`) +
     `<path d="${pathEspecular()}" fill="#FFFFFF" opacity=".30"/>` +
     `</g>` +
-    `<path d="${pathCabeca()}" ${traco}/>` +
+    `<path d="${dCabeca}" ${traco}/>` +
     olho(cxOlhoE, cyOlhoE) +
     olho(cxOlhoD, cyOlhoD) +
     `</g>` +
@@ -274,6 +350,16 @@ function regioes(fracCabeca: number): Regiao[] {
   ];
 }
 
+/**
+ * O PERFIL É COMPARADO **POR LADO**, contra o eixo do tronco.
+ *
+ * Comparar largura total é cego para deriva de eixo: uma cabeça deslocada 8 unidades
+ * para a direita tem a mesma largura em toda altura e passa verde. E a referência
+ * TEM deriva — o eixo da cabeça anda de +7 no corpo dela para +15 no quarto de
+ * baixo. O item "base da cabeça: o eixo escorre para a direita" do plano ficou verde
+ * no Bloco 1b exatamente por isto, e é a razão de o gate agora somar as duas
+ * distâncias como amostras independentes em vez de somá-las numa largura.
+ */
 function compararPerfil(alvo: Marcos, ref: Marcos): ErroRegiao[] {
   const fracCabeca = ref.cabeca.alt / 600;
   return regioes(fracCabeca).map((r) => {
@@ -289,7 +375,7 @@ function compararPerfil(alvo: Marcos, ref: Marcos): ErroRegiao[] {
       // A primeira e a última linha da figura são uma ponta de 1 px em que o
       // antialiasing decide sozinho a largura.
       if (b.frac < 0.004 || b.frac > 0.996) continue;
-      erros.push(Math.abs(a.larg - b.larg * r.fator));
+      erros.push(Math.abs(a.esq - b.esq * r.fator), Math.abs(a.dir - b.dir * r.fator));
     }
     erros.sort((x, y) => x - y);
     const n = erros.length;
@@ -319,12 +405,58 @@ interface Marco {
 
 function marcos(alvo: Marcos, ref: Marcos): Marco[] {
   const media = (xs: number[]) => xs.reduce((s, v) => s + v, 0) / xs.length;
-  const planoDir = (m: Marcos) => media(m.planoLateral.map((p) => p.dir));
-  const planoEsq = (m: Marcos) => media(m.planoLateral.map((p) => p.esq));
   const troncoDir = (m: Marcos) => media(m.planoLateralTronco.map((p) => p.dir));
   const troncoEsq = (m: Marcos) => media(m.planoLateralTronco.map((p) => p.esq));
 
+  /**
+   * OS MARCOS DO VOLUME — os oito que o Bloco 1b não tinha, e cada um mata um
+   * defeito que passou verde.
+   *
+   * Eles ficam separados dos marcos de pose porque medem outra coisa: pose é onde as
+   * peças estão, volume é como a luz cai. Um boneco pode ter a pose exata e o rosto
+   * chapado — foi o que o 1b entregou e o que o Doug reprovou como "efeito cubo"
+   * faltando.
+   *
+   * A tolerância de largura é maior que a de tom (6 contra 5) porque a aresta é
+   * achada por partição sobre pixels com antialiasing: onde ela cai tem ±2 unidades
+   * de indeterminação, enquanto o tom de um segmento inteiro é uma média de dezenas
+   * de pixels e é estável.
+   */
+  /**
+   * O desnível de tom, **normalizado ao platô de 221 da referência**.
+   *
+   * Sombreamento é multiplicativo, e o gate compara duas imagens com platôs
+   * diferentes: o rosto da referência lê 221, o boneco renderizado com `PELE[2]` lê
+   * 185,6. A mesma faceta correta sai −28 lá e −24 aqui. Comparar o número cru
+   * reprovaria o desenho certo — e, numa pele clara, aprovaria o errado.
+   *
+   * Dividir pelo platô medido de cada lado e remultiplicar por 221 deixa os dois
+   * comparáveis e os números legíveis: continuam sendo "níveis de luminância", só
+   * que sempre na escala da referência.
+   */
+  const rel = (delta: number, plato: number) => (plato > 1 ? (delta / plato) * 221 : 0);
+  const fTopo = (m: Marcos) => m.facetas.topo;
+  const fBase = (m: Marcos) => m.facetas.base;
+
+  const volume: Marco[] = [
+    { nome: "espessura do traço", medido: alvo.espessuraTraco, esperado: ref.espessuraTraco, tol: 1.5 },
+    // A CONTAGEM. É o marco que enxerga a orelha colada, e o único do gate inteiro
+    // que não é uma medida contínua: 1 à esquerda, 2 à direita, e não há meio-termo.
+    { nome: "traços na orelha esq", medido: alvo.tracosOrelha.esq, esperado: ref.tracosOrelha.esq, tol: 0.5 },
+    { nome: "traços na orelha dir", medido: alvo.tracosOrelha.dir, esperado: ref.tracosOrelha.dir, tol: 0.5 },
+    { nome: "faceta esq · largura topo", medido: fTopo(alvo).largEsq, esperado: fTopo(ref).largEsq, tol: 6 },
+    { nome: "faceta esq · delta topo", medido: rel(fTopo(alvo).deltaEsq, fTopo(alvo).plato), esperado: rel(fTopo(ref).deltaEsq, fTopo(ref).plato), tol: 5 },
+    { nome: "faceta esq · delta base", medido: rel(fBase(alvo).deltaEsq, fBase(alvo).plato), esperado: rel(fBase(ref).deltaEsq, fBase(ref).plato), tol: 5 },
+    { nome: "faceta dir · largura topo", medido: fTopo(alvo).largDir, esperado: fTopo(ref).largDir, tol: 6 },
+    { nome: "faceta dir · delta topo", medido: rel(fTopo(alvo).deltaDir, fTopo(alvo).plato), esperado: rel(fTopo(ref).deltaDir, fTopo(ref).plato), tol: 5 },
+    { nome: "faceta dir · delta base", medido: rel(fBase(alvo).deltaDir, fBase(alvo).plato), esperado: rel(fBase(ref).deltaDir, fBase(ref).plato), tol: 5 },
+    { nome: "queixo · delta", medido: rel(alvo.facetas.queixo.delta, alvo.facetas.queixo.plato), esperado: rel(ref.facetas.queixo.delta, ref.facetas.queixo.plato), tol: 6 },
+    { nome: "sombra do queixo · altura", medido: alvo.facetas.sombraQueixo.altura, esperado: ref.facetas.sombraQueixo.altura, tol: 6 },
+    { nome: "sombra do queixo · delta", medido: rel(alvo.facetas.sombraQueixo.delta, alvo.facetas.sombraQueixo.plato), esperado: rel(ref.facetas.sombraQueixo.delta, ref.facetas.sombraQueixo.plato), tol: 8 },
+  ];
+
   return [
+    ...volume,
     { nome: "largura da cabeça", medido: alvo.cabeca.larg, esperado: ref.cabeca.larg, tol: 10 },
     { nome: "altura da cabeça", medido: alvo.cabeca.alt, esperado: ref.cabeca.alt, tol: 10 },
     /**
@@ -349,8 +481,6 @@ function marcos(alvo: Marcos, ref: Marcos): Marco[] {
     { nome: "separação dos olhos", medido: alvo.olhos.separacao, esperado: ref.olhos.separacao, tol: 8 },
     { nome: "largura do olho", medido: alvo.olhos.esq.larg, esperado: ref.olhos.esq.larg, tol: 5 },
     { nome: "altura do olho", medido: alvo.olhos.esq.alt, esperado: ref.olhos.esq.alt, tol: 8 },
-    { nome: "plano lateral da cabeça, dir", medido: planoDir(alvo), esperado: planoDir(ref), tol: 5 },
-    { nome: "plano lateral da cabeça, esq", medido: planoEsq(alvo), esperado: planoEsq(ref), tol: 4 },
     { nome: "plano lateral do tronco, dir", medido: troncoDir(alvo), esperado: troncoDir(ref), tol: 6 },
     { nome: "plano lateral do tronco, esq", medido: troncoEsq(alvo), esperado: troncoEsq(ref), tol: 6 },
     { nome: "faixa escura no eixo do rosto", medido: alvo.faixaNoEixo, esperado: ref.faixaNoEixo, tol: 6 },
@@ -466,8 +596,8 @@ async function main() {
     if (unicos !== ids.length)
       falhas.push(`unicidade de id: ${ids.length} emitidos e só ${unicos} únicos`);
 
-    // ---- as três fixtures ----
-    console.log(`\nAS TRÊS FIXTURES — cada uma tem de reprovar num gate diferente`);
+    // ---- as cinco fixtures ----
+    console.log(`\nAS CINCO FIXTURES — cada uma tem de reprovar num marco diferente`);
 
     // 1. cabeça 10% estreita → perfil externo
     const f1 = await medirSvg(nav, fixture({ escalaCabecaX: 0.9 }));
@@ -482,7 +612,7 @@ async function main() {
     // 2. silhueta certa, pose errada → marcos
     const f2 = await medirSvg(
       nav,
-      fixture({ olhosCentrados: true, orelhasEspelhadas: true, semPlanoLateral: true }),
+      fixture({ olhosCentrados: true, orelhasEspelhadas: true, semPlanoTronco: true }),
     );
     const perfil2 = compararPerfil(f2, ref);
     const marcos2 = marcos(f2, ref).filter((m) => Math.abs(m.medido - m.esperado) > m.tol);
@@ -503,16 +633,54 @@ async function main() {
           `então ou a fixture mudou de silhueta ou o perfil está medindo pose`,
       );
 
-    // 3. duas instâncias, MESMO ns e clips DIFERENTES → unicidade de id
+    // ---- as duas fixtures do Bloco 1c, e cada uma é um defeito que PASSOU ----
+    //
+    // As duas têm a silhueta externa exatamente certa, e é isso que as torna úteis:
+    // elas provam que os marcos novos enxergam o que o perfil não enxerga. Se
+    // qualquer uma passasse, o gate estaria de volta ao estado em que aprovou a base
+    // que o Doug reprovou.
+    const olhaFixture = async (
+      rotulo: string,
+      mut: Mutacao,
+      quais: string[],
+    ): Promise<void> => {
+      const m = await medirSvg(nav, fixture(mut));
+      const pegos = marcos(m, ref).filter(
+        (x) => quais.some((q) => x.nome.includes(q)) && Math.abs(x.medido - x.esperado) > x.tol,
+      );
+      const perfilLimpo = !compararPerfil(m, ref).some((e) => reprovou(e));
+      console.log(
+        `    ${pegos.length ? "·" : "✗"} ${rotulo}: ` +
+          `${pegos.length} marco(s) — ${pegos.map((x) => x.nome).join(", ") || "NENHUM"}`,
+      );
+      console.log(
+        `      e o perfil externo ${perfilLimpo ? "PASSA, como tem de passar" : "também reprovou — a fixture não isola o marco"}`,
+      );
+      if (!pegos.length) falhas.push(`a fixture "${rotulo}" PASSOU nos marcos ${quais.join("/")}`);
+      if (!perfilLimpo)
+        falhas.push(
+          `a fixture "${rotulo}" reprovou no PERFIL também — ela deveria ter a silhueta certa`,
+        );
+    };
+
+    await olhaFixture("rosto chapado, sem faceta esquerda", { rostoChapado: true }, ["faceta"]);
+    await olhaFixture("orelha esquerda colada atrás", { orelhaColada: true }, ["traços na orelha"]);
+
+    // 5. duas instâncias, MESMO ns e clips DIFERENTES → unicidade de id
     //
     // Sem clips divergentes este teste é teatro: a colisão resolve para o
     // primeiro clip e, com geometrias idênticas, nada muda na tela. Aqui a
     // segunda instância pede um clip estreito e recebe o largo da primeira, o
     // que é medível em pixel.
-    const clipEstreito = `<clipPath id="dup-clip-tronco"><path d="M 200 320 L 300 320 L 300 620 L 200 620 Z"/></clipPath>`;
+    //
+    // O `id` mudou de `-clip-tronco` para `-c-tronco` no Bloco 1c, quando os paths
+    // passaram a viver em `<defs>` e o `clipPath` virou um `<use>`. A substituição
+    // ficou sem casar e a fixture reportou "nada mudou em pixel" — que é a mensagem
+    // certa para um teste que virou teatro, e foi assim que ela apareceu.
+    const clipEstreito = `<clipPath id="dup-c-tronco"><path d="M 200 320 L 300 320 L 300 620 L 200 620 Z"/></clipPath>`;
     const a = dimensionar(compor({ pele: PELE[2], cabelo: "#3A2F2A", ns: "dup" }), 600);
     const bMutado = dimensionar(compor({ pele: PELE[6], cabelo: "#3A2F2A", ns: "dup" }), 600).replace(
-      /<clipPath id="dup-clip-tronco">.*?<\/clipPath>/,
+      /<clipPath id="dup-c-tronco">.*?<\/clipPath>/,
       clipEstreito,
     );
     const idsDup = idsDe(a + bMutado);
@@ -542,7 +710,7 @@ async function main() {
     for (const f of falhas) console.error(`  - ${f}`);
     process.exitCode = 1;
   } else {
-    console.log(`\npose conferida: perfil, marcos e unicidade de id, com as 3 fixtures reprovando`);
+    console.log(`\npose conferida: perfil, marcos e unicidade de id, com as 5 fixtures reprovando`);
   }
 }
 

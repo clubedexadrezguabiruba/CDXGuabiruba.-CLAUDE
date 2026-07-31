@@ -203,7 +203,7 @@ async function ler(): Promise<Leitura> {
   larguras.sort((a, c) => a - c);
   const espessuraPx = larguras[Math.floor(larguras.length / 2)] || 8;
 
-  const cabeca = contornoCabeca(b, linhas, y0, yCortePx, ux, uy, espessuraPx);
+  const cabeca = contornoCabeca(b, linhas, y0, yCortePx, ux, uy, espessuraPx, fator);
 
   // --- o tronco, por linha ---
   //
@@ -283,6 +283,7 @@ function contornoCabeca(
   ux: (px: number) => number,
   uy: (py: number) => number,
   espessuraPx: number,
+  fator: number,
 ): Ponto[] {
   /**
    * A borda de um lado, numa linha. `null` onde a corrida é larga demais para ser
@@ -337,19 +338,43 @@ function contornoCabeca(
    * da cabeça com o ombro tem dezenas, e precisa mesmo encerrar o trecho para a
    * varredura por coluna assumir. `SALTO` fica entre as duas, e por isso separa uma
    * da outra sem que nenhuma das duas precise ser nomeada.
+   *
+   * ---------------------------------------------------------------------------
+   *
+   * `degrau` é o oposto, e vale só para as CALOTAS. Nelas um salto de valor entre
+   * amostras vizinhas nunca é contorno: a cúpula e a base são curvas suaves, com
+   * inclinação no máximo 1 por construção (acima disso quem lê são os lados). Um
+   * salto de 11 unidades numa coluna é outra peça entrando na janela — na base da
+   * cabeça, é o **ombro do tronco**, que surge por trás em x 136 e aparece como uma
+   * espiga de uma coluna só. Ela puxava o fundo da cabeça 11 unidades para baixo e
+   * abria um degrau no contorno bem na emenda.
+   *
+   * Nos LADOS o mesmo guarda seria errado, e é por isso que ele é opcional: a
+   * saliência da orelha é um salto legítimo de 24 unidades em duas linhas. O que
+   * distingue os dois casos não é o tamanho do salto, é a varredura em que ele
+   * aparece — e é a razão de as quatro funções serem separadas.
    */
   const SALTO = 20; // amostras (≈ 8 unidades a 2048 px de altura)
-  const trecho = (f: (i: number) => number | null, semente: number, de: number, ate: number) => {
+  const trecho = (
+    f: (i: number) => number | null,
+    semente: number,
+    de: number,
+    ate: number,
+    degrau = Infinity,
+  ) => {
     const pts: { i: number; v: number }[] = [];
     for (const passo of [-1, 1] as const) {
       let vazios = 0;
+      let ult: { i: number; v: number } | null = null;
       for (let i = passo === -1 ? semente : semente + 1; i >= de && i <= ate; i += passo) {
         const v = f(i);
-        if (v === null) {
+        const salta = v !== null && ult !== null && Math.abs(v - ult.v) > degrau + Math.abs(i - ult.i);
+        if (v === null || salta) {
           if (++vazios > SALTO) break;
           continue;
         }
         vazios = 0;
+        ult = { i, v };
         pts.push({ i, v });
       }
     }
@@ -370,13 +395,50 @@ function contornoCabeca(
   const yMeio = Math.round((y0 + yCortePx) / 2);
   const xMeio = Math.round((xMin + xMax) / 2);
 
-  const esq = trecho((y) => lado(y, 0), yMeio, y0 + 2, yCortePx - 3);
-  const dir = trecho((y) => lado(y, 1), yMeio, y0 + 2, yCortePx - 3);
-  const topoBruto = trecho((x) => borda(x, 0), xMeio, Math.round(xMin) + 2, Math.round(xMax) - 2);
-  const baseBruta = trecho((x) => borda(x, 1), xMeio, Math.round(xMin) + 2, Math.round(xMax) - 2);
+  const esqBruta = trecho((y) => lado(y, 0), yMeio, y0 + 2, yCortePx - 3);
+  const dirBruta = trecho((y) => lado(y, 1), yMeio, y0 + 2, yCortePx - 3);
+  /** 6 unidades do `viewBox`, em pixel. Ver `degrau` acima. */
+  const DEGRAU = 6 / fator;
+  const topoBruto = trecho(
+    (x) => borda(x, 0),
+    xMeio,
+    Math.round(xMin) + 2,
+    Math.round(xMax) - 2,
+    DEGRAU,
+  );
+  const baseBruta = trecho(
+    (x) => borda(x, 1),
+    xMeio,
+    Math.round(xMin) + 2,
+    Math.round(xMax) - 2,
+    DEGRAU,
+  );
 
-  if (!esq.length || !dir.length || !topoBruto.length || !baseBruta.length)
+  if (!esqBruta.length || !dirBruta.length || !topoBruto.length || !baseBruta.length)
     throw new Error("linha-de-centro: um dos quatro trechos do contorno da cabeça saiu vazio");
+
+  /**
+   * ONDE A CABEÇA ACABA — e a varredura por linha não sabe sozinha.
+   *
+   * A janela dos lados vai até o corte cabeça↔tronco, e nas últimas linhas antes
+   * dele **a tinta mais à esquerda já é o ombro do tronco**, não a base da cabeça:
+   * o ombro sai de trás por volta de x 136, que é quase exatamente onde a base da
+   * cabeça está passando. A leitura é uma corrida estreita e legítima, só que de
+   * outra peça — e ela puxava o lado esquerdo 8 unidades abaixo do fundo real,
+   * fazendo o contorno voltar sobre si na emenda.
+   *
+   * O fundo da cabeça é a varredura por COLUNA que sabe: ela vê o contorno inteiro
+   * de cima para baixo e para no último traço da cabeça. O ponto mais fundo dela é o
+   * fim da cabeça, e nenhum ponto de lado pode estar abaixo disso. Mesma coisa no
+   * alto, por simetria de argumento.
+   */
+  const yFundo = Math.max(...baseBruta.map((p) => p.v));
+  const yTeto = Math.min(...topoBruto.map((p) => p.v));
+  const esq = esqBruta.filter((p) => p.i >= yTeto && p.i <= yFundo);
+  const dir = dirBruta.filter((p) => p.i >= yTeto && p.i <= yFundo);
+
+  if (!esq.length || !dir.length)
+    throw new Error("linha-de-centro: os lados da cabeça sumiram ao cortar pelo fundo");
 
   /**
    * As calotas e os lados se SOBREPÕEM, e a sobreposição tem de ser cortada.
@@ -463,7 +525,20 @@ function percentil(xs: number[], p: number): number {
  * outros: a cada rodada some o ponto cuja retirada custa menos.
  */
 function decimar(pts: Ponto[], alvo: number): Ponto[] {
-  const v = [...pts];
+  // Primeiro colapsa vizinhos quase coincidentes. Eles aparecem nas EMENDAS entre a
+  // varredura por linha e a por coluna — os dois trechos descrevem o mesmo pedaço de
+  // borda e cada um contribui o seu ponto final. Erro de corda não os remove (dois
+  // pontos colados são colineares com quase tudo, então custam pouco pelos dois
+  // lados), e uma Catmull-Rom que passa por dois pontos a 3 unidades de distância
+  // ganha um laço ali. Distância bruta é o critério certo, e não curvatura — 5
+  // unidades é menos de meio traço, então nada que se veja cabe entre eles.
+  const juntos: Ponto[] = [];
+  for (const p of pts) {
+    const ult = juntos[juntos.length - 1];
+    if (ult && Math.hypot(p.x - ult.x, p.y - ult.y) < 5) continue;
+    juntos.push(p);
+  }
+  const v = juntos;
   while (v.length > alvo) {
     let pior = 1;
     let menorCusto = Infinity;
@@ -564,17 +639,43 @@ async function main() {
     `\nCONTORNO DA CABEÇA — ${bruto.length} pontos de linha de centro ` +
       `(${daLinha} por varredura de linha, ${bruto.length - daLinha} por coluna)`,
   );
-  const alvo = decimar(bruto, 34);
+  console.log(
+    `  caixa: x ${n1(Math.min(...bruto.map((p) => p.x)))}–${n1(Math.max(...bruto.map((p) => p.x)))}   ` +
+      `y ${n1(Math.min(...bruto.map((p) => p.y)))}–${n1(Math.max(...bruto.map((p) => p.y)))}`,
+  );
+  const alvo = decimar(bruto, 42);
   console.log(`  decimado para ${alvo.length} pontos pelo erro de corda:\n`);
   console.log(`  contorno: [`);
   for (const p of alvo) console.log(`    { x: ${n1(p.x)}, y: ${n1(p.y)} },`);
   console.log(`  ],`);
 
   // --- o tronco ---
-  console.log(`\nTRONCO — linha de centro por linha, em x absoluto\n`);
+  //
+  // O tronco sai como **meia-largura de linha de centro por altura**, e não como as
+  // duas bordas: uma tabela de meias larguras é metade dos números para a mesma
+  // forma. A assimetria vem impressa junto para que a simplificação seja auditável e
+  // não presumida — ela é de 3,7 unidades, e está toda na linha mais alta, que fica
+  // ESCONDIDA sob a cabeça (o tronco só passa a aparecer em y ≈ 347). Nas alturas
+  // visíveis os dois lados concordam dentro de meia unidade.
+  //
+  // A decimação é a mesma do contorno, pelo erro de corda, e pelo mesmo motivo: o
+  // perfil é lido em 22 alturas e cada uma vira um segmento cúbico por lado no path.
+  // 44 cúbicas para uma cápsula é desperdício de bytes num arquivo com teto de 8 KB.
+  const perfilTronco: Ponto[] = L.tronco.map((t) => ({
+    x: (t.dir - t.esq) / 2,
+    y: t.y,
+    via: "linha",
+  }));
+  const troncoMagro = decimar(perfilTronco, 7);
+  const desvio = Math.max(
+    ...L.tronco.map((t) => Math.abs(CENTRO_X - t.esq - (t.dir - CENTRO_X))),
+  );
+  console.log(
+    `\nTRONCO — meia-largura de linha de centro; assimetria máxima entre os lados ${n1(desvio)}`,
+  );
+  console.log(`  ${L.tronco.length} alturas lidas, decimado para ${troncoMagro.length}:\n`);
   console.log(`  perfil: [`);
-  for (const t of L.tronco)
-    console.log(`    { y: ${n1(t.y)}, esq: ${n1(t.esq)}, dir: ${n1(t.dir)} },`);
+  for (const t of troncoMagro) console.log(`    { y: ${n1(t.y)}, meio: ${n1(t.x)} },`);
   console.log(`  ],`);
 
   // --- a banda das orelhas: quantos traços existem de cada lado ---

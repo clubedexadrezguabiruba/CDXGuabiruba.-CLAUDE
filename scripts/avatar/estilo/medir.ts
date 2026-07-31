@@ -294,14 +294,24 @@ export interface Marcos {
    *
    * `topo` e `base` são duas janelas de altura, e o desnível muda muito entre elas:
    * é isso que obriga cada faceta a ser um gradiente vertical em vez de tom chapado.
+   *
+   * ---------------------------------------------------------------------------
+   *
+   * **`plato` vem junto, e comparar sem ele dá errado.** O sombreamento é
+   * multiplicativo: uma faceta é a superfície refletindo menos luz, então o que se
+   * conserva entre duas peles é a RAZÃO, não o desnível absoluto. O rosto da
+   * referência tem luminância 221; o boneco renderizado com `PELE[2]` tem 185,6. A
+   * mesma faceta de −28 na referência sai −24 ali, e um gate que comparasse os dois
+   * números crus reprovaria um desenho correto — e aprovaria um errado numa pele
+   * clara. Quem compara divide pelo próprio platô.
    */
   facetas: {
-    topo: { largEsq: number; deltaEsq: number; largDir: number; deltaDir: number };
-    base: { largEsq: number; deltaEsq: number; largDir: number; deltaDir: number };
+    topo: { largEsq: number; deltaEsq: number; largDir: number; deltaDir: number; plato: number };
+    base: { largEsq: number; deltaEsq: number; largDir: number; deltaDir: number; plato: number };
     /** A faixa escura no fim do rosto, acima do contorno. Altura e desnível. */
-    queixo: { altura: number; delta: number };
+    queixo: { altura: number; delta: number; plato: number };
     /** A sombra projetada da cabeça no tronco, abaixo do contorno. A mais escura. */
-    sombraQueixo: { altura: number; delta: number };
+    sombraQueixo: { altura: number; delta: number; plato: number };
   };
   /**
    * Quantos traços cruzam a banda de cada orelha. **Um** à esquerda e **dois** à
@@ -340,8 +350,16 @@ export interface Marcos {
    * contra a vírgula de 52 unidades que desenhamos reprovaria para sempre por um
    * motivo que ninguém pretende corrigir. Fica de fora, declarado.
    */
-  /** Largura por linha, em unidades, indexada pela fração da altura útil. */
-  perfil: { frac: number; larg: number; orelha: boolean }[];
+  /**
+   * O perfil externo por linha, indexado pela fração da altura útil.
+   *
+   * `esq` e `dir` são as distâncias de cada borda ao **eixo do tronco**, e não a
+   * largura total. A distinção é o que faz o perfil enxergar deriva de eixo: uma
+   * cabeça deslocada 8 unidades para a direita tem exatamente a mesma largura em
+   * toda altura, e passa batido num gate que só compara `larg`. Foi assim que o
+   * "eixo escorrendo no quarto de baixo" ficou verde no Bloco 1b.
+   */
+  perfil: { frac: number; larg: number; esq: number; dir: number; orelha: boolean }[];
 }
 
 /** Quantas amostras o perfil tem. 240 dá ~2,5 unidades de passo em 600. */
@@ -601,7 +619,7 @@ export function medir(b: Bitmap): Marcos {
     const lidas = fracs
       .map((f) => faceta(utilY0 + Math.round((cabecaY1 - utilY0) * f)))
       .filter((x): x is NonNullable<typeof x> => x !== null);
-    if (!lidas.length) return { largEsq: 0, deltaEsq: 0, largDir: 0, deltaDir: 0 };
+    if (!lidas.length) return { largEsq: 0, deltaEsq: 0, largDir: 0, deltaDir: 0, plato: 1 };
     const m = (f: (x: (typeof lidas)[0]) => number) =>
       lidas.reduce((s, x) => s + f(x), 0) / lidas.length;
     return {
@@ -609,6 +627,7 @@ export function medir(b: Bitmap): Marcos {
       deltaEsq: m((x) => x.deltaEsq),
       largDir: m((x) => x.largDir),
       deltaDir: m((x) => x.deltaDir),
+      plato: m((x) => x.plato),
     };
   };
   const facetaTopo = janela([0.30, 0.35, 0.40]);
@@ -637,7 +656,11 @@ export function medir(b: Bitmap): Marcos {
     if (v.length < 8) return null;
     const p = particao(v, 2);
     const i = qual === "fim" ? 1 : 0;
-    return { altura: u(p.larguras[i]), delta: p.medias[i] - p.medias[1 - i] };
+    return {
+      altura: u(p.larguras[i]),
+      delta: p.medias[i] - p.medias[1 - i],
+      plato: p.medias[1 - i],
+    };
   };
   const eixoCabecaPx = Math.round((cx0 + cx1) / 2);
   /** Onde o contorno cabeça↔tronco começa e acaba, na coluna do eixo da cabeça. */
@@ -758,6 +781,7 @@ export function medir(b: Bitmap): Marcos {
   };
 
   // --- o perfil, marcando as linhas de orelha para o gate poder excluí-las ---
+  const eixoTroncoPx = (tx0 + tx1) / 2;
   const perfil = [];
   for (let i = 0; i < AMOSTRAS; i++) {
     const frac = i / (AMOSTRAS - 1);
@@ -765,7 +789,13 @@ export function medir(b: Bitmap): Marcos {
     const l = linhas[y];
     const e = l ? cx0 - l.x0 : 0;
     const d = l ? l.x1 - cx1 : 0;
-    perfil.push({ frac, larg: l ? u(l.larg) : 0, orelha: y <= cabecaY1 && (e > 2 || d > 2) });
+    perfil.push({
+      frac,
+      larg: l ? u(l.larg) : 0,
+      esq: l ? u(eixoTroncoPx - l.x0) : 0,
+      dir: l ? u(l.x1 - eixoTroncoPx) : 0,
+      orelha: y <= cabecaY1 && (e > 2 || d > 2),
+    });
   }
 
   return {
@@ -787,8 +817,8 @@ export function medir(b: Bitmap): Marcos {
     facetas: {
       topo: facetaTopo,
       base: facetaBase,
-      queixo: queixo || { altura: 0, delta: 0 },
-      sombraQueixo: sombraQueixo || { altura: 0, delta: 0 },
+      queixo: queixo || { altura: 0, delta: 0, plato: 1 },
+      sombraQueixo: sombraQueixo || { altura: 0, delta: 0, plato: 1 },
     },
     tracosOrelha: { esq: contarTracos("esq"), dir: contarTracos("dir") },
     espessuraTraco,

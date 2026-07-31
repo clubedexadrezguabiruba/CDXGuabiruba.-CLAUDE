@@ -31,19 +31,25 @@ import sharp from "sharp";
 import { chromium, type Browser } from "@playwright/test";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import {
-  CABECA,
-  CABECA_H,
+  CAIXA_CABECA,
   CENTRO_X,
+  FACETAS,
   GIRO,
   OLHO,
   OLHO_CX_ESQ,
   OLHO_CY_ESQ,
-  ORELHA,
-  ORELHA_CX_DIR,
-  ORELHA_CX_ESQ,
+  ORELHA_DIR,
   TRACO,
   TRONCO,
   VIEWBOX,
+  bordasEm,
+  pathCabeca,
+  pathConchaEsq,
+  pathFacetaDir,
+  pathFacetaEsq,
+  pathOrelhaDir,
+  pathSombraQueixoTronco,
+  pathTronco,
 } from "../../../src/lib/avatar/estilo/geometria";
 import { conferirSvg } from "../../../src/lib/avatar/svgContrato";
 import { PELE } from "../../../src/lib/avatar/palette";
@@ -77,7 +83,7 @@ const TAMANHOS = [56, 100, 200, 425] as const;
 const REF = { lado: 1254, tintaY0: 148, tintaY1: 1044, eixoTronco: 611.5 } as const;
 const REF_ESCALA = 600 / (REF.tintaY1 - REF.tintaY0); // 0,6696
 const REF_X = CENTRO_X - REF.eixoTronco * REF_ESCALA;
-const REF_Y = CABECA.y0 - TRACO / 2 - REF.tintaY0 * REF_ESCALA;
+const REF_Y = CAIXA_CABECA.y0 - TRACO / 2 - REF.tintaY0 * REF_ESCALA;
 const REF_LADO = REF.lado * REF_ESCALA;
 
 // ---------------------------------------------------------------------------
@@ -95,22 +101,43 @@ function caixa(cx: number, cy: number, lado: number): string {
   return `${(cx - lado / 2).toFixed(0)} ${(cy - lado / 2).toFixed(0)} ${lado} ${lado}`;
 }
 
+/** O centro da banda de cada orelha, tirado do contorno e da constante. */
+const ORELHA_CY = (FACETAS.concha.yTopo + FACETAS.concha.yBase) / 2;
+const ORELHA_ESQ_CX = bordasEm(ORELHA_CY).esq + 14;
+const ORELHA_DIR_CX = ORELHA_DIR.xPonta - 14;
+
 function closes(): Close[] {
+  const yQueixo = CAIXA_CABECA.y1 - FACETAS.queixo.altura;
   return [
     {
       rotulo: "orelha esquerda",
-      origem: `ORELHA_CX_ESQ=${ORELHA_CX_ESQ} · cy=${ORELHA.cy} · saliência ${GIRO.saliencia.esq}`,
-      vb: caixa(ORELHA_CX_ESQ, ORELHA.cy, ORELHA.ry * 2 + 60),
+      origem: `dentro de pathCabeca() · saliência ${GIRO.saliencia.esq} · concha ${FACETAS.concha.delta}`,
+      vb: caixa(ORELHA_ESQ_CX, ORELHA_CY, 130),
     },
     {
       rotulo: "orelha direita",
-      origem: `ORELHA_CX_DIR=${ORELHA_CX_DIR} · cy=${ORELHA.cy} · saliência ${GIRO.saliencia.dir}`,
-      vb: caixa(ORELHA_CX_DIR, ORELHA.cy, ORELHA.ry * 2 + 60),
+      origem: `ORELHA_DIR.xPonta=${ORELHA_DIR.xPonta} · saliência ${GIRO.saliencia.dir}`,
+      vb: caixa(ORELHA_DIR_CX, ORELHA_CY, 130),
     },
     {
-      rotulo: "plano lateral direito",
-      origem: `borda direita da cabeça x=${CABECA.x1} · faixa de ${GIRO.planoLateral.cabeca}`,
-      vb: caixa(CABECA.x1 - 20, CABECA.y0 + CABECA_H * 0.45, 170),
+      rotulo: "aresta esquerda",
+      origem: `borda esq da cabeça · faceta de ${FACETAS.esq.larguraTopo} a ${FACETAS.esq.larguraBase}`,
+      vb: caixa(bordasEm(CAIXA_CABECA.y0 + 0.35 * CAIXA_CABECA.alt).esq + 20, CAIXA_CABECA.y0 + CAIXA_CABECA.alt * 0.35, 170),
+    },
+    {
+      rotulo: "aresta direita",
+      origem: `borda dir da cabeça · faceta de ${FACETAS.dir.larguraTopo} a ${FACETAS.dir.larguraBase}`,
+      vb: caixa(bordasEm(CAIXA_CABECA.y0 + 0.45 * CAIXA_CABECA.alt).dir - 20, CAIXA_CABECA.y0 + CAIXA_CABECA.alt * 0.45, 170),
+    },
+    {
+      rotulo: "queixo",
+      origem: `faixa de ${FACETAS.queixo.altura} u a ${FACETAS.queixo.delta} níveis, acima de y=${CAIXA_CABECA.y1.toFixed(0)}`,
+      vb: caixa(CENTRO_X + 20, yQueixo, 200),
+    },
+    {
+      rotulo: "sombra abaixo do queixo",
+      origem: `${FACETAS.sombraQueixo.altura} u a ${FACETAS.sombraQueixo.delta} níveis, no clip do tronco`,
+      vb: caixa(CENTRO_X, CAIXA_CABECA.y1 + 10, 260),
     },
     {
       rotulo: "canto do olho",
@@ -118,14 +145,9 @@ function closes(): Close[] {
       vb: caixa(OLHO_CX_ESQ, OLHO_CY_ESQ - OLHO.h / 2, 96),
     },
     {
-      rotulo: "cabeça ↔ tronco",
-      origem: `base da cabeça y=${CABECA.y1} · ombro do tronco em y=${TRONCO.yTopo}`,
-      vb: caixa(CENTRO_X - 100, CABECA.y1 + 8, 190),
-    },
-    {
       rotulo: "canto do especular",
-      origem: `canto superior esquerdo da cabeça (LUZ)`,
-      vb: caixa(CABECA.x0 + 60, CABECA.y0 + 60, 150),
+      origem: `canto superior esquerdo da cabeça (LUZ) · caixa medida x 121–175 · y 61–108`,
+      vb: caixa(148, 85, 150),
     },
     {
       rotulo: "base do tronco",
@@ -144,14 +166,55 @@ function closes(): Close[] {
  * referência tem 24 de um lado e 15 do outro. Um close por orelha em painéis
  * distantes não deixa comparar — e comparar é a única coisa que revela a
  * assimetria.
+ *
+ * No Bloco 1c elas passaram a ser peças de natureza diferente: a esquerda é o
+ * contorno da cabeça (um traço) e a direita é forma própria (dois). Este par lado a
+ * lado é onde isso se vê sem precisar do gate.
  */
 function caixasDasOrelhas(): { esq: string; dir: string; lado: number } {
-  const lado = ORELHA.ry * 2 + 60;
+  const lado = 130;
   return {
-    esq: caixa(ORELHA_CX_ESQ, ORELHA.cy, lado),
-    dir: caixa(ORELHA_CX_DIR, ORELHA.cy, lado),
+    esq: caixa(ORELHA_ESQ_CX, ORELHA_CY, lado),
+    dir: caixa(ORELHA_DIR_CX, ORELHA_CY, lado),
     lado,
   };
+}
+
+/**
+ * O MAPA DAS FACETAS — cada faceta pintada de cor sinalizadora.
+ *
+ * É a folha que teria pegado o "efeito cubo" faltando. A folha normal mostra o
+ * boneco ao lado da referência e o olho compara tom com tom, que é justamente o que
+ * ele faz mal: a faceta esquerda da referência tem −5 níveis no alto, e cinco níveis
+ * de 221 não se veem lado a lado. Pintadas de magenta e ciano, existir ou não existir
+ * é binário.
+ *
+ * As cores são deliberadamente feias e fora da paleta: ninguém confunde este painel
+ * com o desenho.
+ */
+function mapaDeFacetas(ns: string): string {
+  const traco = `fill="none" stroke="#241610" stroke-width="${TRACO}" stroke-linejoin="round" stroke-linecap="round"`;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}" ` +
+    `width="${Math.round((260 * VIEWBOX.w) / VIEWBOX.h)}" height="260">` +
+    `<defs><clipPath id="${ns}-mc"><path d="${pathCabeca()}"/></clipPath>` +
+    `<clipPath id="${ns}-mt"><path d="${pathTronco()}"/></clipPath></defs>` +
+    `<path d="${pathTronco()}" fill="#EDE7DC"/>` +
+    `<g clip-path="url(#${ns}-mt)">` +
+    `<path d="${pathSombraQueixoTronco()}" fill="#1B5E20"/>` +
+    `</g>` +
+    `<path d="${pathTronco()}" ${traco}/>` +
+    `<path d="${pathOrelhaDir()}" fill="#FF8F00"/>` +
+    `<path d="${pathOrelhaDir()}" ${traco}/>` +
+    `<path d="${pathCabeca()}" fill="#F2E9DA"/>` +
+    `<g clip-path="url(#${ns}-mc)">` +
+    `<path d="${pathFacetaEsq()}" fill="#E91E8C" opacity=".85"/>` +
+    `<path d="${pathFacetaDir()}" fill="#00B8D4" opacity=".85"/>` +
+    `<path d="${pathConchaEsq()}" fill="#6A1B9A" opacity=".9"/>` +
+    `</g>` +
+    `<path d="${pathCabeca()}" ${traco}/>` +
+    `</svg>`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -161,7 +224,11 @@ async function main() {
 
   const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", animado: true, ns: "kk" });
   const problemas = conferirSvg(svg);
-  const formas = (svg.match(/<(path|ellipse|rect|circle)\b/g) ?? []).length;
+  // `use` CONTA. A cabeça e o tronco viraram `<path>` em `<defs>` referenciados por
+  // `<use>` para o contorno de 29 pontos não ser escrito três vezes; se o contador
+  // ignorasse `use`, o orçamento de formas passaria a mentir para menos justamente
+  // por causa da mudança que o fez caber.
+  const formas = (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
   const bytes = Buffer.byteLength(svg, "utf-8");
 
   console.log(`base autorada:`);
@@ -277,13 +344,63 @@ async function main() {
       ) +
       `</div>`;
 
+    // 5. O PAINEL DO TRAÇO — a leitura que decide, e é do Doug.
+    //
+    // Os dois lados saem do MESMO SVG, com `--av-traco` trocado por substituição de
+    // texto. Isso não é conveniência: é a prova em imagem de que a geometria deixou
+    // de depender da espessura do traço. Até o Bloco 1b, trocar `TRACO` mexia em
+    // `MEIO`, e `MEIO` mexia na silhueta — os dois painéis teriam formas diferentes,
+    // e a comparação não seria sobre o traço.
+    const comTraco = (t: number) =>
+      base(425, `tr${t}`).replace(`--av-traco:${TRACO}`, `--av-traco:${t}`);
+    const secaoTraco =
+      `<div style="display:flex;gap:10px;align-items:flex-end;background:#fff;` +
+      `border:1px solid #eee;padding:8px;border-radius:4px">` +
+      fig(`traço ${TRACO} — o medido`, comTraco(TRACO)) +
+      fig("traço 17 — o do Bloco 1b", comTraco(17)) +
+      fig("referência", refNoLugar(425)) +
+      `</div>`;
+
+    // 6. O MAPA DAS FACETAS
+    const secaoFacetas =
+      `<div style="display:flex;gap:14px;align-items:flex-start">` +
+      fig("mapa das facetas", mapaDeFacetas("mapa")) +
+      fig("o SVG", base(260, "cmp")) +
+      fig("referência", refNoLugar(260)) +
+      `<div style="font:11px system-ui;color:#666;max-width:330px;line-height:1.5">` +
+      `<b style="color:#E91E8C">■</b> faceta esquerda + queixo — ` +
+      `${FACETAS.esq.larguraTopo} u a ${FACETAS.esq.deltaTopo} no topo, ` +
+      `${FACETAS.esq.larguraBase} u a ${FACETAS.esq.deltaBase} na base<br>` +
+      `<b style="color:#00B8D4">■</b> faceta direita — ` +
+      `${FACETAS.dir.larguraTopo} u a ${FACETAS.dir.deltaTopo} no topo, ` +
+      `${FACETAS.dir.larguraBase} u a ${FACETAS.dir.deltaBase} na base<br>` +
+      `<b style="color:#6A1B9A">■</b> concha da orelha esquerda — ${FACETAS.concha.delta}<br>` +
+      `<b style="color:#1B5E20">■</b> sombra da cabeça no tronco — ` +
+      `${FACETAS.sombraQueixo.altura} u a ${FACETAS.sombraQueixo.delta}<br>` +
+      `<b style="color:#FF8F00">■</b> orelha direita, forma própria<br><br>` +
+      `<span style="color:#999">A faceta esquerda é o DOBRO da direita no topo. ` +
+      `Essa razão é o giro: o lado esquerdo é o que vira para o observador, o ` +
+      `direito é o que foge. A orelha esquerda não aparece pintada porque ela é o ` +
+      `contorno da cabeça — um traço só, como na referência.</span>` +
+      `</div></div>`;
+
     await pg.setViewportSize({ width: 1500, height: 900 });
     await pg.setContent(
       `<body style="margin:0;background:#fff;padding:18px;font:12px system-ui;color:#555">` +
-        `<h1 style="font:600 17px system-ui;margin:0 0 3px">Base kokeshi — a folha do Bloco 1b</h1>` +
+        `<h1 style="font:600 17px system-ui;margin:0 0 3px">Base kokeshi — a folha do Bloco 1c</h1>` +
         `<p style="margin:0;color:#888">O que se aprova é o <b>SVG</b>. A referência está ao lado só para comparar, ` +
         `alinhada por cálculo (escala ${REF_ESCALA.toFixed(3)}), e nunca vira asset. ` +
         `${formas} formas · ${(bytes / 1024).toFixed(2)} KB · conferirSvg ${problemas.length}.</p>` +
+        titulo(
+          "O TRAÇO — a leitura que decide",
+          `o medido é ${TRACO}; o Bloco 1b usava 17, que saiu de contar a rampa oblíqua como traço`,
+        ) +
+        secaoTraco +
+        titulo(
+          "O MAPA DAS FACETAS",
+          "o rosto é um cubo: existir ou não existir cada faceta é binário aqui, e invisível na comparação lado a lado",
+        ) +
+        secaoFacetas +
         titulo("Os quatro tamanhos", "56 px é o teste do ranking — se ele falhar, os outros três não salvam") +
         `<div style="display:flex;gap:14px;align-items:flex-end">${secaoTamanhos}</div>` +
         titulo("As 8 peles", "prova que var(--av-pele) recolore de verdade, e que a sombra da pele acompanha") +
