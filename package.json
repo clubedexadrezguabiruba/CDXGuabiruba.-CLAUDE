@@ -47,6 +47,7 @@
     "avatar:animacao": "tsx scripts/avatar/estilo/medir-animacao.ts",
     "avatar:preview": "npm run avatar:garment && node -e \"require('fs').mkdirSync('public/dev/uniformes',{recursive:true});for(const f of require('fs').readdirSync('scripts/avatar/uniformes'))require('fs').copyFileSync('scripts/avatar/uniformes/'+f,'public/dev/uniformes/'+f)\"",
     "avatar:pose": "tsx scripts/avatar/estilo/verificar-pose.ts",
+    "avatar:linha-de-centro": "tsx scripts/avatar/estilo/linha-de-centro.ts",
     "verify:pose": "npm run avatar:pose"
   },
   "dependencies": {

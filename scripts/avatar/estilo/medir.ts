@@ -78,6 +78,168 @@ export function silhueta(b: Bitmap): (Linha | null)[] {
 }
 
 // ---------------------------------------------------------------------------
+// A LINHA DE CENTRO — a irmã de `silhueta()`, e o que ela enxerga a mais
+// ---------------------------------------------------------------------------
+
+/**
+ * Uma corrida de tinta: um trecho contíguo de pixels escuros, com o **centro** (a
+ * linha que o desenhista traçou) e a **largura** (a espessura do traço ali).
+ */
+export interface Corrida {
+  x0: number;
+  x1: number;
+  centro: number;
+  espessura: number;
+}
+
+/**
+ * As corridas de tinta ao longo de uma varredura.
+ *
+ * `silhueta()` devolve o primeiro e o último pixel escuro da linha — a fronteira
+ * externa. Isto devolve **cada travessia de traço**, e a diferença é o que separa
+ * três perguntas que a silhueta externa não sabe responder:
+ *
+ *  - **onde passa a linha?** No centro da corrida, e não meio traço para fora dela.
+ *    Guardar centro em vez de silhueta é o que faz `TRACO` deixar de mexer na
+ *    geometria;
+ *  - **quanto mede o traço?** A largura da corrida, medida em vez de estimada;
+ *  - **quantos traços existem aqui?** A contagem. Uma orelha que interrompe o
+ *    contorno da cabeça e uma orelha colada por cima dele têm a **mesma silhueta
+ *    externa** e contagens diferentes — 1 contra 2. Foi por essa cegueira que o
+ *    gate do Bloco 1b aprovou uma orelha lendo como peça colada atrás.
+ *
+ * Corridas de 1 px são descartadas: são a rampa de antialiasing tocando o limiar.
+ *
+ * `amostra` é indireta de propósito — a MESMA função varre uma linha e uma coluna.
+ * Onde a borda é quase horizontal a varredura horizontal atravessa o traço na
+ * diagonal e mede até 6× a espessura real; lá quem vale é a coluna.
+ */
+export function corridas(n: number, amostra: (i: number) => boolean): Corrida[] {
+  const out: Corrida[] = [];
+  let inicio = -1;
+  for (let i = 0; i <= n; i++) {
+    const escuro = i < n && amostra(i);
+    if (escuro && inicio < 0) inicio = i;
+    if (!escuro && inicio >= 0) {
+      const fim = i - 1;
+      if (fim - inicio + 1 > 1)
+        out.push({ x0: inicio, x1: fim, centro: (inicio + fim) / 2, espessura: fim - inicio + 1 });
+      inicio = -1;
+    }
+  }
+  return out;
+}
+
+export const naLinha = (b: Bitmap, y: number): Corrida[] =>
+  corridas(b.w, (x) => lum(b, x, y) < ESCURO);
+
+export function naColuna(b: Bitmap, x: number, yDe: number, yAte: number): Corrida[] {
+  return corridas(yAte - yDe + 1, (i) => lum(b, x, yDe + i) < ESCURO).map((c) => ({
+    x0: c.x0 + yDe,
+    x1: c.x1 + yDe,
+    centro: c.centro + yDe,
+    espessura: c.espessura,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// AS FACETAS — achar a ARESTA, sem supor de que lado ela é mais escura
+// ---------------------------------------------------------------------------
+
+/**
+ * A partição ótima de um vetor em **três segmentos de valor constante**, por erro
+ * quadrático mínimo. Devolve os dois cortes e a média de cada segmento.
+ *
+ * ---------------------------------------------------------------------------
+ * ESTA FUNÇÃO EXISTE PORQUE A PERGUNTA ANTERIOR ESTAVA ERRADA
+ * ---------------------------------------------------------------------------
+ *
+ * O plano lateral do Bloco 1b era procurado assim: *"a partir da borda, quantos
+ * pixels seguidos estão mais escuros que o platô do rosto?"* (`banda()`, mais
+ * abaixo). A resposta na referência, do lado esquerdo, foi **zero** — e a conclusão
+ * tirada dela foi que não existia faceta esquerda. O Doug reprovou a base por
+ * exatamente isso: *"não há sombreamento lateral do rosto do lado esquerdo, efeito
+ * cubo, e é um dos principais fatores para entender que o rosto está de lado"*.
+ *
+ * A faceta existe em **toda** a altura do rosto. O que muda é o tom dela, que
+ * **atravessa** o tom frontal: mais clara que o rosto em cima (+15 níveis), mais
+ * escura embaixo (−32). Uma pergunta com o sinal embutido — "mais escuro que" — é
+ * cega para metade disso por construção, e mede zero onde os dois se cruzam.
+ *
+ * A pergunta certa não tem sinal: **onde está a descontinuidade?** Uma partição
+ * ótima acha o corte pelo salto de tom, para qualquer sinal, e enxerga uma faceta
+ * mais clara tão bem quanto uma mais escura. É a lição do bloco em uma função.
+ *
+ * O custo é O(n²) e n é a largura do rosto em pixel — alguns milhares de operações
+ * por linha, num script que roda sob demanda.
+ */
+export interface Particao {
+  /** Os `k−1` índices de corte. */
+  cortes: number[];
+  /** A média de cada um dos `k` segmentos. */
+  medias: number[];
+  /** O comprimento de cada segmento. */
+  larguras: number[];
+}
+
+export function particao(v: number[], k: number): Particao {
+  const n = v.length;
+  if (n < k * 2) throw new Error(`particao: vetor de ${n} curto demais para ${k} segmentos`);
+
+  // Somas de prefixo: o erro quadrático de um segmento sai em tempo constante.
+  const s = new Float64Array(n + 1);
+  const s2 = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) {
+    s[i + 1] = s[i] + v[i];
+    s2[i + 1] = s2[i] + v[i] * v[i];
+  }
+  const erro = (a: number, b: number) => {
+    const m = b - a;
+    if (m <= 0) return 0;
+    const soma = s[b] - s[a];
+    return Math.max(0, s2[b] - s2[a] - (soma * soma) / m);
+  };
+
+  // `melhor[j][i]` = erro mínimo de partir v[0..i) em j segmentos.
+  const melhor: Float64Array[] = [];
+  const de: Int32Array[] = [];
+  for (let j = 0; j <= k; j++) {
+    melhor.push(new Float64Array(n + 1).fill(Infinity));
+    de.push(new Int32Array(n + 1));
+  }
+  melhor[0][0] = 0;
+  for (let j = 1; j <= k; j++) {
+    for (let i = j; i <= n; i++) {
+      for (let p = j - 1; p < i; p++) {
+        const e = melhor[j - 1][p] + erro(p, i);
+        if (e < melhor[j][i]) {
+          melhor[j][i] = e;
+          de[j][i] = p;
+        }
+      }
+    }
+  }
+
+  const cortes: number[] = [];
+  let i = n;
+  for (let j = k; j > 0; j--) {
+    const p = de[j][i];
+    if (j > 1) cortes.unshift(p);
+    i = p;
+  }
+  const limites = [0, ...cortes, n];
+  const medias: number[] = [];
+  const larguras: number[] = [];
+  for (let j = 0; j < k; j++) {
+    const a = limites[j];
+    const b = limites[j + 1];
+    medias.push(b > a ? (s[b] - s[a]) / (b - a) : 0);
+    larguras.push(b - a);
+  }
+  return { cortes, medias, larguras };
+}
+
+// ---------------------------------------------------------------------------
 // Os marcos
 // ---------------------------------------------------------------------------
 
@@ -121,6 +283,33 @@ export interface Marcos {
   planoLateral: { fracAltura: number; esq: number; dir: number }[];
   /** O mesmo, no tronco. */
   planoLateralTronco: { fracAltura: number; esq: number; dir: number }[];
+  /**
+   * AS QUATRO FACETAS DO ROSTO — largura e desnível de tom contra o platô frontal.
+   *
+   * O rosto da referência é um **cubo**, não um cilindro: uma faceta frontal, uma
+   * esquerda larga (a que vira para o observador), uma direita estreita (a que
+   * foge), e o queixo. A razão entre as larguras das duas laterais *é* o giro, e é
+   * um dado independente da silhueta — dois desenhos com o mesmo contorno externo
+   * podem ter um o rosto virado e o outro chapado.
+   *
+   * `topo` e `base` são duas janelas de altura, e o desnível muda muito entre elas:
+   * é isso que obriga cada faceta a ser um gradiente vertical em vez de tom chapado.
+   */
+  facetas: {
+    topo: { largEsq: number; deltaEsq: number; largDir: number; deltaDir: number };
+    base: { largEsq: number; deltaEsq: number; largDir: number; deltaDir: number };
+    /** A faixa escura no fim do rosto, acima do contorno. Altura e desnível. */
+    queixo: { altura: number; delta: number };
+    /** A sombra projetada da cabeça no tronco, abaixo do contorno. A mais escura. */
+    sombraQueixo: { altura: number; delta: number };
+  };
+  /**
+   * Quantos traços cruzam a banda de cada orelha. **Um** à esquerda e **dois** à
+   * direita, na referência. A silhueta externa é cega para esta diferença.
+   */
+  tracosOrelha: { esq: number; dir: number };
+  /** Espessura do contorno, corrigida pela inclinação da borda. */
+  espessuraTraco: number;
   /**
    * Queda de luminância na coluna central do rosto contra o platô do interior.
    * Perto de 0 é o certo: a referência tem um PLANO na lateral, não uma mancha
@@ -364,6 +553,165 @@ export function medir(b: Bitmap): Marcos {
     banda(yCorte + Math.round((utilY1 - yCorte) * frac), frac),
   );
 
+  // --- AS FACETAS: o rosto como um CUBO, e a aresta achada sem supor o sinal ---
+  //
+  // `banda()`, acima, pergunta *"quantos pixels seguidos, a partir da borda, estão
+  // mais escuros que o platô?"*. A pergunta tem o sinal embutido, e por isso ela
+  // mediu ZERO à esquerda na referência e a conclusão foi que não havia faceta
+  // esquerda — o defeito que o Doug reprovou como "efeito cubo" faltando.
+  //
+  // Aqui a pergunta é *"onde está a descontinuidade?"*, e `particao()` responde para
+  // qualquer sinal.
+  //
+  // AS FAIXAS DE LEITURA SÃO ESCOLHIDAS, E ISSO É PARTE DA MEDIDA. Duas coisas
+  // dentro do rosto arruínam a partição, e nenhuma das duas é faceta:
+  //
+  //  - **o especular**, no alto à esquerda (medido: uma faixa de 20 unidades a 32
+  //    unidades para DENTRO da borda, em `frac` 0,07–0,22). Quem parte uma linha que
+  //    o atravesse acha um segmento claro e o reporta como "faceta esquerda +15".
+  //    Ela não é: a faceta encosta na borda, o especular não;
+  //  - **os olhos**, em `frac` 0,49–0,76, que são tinta preta e dominam qualquer
+  //    partição por erro quadrático.
+  //
+  // Sobram duas janelas limpas, e são estas. A leitura em três alturas de cada
+  // janela é média para tirar o ruído de antialiasing.
+  const faceta = (y: number) => {
+    const l = linhas[y];
+    if (!l) return null;
+    const a = l.x0 + espessura(y, 1) + 2;
+    const c = l.x1 - espessura(y, -1) - 2;
+    if (c - a < 40) return null;
+    const v: number[] = [];
+    for (let x = a; x <= c; x++) v.push(lum(b, x, y));
+    const p = particao(v, 3);
+    // O segmento do meio é o platô frontal. Se ele estiver escuro, a linha pegou
+    // tinta (olho, boca, contorno interno) e a leitura inteira não vale — reportar
+    // um número errado é pior que não reportar, e é a mesma decisão já registrada
+    // para o especular no `Marcos`.
+    if (p.medias[1] < 140) return null;
+    return {
+      plato: p.medias[1],
+      largEsq: u(p.larguras[0]),
+      deltaEsq: p.medias[0] - p.medias[1],
+      largDir: u(p.larguras[2]),
+      deltaDir: p.medias[2] - p.medias[1],
+    };
+  };
+  const janela = (fracs: number[]) => {
+    const lidas = fracs
+      .map((f) => faceta(utilY0 + Math.round((cabecaY1 - utilY0) * f)))
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    if (!lidas.length) return { largEsq: 0, deltaEsq: 0, largDir: 0, deltaDir: 0 };
+    const m = (f: (x: (typeof lidas)[0]) => number) =>
+      lidas.reduce((s, x) => s + f(x), 0) / lidas.length;
+    return {
+      largEsq: m((x) => x.largEsq),
+      deltaEsq: m((x) => x.deltaEsq),
+      largDir: m((x) => x.largDir),
+      deltaDir: m((x) => x.deltaDir),
+    };
+  };
+  const facetaTopo = janela([0.30, 0.35, 0.40]);
+  const facetaBase = janela([0.84, 0.88, 0.92]);
+
+  // --- O QUEIXO E A SOMBRA ABAIXO DELE: a mesma partição, virada de lado ---
+  //
+  // As duas são faixas HORIZONTAIS, então a varredura é uma coluna. Elas moram uma
+  // de cada lado do contorno que separa a cabeça do tronco, e a de baixo é a mais
+  // escura do boneco inteiro — é ela que assenta a cabeça sobre o corpo, e nenhuma
+  // das duas existe hoje.
+  //
+  // `qual` diz em que ponta da janela mora a faixa, e a distinção é obrigatória: o
+  // queixo fica no FIM da janela (o platô do rosto vem antes dele, descendo) e a
+  // sombra fica no COMEÇO (ela encosta no contorno, e o tom do tronco vem depois).
+  // Sem o parâmetro, uma das duas sai com o sinal trocado — a sombra reportava
+  // **+45** em vez de −46, e um marco com o sinal errado não reprova o desenho que
+  // esqueceu a sombra: reprova o que a desenhou.
+  const faixaVertical = (yDe: number, yAte: number, x: number, qual: "inicio" | "fim") => {
+    const v: number[] = [];
+    for (let y = yDe; y <= yAte; y++) {
+      const t = lum(b, x, y);
+      if (t < ESCURO) return null; // bateu no contorno: a janela está errada
+      v.push(t);
+    }
+    if (v.length < 8) return null;
+    const p = particao(v, 2);
+    const i = qual === "fim" ? 1 : 0;
+    return { altura: u(p.larguras[i]), delta: p.medias[i] - p.medias[1 - i] };
+  };
+  const eixoCabecaPx = Math.round((cx0 + cx1) / 2);
+  /** Onde o contorno cabeça↔tronco começa e acaba, na coluna do eixo da cabeça. */
+  const contorno = naColuna(b, eixoCabecaPx, utilY0, utilY1).filter(
+    (c) => c.centro > utilY0 + (cabecaY1 - utilY0) * 0.8,
+  );
+  const queixo =
+    contorno.length &&
+    faixaVertical(
+      utilY0 + Math.round((cabecaY1 - utilY0) * 0.7),
+      Math.round(contorno[0].x0) - 2,
+      eixoCabecaPx,
+      "fim",
+    );
+  const sombraQueixo =
+    contorno.length &&
+    faixaVertical(
+      Math.round(contorno[0].x1) + 2,
+      Math.min(utilY1, Math.round(contorno[0].x1) + 2 + Math.round(70 / fator)),
+      eixoCabecaPx,
+      "inicio",
+    );
+
+  // --- QUANTOS TRAÇOS EXISTEM NA BANDA DE CADA ORELHA ---
+  //
+  // É uma CONTAGEM, e é o marco que o Bloco 1b não tinha. A referência tem **um**
+  // traço à esquerda — a borda da orelha *vira* a silhueta, e não há borda de cabeça
+  // por trás dela — e **dois** à direita, onde a borda da cabeça continua e a orelha
+  // é um arco fora dela. Desenhar dois à esquerda é o que faz a orelha ler como peça
+  // colada atrás, e é invisível para a silhueta externa: os dois desenhos têm
+  // exatamente o mesmo primeiro pixel escuro.
+  //
+  // A janela é medida **para dentro a partir da corrida mais externa**, e não como
+  // uma fração da cabeça. Uma fração fixa deixa o OLHO dentro da janela — o olho
+  // direito fica a 69 unidades da borda e uma janela de 94 o engolia, fazendo a
+  // contagem reportar 3 onde há 2. Contado a partir da borda, o critério fica sendo
+  // "quantos traços há junto da silhueta", que é a pergunta que se quis fazer.
+  const JANELA_ORELHA = 45;
+  const contarTracos = (lado: "esq" | "dir") => {
+    const contagens: number[] = [];
+    for (const frac of [0.62, 0.66, 0.70, 0.74]) {
+      const y = utilY0 + Math.round((cabecaY1 - utilY0) * frac);
+      const cs = naLinha(b, y);
+      if (cs.length < 2) continue;
+      const externa = lado === "esq" ? cs[0].centro : cs[cs.length - 1].centro;
+      contagens.push(cs.filter((c) => u(Math.abs(c.centro - externa)) <= JANELA_ORELHA).length);
+    }
+    if (!contagens.length) return 0;
+    contagens.sort((p, q) => p - q);
+    return contagens[Math.floor(contagens.length / 2)];
+  };
+
+  // --- A ESPESSURA DO TRAÇO, corrigida pela inclinação da borda ---
+  //
+  // Uma varredura horizontal atravessa um traço inclinado na diagonal e mede
+  // `t · √(1 + m²)`. Sem a correção, misturar seções oblíquas com retas puxa a média
+  // para cima — o erro só tem um sinal. Foi assim que `TRACO` virou 17 quando o
+  // traço da referência mede 13.
+  const espessuras: number[] = [];
+  for (let y = utilY0 + Math.round(alturaUtilPx * 0.1); y < utilY0 + Math.round(alturaUtilPx * 0.9); y++) {
+    const aqui = linhas[y];
+    const ant = linhas[y - 3];
+    const pos = linhas[y + 3];
+    if (!aqui || !ant || !pos) continue;
+    for (const lado of [1, -1] as const) {
+      const borda = (l: Linha) => (lado === 1 ? l.x0 : l.x1);
+      const m = (borda(pos) - borda(ant)) / 6;
+      if (Math.abs(m) > 1) continue;
+      espessuras.push(u(espessura(y, lado)) / Math.sqrt(1 + m * m));
+    }
+  }
+  espessuras.sort((p, q) => p - q);
+  const espessuraTraco = espessuras.length ? espessuras[Math.floor(espessuras.length / 2)] : 0;
+
   // --- a coluna central do rosto: tem de estar no platô, não numa faixa ---
   let faixaNoEixo = 0;
   for (const frac of [0.2, 0.3, 0.4]) {
@@ -436,6 +784,14 @@ export function medir(b: Bitmap): Marcos {
     giroDoEixo: cabeca.cx - tronco.cx,
     planoLateral: plano,
     planoLateralTronco: planoTronco,
+    facetas: {
+      topo: facetaTopo,
+      base: facetaBase,
+      queixo: queixo || { altura: 0, delta: 0 },
+      sombraQueixo: sombraQueixo || { altura: 0, delta: 0 },
+    },
+    tracosOrelha: { esq: contarTracos("esq"), dir: contarTracos("dir") },
+    espessuraTraco,
     sombra,
     faixaNoEixo,
     perfil,
