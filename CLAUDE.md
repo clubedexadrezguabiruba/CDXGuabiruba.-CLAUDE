@@ -90,7 +90,16 @@ quando não há `.env.local` — é assim que funcionam em CI.
 - scripts/verify/ → gates de validação por fase
 
 ## Referências (ler antes de mudanças grandes)
-- Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md
+- Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md — **a §5 (aulas) está
+  superada** pelo currículo abaixo
+- Currículo das aulas: `docs/curriculo/01-curriculo-definitivo-v1.md` — **aprovado em
+  2026-07-30 (revisão 3) e é a fonte de verdade do conteúdo pedagógico.** 124 aulas em
+  7 trilhas (25·21·19·18·16·14·11), com uma coluna de defesa atravessando da trilha 1
+  à 6, meta de volume de prática por trilha, 3 blocos de revisão espaçada obrigatórios
+  por trilha, 10 mini-jogos, 5 duelos com missão e o professor-guia. A §15 lista as 22
+  correções da revisão 3. Só conteúdo: o plano técnico dos formatos novos (lição
+  interativa, quiz, mini-jogo, bloco de puzzle, bloco de revisão, duelo com missão,
+  move trainer) ainda não existe
 - Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md (a seção "Estado real" é a
   única parte confiável — a Parte 1 é um guia de setup pré-projeto)
 - Avatar: **o plano vigente é o v4**, e são cinco documentos com papéis distintos:
@@ -101,6 +110,11 @@ quando não há `.env.local` — é assim que funcionam em CI.
     leia este.** O processo de ponta a ponta: o que pedir ao gerador, a tabela de
     matiz, as três camadas do asset, as variantes por DPR, os oito gates e o que
     cada reprovação significa
+  - `docs/avatar/17-patentes-uniformes-design.md` — o design das 6 patentes: a lei
+    das cores do pipeline, a paleta medida e o racional pela Bíblia Tonal. A régua
+    de verdade é `scripts/avatar/patentes.ts`, medida por `verify:paleta-patentes`
+  - `docs/avatar/18-uniformes-blocos.md` — **para abrir, copiar e fechar.** Os 4
+    pedidos prontos (Capitão, Comandante, General, Mestre) e a esteira até o gate
   - `docs/avatar/12-avatar-v4-plano-completo.md` — as 30 decisões e o porquê,
     mais a **emenda à D27**: só pele e cabelo recolorem
   - `docs/avatar/13-checklist-de-verificacao.md` — os ~90 itens de auditoria

@@ -1,0 +1,19 @@
+// TYPECHECK DOS SCRIPTS DE AVATAR.
+//
+// O `tsconfig.json` inclui só `src/**`, e foi por isso que uma refatoração
+// incompleta passou verde: `rasterizarSentinela is not defined` e
+// `b64png is not defined` são `Cannot find name` — erros que o tsc pega de
+// graça e que ninguém rodava, porque `npm run typecheck` não olhava para cá.
+//
+// `scripts/verify/**` fica de FORA de propósito, registrado como dívida no
+// runbook. O escopo é o que esta fase mexe.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // O pai é `incremental`, e com `noEmit` isso exige um `.tsbuildinfo`
+    // próprio. Desligar é mais barato que administrar um segundo cache.
+    "incremental": false
+  },
+  "include": ["scripts/avatar/**/*.ts"],
+  "exclude": ["node_modules"]
+}

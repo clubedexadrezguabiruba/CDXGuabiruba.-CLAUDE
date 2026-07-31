@@ -61,3 +61,8 @@ public/stockfish/
 
 # Saída do avatar:garment — regenerável, e sai daqui para public/items no Bloco 7b
 scripts/avatar/uniformes/
+
+# Cópia dos uniformes para a página de conferência /dev/avatar-uniforme.
+# NÃO é public/items/: `verify:avatar-assets` reprova arquivo órfão lá dentro, e
+# a linha do uniforme em `items` só nasce no Bloco 7b.
+public/dev/
