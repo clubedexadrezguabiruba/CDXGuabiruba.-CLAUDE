@@ -627,6 +627,41 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     do Recruta servir sem rodada nova, depois de duas tentativas de encaixe justo
     que falharam.
 
+15b. **A pose é "quase frontal, com giro mínimo para a direita da imagem" — e o
+    pedido tem de dizer isso com essas palavras.** ⚠️ *Escrito em 2026-07-31, e as
+    duas formulações anteriores estavam erradas em direções opostas.*
+
+    Este plano já disse **"levemente em 3/4"** e o Bloco 1 respondeu com **"frontal
+    simétrica"**. Nenhum dos dois descreve a `referencia-base.png`. A medição
+    (`scripts/avatar/estilo/medir.ts`, em unidades do `viewBox` com a altura útil
+    normalizada em 600) diz:
+
+    | sinal                                     | medido |
+    |-------------------------------------------|--------|
+    | a orelha ESQUERDA sai da cabeça            | 24,1   |
+    | a orelha DIREITA sai da cabeça             | 14,7   |
+    | o par de olhos, contra o eixo da cabeça    | +33,5  |
+    | plano lateral escuro: esquerda / direita   | 0 / 16 |
+    | eixo da cabeça, contra o eixo do tronco    | +7,4   |
+
+    **Por que isso é regra de PEDIDO e não só de código.** A referência vai anexada
+    idêntica em todo pedido ao gerador, e é dela que o gerador copia a leitura
+    espacial. Se o pedido não exigir o plano lateral direito e as orelhas
+    assimétricas, ele devolve simetria — e aí a base (que é assimétrica, por
+    medição) recebe tinta simétrica e briga consigo mesma em toda peça. O inverso
+    também vale: uma base simétrica com tinta assimétrica é o mesmo defeito pelo
+    outro lado.
+
+    **No pedido, escrever literalmente:** *"pose quase frontal, com um giro mínimo
+    para a direita da imagem: a orelha esquerda aparece inteira e a direita fica
+    parcialmente escondida; há um plano lateral mais escuro só na borda direita da
+    cabeça e do tronco; os olhos ficam ligeiramente à direita do centro da cabeça,
+    com o direito um pouco mais alto."*
+
+    A assimetria mora em `GIRO`, em `geometria.ts`, ao lado de `LUZ`, e
+    `npm run avatar:pose` reprova quem a perder. Ela revoga a **D3 do doc 12**, com
+    o imposto (92 itens de catálogo autorados para o giro) registrado lá.
+
 ## 7c. Restrições de composição — aprendidas no `avatar:garment`
 
 16. **Regra de CSS NÃO alcança o conteúdo de `<use>` — e este item já disse o

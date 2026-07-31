@@ -37,7 +37,7 @@
     "verify:chest-pool": "tsx scripts/verify/phase8/verify-chest-pool.ts",
     "verify:paleta-patentes": "tsx scripts/verify/phase8/verify-paleta-patentes.ts",
     "verify:phase8": "npm run verify:avatar-assets && npm run verify:avatar-db && npm run verify:chest-pool && npm run verify:paleta-patentes",
-    "verify:all": "npm run verify:phase2 && npm run verify:seeds && npm run verify:revanche && npm run verify:rush && npm run verify:phase5 && npm run verify:phase6 && npm run verify:phase8 && npm run verify:turmas && npm run verify:privileges && npm run verify:xp-curve && npm run verify:no-dup-rpc && npm run verify:puzzle-authority",
+    "verify:all": "npm run verify:phase2 && npm run verify:seeds && npm run verify:revanche && npm run verify:rush && npm run verify:phase5 && npm run verify:phase6 && npm run verify:phase8 && npm run verify:turmas && npm run verify:privileges && npm run verify:xp-curve && npm run verify:no-dup-rpc && npm run verify:puzzle-authority && npm run verify:pose",
     "test": "vitest run",
     "test:watch": "vitest",
     "avatar:proveniencia": "tsx scripts/avatar/proveniencia.ts",
@@ -45,7 +45,9 @@
     "avatar:folha": "tsx scripts/avatar/folha-contato.ts",
     "avatar:folha-base": "tsx scripts/avatar/estilo/folha-base.ts",
     "avatar:animacao": "tsx scripts/avatar/estilo/medir-animacao.ts",
-    "avatar:preview": "npm run avatar:garment && node -e \"require('fs').mkdirSync('public/dev/uniformes',{recursive:true});for(const f of require('fs').readdirSync('scripts/avatar/uniformes'))require('fs').copyFileSync('scripts/avatar/uniformes/'+f,'public/dev/uniformes/'+f)\""
+    "avatar:preview": "npm run avatar:garment && node -e \"require('fs').mkdirSync('public/dev/uniformes',{recursive:true});for(const f of require('fs').readdirSync('scripts/avatar/uniformes'))require('fs').copyFileSync('scripts/avatar/uniformes/'+f,'public/dev/uniformes/'+f)\"",
+    "avatar:pose": "tsx scripts/avatar/estilo/verificar-pose.ts",
+    "verify:pose": "npm run avatar:pose"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.70",

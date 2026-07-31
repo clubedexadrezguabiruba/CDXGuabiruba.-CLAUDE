@@ -54,7 +54,7 @@ describe("a interface Traje não tem campo de silhueta", () => {
 });
 
 describe("o SVG emitido respeita o contrato", () => {
-  const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", animado: true });
+  const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", animado: true, ns: "kk" });
 
   it("conferirSvg não acha problema", () => {
     expect(conferirSvg(svg)).toEqual([]);

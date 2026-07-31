@@ -108,7 +108,21 @@ que já existe, não da pose.
 
 **Se mudar depois:** redesenha todos os itens que tocam o corpo.
 
-**DECISÃO:** _(em aberto)_
+**DECISÃO:** ~~A (frontal simétrica)~~ → **nem A nem B: quase frontal, com giro
+mínimo para a direita da imagem** (2026-07-31).
+
+A recomendação acima raciocinou sobre um estilo que foi trocado, e o argumento
+dela continua correto — três-quartos obriga cada item a ser desenhado em
+perspectiva. O que mudou é o fato: a `referencia-base.png` do estilo kokeshi **não
+é simétrica**, e não por pouco. Quatro sinais independentes concordam (orelhas
+24,1 contra 14,7; olhos +33,5 do eixo; plano lateral 0 contra 16; eixo da cabeça
++7,4 do eixo do tronco), todos medidos em pixel.
+
+Não é o "três-quartos" da opção B: o tronco não gira e não há perspectiva a
+desenhar. É um giro de poucas unidades, e ele vira **dado do sistema** na
+constante `GIRO` de `geometria.ts`, que todo acessório lê. O imposto (92 itens
+autorados para o giro) e o porquê de valer a pena estão registrados na **D3 do
+doc 12**; a régua é `npm run avatar:pose`.
 
 ---
 

@@ -27,14 +27,21 @@
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import sharp from "sharp";
 import { chromium, type Browser } from "@playwright/test";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import {
   CABECA,
+  CABECA_H,
   CENTRO_X,
+  GIRO,
   OLHO,
   OLHO_CX_ESQ,
+  OLHO_CY_ESQ,
   ORELHA,
+  ORELHA_CX_DIR,
+  ORELHA_CX_ESQ,
+  TRACO,
   TRONCO,
   VIEWBOX,
 } from "../../../src/lib/avatar/estilo/geometria";
@@ -53,18 +60,24 @@ const TAMANHOS = [56, 100, 200, 425] as const;
 // ---------------------------------------------------------------------------
 
 /**
- * A referência tem 1254×1254 e a figura dela ocupa y 155→1040 (885 px), com o
- * eixo de simetria em x≈617. No nosso `viewBox` a figura ocupa y 45→645 (600
- * unidades), com o eixo em 250.
+ * A referência tem 1254×1254 e o CONTORNO ESCURO dela ocupa y 148→1044 (896 px),
+ * com o eixo do tronco em x = 611,5. No nosso `viewBox` a silhueta externa ocupa
+ * y 39,5→640,5 (601 unidades), com o eixo do tronco em 250.
  *
- * Daí saem os três números abaixo, e todos são consequência desses seis: nenhum
- * foi mexido até "ficar bom". Se a folha mostrar as duas figuras em tamanhos
- * diferentes, o erro está numa das medidas da referência, não no ajuste.
+ * Os números mudaram nesta rodada, e a mudança não é cosmética: a versão
+ * anterior usava y 155→1040 porque lia a silhueta como "pixel diferente do
+ * fundo", e por baixo do tronco existe a **sombra do chão**, que é tinta clara.
+ * Ela engordava a figura e escondia o fim do tronco. `medir.ts` explica em
+ * detalhe; o efeito aqui é que a referência ficava ~7% pequena ao lado do SVG, o
+ * que faz TODA comparação de proporção mentir a favor.
+ *
+ * O eixo é o do TRONCO e não o da figura: a cabeça tem eixo próprio, 7,4
+ * unidades à direita (`GIRO`), e alinhar pela cabeça desalinharia os ombros.
  */
-const REF = { lado: 1254, figuraY0: 155, figuraY1: 1040, eixoX: 617 } as const;
-const REF_ESCALA = 600 / (REF.figuraY1 - REF.figuraY0); // 0,678
-const REF_X = 250 - REF.eixoX * REF_ESCALA;
-const REF_Y = 45 - REF.figuraY0 * REF_ESCALA;
+const REF = { lado: 1254, tintaY0: 148, tintaY1: 1044, eixoTronco: 611.5 } as const;
+const REF_ESCALA = 600 / (REF.tintaY1 - REF.tintaY0); // 0,6696
+const REF_X = CENTRO_X - REF.eixoTronco * REF_ESCALA;
+const REF_Y = CABECA.y0 - TRACO / 2 - REF.tintaY0 * REF_ESCALA;
 const REF_LADO = REF.lado * REF_ESCALA;
 
 // ---------------------------------------------------------------------------
@@ -86,18 +99,28 @@ function closes(): Close[] {
   return [
     {
       rotulo: "orelha esquerda",
-      origem: `CABECA.x0=${CABECA.x0} · ORELHA.cy=${ORELHA.cy} · ry=${ORELHA.ry}`,
-      vb: caixa(CABECA.x0, ORELHA.cy, ORELHA.ry * 2 + 60),
+      origem: `ORELHA_CX_ESQ=${ORELHA_CX_ESQ} · cy=${ORELHA.cy} · saliência ${GIRO.saliencia.esq}`,
+      vb: caixa(ORELHA_CX_ESQ, ORELHA.cy, ORELHA.ry * 2 + 60),
+    },
+    {
+      rotulo: "orelha direita",
+      origem: `ORELHA_CX_DIR=${ORELHA_CX_DIR} · cy=${ORELHA.cy} · saliência ${GIRO.saliencia.dir}`,
+      vb: caixa(ORELHA_CX_DIR, ORELHA.cy, ORELHA.ry * 2 + 60),
+    },
+    {
+      rotulo: "plano lateral direito",
+      origem: `borda direita da cabeça x=${CABECA.x1} · faixa de ${GIRO.planoLateral.cabeca}`,
+      vb: caixa(CABECA.x1 - 20, CABECA.y0 + CABECA_H * 0.45, 170),
     },
     {
       rotulo: "canto do olho",
-      origem: `OLHO_CX_ESQ=${OLHO_CX_ESQ} · topo em ${OLHO.cy - OLHO.h / 2}`,
-      vb: caixa(OLHO_CX_ESQ, OLHO.cy - OLHO.h / 2, 96),
+      origem: `OLHO_CX_ESQ=${OLHO_CX_ESQ} · topo em ${OLHO_CY_ESQ - OLHO.h / 2}`,
+      vb: caixa(OLHO_CX_ESQ, OLHO_CY_ESQ - OLHO.h / 2, 96),
     },
     {
       rotulo: "cabeça ↔ tronco",
-      origem: `ombro em x=${CENTRO_X - TRONCO.meioOmbro} · base da cabeça y=${CABECA.y1}`,
-      vb: caixa(CENTRO_X - TRONCO.meioOmbro, CABECA.y1 + 8, 170),
+      origem: `base da cabeça y=${CABECA.y1} · ombro do tronco em y=${TRONCO.yTopo}`,
+      vb: caixa(CENTRO_X - 100, CABECA.y1 + 8, 190),
     },
     {
       rotulo: "canto do especular",
@@ -106,10 +129,29 @@ function closes(): Close[] {
     },
     {
       rotulo: "base do tronco",
-      origem: `TRONCO.yBase=${TRONCO.yBase} · r=${TRONCO.r} · sombra do chão`,
+      origem: `TRONCO.yBase=${TRONCO.yBase} · arremate ry=${TRONCO.ryArremate} · sombra do chão`,
       vb: caixa(CENTRO_X, TRONCO.yBase - 10, 330),
     },
   ];
+}
+
+/**
+ * O recorte de cada orelha, no MESMO tamanho de caixa, para irem um ao lado do
+ * outro na mesma escala.
+ *
+ * É a leitura que a rodada anterior não tinha, e o defeito que ela existe para
+ * mostrar é justamente o que passou: as duas orelhas saíam idênticas quando a
+ * referência tem 24 de um lado e 15 do outro. Um close por orelha em painéis
+ * distantes não deixa comparar — e comparar é a única coisa que revela a
+ * assimetria.
+ */
+function caixasDasOrelhas(): { esq: string; dir: string; lado: number } {
+  const lado = ORELHA.ry * 2 + 60;
+  return {
+    esq: caixa(ORELHA_CX_ESQ, ORELHA.cy, lado),
+    dir: caixa(ORELHA_CX_DIR, ORELHA.cy, lado),
+    lado,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -117,7 +159,7 @@ function closes(): Close[] {
 async function main() {
   mkdirSync(DIAG, { recursive: true });
 
-  const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", animado: true });
+  const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", animado: true, ns: "kk" });
   const problemas = conferirSvg(svg);
   const formas = (svg.match(/<(path|ellipse|rect|circle)\b/g) ?? []).length;
   const bytes = Buffer.byteLength(svg, "utf-8");
@@ -129,8 +171,16 @@ async function main() {
   for (const p of problemas) console.log(`    - ${p.detalhe}`);
   writeFileSync(`${DIAG}/base.svg`, svg);
 
-  const refB64 = readFileSync(REFERENCIA).toString("base64");
-  const refUri = `data:image/png;base64,${refB64}`;
+  // A referência entra na folha uma vez POR PAINEL, e são treze. O PNG original
+  // tem 964 KB, e treze cópias em base64 passam de 16 MB de HTML — o
+  // `setContent` do Chromium estoura os 30 s nisso. Requantizar para 64 cores
+  // resolve sem perder nada que importe: a referência é ilustração de cor
+  // chapada, e a resolução (1254 px) fica intacta, que é o que os closes usam.
+  const refPng = await sharp(readFileSync(REFERENCIA)).png({ palette: true, colours: 64 }).toBuffer();
+  const refUri = `data:image/png;base64,${refPng.toString("base64")}`;
+  console.log(
+    `\nreferência embutida: ${(refPng.length / 1024).toFixed(0)} KB requantizados × 13 painéis`,
+  );
 
   const recortes = closes();
   console.log(`\ncloses de coordenada medida (nenhum número escolhido a olho):`);
@@ -140,13 +190,22 @@ async function main() {
   try {
     const pg = await nav.newPage();
 
-    /** A base num tamanho e num `viewBox`. `estatica` desliga o piscar. */
-    const base = (h: number, vb = `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, pele: string = PELE[2], ns = "kk") => {
+    /**
+     * A base num tamanho e num `viewBox`.
+     *
+     * `ns` é o SEGUNDO parâmetro, e não o último com valor padrão, de propósito.
+     * Ele era o último e tinha padrão `"kk"`, e esta folha renderiza NOVE
+     * bonecos no mesmo documento — os quatro tamanhos e os cinco closes saíam
+     * todos com o mesmo prefixo, e portanto com `clipPath` de `id` repetido. O
+     * navegador resolve a colisão para o primeiro, e como as nove geometrias
+     * eram idênticas, nada mudava na tela. Era a colisão de `id` real do
+     * projeto, invisível.
+     */
+    const base = (h: number, ns: string, vb = `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, pele: string = PELE[2]) => {
       const [, , w0, h0] = vb.split(" ").map(Number);
-      const um = compor({ pele, cabelo: "#3A2F2A", ns })
+      return compor({ pele, cabelo: "#3A2F2A", ns })
         .replace(`viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}"`, `viewBox="${vb}"`)
         .replace("<svg ", `<svg width="${Math.round((h * w0) / h0)}" height="${h}" `);
-      return um;
     };
 
     /** A referência recortada e escalada para a figura cair no mesmo lugar. */
@@ -173,7 +232,7 @@ async function main() {
         `${t} px${t === 56 ? " · o do ranking" : ""}`,
         `<div style="display:flex;gap:6px;align-items:flex-end;background:#fff;` +
           `border:1px solid #eee;padding:6px;border-radius:4px">` +
-          fig("SVG", base(t)) +
+          fig("SVG", base(t, `tam${t}`)) +
           fig("referência", refNoLugar(t)) +
           `</div>`,
       ),
@@ -181,27 +240,47 @@ async function main() {
 
     // 2. as 8 peles
     const secaoPeles = PELE.map((p, i) =>
-      fig(`${i + 1} · ${p}`, base(150, `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, p, `kk${i}`)),
+      fig(`${i + 1} · ${p}`, base(150, `pele${i}`, `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, p)),
     ).join("");
 
     // 3. os closes, SVG contra referência, no mesmo recorte
     const secaoCloses = recortes
       .map(
-        (c) =>
+        (c, i) =>
           `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">` +
           `<div style="width:230px;font:11px system-ui;color:#555;padding-top:60px">` +
           `<b>${c.rotulo}</b><br><span style="color:#999">${c.origem}</span><br>` +
           `<span style="color:#bbb">viewBox "${c.vb}"</span></div>` +
-          fig("SVG", base(190, c.vb)) +
+          fig("SVG", base(190, `close${i}`, c.vb)) +
           fig("referência", refNoLugar(190, c.vb)) +
           `</div>`,
       )
       .join("");
 
+    // 4. as duas orelhas, na mesma escala e uma ao lado da outra
+    const or = caixasDasOrelhas();
+    const secaoOrelhas =
+      `<div style="display:flex;gap:18px;align-items:flex-start">` +
+      fig(
+        `esquerda · saliência ${GIRO.saliencia.esq}`,
+        `<div style="display:flex;gap:4px">` +
+          fig("SVG", base(200, "orE", or.esq)) +
+          fig("ref", refNoLugar(200, or.esq)) +
+          `</div>`,
+      ) +
+      fig(
+        `direita · saliência ${GIRO.saliencia.dir}`,
+        `<div style="display:flex;gap:4px">` +
+          fig("SVG", base(200, "orD", or.dir)) +
+          fig("ref", refNoLugar(200, or.dir)) +
+          `</div>`,
+      ) +
+      `</div>`;
+
     await pg.setViewportSize({ width: 1500, height: 900 });
     await pg.setContent(
       `<body style="margin:0;background:#fff;padding:18px;font:12px system-ui;color:#555">` +
-        `<h1 style="font:600 17px system-ui;margin:0 0 3px">Base kokeshi — a folha do Bloco 1</h1>` +
+        `<h1 style="font:600 17px system-ui;margin:0 0 3px">Base kokeshi — a folha do Bloco 1b</h1>` +
         `<p style="margin:0;color:#888">O que se aprova é o <b>SVG</b>. A referência está ao lado só para comparar, ` +
         `alinhada por cálculo (escala ${REF_ESCALA.toFixed(3)}), e nunca vira asset. ` +
         `${formas} formas · ${(bytes / 1024).toFixed(2)} KB · conferirSvg ${problemas.length}.</p>` +
@@ -209,6 +288,11 @@ async function main() {
         `<div style="display:flex;gap:14px;align-items:flex-end">${secaoTamanhos}</div>` +
         titulo("As 8 peles", "prova que var(--av-pele) recolore de verdade, e que a sombra da pele acompanha") +
         `<div style="display:flex;gap:8px;flex-wrap:wrap">${secaoPeles}</div>` +
+        titulo(
+          "As duas orelhas, na mesma escala",
+          "o giro em uma leitura só: a esquerda sai 24 unidades da cabeça, a direita 15",
+        ) +
+        secaoOrelhas +
         titulo("Closes de coordenada medida", "cada viewBox sai de uma constante de geometria.ts") +
         secaoCloses +
         `</body>`,

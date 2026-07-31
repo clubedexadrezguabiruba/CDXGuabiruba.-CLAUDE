@@ -118,9 +118,24 @@ mas a evidência já existe em `.scratch/pagina-avatar-v4-completo.png`.
       parâmetro que muda, para a comparação ser entre proporções e não entre desenhos
 - [x] **T0.12** 👤→🤖 ~~**Proporção escolhida: 1:3**~~ *(usuário delegou a escolha)*
       → **REVOGADA em 2026-07-31 pela troca de estilo (doc 15, Bloco 1).** A cabeça
-      passa a ser **0,508 da figura** (≈1:2), medida na `referencia-base.png`. O
+      passa a ser **0,52 da figura** (≈1:2), medida na `referencia-base.png`. O
       boneco kokeshi não tem pernas, então a figura de três cabeças que a T0.11
       comparou não existe mais. A régua é `src/lib/avatar/estilo/geometria.ts`
+      *(o 0,508 escrito aqui antes saiu de uma medição que lia a silhueta como
+      "pixel diferente do fundo" e engolia a sombra do chão junto; o valor certo é
+      0,52 — ver o cabeçalho de `scripts/avatar/estilo/medir.ts`)*
+- [x] **T0.15** 🤖 **Bloco 1b — a base refeita com a assimetria medida**
+      *(2026-07-31)*. O Bloco 1 entregou a arquitetura e o Doug a aprovou; a base
+      visual foi **reprovada** e é isto que a refaz. A pose deixou de ser tratada
+      como simétrica: entra a constante `GIRO` em `geometria.ts` com os cinco
+      deslocamentos medidos, o topo da cabeça vira cúpula (o chato do ápice cai de
+      48% para 10% da largura), os olhos ficam assimétricos e 32% mais largos, a
+      mancha diagonal no rosto vira **plano lateral** na borda, a sombra do chão
+      volta a ser centrada e do tamanho medido, e o tronco passa a ter o ponto
+      mais largo a 57% da altura. Nasce junto `npm run avatar:pose` — o 15º gate
+      do `verify:all` —, que mede perfil externo, marcos da pose e unicidade de
+      `id`, com **três fixtures** que reprovam uma em cada. `ns` deixou de ter
+      valor padrão: o `typecheck` agora cobra a unicidade de quem compõe
 - [x] **T0.13** 🤖 Converter 1 pet para SVG animado por CSS e comparar com o APNG
 - [x] **T0.14** 👤→🤖 **Pets viram SVG** *(usuário delegou; confirmar se discordar)*
 

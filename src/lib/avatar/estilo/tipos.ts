@@ -88,10 +88,23 @@ export interface EstadoAvatar {
    */
   animado?: boolean;
   /**
-   * Prefixo de todo `id` que o SVG emitir. Existe porque compor o avatar é
-   * concatenar camadas num `<svg>` só (D22), e dois `clipPath` chamados
-   * `tronco` numa mesma página fazem o segundo vencer em silêncio — o modo de
-   * falha do §8 item 4.
+   * Prefixo de todo `id` que o SVG emitir, e **obrigatório de propósito**.
+   *
+   * Existe porque compor o avatar é concatenar camadas num `<svg>` só (D22), e
+   * dois `clipPath` chamados `tronco` numa mesma página fazem o segundo vencer
+   * em silêncio — o modo de falha do §8 item 4.
+   *
+   * Ele já teve valor padrão (`"kk"`), e o padrão criou exatamente a colisão que
+   * ele existia para impedir: a `folha-base.ts` compõe NOVE renders no mesmo
+   * documento (4 tamanhos + 5 closes) e todos herdavam o mesmo prefixo. Ninguém
+   * viu, porque as nove geometrias eram idênticas — a colisão resolvia para o
+   * primeiro clip e nada mudava na tela.
+   *
+   * Sem padrão, o `typecheck` cobra de quem compõe: de onde vem a unicidade? É a
+   * mesma trava estrutural da `interface Traje` acima, pelo mesmo motivo —
+   * mecanismo em vez de disciplina. Ela não basta sozinha (nada impede passar a
+   * mesma string duas vezes), e por isso `npm run avatar:pose` mede unicidade de
+   * `id` no DOM com as instâncias renderizadas juntas.
    */
-  ns?: string;
+  ns: string;
 }

@@ -24,7 +24,7 @@
 |---|---|---|---|
 | D1 | Proporção | ~~1:3~~ → **REVOGADA em 2026-07-31: a cabeça é 0,508 da figura (≈1:2)** | a T0.12 do doc 14 escolheu 1:3 para um boneco com pernas. O estilo kokeshi não tem pernas, e sem pernas a figura de três cabeças que o D1 media deixa de existir — a razão passa a ser cabeça↔tronco, medida em **0,508** na `referencia-base.png`. A régua de verdade é `src/lib/avatar/estilo/geometria.ts`; o custo é o item 8 da §2 do doc 15 (tudo que identifica o aluno cabe na cabeça), endereçado pelos slots `emblema` e `rosto` |
 | D2 | Canvas | **4:5 — `viewBox` 400×500** | com SVG o `viewBox` escala livremente, então errar a proporção do quadro **deixou de ser caro**. Decisão rebaixada de crítica para ajustável |
-| D3 | Pose | **frontal simétrica** | simetria é o que faz overlay simples funcionar; 3/4 recria o problema que quebrou 45 itens |
+| D3 | Pose | ~~frontal simétrica~~ → **REVOGADA em 2026-07-31: quase frontal, com giro mínimo para a direita da imagem** | a `referencia-base.png` não é simétrica, e não é por pouco: **quatro sinais independentes** concordam, todos medidos em pixel por `scripts/avatar/estilo/medir.ts` — orelha esquerda sai 24,1 unidades e a direita 14,7; o par de olhos anda +33,5 do eixo da cabeça; o plano lateral escuro mede 0 à esquerda e 16 à direita; e o eixo da cabeça fica +7,4 do eixo do tronco. **O imposto é real e está pago de olhos abertos:** todo chapéu, emblema, decalque de rosto e capa passa a ser autorado *para aquele giro* — um chapéu centrado fica errado —, e são 92 itens de catálogo. **Por que vale mesmo assim:** os trajes são gerados A PARTIR desta mesma referência, então uma base simétrica receberia tinta assimétrica e brigaria consigo mesma em toda peça — defeito novo, permanente e em 14 peças. **A mitigação** é a constante `GIRO` em `geometria.ts`, ao lado de `LUZ`: a assimetria vira dado do sistema, lido por todo acessório futuro, em vez de julgamento de quem desenha. Medido por `npm run avatar:pose` |
 | D4 | Tons de pele | **8** (era 5) | com classe de paleta, tom de pele é **uma linha de CSS** — 8 custam o mesmo que 3. O número 5 tinha sido calibrado contra custo de PNG, que não existe mais. Para clube de escola pública, representação melhor sai de graça |
 | D5 | Cabelo | **curto baked na base + slot `hair`** | ninguém aparece careca por 404, e o slot dá o eixo de identidade |
 
@@ -119,8 +119,9 @@ uma camada própria, `av-sobrancelha`, separada de `av-olho` por um corte medido
 ## 2.1 O corpo
 
 - **1 body family** `estrategista_v2`, substitui `recruta_v1`.
-- Proporção **1:3 provisória** (confirmar por medição na F0), pose **frontal
-  simétrica**, `viewBox` **4:5**.
+- Proporção ~~1:3 provisória~~ → **medida: cabeça 0,52 da figura** (D1 revogada),
+  pose ~~frontal simétrica~~ → **quase frontal, com giro mínimo para a direita da
+  imagem** (D3 revogada), `viewBox` ~~4:5~~ → **5:7, 500×700**.
 - **Baked na base:** cabelo curto simples e traje de treino. O **rosto sai em
   paths próprios**, com classes — é o que torna as 4 expressões (D8) gratuitas.
 - **Pele por paleta:** o artista desenha **1 corpo**; os **8 tons** são classes
