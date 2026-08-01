@@ -35,6 +35,7 @@ Thumbs.db
 # O settings.local.json guarda caminho absoluto e permissões pessoais.
 .claude/*
 !.claude/commands/
+!.claude/skills/
 !.claude/settings.json
 
 # Supabase CLI (local state)
