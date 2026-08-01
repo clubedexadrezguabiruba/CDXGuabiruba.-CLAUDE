@@ -339,9 +339,17 @@ function gradiente(id: string, y0: number, y1: number, paradas: [number, string]
  * A composição inteira, como string de `<svg>`.
  *
  * Emite as custom properties no elemento raiz, o que faz o arquivo funcionar
- * sozinho (folha de contato, gate, `<img>`) e continuar recolorível quando o app
- * sobrescreve `--av-pele` mais acima na árvore. Todas as quatro estão em
+ * sozinho (folha de contato, gate, embutido numa tag de imagem) e continuar
+ * recolorível quando o app sobrescreve `--av-pele` mais acima na árvore.
+ *
+ * São **quatro sem cabelo e seis com** — `--av-cabelo` e `--av-cabelo-s` só saem
+ * quando há modelo, para a base careca não pagar bytes por uma camada que ela não
+ * tem (ver `estilo()` e o teto de regressão em `folha-base.ts`). Todas estão em
  * `PROPRIEDADES.avatar`, então `conferirSvg` aprova.
+ *
+ * **Cuidado com o que ele NÃO aprova:** o `conferirSvg` reprova propriedade a
+ * MAIS, nunca a menos. Foi por isso que `--av-cabelo` ficou congelada na paleta
+ * desde o Bloco 1 sem nunca ser emitida, e nada acusou até o 2a.1.
  *
  * **`estado.ns` é obrigatório, e isso é a trava e não uma chatice.** Ele tinha
  * um valor padrão (`"kk"`), e o padrão criava a colisão que ele existia para
