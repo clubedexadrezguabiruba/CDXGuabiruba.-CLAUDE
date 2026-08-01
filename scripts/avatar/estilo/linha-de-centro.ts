@@ -98,6 +98,28 @@ const ALTURA_RASTER = 2048;
  */
 const Y_TOPO = 39.5;
 
+/**
+ * Quantos pontos o contorno da cabeça leva para `geometria.ts`.
+ *
+ * 42 veio do Bloco 1c e foi escolhido pelo orçamento de bytes. O Bloco 1d
+ * **verificou o número em vez de herdá-lo**, e a resposta surpreende: mais pontos
+ * pioram. Medido no path emitido, o menor raio de curvatura cai de 32,6 com 42
+ * pontos para 16,8 com 48 e 16,4 com 88 — passado certo limite, o erro de corda
+ * gasta ponto reproduzindo detalhe de amostragem em vez de forma. Ver `decimar()`.
+ */
+const ALVO_PONTOS = 42;
+
+/**
+ * Janela da média móvel que alisa o degrau das emendas, em unidades de arco.
+ *
+ * 15 unidades, e o número saiu de varredura, não de estimativa: as emendas têm
+ * degrau de 1,3 a 1,9 unidade, e a curvatura só para de inverter a partir de 15
+ * (com 6 restavam duas inversões, com 9 e 12 uma). Ver `suavizar()` para o que a
+ * janela custa em forma — 0,15 unidade de atalho no canto mais fechado, um terço de
+ * pixel do raster.
+ */
+const JANELA_SUAVE = 15;
+
 // ---------------------------------------------------------------------------
 // A leitura
 // ---------------------------------------------------------------------------
@@ -517,12 +539,115 @@ function percentil(xs: number[], p: number): number {
 }
 
 /**
+ * ALISA O DEGRAU DAS EMENDAS, com uma média móvel por comprimento de arco.
+ *
+ * ---------------------------------------------------------------------------
+ * O DEFEITO QUE ELA CONSERTA, E POR QUE ELE NÃO É RUÍDO
+ * ---------------------------------------------------------------------------
+ *
+ * O Doug reprovou a primeira folha do Bloco 1d por "pequenas quebras" no contorno,
+ * no queixo e no topo esquerdo. O diagnóstico de suavidade, no fim deste arquivo,
+ * localizou **três** e deu a elas uma assinatura única: uma virada de mais de 20°
+ * seguida imediatamente de uma virada negativa — a curva passa do ponto e volta. E
+ * as três caem no MESMO tipo de lugar: onde um ponto vindo da varredura por `linha`
+ * encosta num vindo da varredura por `coluna`.
+ *
+ * A causa não é falta de pontos nem ruído de extração. O contorno cru é limpo: o
+ * resíduo contra um ajuste local mede **0,09 unidade**, um quinto de pixel do raster.
+ * O que existe é um **degrau sistemático de ~1 unidade entre as duas varreduras**.
+ * Perto dos 45° as duas são legíveis e descrevem a mesma borda, mas discretizam em
+ * direções diferentes — uma acha o centro do traço percorrendo x, a outra percorrendo
+ * y —, e o viés de cada uma tem sinal próprio. `cortar()` escolhe onde uma acaba e a
+ * outra começa, e o degrau fica inteiro naquele ponto.
+ *
+ * Uma spline melhor não conserta isso, e foi o que a troca para Catmull-Rom
+ * centrípeta mostrou: ela alisou o topo e **deixou o queixo como estava**, porque
+ * ali o defeito está no dado e não na curva.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE MÉDIA MÓVEL, E POR QUE ELA NÃO CUSTA FORMA
+ * ---------------------------------------------------------------------------
+ *
+ * O degrau é uma descontinuidade de 1 unidade num contorno amostrado a cada 0,4
+ * unidade: é o componente de frequência mais alta que existe no dado. Uma média
+ * móvel de janela curta o distribui pelos vizinhos e não tem o que fazer com o
+ * resto, porque o resto varia devagar.
+ *
+ * A janela é de 6 unidades de arco — **meio traço**. O que ela custa é atalho de
+ * canto, e o atalho de uma média móvel numa curva de raio `R` vale `j²/8R`: nos
+ * cantos mais fechados da cabeça (`R` ≈ 30) isso dá **0,15 unidade**, ou um terço de
+ * pixel do raster. Está abaixo do próprio ruído de extração, e três ordens de
+ * grandeza abaixo do degrau que ela remove.
+ *
+ * Ela roda **antes** de decimar, e a ordem importa: alisar 2 600 pontos distribui o
+ * degrau; alisar 42 mexeria na forma.
+ */
+function suavizar(pts: Ponto[], janela: number): Ponto[] {
+  const N = pts.length;
+  if (N < 8) return pts;
+  // Comprimento de arco acumulado, para a janela ser medida em unidades do
+  // `viewBox` e não em número de amostras — a densidade de pontos varia muito ao
+  // longo do contorno, e uma janela em amostras alisaria demais onde eles são densos.
+  const passo: number[] = [];
+  for (let i = 0; i < N; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % N];
+    passo.push(Math.hypot(b.x - a.x, b.y - a.y));
+  }
+  const meia = janela / 2;
+  return pts.map((p, i) => {
+    let sx = p.x;
+    let sy = p.y;
+    let n = 1;
+    for (const sentido of [1, -1] as const) {
+      let d = 0;
+      for (let k = 1; k < N / 2; k++) {
+        const j = (i + sentido * k + N * N) % N;
+        d += passo[sentido === 1 ? (i + k - 1 + N * N) % N : j];
+        if (d > meia) break;
+        sx += pts[j].x;
+        sy += pts[j].y;
+        n++;
+      }
+    }
+    return { x: sx / n, y: sy / n, via: p.via };
+  });
+}
+
+/**
  * Reduz o contorno a `alvo` pontos, **pelo erro de corda** e não por passo fixo.
  *
- * Passo fixo gasta pontos onde a curva é reta e falta onde ela vira — e é
- * justamente nas viradas (a cúpula, a saliência da orelha, o queixo) que a forma
- * mora. Aqui um ponto só sobrevive se removê-lo afastasse a curva mais que os
- * outros: a cada rodada some o ponto cuja retirada custa menos.
+ * Passo fixo gasta pontos onde a curva é reta e falta onde ela vira — e é justamente
+ * nas viradas (a cúpula, o queixo) que a forma mora. Aqui um ponto só sobrevive se
+ * removê-lo afastasse a curva mais que os outros: a cada rodada some o ponto cuja
+ * retirada custa menos.
+ *
+ * ---------------------------------------------------------------------------
+ * DUAS ALTERNATIVAS FORAM MEDIDAS CONTRA ELE, E AS DUAS PERDERAM
+ * ---------------------------------------------------------------------------
+ *
+ * O erro de corda é o critério clássico para **aproximar uma poligonal por outra**, e
+ * estes pontos não são uma poligonal: são pontos de controle de uma spline. A
+ * objeção é legítima e foi testada, medindo no path EMITIDO (amostrado com
+ * `getPointAtLength`) o máximo de `|dκ/ds|` e o menor raio de curvatura:
+ *
+ * | critério | dκ/ds máx | raio mínimo | caixa preservada |
+ * |---|---|---|---|
+ * | **erro de corda** | 3,6e-3 | **32,6** | sim |
+ * | arco uniforme | **2,3e-3** | 31,4 | sim |
+ * | densidade ∝ curvatura | 1,2e-2 | 13,8 | **não** — o ápice cai 1,7 u |
+ *
+ * A densidade por curvatura é a que parecia mais certa no papel e é a pior: ela
+ * adensa os cantos e deixa a cúpula — que é gentil e longa — com pontos de menos, e o
+ * ápice da cabeça desce quase duas unidades. Arco uniforme empata dentro do ruído.
+ *
+ * **Mais pontos também não ajudam**, e isso é contraintuitivo o bastante para ficar
+ * escrito: com 48 pontos o raio mínimo cai para 16,8 e com 88 para 16,4, porque o
+ * critério passa a gastar pontos reproduzindo detalhe de amostragem em vez de forma.
+ *
+ * O ganho real da rodada não estava aqui. O "mini kink acima do reflexo da luz" que o
+ * Doug viu era o **especular**, que crowdeava o contorno a 1,8 unidade — ver
+ * `pathEspecular()` em `geometria.ts`.
  */
 function decimar(pts: Ponto[], alvo: number): Ponto[] {
   // Primeiro colapsa vizinhos quase coincidentes. Eles aparecem nas EMENDAS entre a
@@ -643,11 +768,102 @@ async function main() {
     `  caixa: x ${n1(Math.min(...bruto.map((p) => p.x)))}–${n1(Math.max(...bruto.map((p) => p.x)))}   ` +
       `y ${n1(Math.min(...bruto.map((p) => p.y)))}–${n1(Math.max(...bruto.map((p) => p.y)))}`,
   );
-  const alvo = decimar(bruto, 42);
+  // --- AS EMENDAS, CRUAS: onde uma varredura passa a bola para a outra ---
+  //
+  // As quebras que o Doug viu na folha do Bloco 1d caíam todas em junção de
+  // varredura, e "degrau" era só a primeira hipótese. Um degrau, uma lacuna e uma
+  // sobreposição produzem o mesmo sintoma na folha e pedem consertos diferentes:
+  //
+  //  - **degrau** — as duas varreduras discordam de ~1 unidade na mesma posição de
+  //    arco. Alisa com média móvel;
+  //  - **lacuna** — falta um pedaço de borda entre a última leitura de uma e a
+  //    primeira da outra. A curva corta reto e vira de uma vez;
+  //  - **sobreposição** — as duas descrevem o mesmo pedaço e o contorno DOBRA SOBRE
+  //    SI. Nenhuma suavização conserta: é preciso cortar o trecho repetido.
+  //
+  // Isto imprime o salto de posição em cada junção, que é o que separa os três.
+  console.log(`\n  AS EMENDAS — o salto no contorno cru onde a varredura troca`);
+  for (let i = 0; i < bruto.length; i++) {
+    const a = bruto[i];
+    const b = bruto[(i + 1) % bruto.length];
+    if (a.via === b.via) continue;
+    const passo = Math.hypot(b.x - a.x, b.y - a.y);
+    const tipico = 600 / bruto.length;
+    console.log(
+      `    ${a.via} → ${b.via}  em (${n1(a.x)}, ${n1(a.y)}) → (${n1(b.x)}, ${n1(b.y)})   ` +
+        `salto ${n1(passo)} u   (passo típico ${n1(tipico)})` +
+        (passo > 8 * tipico ? "   <- LACUNA" : ""),
+    );
+  }
+
+  const alvo = decimar(suavizar(bruto, JANELA_SUAVE), ALVO_PONTOS);
   console.log(`  decimado para ${alvo.length} pontos pelo erro de corda:\n`);
   console.log(`  contorno: [`);
   for (const p of alvo) console.log(`    { x: ${n1(p.x)}, y: ${n1(p.y)} },`);
   console.log(`  ],`);
+
+  // --- O DIAGNÓSTICO DA SUAVIDADE, e ele existe por uma reprovação concreta ---
+  //
+  // O Doug reprovou a primeira folha do Bloco 1d por "pequenas quebras" no contorno,
+  // no queixo e no topo esquerdo. Duas causas eram possíveis e a tabela acima não
+  // distingue as duas: parametrização da spline (consertada em `geometria.ts`) ou a
+  // **emenda entre as duas varreduras** — a por linha e a por coluna descrevem o
+  // mesmo pedaço de borda perto dos 45°, e um desacordo de uma unidade entre elas
+  // vira um repuxo que nenhuma spline conserta.
+  //
+  // Isto imprime, para cada ponto que sobreviveu: de qual varredura ele veio, quanto
+  // a direção da borda vira ali, e o **raio de curvatura local** que essa virada
+  // implica.
+  //
+  // O CRITÉRIO É A REVERSÃO DE SINAL, E NÃO O TAMANHO DA VIRADA. A primeira versão
+  // deste diagnóstico marcava toda virada acima de 18° e gritava à toa: no canto do
+  // queixo, com os pontos a 26 unidades e o canto com raio 48, 31,7° é exatamente a
+  // curva que a forma tem. Virada grande com passo grande é canto; o defeito é
+  // outro.
+  //
+  // O contorno desta cabeça é convexo em toda parte, então **a direção só pode virar
+  // para um lado**. Uma reversão de sinal é a curva passando do ponto e voltando, que
+  // é literalmente o repuxo que se vê na tela. Ela não depende de quantos pontos há
+  // nem de quão fechado é o canto, e por isso é o critério certo.
+  //
+  // O raio vai junto porque separa dois consertos: reversão com raio grande é degrau
+  // de emenda (alisa); com raio menor que um traço, é ponto no lugar errado.
+  const ang = (a: Ponto, b: Ponto) => (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+  console.log(`\n  SUAVIDADE — virada da borda em cada ponto; reversão de sinal é o defeito`);
+  console.log(`   #   x        y       via      passo   virada    raio`);
+  let reversoes = 0;
+  const viradas: number[] = [];
+  for (let i = 0; i < alvo.length; i++) {
+    const ant = alvo[(i - 1 + alvo.length) % alvo.length];
+    const p = alvo[i];
+    const pos = alvo[(i + 1) % alvo.length];
+    let vira = ang(p, pos) - ang(ant, p);
+    while (vira > 180) vira -= 360;
+    while (vira < -180) vira += 360;
+    viradas.push(vira);
+  }
+  // O sinal dominante é o do contorno inteiro: a soma das viradas de um laço fechado
+  // é ±360°, e o sinal dela diz para que lado esta cabeça é convexa.
+  const sentido = Math.sign(viradas.reduce((s, v) => s + v, 0));
+  for (let i = 0; i < alvo.length; i++) {
+    const ant = alvo[(i - 1 + alvo.length) % alvo.length];
+    const p = alvo[i];
+    const passo = Math.hypot(p.x - ant.x, p.y - ant.y);
+    const rad = Math.abs((viradas[i] * Math.PI) / 180);
+    const raio = rad > 1e-6 ? passo / (2 * Math.sin(rad / 2)) : Infinity;
+    const inverteu = Math.sign(viradas[i]) === -sentido && Math.abs(viradas[i]) > 1.5;
+    if (inverteu) reversoes++;
+    console.log(
+      `  ${String(i).padStart(2)}  ${n1(p.x).padStart(6)}  ${n1(p.y).padStart(6)}  ` +
+        `${p.via.padEnd(7)}  ${n1(passo).padStart(5)}  ${viradas[i].toFixed(1).padStart(6)}°  ` +
+        `${(isFinite(raio) ? n1(raio) : "—").padStart(6)}` +
+        (inverteu ? "   <- REVERSÃO" : ""),
+    );
+  }
+  console.log(
+    `\n  ${reversoes} reversão(ões) de curvatura em ${alvo.length} pontos` +
+      (reversoes ? "   — o contorno REPUXA nesses pontos" : "   — o contorno é convexo em toda parte"),
+  );
 
   // --- o tronco ---
   //

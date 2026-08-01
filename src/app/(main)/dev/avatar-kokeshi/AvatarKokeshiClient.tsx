@@ -144,6 +144,11 @@ export default function AvatarKokeshiClient() {
           animação e confira que ele continua aberto.
         </li>
         <li>
+          <b>a sobrancelha NÃO pisca</b> — ela e a boca ficam fora da classe do olho de
+          propósito. Uma sobrancelha que achatasse junto com o olho leria como careta, não
+          como piscada. Olhe uma piscada de perto no tamanho <code>xl</code>.
+        </li>
+        <li>
           <b>o respiro</b> — sobe ~4 unidades em 3,5 s, e a <b>sombra do chão encolhe junto</b>. Se
           a sombra subisse com o boneco, ele pareceria um adesivo.
         </li>

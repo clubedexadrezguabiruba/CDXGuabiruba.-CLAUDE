@@ -93,9 +93,15 @@ describe("o validador reprova de verdade", () => {
   });
 
   it("pegaria a paleta de cabelo se o preto voltasse a ser preto de verdade", () => {
-    // `#1F1712` contra o contorno `#241610` dista ~7: a silhueta do cabelo
-    // desapareceria. É o motivo de o preto da paleta ser #3A2F2A.
-    expect(distancia(LINHA, "#1F1712")).toBeLessThan(MIN_CONTORNO);
+    // `#141414` contra o contorno dista 34,6: a silhueta do cabelo desapareceria.
+    // É o motivo de o preto da paleta ser #3A2F2A, que dista 85,7.
+    //
+    // O exemplo era `#1F1712`, escolhido quando `LINHA` era o marrom `#241610`.
+    // Contra o preto de agora ele dista 42,6 e **passaria** — não porque a regra
+    // afrouxou, mas porque um marrom quase-preto está longe do preto puro. Trocar o
+    // exemplo preserva o que o teste demonstra; mantê-lo teria trocado a
+    // demonstração por um falso negativo silencioso.
+    expect(distancia(LINHA, "#141414")).toBeLessThan(MIN_CONTORNO);
   });
 
   it("aceita um conjunto folgado", () => {

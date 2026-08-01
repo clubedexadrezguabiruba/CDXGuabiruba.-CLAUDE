@@ -110,7 +110,7 @@ creme-pêssego, o tronco saiu salpicado de manchas cor de pele.
 recolorem. A cor do uniforme **é o sinal da patente**, e duas peças da mesma
 patente precisam sair na mesma cor entre pedidos, porque nada as harmoniza depois.
 
-## 2.2 Quatro armadilhas do caminho da arte
+## 2.2 Cinco armadilhas do caminho da arte
 
 1. **O "SVG" que o Canva exporta não é vetor.** É um PNG em base64 dentro de um
    `<svg>`, com a transparência num SEGUNDO PNG cuja luminância vira o alfa.
@@ -125,6 +125,35 @@ patente precisam sair na mesma cor entre pedidos, porque nada as harmoniza depoi
    corrige com prompt melhor. Regere.
 4. **Sem textura de tecido.** Uma trama quase invisível no PNG o traçador
    transforma em regiões esfarrapadas do tamanho do tronco.
+5. **O conversor da Adobe devolve DOIS SVG, e só um deles é fonte de medida.**
+   ⚠️ *Escrito no Bloco 1c, confirmado no 1d.*
+
+   Do mesmo PNG saem um **line-art** e um **colorido**, e a diferença não é de
+   qualidade, é de natureza:
+
+   | saída | o que é | serve para |
+   |---|---|---|
+   | **line-art** | o traço virado região preenchida, poucos paths, `fill="#000000"` | **medir forma** — sim |
+   | **colorido** | auto-trace de tudo, centenas de paths e de cores | **nada** — nem forma, nem cor |
+
+   Números das duas rodadas do estilo kokeshi: o line-art veio com **3 paths** na
+   arte anterior e **6** na definitiva (contorno, dois olhos, duas sobrancelhas,
+   boca). O colorido veio com **640 paths e 558 tons** na primeira e **563 paths e
+   532 tons** na segunda — numa ilustração de oito tons chapados.
+
+   **Por que o colorido não serve nem para cor.** Um trace é um redesenho: ele
+   ajusta curvas aos pixels **e quantiza a cor**. Os 532 tons são invenção do
+   traçador, assados em `fill=` literais que não recolorem — e o `conferirSvg`
+   aprova mesmo assim, porque ele confere as custom properties declaradas, não a
+   ausência de cor assada. A cor sai do **PNG**, medida em pixel.
+
+   **Por que o line-art serve para forma, apesar de ser redesenho.** Porque isso é
+   verificável, e é verificado: `npm run avatar:linha-de-centro` mede a mesma coisa
+   nas duas fontes por réguas independentes e imprime a discordância. Na arte
+   definitiva ela dá **0,4** na meia-largura da cabeça e **0,1** na do tronco. Duas
+   medições independentes que concordam em décimo de unidade não estão as duas
+   erradas do mesmo jeito. Se a conferência abrir, o trace não serve — e é melhor
+   saber disso antes de a tabela dele virar a silhueta de 14 trajes.
 
 ---
 

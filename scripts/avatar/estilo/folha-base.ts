@@ -16,8 +16,8 @@
  *  1. a base nos 4 tamanhos (56, 100, 200, 425 px) — 56 px é o teste do ranking;
  *  2. lado a lado com a referência, **na mesma escala de figura**, para medir
  *     fidelidade de proporção, espessura de traço e canto do especular. O
- *     alinhamento é calculado (fator 0,678 e as duas origens), nunca ajustado a
- *     olho;
+ *     alinhamento é calculado (`REF_ESCALA` e as duas origens, todas medidas na
+ *     imagem), nunca ajustado a olho;
  *  3. as 8 peles × o careca, provando que `var(--av-pele)` recolore de verdade;
  *  4. closes de COORDENADA MEDIDA — cada `viewBox` sai das constantes de
  *     `geometria.ts`, não de um número escolhido olhando a tela.
@@ -31,28 +31,43 @@ import sharp from "sharp";
 import { chromium, type Browser } from "@playwright/test";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import {
+  BOCA,
   CAIXA_CABECA,
+  ESPECULAR,
   CENTRO_X,
   FACETAS,
-  GIRO,
   OLHO,
+  OLHO_CX_DIR,
   OLHO_CX_ESQ,
+  OLHO_CY_DIR,
   OLHO_CY_ESQ,
-  ORELHA_DIR,
+  SOBRANCELHA,
   TRACO,
   TRONCO,
   VIEWBOX,
   bordasEm,
   pathCabeca,
-  pathConchaEsq,
   pathFacetaDir,
   pathFacetaEsq,
-  pathOrelhaDir,
   pathSombraQueixoTronco,
   pathTronco,
 } from "../../../src/lib/avatar/estilo/geometria";
 import { conferirSvg } from "../../../src/lib/avatar/svgContrato";
-import { PELE } from "../../../src/lib/avatar/palette";
+import { LINHA, PELE } from "../../../src/lib/avatar/palette";
+
+/**
+ * A PELE DA COMPARAÇÃO. `PELE[1]` (#F7CBA4) e não `PELE[2]`, e a troca é medida.
+ *
+ * O platô do rosto na referência é `#FED9A9`. Contra ele, `PELE[1]` dista 16,4 e
+ * `PELE[2]` dista 59,0 — três vezes e meia mais. Os painéis que existem para
+ * comparar o SVG com a referência lado a lado (o traço, os 4 tamanhos, os closes e o
+ * mapa de facetas) usavam a pele errada, e uma diferença de tom de 59 níveis entre
+ * as duas metades da comparação é ruído por cima do que se quer julgar.
+ *
+ * O painel das 8 peles continua com as oito: ele não compara com a referência, ele
+ * prova que `var(--av-pele)` recolore.
+ */
+const PELE_COMPARACAO = PELE[1];
 
 const DIAG = ".scratch/estilo";
 const FOLHA = `${DIAG}/folha-base.png`;
@@ -61,27 +76,49 @@ const REFERENCIA = "scripts/avatar/fonte/estilo-kokeshi/referencia-base.png";
 /** Os quatro tamanhos de leitura. 56 é o do ranking e é o que manda. */
 const TAMANHOS = [56, 100, 200, 425] as const;
 
+/**
+ * OS DOIS TETOS DO ORÇAMENTO, e eles **reprovam** — não são mais só impressos.
+ *
+ * Eram dois números no relatório, e número impresso é número que se aprende a
+ * ignorar. Este projeto tem a lição medida: o `verify:avatar-assets` ficou vermelho
+ * por meses sem ninguém saber. Um teto que não reprova não é teto.
+ *
+ * **20 formas** porque o boneco é a base de 60 desenhos e 30 deles aparecem juntos
+ * no ranking a 56 px; **7 680 bytes** (7,5 KB) porque cada aluno carrega um destes e
+ * o alvo do doc 15 é o app abrir em rede de escola.
+ *
+ * Onde o corte do Bloco 1d foi feito, e onde ele NÃO podia ser feito, está em
+ * `pathPlanoLateralTronco()` — arredondar coordenada para inteiro pagaria 1,5 KB e
+ * derruba o raio mínimo do contorno de 34,4 para 14,5.
+ */
+const TETO_FORMAS = 20;
+const TETO_BYTES = 7680;
+
 // ---------------------------------------------------------------------------
 // O alinhamento da referência — calculado, não ajustado
 // ---------------------------------------------------------------------------
 
 /**
- * A referência tem 1254×1254 e o CONTORNO ESCURO dela ocupa y 148→1044 (896 px),
- * com o eixo do tronco em x = 611,5. No nosso `viewBox` a silhueta externa ocupa
- * y 39,5→640,5 (601 unidades), com o eixo do tronco em 250.
+ * A referência definitiva tem 2038×2038 e o CONTORNO ESCURO dela ocupa
+ * y 244→1692 (1449 px), com o eixo do tronco em x = 994,5. No nosso `viewBox` a
+ * silhueta externa ocupa y 39,5→640,5 (601 unidades), com o eixo do tronco em 250.
  *
- * Os números mudaram nesta rodada, e a mudança não é cosmética: a versão
- * anterior usava y 155→1040 porque lia a silhueta como "pixel diferente do
- * fundo", e por baixo do tronco existe a **sombra do chão**, que é tinta clara.
- * Ela engordava a figura e escondia o fim do tronco. `medir.ts` explica em
- * detalhe; o efeito aqui é que a referência ficava ~7% pequena ao lado do SVG, o
- * que faz TODA comparação de proporção mentir a favor.
+ * **Os quatro números são medidos, e nenhum deles é o da arte anterior** — ela tinha
+ * 1254×1254, y 149→1044 e eixo em 611,5. Trocar a imagem sem trocá-los desalinharia
+ * a comparação inteira por ~30%, e o painel lado a lado é justamente o que existe
+ * para julgar proporção.
  *
- * O eixo é o do TRONCO e não o da figura: a cabeça tem eixo próprio, 7,4
- * unidades à direita (`GIRO`), e alinhar pela cabeça desalinharia os ombros.
+ * Uma rodada anterior usava y 155→1040 porque lia a silhueta como "pixel diferente
+ * do fundo", e por baixo do tronco existe a **sombra do chão**, que é tinta clara.
+ * Ela engordava a figura e escondia o fim do tronco. `medir.ts` explica em detalhe;
+ * o efeito aqui era a referência ficar ~7% pequena ao lado do SVG, o que faz TODA
+ * comparação de proporção mentir a favor.
+ *
+ * O eixo é o do TRONCO e não o da figura: a cabeça tem eixo próprio, 7 unidades à
+ * direita (`GIRO`), e alinhar pela cabeça desalinharia os ombros.
  */
-const REF = { lado: 1254, tintaY0: 148, tintaY1: 1044, eixoTronco: 611.5 } as const;
-const REF_ESCALA = 600 / (REF.tintaY1 - REF.tintaY0); // 0,6696
+const REF = { lado: 2038, tintaY0: 244, tintaY1: 1692, eixoTronco: 994.5 } as const;
+const REF_ESCALA = 600 / (REF.tintaY1 - REF.tintaY0); // 0,4144
 const REF_X = CENTRO_X - REF.eixoTronco * REF_ESCALA;
 const REF_Y = CAIXA_CABECA.y0 - TRACO / 2 - REF.tintaY0 * REF_ESCALA;
 const REF_LADO = REF.lado * REF_ESCALA;
@@ -101,23 +138,27 @@ function caixa(cx: number, cy: number, lado: number): string {
   return `${(cx - lado / 2).toFixed(0)} ${(cy - lado / 2).toFixed(0)} ${lado} ${lado}`;
 }
 
-/** O centro da banda de cada orelha, tirado do contorno e da constante. */
-const ORELHA_CY = (FACETAS.concha.yTopo + FACETAS.concha.yBase) / 2;
-const ORELHA_ESQ_CX = bordasEm(ORELHA_CY).esq + 14;
-const ORELHA_DIR_CX = ORELHA_DIR.xPonta - 14;
+/** O centro de cada sobrancelha, derivado do olho do mesmo lado. */
+const CENHO_ESQ_CY = OLHO_CY_ESQ - SOBRANCELHA.acimaDoOlho;
+const CENHO_DIR_CY = OLHO_CY_DIR - SOBRANCELHA.acimaDoOlho;
 
 function closes(): Close[] {
   const yQueixo = CAIXA_CABECA.y1 - FACETAS.queixo.altura;
   return [
     {
-      rotulo: "orelha esquerda",
-      origem: `dentro de pathCabeca() · saliência ${GIRO.saliencia.esq} · concha ${FACETAS.concha.delta}`,
-      vb: caixa(ORELHA_ESQ_CX, ORELHA_CY, 130),
+      rotulo: "sobrancelha esquerda",
+      origem: `OLHO_CY_ESQ − ${SOBRANCELHA.acimaDoOlho} · ${SOBRANCELHA.larg}×${SOBRANCELHA.espessura} · sobe ${SOBRANCELHA.subida}`,
+      vb: caixa(OLHO_CX_ESQ, CENHO_ESQ_CY, 110),
     },
     {
-      rotulo: "orelha direita",
-      origem: `ORELHA_DIR.xPonta=${ORELHA_DIR.xPonta} · saliência ${GIRO.saliencia.dir}`,
-      vb: caixa(ORELHA_DIR_CX, ORELHA_CY, 130),
+      rotulo: "sobrancelha direita",
+      origem: `OLHO_CY_DIR − ${SOBRANCELHA.acimaDoOlho} · o desnível de ${CENHO_ESQ_CY - CENHO_DIR_CY} entre as duas é o giro`,
+      vb: caixa(OLHO_CX_DIR, CENHO_DIR_CY, 110),
+    },
+    {
+      rotulo: "boca",
+      origem: `${BOCA.larg}×${BOCA.espessura} · sagita ${BOCA.sagita} · centrada no ponto médio dos olhos`,
+      vb: caixa(CENTRO_X + 40, OLHO.cy + BOCA.abaixoDoOlho, 120),
     },
     {
       rotulo: "aresta esquerda",
@@ -146,8 +187,8 @@ function closes(): Close[] {
     },
     {
       rotulo: "canto do especular",
-      origem: `canto superior esquerdo da cabeça (LUZ) · caixa medida x 121–175 · y 61–108`,
-      vb: caixa(148, 85, 150),
+      origem: `LUZ · mancha medida ${ESPECULAR.rx * 2}×${ESPECULAR.ry * 2} em (${ESPECULAR.cx}, ${ESPECULAR.cy}), a 31 u do contorno`,
+      vb: caixa(ESPECULAR.cx, ESPECULAR.cy, 150),
     },
     {
       rotulo: "base do tronco",
@@ -158,25 +199,24 @@ function closes(): Close[] {
 }
 
 /**
- * O recorte de cada orelha, no MESMO tamanho de caixa, para irem um ao lado do
+ * O recorte de cada SOBRANCELHA, no MESMO tamanho de caixa, para irem um ao lado do
  * outro na mesma escala.
  *
- * É a leitura que a rodada anterior não tinha, e o defeito que ela existe para
- * mostrar é justamente o que passou: as duas orelhas saíam idênticas quando a
- * referência tem 24 de um lado e 15 do outro. Um close por orelha em painéis
- * distantes não deixa comparar — e comparar é a única coisa que revela a
- * assimetria.
+ * Este painel era das duas orelhas, e existia para mostrar a assimetria que passou
+ * verde no 1b: elas saíam idênticas quando a referência tem 24 de um lado e 15 do
+ * outro. A arte definitiva não tem orelhas, e o par que carrega a assimetria agora é
+ * este — **as duas sobrancelhas estão a alturas diferentes**, e a diferença é o
+ * mesmo giro.
  *
- * No Bloco 1c elas passaram a ser peças de natureza diferente: a esquerda é o
- * contorno da cabeça (um traço) e a direita é forma própria (dois). Este par lado a
- * lado é onde isso se vê sem precisar do gate.
+ * Vale a mesma lição de leitura: um close por peça em painéis distantes não deixa
+ * comparar, e comparar é a única coisa que revela desnível.
  */
-function caixasDasOrelhas(): { esq: string; dir: string; lado: number } {
-  const lado = 130;
+function caixasDasSobrancelhas(): { esq: string; dir: string; desnivel: number } {
+  const lado = 120;
   return {
-    esq: caixa(ORELHA_ESQ_CX, ORELHA_CY, lado),
-    dir: caixa(ORELHA_DIR_CX, ORELHA_CY, lado),
-    lado,
+    esq: caixa(OLHO_CX_ESQ, CENHO_ESQ_CY, lado),
+    dir: caixa(OLHO_CX_DIR, CENHO_DIR_CY, lado),
+    desnivel: CENHO_ESQ_CY - CENHO_DIR_CY,
   };
 }
 
@@ -193,7 +233,11 @@ function caixasDasOrelhas(): { esq: string; dir: string; lado: number } {
  * com o desenho.
  */
 function mapaDeFacetas(ns: string): string {
-  const traco = `fill="none" stroke="#241610" stroke-width="${TRACO}" stroke-linejoin="round" stroke-linecap="round"`;
+  // `LINHA` importado, e não o literal `#241610` que estava escrito aqui à mão. Ele
+  // ficou defasado no instante em que a paleta mudasse, e este painel passaria a
+  // desenhar um contorno de cor diferente do resto da folha sem ninguém notar — a
+  // segunda cópia de um valor é sempre a que diverge.
+  const traco = `fill="none" stroke="${LINHA}" stroke-width="${TRACO}" stroke-linejoin="round" stroke-linecap="round"`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}" ` +
     `width="${Math.round((260 * VIEWBOX.w) / VIEWBOX.h)}" height="260">` +
@@ -204,13 +248,10 @@ function mapaDeFacetas(ns: string): string {
     `<path d="${pathSombraQueixoTronco()}" fill="#1B5E20"/>` +
     `</g>` +
     `<path d="${pathTronco()}" ${traco}/>` +
-    `<path d="${pathOrelhaDir()}" fill="#FF8F00"/>` +
-    `<path d="${pathOrelhaDir()}" ${traco}/>` +
     `<path d="${pathCabeca()}" fill="#F2E9DA"/>` +
     `<g clip-path="url(#${ns}-mc)">` +
     `<path d="${pathFacetaEsq()}" fill="#E91E8C" opacity=".85"/>` +
     `<path d="${pathFacetaDir()}" fill="#00B8D4" opacity=".85"/>` +
-    `<path d="${pathConchaEsq()}" fill="#6A1B9A" opacity=".9"/>` +
     `</g>` +
     `<path d="${pathCabeca()}" ${traco}/>` +
     `</svg>`
@@ -222,7 +263,7 @@ function mapaDeFacetas(ns: string): string {
 async function main() {
   mkdirSync(DIAG, { recursive: true });
 
-  const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", animado: true, ns: "kk" });
+  const svg = compor({ pele: PELE_COMPARACAO, cabelo: "#3A2F2A", animado: true, ns: "kk" });
   const problemas = conferirSvg(svg);
   // `use` CONTA. A cabeça e o tronco viraram `<path>` em `<defs>` referenciados por
   // `<use>` para o contorno de 29 pontos não ser escrito três vezes; se o contador
@@ -232,8 +273,17 @@ async function main() {
   const bytes = Buffer.byteLength(svg, "utf-8");
 
   console.log(`base autorada:`);
-  console.log(`  formas ............ ${formas}   (teto do plano: 20)`);
-  console.log(`  bytes ............. ${bytes} (${(bytes / 1024).toFixed(2)} KB)   (teto do plano: 8 KB)`);
+  const estourou = [
+    formas > TETO_FORMAS ? `formas: ${formas} contra o teto de ${TETO_FORMAS}` : "",
+    bytes > TETO_BYTES ? `bytes: ${bytes} contra o teto de ${TETO_BYTES}` : "",
+  ].filter(Boolean);
+  console.log(
+    `  formas ............ ${formas}   (teto ${TETO_FORMAS})${formas > TETO_FORMAS ? "   ✗ ESTOUROU" : ""}`,
+  );
+  console.log(
+    `  bytes ............. ${bytes} (${(bytes / 1024).toFixed(2)} KB)   ` +
+      `(teto ${TETO_BYTES})${bytes > TETO_BYTES ? "   ✗ ESTOUROU" : `   folga ${TETO_BYTES - bytes}`}`,
+  );
   console.log(`  conferirSvg ....... ${problemas.length} problema(s)`);
   for (const p of problemas) console.log(`    - ${p.detalhe}`);
   writeFileSync(`${DIAG}/base.svg`, svg);
@@ -268,7 +318,7 @@ async function main() {
      * eram idênticas, nada mudava na tela. Era a colisão de `id` real do
      * projeto, invisível.
      */
-    const base = (h: number, ns: string, vb = `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, pele: string = PELE[2]) => {
+    const base = (h: number, ns: string, vb = `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, pele: string = PELE_COMPARACAO) => {
       const [, , w0, h0] = vb.split(" ").map(Number);
       return compor({ pele, cabelo: "#3A2F2A", ns })
         .replace(`viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}"`, `viewBox="${vb}"`)
@@ -324,22 +374,22 @@ async function main() {
       )
       .join("");
 
-    // 4. as duas orelhas, na mesma escala e uma ao lado da outra
-    const or = caixasDasOrelhas();
-    const secaoOrelhas =
+    // 4. as duas sobrancelhas, na mesma escala e uma ao lado da outra
+    const ce = caixasDasSobrancelhas();
+    const secaoSobrancelhas =
       `<div style="display:flex;gap:18px;align-items:flex-start">` +
       fig(
-        `esquerda · saliência ${GIRO.saliencia.esq}`,
+        `esquerda · centro y ${CENHO_ESQ_CY.toFixed(1)}`,
         `<div style="display:flex;gap:4px">` +
-          fig("SVG", base(200, "orE", or.esq)) +
-          fig("ref", refNoLugar(200, or.esq)) +
+          fig("SVG", base(200, "ceE", ce.esq)) +
+          fig("ref", refNoLugar(200, ce.esq)) +
           `</div>`,
       ) +
       fig(
-        `direita · saliência ${GIRO.saliencia.dir}`,
+        `direita · centro y ${CENHO_DIR_CY.toFixed(1)}`,
         `<div style="display:flex;gap:4px">` +
-          fig("SVG", base(200, "orD", or.dir)) +
-          fig("ref", refNoLugar(200, or.dir)) +
+          fig("SVG", base(200, "ceD", ce.dir)) +
+          fig("ref", refNoLugar(200, ce.dir)) +
           `</div>`,
       ) +
       `</div>`;
@@ -356,8 +406,8 @@ async function main() {
     const secaoTraco =
       `<div style="display:flex;gap:10px;align-items:flex-end;background:#fff;` +
       `border:1px solid #eee;padding:8px;border-radius:4px">` +
-      fig(`traço ${TRACO} — o medido`, comTraco(TRACO)) +
-      fig("traço 17 — o do Bloco 1b", comTraco(17)) +
+      fig(`traço ${TRACO} — o medido na arte nova`, comTraco(TRACO)) +
+      fig("traço 13 — o da arte anterior", comTraco(13)) +
       fig("referência", refNoLugar(425)) +
       `</div>`;
 
@@ -374,26 +424,27 @@ async function main() {
       `<b style="color:#00B8D4">■</b> faceta direita — ` +
       `${FACETAS.dir.larguraTopo} u a ${FACETAS.dir.deltaTopo} no topo, ` +
       `${FACETAS.dir.larguraBase} u a ${FACETAS.dir.deltaBase} na base<br>` +
-      `<b style="color:#6A1B9A">■</b> concha da orelha esquerda — ${FACETAS.concha.delta}<br>` +
       `<b style="color:#1B5E20">■</b> sombra da cabeça no tronco — ` +
-      `${FACETAS.sombraQueixo.altura} u a ${FACETAS.sombraQueixo.delta}<br>` +
-      `<b style="color:#FF8F00">■</b> orelha direita, forma própria<br><br>` +
+      `${FACETAS.sombraQueixo.altura} u a ${FACETAS.sombraQueixo.delta}<br><br>` +
       `<span style="color:#999">A faceta esquerda é o DOBRO da direita no topo. ` +
       `Essa razão é o giro: o lado esquerdo é o que vira para o observador, o ` +
-      `direito é o que foge. A orelha esquerda não aparece pintada porque ela é o ` +
-      `contorno da cabeça — um traço só, como na referência.</span>` +
+      `direito é o que foge. Sumiram deste mapa a concha e a orelha direita — a ` +
+      `arte definitiva não tem orelhas, e o giro passou a ler pelos olhos, pelas ` +
+      `sobrancelhas e por esta razão de larguras.</span>` +
       `</div></div>`;
 
     await pg.setViewportSize({ width: 1500, height: 900 });
     await pg.setContent(
       `<body style="margin:0;background:#fff;padding:18px;font:12px system-ui;color:#555">` +
-        `<h1 style="font:600 17px system-ui;margin:0 0 3px">Base kokeshi — a folha do Bloco 1c</h1>` +
+        `<h1 style="font:600 17px system-ui;margin:0 0 3px">Base kokeshi — a folha do Bloco 1d: ` +
+        `sem orelhas, com sobrancelha e boca</h1>` +
         `<p style="margin:0;color:#888">O que se aprova é o <b>SVG</b>. A referência está ao lado só para comparar, ` +
         `alinhada por cálculo (escala ${REF_ESCALA.toFixed(3)}), e nunca vira asset. ` +
         `${formas} formas · ${(bytes / 1024).toFixed(2)} KB · conferirSvg ${problemas.length}.</p>` +
         titulo(
           "O TRAÇO — a leitura que decide",
-          `o medido é ${TRACO}; o Bloco 1b usava 17, que saiu de contar a rampa oblíqua como traço`,
+          `na arte definitiva ele mede 11,9 no line-art e 11,2 no PNG, contra 12,7/12,6 na anterior; ` +
+            `daí ${TRACO} onde era 13`,
         ) +
         secaoTraco +
         titulo(
@@ -406,10 +457,10 @@ async function main() {
         titulo("As 8 peles", "prova que var(--av-pele) recolore de verdade, e que a sombra da pele acompanha") +
         `<div style="display:flex;gap:8px;flex-wrap:wrap">${secaoPeles}</div>` +
         titulo(
-          "As duas orelhas, na mesma escala",
-          "o giro em uma leitura só: a esquerda sai 24 unidades da cabeça, a direita 15",
+          "As duas sobrancelhas, na mesma escala",
+          `o giro em uma leitura só: elas estão a alturas diferentes, ${ce.desnivel.toFixed(1)} unidade de desnível`,
         ) +
-        secaoOrelhas +
+        secaoSobrancelhas +
         titulo("Closes de coordenada medida", "cada viewBox sai de uma constante de geometria.ts") +
         secaoCloses +
         `</body>`,
@@ -422,7 +473,10 @@ async function main() {
     await nav.close();
   }
 
-  if (problemas.length) process.exitCode = 1;
+  if (problemas.length || estourou.length) {
+    for (const e of estourou) console.error(`  ✗ ${e}`);
+    process.exitCode = 1;
+  }
 }
 
 main().catch((e) => {

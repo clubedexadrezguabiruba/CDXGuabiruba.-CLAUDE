@@ -23,8 +23,9 @@
  * Aqui a silhueta é **o primeiro e o último pixel escuro de cada linha**
  * (luminância < `ESCURO`). O contorno do estilo kokeshi é preto-marrom espesso e
  * fecha a figura inteira; a sombra do chão nunca chega perto de escura. A mesma
- * regra vale para o SVG que nós emitimos, cujo `stroke` é `LINHA` (#241610,
- * luminância 25). Referência e render medidos pela mesma régua.
+ * regra vale para o SVG que nós emitimos, cujo `stroke` é `LINHA` — que desde o
+ * Bloco 1d é `#000000`, luminância 0, contra os 3,0 medidos no traço da
+ * referência. Referência e render medidos pela mesma régua.
  *
  * ---------------------------------------------------------------------------
  * TUDO SAI EM UNIDADES DO VIEWBOX, NORMALIZADO SÓ PELA ALTURA
@@ -267,7 +268,6 @@ export interface Marcos {
     fracLargMax: number;
     largBase: number;
   };
-  orelhas: { esq: number; dir: number; cy: number };
   olhos: {
     esq: Caixa;
     dir: Caixa;
@@ -313,11 +313,6 @@ export interface Marcos {
     /** A sombra projetada da cabeça no tronco, abaixo do contorno. A mais escura. */
     sombraQueixo: { altura: number; delta: number; plato: number };
   };
-  /**
-   * Quantos traços cruzam a banda de cada orelha. **Um** à esquerda e **dois** à
-   * direita, na referência. A silhueta externa é cega para esta diferença.
-   */
-  tracosOrelha: { esq: number; dir: number };
   /** Espessura do contorno, corrigida pela inclinação da borda. */
   espessuraTraco: number;
   /**
@@ -424,23 +419,6 @@ export function medir(b: Bitmap): Marcos {
     alt: u(cabecaY1 - utilY0 + 1),
   };
 
-  // --- as orelhas: o que EXCEDE o núcleo da cabeça, cada lado por si ---
-  let salEsq = 0;
-  let salDir = 0;
-  const linhasOrelha: number[] = [];
-  for (let y = utilY0; y <= cabecaY1; y++) {
-    const l = linhas[y];
-    if (!l) continue;
-    const e = cx0 - l.x0;
-    const d = l.x1 - cx1;
-    if (e > salEsq) salEsq = e;
-    if (d > salDir) salDir = d;
-    if (e > 2 || d > 2) linhasOrelha.push(y);
-  }
-  const orelhaCy = linhasOrelha.length
-    ? (linhasOrelha[0] + linhasOrelha[linhasOrelha.length - 1]) / 2
-    : cabeca.cy / fator;
-
   // --- o tronco ---
   let tMax = 0;
   let tMaxY = yCorte;
@@ -496,8 +474,23 @@ export function medir(b: Bitmap): Marcos {
     }
     return n;
   }
-  const oy0 = utilY0 + Math.round((cabecaY1 - utilY0) * 0.28);
-  const oy1 = utilY0 + Math.round((cabecaY1 - utilY0) * 0.84);
+  // A BANDA DE BUSCA APERTOU NO BLOCO 1d, E APERTAR É O CONSERTO.
+  //
+  // Ela ia de 0,28 a 0,84 quando a única tinta dentro do rosto eram os olhos
+  // (`fracCab` 0,481–0,756). A arte nova tem **sobrancelhas em 0,398–0,438** e
+  // **boca em 0,822–0,844**, e as duas caíam dentro da janela antiga.
+  //
+  // O estrago não é achar um terceiro grupo — os "dois maiores" continuariam sendo
+  // os olhos. É que a sobrancelha fica **na mesma coluna** do olho de baixo, então
+  // ela entra no grupo dele, e `caixaOlho()` mede a caixa da coluna inteira: a
+  // **altura do olho** sai medindo da sobrancelha até o fim do olho. Medido na arte
+  // nova com a janela velha: 108,5 unidades de altura e 46,4 de largura, contra os
+  // 82 e 37 reais. Um marco com 33% de erro, e verde, porque o número esperado sai
+  // da mesma leitura errada na referência.
+  //
+  // 0,46–0,78 abraça os olhos e não alcança nem a sobrancelha nem a boca.
+  const oy0 = utilY0 + Math.round((cabecaY1 - utilY0) * 0.46);
+  const oy1 = utilY0 + Math.round((cabecaY1 - utilY0) * 0.78);
   const colunas = new Set<number>();
   for (let y = oy0; y <= oy1; y++) {
     const l = linhas[y];
@@ -593,6 +586,56 @@ export function medir(b: Bitmap): Marcos {
   //
   // Sobram duas janelas limpas, e são estas. A leitura em três alturas de cada
   // janela é média para tirar o ruído de antialiasing.
+  //
+  // ---------------------------------------------------------------------------
+  // AS JANELAS ANDARAM NO BLOCO 1d, E É A CORREÇÃO MAIS SILENCIOSA DELE
+  // ---------------------------------------------------------------------------
+  //
+  // A arte nova acrescentou duas peças de tinta que não existiam quando estas
+  // janelas foram escolhidas: **sobrancelhas** em `fracCab` 0,398–0,438 e **boca**
+  // em 0,822–0,844. A janela do topo terminava em 0,40 e a da base começava em
+  // 0,84 — as duas encostavam na tinta nova.
+  //
+  // O modo de falha é o pior que existe: `particao()` acha a descontinuidade da
+  // sobrancelha em vez da aresta da faceta, reporta uma largura e um delta
+  // plausíveis, e o gate fica **VERDE** porque compara essa leitura errada contra a
+  // mesma leitura errada na referência. Um marco que mede outra coisa e concorda
+  // consigo mesmo é indistinguível de um marco que funciona.
+  //
+  // A guarda de `faceta()` — descartar a linha se o platô central cair abaixo de
+  // 140 — é a rede, e ela salva só quando a tinta cruza o MEIO do rosto. A
+  // sobrancelha não cruza: ela mora sobre o olho, longe do eixo.
+  //
+  // AS JANELAS NOVAS FORAM ESCOLHIDAS POR VARREDURA, e não por dedução — porque a
+  // dedução errou. A primeira tentativa foi subir a janela do topo para 0,26–0,34,
+  // já que a sobrancelha começa em 0,398. Medido, isso é pior: em `frac` 0,26 a
+  // partição devolve uma "faceta esquerda" de **103 unidades a −2,2** na arte nova
+  // e de **132 a +2,6** na antiga. Não é faceta nenhuma, é o ESPECULAR — a faixa
+  // clara que começa 32 unidades para dentro da borda, e que este mesmo comentário
+  // já avisava para evitar. Fugir de uma tinta caindo na outra.
+  //
+  // Varrendo a altura da cabeça de 2 em 2 centésimos nas DUAS artes, a banda em que
+  // a faceta esquerda lê estável (~32 unidades) vai de 0,28 a 0,48, e a sobrancelha
+  // come 0,40–0,42. Sobra 0,28–0,38 no alto.
+  //
+  // | janela              | nova            | antiga          | leituras |
+  // |---------------------|-----------------|-----------------|----------|
+  // | [0,30 0,35 0,40]    | 32,7 / −4,1     | 32,1 / −4,8     | 2 de 3   |
+  // | [0,26 0,30 0,34]    | **103,2** / −2,2| **131,9** / +2,6| 3 de 3   |
+  // | **[0,30 0,34 0,38]**| 32,7 / −4,6     | 32,1 / −4,4     | **3 de 3** |
+  //
+  // A janela velha ainda "funcionava" por acidente: a guarda do platô descartava a
+  // linha da sobrancelha e a média saía de 2 leituras em vez de 3. Depender disso é
+  // ter um marco cuja precisão cai sem avisar. Estas três são limpas por construção.
+  //
+  // Na base o mesmo procedimento: a boca acaba em 0,844 e o contorno começa a fechar
+  // por volta de 0,92, alargando a leitura da direita (0,94 devolve 74,9). Sobra
+  // 0,86–0,91, e **[0,87 0,89 0,91]** lê 3 de 3 nas duas artes.
+  //
+  // `FAIXA_FACETA.yAmostraTopo/yAmostraBase` acompanham em `geometria.ts` — 0,34 e
+  // 0,89, os centros destas janelas. Elas existem para o gradiente valer o tom
+  // medido **na altura em que ele foi medido**, e uma janela que anda sem a âncora
+  // reintroduz o defeito que o Bloco 1c consertou.
   const faceta = (y: number) => {
     const l = linhas[y];
     if (!l) return null;
@@ -630,8 +673,8 @@ export function medir(b: Bitmap): Marcos {
       plato: m((x) => x.plato),
     };
   };
-  const facetaTopo = janela([0.30, 0.35, 0.40]);
-  const facetaBase = janela([0.84, 0.88, 0.92]);
+  const facetaTopo = janela([0.30, 0.34, 0.38]);
+  const facetaBase = janela([0.87, 0.89, 0.91]);
 
   // --- O QUEIXO E A SOMBRA ABAIXO DELE: a mesma partição, virada de lado ---
   //
@@ -684,34 +727,15 @@ export function medir(b: Bitmap): Marcos {
       "inicio",
     );
 
-  // --- QUANTOS TRAÇOS EXISTEM NA BANDA DE CADA ORELHA ---
+  // A CONTAGEM DE TRAÇOS NA BANDA DAS ORELHAS morava aqui, e saiu no Bloco 1d junto
+  // com as orelhas. Ela era o marco que enxergava a orelha esquerda desenhada como
+  // peça colada atrás — 2 traços onde a referência tem 1, com a silhueta externa
+  // idêntica nos dois casos. A arte nova não tem orelha nenhuma, e um marco que
+  // compara 1 contra 1 em toda parte não reprova desenho nenhum.
   //
-  // É uma CONTAGEM, e é o marco que o Bloco 1b não tinha. A referência tem **um**
-  // traço à esquerda — a borda da orelha *vira* a silhueta, e não há borda de cabeça
-  // por trás dela — e **dois** à direita, onde a borda da cabeça continua e a orelha
-  // é um arco fora dela. Desenhar dois à esquerda é o que faz a orelha ler como peça
-  // colada atrás, e é invisível para a silhueta externa: os dois desenhos têm
-  // exatamente o mesmo primeiro pixel escuro.
-  //
-  // A janela é medida **para dentro a partir da corrida mais externa**, e não como
-  // uma fração da cabeça. Uma fração fixa deixa o OLHO dentro da janela — o olho
-  // direito fica a 69 unidades da borda e uma janela de 94 o engolia, fazendo a
-  // contagem reportar 3 onde há 2. Contado a partir da borda, o critério fica sendo
-  // "quantos traços há junto da silhueta", que é a pergunta que se quis fazer.
-  const JANELA_ORELHA = 45;
-  const contarTracos = (lado: "esq" | "dir") => {
-    const contagens: number[] = [];
-    for (const frac of [0.62, 0.66, 0.70, 0.74]) {
-      const y = utilY0 + Math.round((cabecaY1 - utilY0) * frac);
-      const cs = naLinha(b, y);
-      if (cs.length < 2) continue;
-      const externa = lado === "esq" ? cs[0].centro : cs[cs.length - 1].centro;
-      contagens.push(cs.filter((c) => u(Math.abs(c.centro - externa)) <= JANELA_ORELHA).length);
-    }
-    if (!contagens.length) return 0;
-    contagens.sort((p, q) => p - q);
-    return contagens[Math.floor(contagens.length / 2)];
-  };
+  // O que ela ensinou continua no arquivo e é o que importa: `corridas()`, `naLinha()`
+  // e `naColuna()` existem porque a silhueta externa é cega para o que está DENTRO
+  // dela, e essa cegueira custou um bloco inteiro.
 
   // --- A ESPESSURA DO TRAÇO, corrigida pela inclinação da borda ---
   //
@@ -736,8 +760,12 @@ export function medir(b: Bitmap): Marcos {
   const espessuraTraco = espessuras.length ? espessuras[Math.floor(espessuras.length / 2)] : 0;
 
   // --- a coluna central do rosto: tem de estar no platô, não numa faixa ---
+  // As três alturas param antes de 0,398, onde a sobrancelha começa: a coluna do
+  // eixo passa entre as duas sobrancelhas, mas a leitura do platô é a mediana da
+  // linha inteira, e a tinta puxa a mediana para baixo — o que aparece como uma
+  // "queda no eixo" que não existe. Mesmo motivo das janelas das facetas.
   let faixaNoEixo = 0;
-  for (const frac of [0.2, 0.3, 0.4]) {
+  for (const frac of [0.2, 0.26, 0.32]) {
     const y = utilY0 + Math.round((cabecaY1 - utilY0) * frac);
     const l = linhas[y];
     if (!l) continue;
@@ -780,7 +808,18 @@ export function medir(b: Bitmap): Marcos {
     escurecimento,
   };
 
-  // --- o perfil, marcando as linhas de orelha para o gate poder excluí-las ---
+  // --- o perfil, marcando as linhas que SALTAM do núcleo da cabeça ---
+  //
+  // `orelha` era o nome, e o que ele mede é qualquer linha em que a silhueta exceda
+  // o núcleo da cabeça em mais de 2 px. Na arte com orelhas ele era verdadeiro em
+  // ~30 linhas e o gate as excluía do perfil, porque a saliência dominaria o erro. Na
+  // arte nova ele é **falso em toda linha**, nas duas fontes, e o filtro do gate
+  // virou um no-op.
+  //
+  // Ele fica. O campo não descreve orelha, descreve saliência — e é o guarda que
+  // impede uma protuberância futura (uma mecha, um coque) de mascarar erro de
+  // silhueta na estatística do perfil. Um guarda que hoje não dispara é diferente de
+  // um guarda que não existe.
   const eixoTroncoPx = (tx0 + tx1) / 2;
   const perfil = [];
   for (let i = 0; i < AMOSTRAS; i++) {
@@ -803,7 +842,6 @@ export function medir(b: Bitmap): Marcos {
     alturaUtilPx,
     cabeca,
     tronco,
-    orelhas: { esq: u(salEsq), dir: u(salDir), cy: u(orelhaCy) },
     olhos: {
       esq: olhoE,
       dir: olhoD,
@@ -820,7 +858,6 @@ export function medir(b: Bitmap): Marcos {
       queixo: queixo || { altura: 0, delta: 0, plato: 1 },
       sombraQueixo: sombraQueixo || { altura: 0, delta: 0, plato: 1 },
     },
-    tracosOrelha: { esq: contarTracos("esq"), dir: contarTracos("dir") },
     espessuraTraco,
     sombra,
     faixaNoEixo,

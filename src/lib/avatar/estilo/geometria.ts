@@ -40,20 +40,27 @@
  * distâncias diferentes do eixo — e foi descartado por impressão visual.
  *
  * A referência tem um **giro mínimo para a direita da imagem**, e ele aparece em
- * quatro sinais independentes, todos medidos em pixel (unidades do `viewBox`,
- * altura útil normalizada em 600):
+ * sinais independentes, todos medidos em pixel (unidades do `viewBox`, altura útil
+ * normalizada em 600):
  *
- * | sinal                                   | medido |
- * |-----------------------------------------|--------|
- * | saliência da orelha esquerda            | 24,1   |
- * | saliência da orelha direita             | 14,7   |
- * | ponto médio dos olhos, contra o eixo    | +33,5  |
- * | plano lateral escuro, esquerda / direita| 0 / 16 |
- * | eixo da cabeça, contra o eixo do tronco | +7,4   |
+ * | sinal                                    | medido |
+ * |------------------------------------------|--------|
+ * | ponto médio dos olhos, contra o eixo     | +33,9  |
+ * | desnível entre os dois olhos             | 3,6    |
+ * | desnível entre as duas sobrancelhas      | 3,5    |
+ * | eixo da cabeça, contra o eixo do tronco  | +7,0   |
+ * | razão entre as facetas laterais, no alto | 2:1    |
  *
- * Quatro sinais concordantes não são ruído de gerador: é leitura espacial
- * deliberada. E adotá-la **revoga a D3 do doc 12** ("pose: frontal simétrica"),
- * revogação registrada lá com o imposto que ela cobra dos 92 itens de catálogo.
+ * Sinais concordantes não são ruído de gerador: é leitura espacial deliberada. E
+ * adotá-la **revoga a D3 do doc 12** ("pose: frontal simétrica"), revogação
+ * registrada lá com o imposto que ela cobra dos 92 itens de catálogo.
+ *
+ * **A lista encolheu no Bloco 1d, e não enfraqueceu.** Ela citava as saliências das
+ * duas orelhas (24,1 e 14,7) como os dois primeiros sinais; a arte nova não tem
+ * orelhas. Entraram no lugar o desnível das sobrancelhas — que a arte nova trouxe e
+ * que concorda com o dos olhos dentro de 0,1 — e a razão das facetas, que já era
+ * medida desde o 1c. Os quatro sinais que restam são todos medidos e todos estão no
+ * gate; nenhum deles dependia da orelha.
  *
  * A mitigação está logo abaixo: a assimetria vira `GIRO`, um dado do sistema ao
  * lado de `LUZ`. Todo acessório futuro lê dali em vez de o desenhista decidir.
@@ -65,22 +72,62 @@
  * De duas fontes, com uma divisão de trabalho que o Bloco 1c fixou: **forma vem do
  * line-art, cor vem do PNG.**
  *
- *  - `referencia-linha-de-centro.svg` — o trace do Adobe, 3 paths, o traço virado
- *    região preenchida. Dá linha de centro e espessura, medidas em vez de
- *    estimadas. É de onde saem `CABECA.contorno`, `TRONCO.perfil` e `TRACO`;
- *  - `referencia-base.png` (1254², altura útil **896 px**) — os tons chapados
- *    verdadeiros. É de onde saem `FACETAS`, `GIRO` e `SOMBRA_CHAO`.
+ *  - `referencia-linha-de-centro.svg` — o trace do Adobe, **6 paths** (o contorno,
+ *    os dois olhos, as duas sobrancelhas e a boca), o traço virado região
+ *    preenchida. Dá linha de centro e espessura, medidas em vez de estimadas. É de
+ *    onde saem `CABECA.contorno`, `TRONCO.perfil`, `TRACO`, `OLHO`, `SOBRANCELHA` e
+ *    `BOCA`;
+ *  - `referencia-base.png` (2038², altura útil **1449 px**) — os tons chapados
+ *    verdadeiros. É de onde saem `FACETAS` e `GIRO`;
+ *  - `referencia-sombra.png` — a arte ANTERIOR, e ela sobrevive por um motivo só.
+ *    Ver a seção seguinte.
  *
- * As duas são lidas por réguas independentes e **concordam dentro de 0,2 unidade**
- * na meia-largura da cabeça (182,0 contra 181,9), na do tronco (137,5 contra 137,7)
- * e na espessura do traço (12,7 contra 12,6). É esse acordo que autoriza tratar um
- * trace — que é um redesenho, não uma conversão — como fonte de geometria.
+ * As duas primeiras são lidas por réguas independentes e concordam na meia-largura
+ * da cabeça (182,0 contra 182,4) e na do tronco (137,4 contra 137,3). É esse acordo
+ * que autoriza tratar um trace — que é um redesenho, não uma conversão — como fonte
+ * de geometria.
  *
- * A **altura útil** da referência é 896 px, do topo do contorno da cabeça à base do
- * contorno do tronco, e é ela que vira as 600 unidades daqui. Uma medição anterior
- * deu 837 px e todo número derivado saiu ~7% grande: ela lia a silhueta como "pixel
- * diferente do fundo", e por baixo do tronco existe a **sombra do chão**, que é
- * tinta clara. Aqui a silhueta é o CONTORNO ESCURO, e a sombra não entra.
+ * A **altura útil** da referência é do topo do contorno da cabeça à base do contorno
+ * do tronco, e é ela que vira as 600 unidades daqui. Uma medição anterior deu 837 px
+ * onde o valor era 896 e todo número derivado saiu ~7% grande: ela lia a silhueta
+ * como "pixel diferente do fundo", e por baixo do tronco existe a **sombra do
+ * chão**, que é tinta clara. Aqui a silhueta é o CONTORNO ESCURO, e a sombra não
+ * entra.
+ *
+ * ---------------------------------------------------------------------------
+ * A ARTE MUDOU NO BLOCO 1d, E O CORPO NÃO SE MOVEU
+ * ---------------------------------------------------------------------------
+ *
+ * O retoque foi localizado: **saíram as orelhas**, entraram **sobrancelhas e boca**.
+ * A razão de tirar as orelhas é de catálogo, não de desenho — orelha na base obriga
+ * cada um dos 92 itens de chapéu e cabelo a decidir se cobre ou não.
+ *
+ * Que o resto não se mexeu é medido, e não presumido:
+ *
+ * | | arte nova | arte anterior |
+ * |---|---|---|
+ * | largura da cabeça | 376,0 | 376,3 |
+ * | largura do tronco | 285,7 | 287,9 |
+ * | corte cabeça ↔ tronco | 0,519 | 0,520 |
+ * | platô do rosto | 221,2 | 221,4 |
+ *
+ * Por isso `TRONCO`, `GIRO`, `FOLGA_PROJETO` e `SOMBRA_CHAO` atravessaram o bloco
+ * sem mudar. **A exceção é o traço**, e ela está registrada em `TRACO`.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE EXISTEM DUAS REFERÊNCIAS, E ISSO INCOMODA
+ * ---------------------------------------------------------------------------
+ *
+ * O PNG novo foi exportado sem fundo, e **a sombra do chão era pintada no fundo**:
+ * ela sumiu junto. Medida, a arte nova tem 69 px de ruído onde a anterior tem 7 940
+ * px de sombra. Três marcos do gate — largura, eixo e escurecimento da sombra —
+ * mediriam contra o nada e ficariam verdes por vacuidade, que é exatamente a classe
+ * de defeito que este projeto já pagou caro.
+ *
+ * Então a arte anterior fica no repositório como `referencia-sombra.png`, usada **só
+ * por esses três marcos**, com a tabela acima como prova de que o corpo é o mesmo.
+ * Duas fontes para o mesmo desenho é uma dívida declarada; medir contra nada é pior.
+ * Uma reexportação com fundo a quita, e a decisão de não fazê-la é do Doug.
  *
  * ---------------------------------------------------------------------------
  * A PROPORÇÃO 1:3 ESTÁ REVOGADA
@@ -134,17 +181,17 @@ export const GIRO = {
   eixoCabeca: 7,
   /** Quanto o par de olhos fica à direita do eixo da CABEÇA. Medido: 33,5. */
   desvioOlhos: 33,
-  /** Quanto o olho direito fica mais ALTO que o esquerdo. Medido: 3,3. */
-  desnivelOlhos: 3,
   /**
-   * Quanto cada orelha sai da silhueta da cabeça. Medido: 24,1 e 14,7.
+   * Quanto o olho direito fica mais ALTO que o esquerdo. Medido: 3,6 nos olhos e
+   * 3,5 nas sobrancelhas — duas peças diferentes, o mesmo número.
    *
-   * **A da esquerda não é desenhada a partir deste número** — ela já está dentro
-   * de `CABECA.contorno`, e o valor fica aqui para os acessórios lerem. A da
-   * direita é forma própria e sai dele. A razão da diferença é a §"as duas
-   * orelhas", abaixo.
+   * `saliencia` morava aqui e saiu no Bloco 1d junto com as orelhas. Ela era o
+   * dado que os acessórios liam para saber "quanto de orelha há para cobrir", e a
+   * resposta agora é nenhuma, para todos os 92 itens de catálogo. Um chapéu que
+   * ainda perguntasse pela saliência não compilaria, que é a forma certa de a
+   * pergunta deixar de existir.
    */
-  saliencia: { esq: 24, dir: 15 },
+  desnivelOlhos: 3,
 } as const;
 
 /** O eixo da cabeça no corpo dela. Não é `CENTRO_X`, e não é constante na altura. */
@@ -178,13 +225,38 @@ export const EIXO_CABECA = CENTRO_X + GIRO.eixoCabeca; // 257
  * seções oblíquas com retas sai grossa.
  *
  * Corrigindo pela inclinação e descartando as bordas muito oblíquas, o traço da
- * referência mede **12,7 no line-art e 12,6 no PNG**: duas fontes independentes,
- * 0,1 de desacordo. Daí o 13.
+ * arte do Bloco 1c mediu **12,7 no line-art e 12,6 no PNG**: duas fontes
+ * independentes, 0,1 de desacordo. Daí o 13.
  *
- * 13 não é 10. O que a folha reprovou foi um traço 23% mais fino que este, e o que
- * está saindo agora é um traço 31% mais grosso que o medido.
+ * ---------------------------------------------------------------------------
+ * E ELE VIROU 12 NO BLOCO 1d, PORQUE A ARTE MUDOU DEBAIXO DELE
+ * ---------------------------------------------------------------------------
+ *
+ * O 13 estava congelado por aprovação, e o congelamento tinha um conteúdo: *não
+ * voltar para 17*. Ele não protegia o número 13 — protegia o método que o produziu,
+ * que é medir em vez de estimar.
+ *
+ * A arte nova tem o contorno **~10% mais fino**, e isso não é leitura: é o desenho.
+ * Três hipóteses de régua foram testadas e as três caíram:
+ *
+ *  1. **resolução.** Medido o mesmo desenho em cinco escalas (700 a 2038 px de
+ *     lado), a arte nova dá 10,9–11,3 em todas e a anterior 12,0–12,6 em todas. Se
+ *     fosse rampa de antialiasing, o número andaria com a escala. Não anda;
+ *  2. **o recorte do fundo comendo a borda.** O PNG novo **não tem canal alpha** —
+ *     achatá-lo sobre branco, cinza ou preto devolve 11,28 nos três casos;
+ *  3. **exportação em px absoluto.** A figura nova é 1,63× maior que a anterior; se
+ *     o traço fosse constante em px, mediria 7,7 e não 11,2.
+ *
+ * As duas réguas independentes concordam de novo, agora em outro valor: **11,9 no
+ * line-art e 11,2 no PNG**. Manter o 13 seria desenhar 16% mais grosso que a fonte,
+ * e o único jeito de o gate aceitar isso seria inventar um segundo fator de folga no
+ * número mais sensível do arquivo — ou afrouxar a tolerância, que é a saída que este
+ * projeto recusa por escrito.
+ *
+ * 12 não é 17, e não é 10. É a mesma pergunta de sempre respondida contra a fonte
+ * que está no repositório hoje.
  */
-export const TRACO = 13;
+export const TRACO = 12;
 
 /**
  * Sangria mínima que a tinta de um PNG precisa exceder o clip, em unidades do
@@ -192,7 +264,7 @@ export const TRACO = 13;
  * defeito de 1 px e vira o comportamento exigido.
  *
  * Vale ≥ metade do traço, porque é o traço que cobre a região de corte. Meio
- * traço são 6,5; 10 dá folga para o antialiasing do clip em DPR fracionário
+ * traço são 6; 10 dá folga para o antialiasing do clip em DPR fracionário
  * (§8 item 6). O teste em `trava-silhueta.test.ts` mantém a relação amarrada:
  * quem mexer no traço sem mexer aqui quebra a suíte.
  */
@@ -215,8 +287,8 @@ export const SANGRIA = 10;
  *
  *  1. **o eixo deriva.** No corpo da cabeça ele está +7 do eixo do tronco; no
  *     quarto de baixo, +15. Um retângulo tem um eixo só;
- *  2. **a saliência da orelha esquerda é parte do contorno** (ver abaixo), e
- *     nenhum canto elíptico produz um abaulamento no meio de um lado;
+ *  2. **os quatro cantos têm raios diferentes** — o alto-esquerdo abre por 27
+ *     unidades de altura e o alto-direito por 48;
  *  3. **a base não é simétrica.**
  *
  * O tronco já tinha aprendido isso: ele virou tabela medida no Bloco 1b e passou a
@@ -229,84 +301,83 @@ export const SANGRIA = 10;
  * olho, nenhum foi arredondado à mão.
  *
  * ---------------------------------------------------------------------------
- * AS DUAS ORELHAS SÃO PEÇAS DE NATUREZA DIFERENTE, E ESSE É O CONSERTO
+ * AS ORELHAS SAÍRAM NO BLOCO 1d, E É O CONTORNO QUE FICA MAIS SIMPLES
  * ---------------------------------------------------------------------------
  *
- * O Doug reprovou a base do 1b dizendo que a orelha esquerda estava "totalmente
- * errada, atrás da cabeça". A causa não era cor de preenchimento nem posição: era
- * **um traço a mais**.
+ * A arte anterior tinha duas orelhas, e elas eram **peças de natureza diferente**: a
+ * esquerda era saliência do próprio contorno (um traço, entre y 209 e 283, chegando
+ * a x 52) e a direita era forma própria por fora da borda contínua (dois traços). A
+ * distinção custou o Bloco 1b inteiro — desenhar dois traços à esquerda é
+ * literalmente o que um adesivo colado atrás mostra, e foi assim que o Doug leu a
+ * peça.
  *
- * O line-art conta quantos traços cruzam cada lado na banda das orelhas:
+ * A arte nova não tem nenhuma das duas, e o motivo não é de desenho: **orelha na
+ * base obriga todo chapéu e todo cabelo a decidir se cobre ou não**, e essa decisão
+ * é imposta a 92 itens de catálogo, um por um. Tirar a orelha da base tira a
+ * pergunta de todos eles de uma vez.
  *
- * ```
- * frac      ESQUERDA                  DIREITA
- * 0.317     196,9(13,5)               187,5(11,9)  204,1(10,7)
- * 0.333     198,6(12,7)               187,3(12,3)  204,3(11,1)
- * 0.350     198,0(12,3)               187,3(12,3)  203,1(11,1)
- * ```
+ * O que some junto: `ORELHA_DIR`, `pathOrelhaDir()`, `pathConchaEsq()`,
+ * `FACETAS.concha`, `GIRO.saliencia`, os marcos de saliência e de contagem de
+ * traços no gate, e a fixture da orelha colada. **Ficam quatro fixtures, e não
+ * cinco** — a da orelha perdeu objeto, e substituí-la por outra sem um defeito real
+ * por trás seria teatro. Este gate já teve uma fixture assim e ela foi corrigida no
+ * 1c justamente por isso.
  *
- * **À esquerda existe UM traço, e ele está em 197–199, não em 173.** O contorno da
- * cabeça é *interrompido* ali: a borda da orelha **vira** a silhueta. Não há borda
- * de cabeça por trás dela. À direita são **dois**: a borda da cabeça continua em
- * 187 e a orelha é um arco fora dela.
- *
- * O 1b desenhava a borda da cabeça reta dos dois lados e punha uma elipse por cima
- * nos dois. Dois traços onde a referência tem um — e isso é o que faz a peça ler
- * como colada atrás, porque é literalmente o que um adesivo colado atrás mostra.
- * Trocar o `fill` não conserta; o traço a mais continua lá.
- *
- * Então: **a orelha esquerda está DENTRO desta tabela** (é a saliência entre y 209
- * e 283, chegando a x 52) e a direita é `ORELHA_DIR`, forma própria. A silhueta
- * externa é cega para a diferença — os dois desenhos têm o mesmo primeiro pixel
- * escuro —, e é por isso que o marco novo do gate é uma **contagem de traços**.
+ * Os 42 pontos abaixo saem de `npm run avatar:linha-de-centro` sobre o line-art
+ * novo, decimados **pelo erro de corda**. A caixa fecha em x 75,4–439,2 e
+ * y 45,5–347,5; a anterior ia a x 52,0, e a diferença é exatamente a orelha.
  */
 export const CABECA = {
   contorno: [
-    { x: 122.3, y: 62.7 },
-    { x: 146.9, y: 56.1 },
-    { x: 221.5, y: 47.3 },
-    { x: 280.1, y: 46.3 },
-    { x: 360.0, y: 53.6 },
-    { x: 385.0, y: 59.6 },
-    { x: 405.5, y: 69.0 },
-    { x: 422.5, y: 81.7 },
-    { x: 431.4, y: 94.4 },
-    { x: 438.3, y: 124.7 },
-    // Entre estes dois pontos passa a orelha DIREITA, e a borda da cabeça segue
-    // reta por trás dela — medida em 437,5. Ela não entra aqui: é `ORELHA_DIR`. A
-    // corda entre os dois vizinhos passa em 438 no meio da banda, meia unidade da
-    // borda medida, então tirar os seis pontos da orelha não desloca a cabeça.
-    { x: 439.1, y: 199.3 },
-    { x: 436.9, y: 279.7 },
-    { x: 433.6, y: 300.2 },
-    { x: 425.0, y: 319.4 },
-    { x: 417.8, y: 327.2 },
-    { x: 398.2, y: 338.9 },
-    { x: 362.1, y: 345.2 },
-    { x: 223.6, y: 347.3 },
-    { x: 138.3, y: 342.6 },
-    { x: 134.6, y: 338.9 },
-    { x: 109.8, y: 326.8 },
-    { x: 101.0, y: 319.8 },
-    { x: 91.8, y: 307.1 },
-    // A ORELHA ESQUERDA começa aqui e vai até y 209. Ela é o contorno, e os seis
-    // pontos abaixo são o que a faz ler como orelha em vez de bico: uma primeira
-    // extração com metade da densidade punha a saliência no lugar certo e com a
-    // curvatura errada — o gate media 24,0 de saliência contra os 24,1 da
-    // referência, e a folha mostrava uma ponta.
-    { x: 79.9, y: 284.2 },
-    { x: 69.1, y: 280.5 },
-    { x: 61.3, y: 273.5 },
-    { x: 56.1, y: 264.5 },
-    { x: 52.0, y: 249.7 },
-    { x: 53.1, y: 228.8 },
-    { x: 61.1, y: 215.3 },
-    { x: 75.4, y: 209.2 },
-    { x: 76.8, y: 198.9 },
-    { x: 75.6, y: 119.0 },
-    { x: 80.7, y: 98.5 },
-    { x: 88.7, y: 85.4 },
-    { x: 96.5, y: 77.6 },
+    { x: 129.7, y: 59.6 },
+    { x: 144.7, y: 56.0 },
+    { x: 181.7, y: 50.4 },
+    { x: 213.8, y: 47.3 },
+    { x: 256.2, y: 45.5 },
+    { x: 288.2, y: 46.1 },
+    { x: 330.2, y: 48.9 },
+    { x: 356.9, y: 52.5 },
+    { x: 382.2, y: 57.9 },
+    { x: 403.7, y: 67.3 },
+    { x: 412.9, y: 72.8 },
+    { x: 424.9, y: 83.7 },
+    { x: 430.6, y: 92.1 },
+    { x: 434.7, y: 101.6 },
+    { x: 437.3, y: 111.9 },
+    { x: 439.2, y: 154.2 },
+    // A lateral direita é uma reta longa: entre y 154,2 e 271,9 a borda anda 1,8
+    // unidade em 118 de altura. Era aqui que a orelha direita saía da cabeça, e o
+    // contorno de agora atravessa a banda sem nenhum ponto — a decimação por erro de
+    // corda gasta ponto onde a curva vira, e aqui ela não vira.
+    { x: 437.4, y: 271.9 },
+    { x: 435.5, y: 292.4 },
+    { x: 433.4, y: 302.5 },
+    { x: 429.7, y: 312.2 },
+    { x: 423.8, y: 321.2 },
+    { x: 411.9, y: 331.3 },
+    { x: 391.5, y: 340.6 },
+    { x: 355.1, y: 345.7 },
+    { x: 301.8, y: 347.2 },
+    { x: 205.6, y: 347.1 },
+    { x: 168.4, y: 345.7 },
+    { x: 142.1, y: 343.0 },
+    { x: 116.0, y: 330.2 },
+    { x: 106.8, y: 324.5 },
+    { x: 98.7, y: 317.1 },
+    { x: 92.7, y: 308.5 },
+    // Onde a orelha esquerda ficava. A borda agora desce reta de y 204 a 293,9,
+    // ganhando 10,8 unidades para dentro — a curvatura suave que a saliência
+    // escondia.
+    { x: 87.5, y: 293.9 },
+    { x: 79.8, y: 247.2 },
+    { x: 76.7, y: 204.4 },
+    { x: 75.2, y: 140.3 },
+    { x: 76.4, y: 113.9 },
+    { x: 78.7, y: 103.7 },
+    { x: 82.7, y: 94.0 },
+    { x: 88.4, y: 85.4 },
+    { x: 95.6, y: 77.7 },
+    { x: 108.5, y: 69.1 },
   ],
 } as const;
 
@@ -331,29 +402,7 @@ export const CAIXA_CABECA = (() => {
 export const CABECA_H_EXTERNA = CAIXA_CABECA.alt + TRACO;
 
 /**
- * A ORELHA DIREITA — a que é forma própria, e só ela.
- *
- * Um arco pequeno FORA da borda contínua da cabeça, com o interior no tom da faceta
- * direita e a linha interna da dobra. A esquerda não tem entrada aqui de propósito:
- * ela é contorno da cabeça, e uma constante para ela seria a segunda descrição que
- * este arquivo existe para não ter.
- *
- * Os três pontos são medidos: a orelha nasce na borda da cabeça em y 213, alcança
- * x 454,3 em y 231 e volta à borda em y 260.
- */
-export const ORELHA_DIR = {
-  yTopo: 213.7,
-  yBase: 259.6,
-  /** Onde a borda da cabeça passa, por trás dela. Medido: 437,5. */
-  xBorda: 437.5,
-  /** O ponto mais externo do arco. */
-  xPonta: 454.3,
-  yPonta: 240.3,
-} as const;
-
-/**
- * Os olhos: cápsulas verticais pretas. Sem nariz, sem boca, sem sobrancelha — a
- * referência não tem nenhum dos três, e cada um seria escopo.
+ * Os olhos: cápsulas verticais pretas.
  *
  * Eles são do COMPOSITOR e não de uma imagem, e é isso que torna o piscar
  * possível de graça: `scaleY` numa forma que o sistema desenha. Um olho vindo de
@@ -363,21 +412,31 @@ export const ORELHA_DIR = {
  * medidos). O par inteiro anda `GIRO.desvioOlhos` para a direita do eixo da
  * cabeça, e o direito sobe `GIRO.desnivelOlhos` — os dois são o giro, não
  * descuido de quem desenhou a referência.
+ *
+ * As medidas saem agora dos **paths 1 e 2 do line-art**, isolados e rasterizados um
+ * a um, em vez de inferidas do PNG: 38,2 × 83,1 os dois, centros em x 213,4 e 368,4,
+ * separação 155,0. É a mesma fonte que dá o contorno, lida da mesma maneira.
  */
 export const OLHO = {
-  w: 37,
-  h: 82,
+  w: 38,
+  h: 83,
   /** Raio da cápsula: metade da largura, para as pontas serem semicírculos. */
-  r: 18.5,
+  r: 19,
   /**
-   * 0,621 da altura EXTERNA da cabeça, medido na referência.
+   * 0,613 da altura EXTERNA da cabeça, medido na referência.
    *
    * É a única conversão de meio traço que sobrou no arquivo, e ela é local: a
    * fração foi medida contra a silhueta externa, então virar coordenada absoluta
    * exige tirar meio traço uma vez. As três conversões espalhadas de antes
    * (`MEIO`, `entrada()`, `cabecaRecuada()`) sumiram.
+   *
+   * Era 0,621, e a correção de 0,008 é medida: os centros dos dois olhos no
+   * line-art novo estão em y 233,7 e 230,1, média 231,9, e 0,621 punha o par 2,1
+   * unidades abaixo disso. Ninguém teria pego — **o gate não tem marco de altura
+   * do olho contra o rosto**, só de altura DO olho. Apareceu porque o Bloco 1d
+   * passou a extrair as peças do rosto do line-art uma a uma.
    */
-  cy: Math.round(CAIXA_CABECA.y0 - TRACO / 2 + 0.621 * CABECA_H_EXTERNA),
+  cy: Math.round(CAIXA_CABECA.y0 - TRACO / 2 + 0.613 * CABECA_H_EXTERNA),
   /** Distância entre os CENTROS dos dois olhos. */
   separacao: 155,
 } as const;
@@ -388,6 +447,109 @@ export const OLHO_CX_ESQ = OLHO_MEIO - OLHO.separacao / 2; // 212,5
 export const OLHO_CX_DIR = OLHO_MEIO + OLHO.separacao / 2; // 367,5
 export const OLHO_CY_ESQ = OLHO.cy + GIRO.desnivelOlhos / 2;
 export const OLHO_CY_DIR = OLHO.cy - GIRO.desnivelOlhos / 2;
+
+/**
+ * AS SOBRANCELHAS E A BOCA — as duas peças que o Bloco 1d ganhou.
+ *
+ * Este docstring dizia, com todas as letras: *"Sem nariz, sem boca, sem sobrancelha
+ * — a referência não tem nenhum dos três, e cada um seria escopo."* Dois dos três
+ * passaram a existir na arte nova, e o registro da mudança é este bloco. O nariz
+ * continua não existindo.
+ *
+ * ---------------------------------------------------------------------------
+ * A PRIMITIVA É TRAÇO COM PONTA REDONDA, E ELA FOI ESCOLHIDA POR ÁREA
+ * ---------------------------------------------------------------------------
+ *
+ * Cada peça foi isolada do line-art, rasterizada sozinha e medida em caixa, área e
+ * perfil. A área decide a forma sem ninguém olhar para o desenho:
+ *
+ * | peça        | caixa       | área medida | retângulo | elipse | **cápsula** |
+ * |-------------|-------------|-------------|-----------|--------|-------------|
+ * | sobrancelha | 46,5 × 10,3 | **363**     | 478       | 375    | **367**     |
+ * | boca        | 37,0 ×  8,2 | **190**     | 304       | 239    | **190**     |
+ * |
+ *
+ * A cápsula acerta as duas, e a da boca acerta na casa das unidades. Cápsula é o que
+ * um `stroke` com `stroke-linecap="round"` desenha de graça — então as três peças
+ * são **um segmento traçado**, e não uma forma preenchida. Sai mais barato em bytes
+ * que `<rect>` mais `transform`, e resolve inclinação e curvatura sem caso especial.
+ *
+ * ---------------------------------------------------------------------------
+ * AS DUAS SÃO CURVAS, E EU ERREI ISSO NA PRIMEIRA FOLHA
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira rodada ajustou uma **reta** ao eixo de cada peça. Ela devolveu
+ * inclinações de −0,0296 e −0,0209 nas sobrancelhas e −0,0009 na boca, e a conclusão
+ * tirada foi "sobrancelha inclinada, boca curva". A sobrancelha saiu um bastão reto,
+ * e o Doug leu na folha o que a régua não tinha perguntado.
+ *
+ * **Uma reta não tem como reportar curvatura.** Num arco simétrico ela devolve
+ * inclinação zero e um resíduo que ninguém olha — é o mesmo modo de falha do
+ * `banda()` do Bloco 1b, que perguntava "quanto é mais escuro?" e por isso era cego
+ * para uma faceta mais clara. Pergunta errada, resposta plausível.
+ *
+ * Ajustando uma **parábola** ao eixo, com o termo linear e o quadrático separados:
+ *
+ * | peça            | largura | espessura | inclinação | sagita |
+ * |-----------------|---------|-----------|------------|--------|
+ * | sobrancelha esq | 46,5    | 8,2       | −0,0296    | **−1,71** |
+ * | sobrancelha dir | 45,2    | 8,2       | −0,0209    | **−1,76** |
+ * | boca            | 36,6    | 5,3       | −0,0009    | **+3,62** |
+ *
+ * As três são curvas. As sobrancelhas **arqueiam para cima** (o meio acima da reta
+ * das pontas) e a boca **para baixo** — é um sorriso, e ele é 25% mais fundo do que
+ * a estimativa por caixa dizia. As sobrancelhas ainda são inclinadas por cima disso,
+ * e a boca não é: cada peça leva só o que foi medido nela.
+ *
+ * ---------------------------------------------------------------------------
+ * ELAS NÃO TÊM COORDENADA PRÓPRIA — PENDURAM NO OLHO
+ * ---------------------------------------------------------------------------
+ *
+ * Medidos, os centros em x da sobrancelha e do olho coincidem (212,6 contra 213,4 à
+ * esquerda; 368,6 contra 368,4 à direita), e o afastamento vertical é o **mesmo dos
+ * dois lados**: 62,7 e 62,6. A boca fica em x 291,1, que é o ponto médio do par de
+ * olhos (290,9) dentro de 0,2.
+ *
+ * Então nada disso é escrito de novo. As três peças são deslocamentos a partir do
+ * olho, e é por isso que **o giro chega nelas sozinho**: o desnível de 3,5 entre as
+ * duas sobrancelhas não é uma constante daqui, é o `GIRO.desnivelOlhos` que elas
+ * herdam. Uma sobrancelha com y próprio seria a segunda descrição da mesma pose.
+ */
+export const SOBRANCELHA = {
+  /** Largura ponta a ponta, de centro a centro das duas pontas redondas. */
+  larg: 46,
+  /** Espessura do traço. Medida constante em toda coluna, nas duas. */
+  espessura: 8.2,
+  /** Quanto ela fica ACIMA do centro do olho do mesmo lado. Medido: 62,7 e 62,6. */
+  acimaDoOlho: 62.7,
+  /**
+   * Subida da ponta esquerda para a direita, em unidades. Medido: 1,4 e 1,0.
+   *
+   * Positivo sobe para a DIREITA DA IMAGEM nas duas — não é espelhado. As duas
+   * sobrancelhas inclinam para o mesmo lado, como as duas facetas do rosto e pelo
+   * mesmo motivo: é a cabeça que está virada, não o par que está franzido.
+   */
+  subida: 1.2,
+  /** O arco: quanto o meio sobe acima da reta das pontas. Medido: 1,71 e 1,76. */
+  sagita: 1.7,
+} as const;
+
+export const BOCA = {
+  /** Largura ponta a ponta. Medido: 37,0. */
+  larg: 37,
+  /** Espessura do traço. Medido: 5,3 constante. */
+  espessura: 5.3,
+  /** Quanto ela fica ABAIXO do centro do par de olhos. Medido: 298,7 − 231,9. */
+  abaixoDoOlho: 66.8,
+  /**
+   * A sagita do sorriso: quanto o meio desce abaixo da reta das pontas.
+   *
+   * **3,6 e não 2,9.** O 2,9 saía de subtrair a espessura da altura da caixa, e essa
+   * conta só vale para um arco cujo eixo é horizontal nas pontas — o que não é o
+   * caso. O ajuste quadrático do eixo dá 3,62, e é ele que manda.
+   */
+  sagita: 3.6,
+} as const;
 
 // ---------------------------------------------------------------------------
 // O tronco
@@ -529,24 +691,25 @@ export const FACETAS = {
   PLATO_PELE: 221,
   /** O mesmo, no tronco. A sombra do queixo é medida contra ele. */
   PLATO_TRONCO: 199,
-  /** A que vira para o observador: larga no alto, e escurece muito descendo. */
-  esq: { larguraTopo: 32.1, larguraBase: 25.7, deltaTopo: -4.8, deltaBase: -28.4 },
-  /** A que foge: metade da largura, e já nasce escura. */
-  dir: { larguraTopo: 15.0, larguraBase: 23.4, deltaTopo: -31.3, deltaBase: -34.7 },
+  /**
+   * A que vira para o observador: larga no alto, e escurece muito descendo.
+   *
+   * Os quatro números foram remedidos no Bloco 1d, e não porque o desenho mudou —
+   * porque **as janelas de amostragem mudaram**. Elas tiveram de sair de cima da
+   * sobrancelha (`fracCab` 0,398–0,438) e da boca (0,822–0,844), e um valor medido
+   * numa janela só vale naquela janela. Ver `medir.ts`, `janela()`.
+   */
+  esq: { larguraTopo: 32.7, larguraBase: 25.8, deltaTopo: -4.6, deltaBase: -29.9 },
+  /** A que foge: metade da largura no alto, e já nasce escura. */
+  dir: { larguraTopo: 16.0, larguraBase: 22.5, deltaTopo: -29.9, deltaBase: -33.2 },
   /** A faixa no fim do rosto, acima do contorno. Tom constante. */
-  queixo: { altura: 8.0, delta: -35.6 },
+  queixo: { altura: 8.7, delta: -33.1 },
   /**
    * A sombra projetada da cabeça no tronco, **abaixo** do contorno. É a mais escura
    * do boneco inteiro, e é ela que assenta a cabeça sobre o corpo — sem ela a
    * cabeça flutua, que é o que o 1b entregou.
    */
-  sombraQueixo: { altura: 14.1, delta: -45.2 },
-  /**
-   * A dobra dentro da orelha esquerda. É TOM, e não linha: entre y 232 e 278 nada
-   * separa a orelha do rosto além da mudança de 221 para 192. Desenhá-la como traço
-   * seria o segundo contorno que faz a orelha ler como peça colada.
-   */
-  concha: { yTopo: 232, yBase: 278, deDentro: 12, largura: 24, delta: -29 },
+  sombraQueixo: { altura: 14.5, delta: -45.3 },
 } as const;
 
 /** Converte um delta de luminância em fator multiplicativo de cor. */
@@ -585,27 +748,67 @@ export const SOMBRA_CHAO = {
 const n = (v: number) => (Math.round(v * 10) / 10).toString();
 
 /**
- * Uma spline de Catmull-Rom por pontos, emitida como cúbicas de Bézier.
+ * Uma spline de Catmull-Rom **CENTRÍPETA**, emitida como cúbicas de Bézier.
  *
  * Existe para que a cabeça e o tronco possam ser TABELAS DE MEDIDAS em vez de
- * pontos de controle ajustados no olho. A conversão é a padrão: o controle de
- * cada ponto é a sexta parte da diferença entre os vizinhos.
+ * pontos de controle ajustados no olho.
  *
  * `fechada` muda o vizinho das pontas: em vez de clampar no próprio extremo, ele dá
  * a volta. Sem isso o contorno da cabeça teria um bico onde a curva se fecha — a
  * emenda cai no meio da cúpula, que é o lugar mais visível do desenho.
+ *
+ * ---------------------------------------------------------------------------
+ * ELA ERA UNIFORME, E A UNIFORME QUEBRAVA O CONTORNO EM DOIS LUGARES
+ * ---------------------------------------------------------------------------
+ *
+ * O Doug reprovou a primeira folha do Bloco 1d assim: *"as linhas da cabeça não
+ * estão 100% arredondadas, há pequenas quebras, principalmente na parte de baixo
+ * (queixo) e no topo da cabeça esquerda"*. As duas regiões que ele nomeou são
+ * exatamente as duas em que o espaçamento entre pontos salta:
+ *
+ *  - **na base**, o contorno vem com 58 unidades entre pontos (a reta do queixo) e
+ *    passa a 13,9 de uma linha para a outra, onde o canto começa a virar;
+ *  - **no topo esquerdo**, o ponto que fecha o laço fica a 4,9 unidades do vizinho
+ *    de um lado e a 17 do outro.
+ *
+ * A versão anterior punha o controle de cada ponto em `(P[i+1] − P[i−1])/6`, **sem
+ * olhar a distância até os vizinhos**. Onde um lado é 4× mais curto que o outro, a
+ * alça de controle sai longa demais para o lado curto: a curva passa do ponto,
+ * volta, e o que se vê é um repuxo. Não é falta de pontos — é a parametrização.
+ *
+ * A centrípeta pesa o parâmetro de cada trecho por `|ΔP|^0,5`. É a variante que
+ * existe justamente para não produzir cúspide nem laço com pontos mal distribuídos,
+ * e ela **contém a anterior**: com espaçamento uniforme os três `d` são iguais e a
+ * fórmula abaixo colapsa em `(P[i+1] − P[i−1])/6`, ponto por ponto. Onde o contorno
+ * já estava liso, nada muda; onde ele repuxava, a alça encurta na medida do trecho.
  */
 function spline(pts: readonly { x: number; y: number }[], fechada = false): string {
   const N = pts.length;
   const em = (i: number) => (fechada ? pts[(i + N) % N] : pts[Math.min(N - 1, Math.max(0, i))]);
+  /** `|ΔP|^0,5` — o expoente 0,5 é o que faz a parametrização ser centrípeta. */
+  const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+    Math.max(1e-6, Math.sqrt(Math.hypot(b.x - a.x, b.y - a.y)));
   let d = "";
   for (let i = 0; i < (fechada ? N : N - 1); i++) {
     const p0 = em(i - 1);
     const p1 = em(i);
     const p2 = em(i + 1);
     const p3 = em(i + 2);
-    const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
-    const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+    const d1 = dist(p0, p1);
+    const d2 = dist(p1, p2);
+    const d3 = dist(p2, p3);
+    // A conversão de Catmull-Rom não uniforme para Bézier cúbica (Barry-Goldman).
+    // Com d1 = d2 = d3 os denominadores viram 6·d² e sobra `(p2 − p0)/6`.
+    const eixo = (a: number, b: number, c: number, e1: number, e2: number) =>
+      (e1 * e1 * c - e2 * e2 * a + (2 * e1 * e1 + 3 * e1 * e2 + e2 * e2) * b) / (3 * e1 * (e1 + e2));
+    const c1 = {
+      x: eixo(p0.x, p1.x, p2.x, d1, d2),
+      y: eixo(p0.y, p1.y, p2.y, d1, d2),
+    };
+    const c2 = {
+      x: eixo(p3.x, p2.x, p1.x, d3, d2),
+      y: eixo(p3.y, p2.y, p1.y, d3, d2),
+    };
     d += `C ${n(c1.x)} ${n(c1.y)} ${n(c2.x)} ${n(c2.y)} ${n(p2.x)} ${n(p2.y)} `;
   }
   return d;
@@ -652,24 +855,92 @@ function perfilTronco(lado: 1 | -1, recuo = 0, ateBase = false): { x: number; y:
 }
 
 /**
+ * O ARREMATE, amostrado como PONTOS do quarto de elipse — e não como um `A`.
+ *
+ * ---------------------------------------------------------------------------
+ * O `A` PRODUZIA UM ENTALHE NOS DOIS CANTOS DE BAIXO, E ELE ERA VISÍVEL
+ * ---------------------------------------------------------------------------
+ *
+ * O tronco fechava assim: `spline(dir)` até o último ponto do perfil, depois
+ * `A rx ryArremate ... ` atravessando por baixo, depois `spline(esq)`. Parece o
+ * arremate arredondado que a referência tem, e não é.
+ *
+ * **A tangente não casa na emenda.** No ponto mais à direita de uma elipse a
+ * tangente é VERTICAL, por construção. O perfil chega lá descendo e fechando: entre
+ * as duas últimas alturas ele anda 13 unidades para dentro em 12,3 de queda, ou 43°.
+ * São ~47° de quebra, num canto, nos dois lados.
+ *
+ * Medida na curva emitida — amostrando o path com `getPointAtLength` e calculando o
+ * círculo circunscrito — ela aparece como **inversão de curvatura com raio 10,7**,
+ * em (146, 615) e (354, 615). Raio menor que o próprio traço, que é a definição
+ * operacional de bico. O Doug viu na folha e chamou de "pequenas quebras na parte de
+ * baixo".
+ *
+ * ---------------------------------------------------------------------------
+ * E A ELIPSE TAMBÉM ERA O MODELO ERRADO — MEDIDO NA REFERÊNCIA
+ * ---------------------------------------------------------------------------
+ *
+ * Trocar o `A` por pontos amostrados da MESMA elipse melhorou o raio de 10,7 para
+ * 18, e não resolveu. A causa é anterior: **uma elipse de 103 × 18,7 tem raio de
+ * curvatura 3,4 na ponta lateral** (`a/b²`), que é um quarto de traço. O arremate da
+ * referência não é isso.
+ *
+ * Varrendo a base do tronco da referência por coluna e calculando o raio local, os
+ * cantos medem **40 a 60 unidades** e o fundo é quase reto (80 a ∞). O modelo certo é
+ * "lados que fecham com raio moderado num fundo chato", e não "meia elipse achatada".
+ *
+ * Este bloco NÃO refaz `TRONCO`: a tabela do tronco é geometria aprovada e a §"o que
+ * não muda" do plano é explícita. O que ele faz é parar de emitir um bico onde a
+ * referência tem uma curva. Com **uma amostra só** — a elipse em `t = 0,7`, entre o
+ * fim do perfil e o fundo — a spline fecha com raio de canto **80**, sem inversão de
+ * curvatura em lugar nenhum da base. É a opção medida mais próxima dos 40–60 da
+ * referência entre as que não invertem; amostragens mais densas reproduzem o bico da
+ * elipse e as mais esparsas achatam o canto até 1 400.
+ *
+ * O ponto do fundo (`t = 1`, em `CENTRO_X`) é compartilhado pelos dois lados: ali a
+ * tangente sai horizontal por simetria, sem ninguém pedir.
+ *
+ * **Fica declarado o que sobra:** o arremate ainda é 80 onde a referência tem 40–60,
+ * e fechar essa diferença é remedir `TRONCO.ryArremate` contra a base extraída por
+ * coluna. É trabalho de um bloco que tenha o tronco no escopo, não deste.
+ */
+const AMOSTRAS_ARREMATE = [0.7] as const;
+
+function arremateTronco(lado: 1 | -1): { x: number; y: number }[] {
+  const ult = TRONCO.perfil[TRONCO.perfil.length - 1];
+  const rx = meioPath(ult.meio);
+  return AMOSTRAS_ARREMATE.map((t) => ({
+    x: CENTRO_X + lado * rx * Math.sqrt(1 - t * t),
+    y: ult.y + TRONCO.ryArremate * t,
+  }));
+}
+
+/**
  * **O PATH CANÔNICO DO TRONCO.** É este, e só este, que os 14 trajes clipam.
  *
  * Não existe segunda cópia em lugar nenhum do sistema — nem no traje (o tipo não
  * tem o campo), nem no gate (que rasteriza esta mesma função), nem no asset (que
  * é tinta, não forma). É a diferença entre `registro()`, que exigia que duas
  * silhuetas COINCIDISSEM, e este arquivo, que só tem uma.
+ *
+ * Ele é UMA spline aberta do ombro direito ao ombro esquerdo, passando pelo fundo,
+ * mais a reta do topo que fecha. O fundo não é mais um comando de arco — ver
+ * `arremateTronco()` para o entalhe que isso produzia.
  */
 export function pathTronco(): string {
-  const dir = perfilTronco(1);
-  const esq = perfilTronco(-1).reverse();
-  const ultimo = dir[dir.length - 1];
-  const rx = ultimo.x - CENTRO_X;
+  const ult = TRONCO.perfil[TRONCO.perfil.length - 1];
+  const pts = [
+    ...perfilTronco(1),
+    ...arremateTronco(1),
+    // O fundo, compartilhado pelos dois lados. É o que dá a tangente horizontal ali.
+    { x: CENTRO_X, y: ult.y + TRONCO.ryArremate },
+    ...arremateTronco(-1).reverse(),
+    ...perfilTronco(-1).reverse(),
+  ];
   return (
-    `M ${n(esq[esq.length - 1].x)} ${n(TRONCO.yTopo)} ` +
-    `L ${n(dir[0].x)} ${n(TRONCO.yTopo)} ` +
-    spline(dir) +
-    `A ${n(rx)} ${n(TRONCO.ryArremate)} 0 0 1 ${n(CENTRO_X - rx)} ${n(ultimo.y)} ` +
-    spline(esq) +
+    `M ${n(pts[pts.length - 1].x)} ${n(TRONCO.yTopo)} ` +
+    `L ${n(pts[0].x)} ${n(TRONCO.yTopo)} ` +
+    spline(pts) +
     `Z`
   );
 }
@@ -702,40 +973,112 @@ export function bordasEm(y: number): { esq: number; dir: number } {
 }
 
 /**
- * A ORELHA DIREITA: o arco que sai da borda contínua da cabeça e volta a ela.
+ * UM ARCO RASO entre duas pontas, com a flecha medida no MEIO.
  *
- * Fecha sobre a própria borda, e não sobre uma elipse inteira: o que se vê da
- * orelha direita na referência é a lasca de fora, e uma elipse completa por trás
- * seria de novo o traço a mais — o mesmo defeito da esquerda, do outro lado.
+ * O ponto de controle vai ao **dobro** da sagita porque uma Bézier quadrática passa
+ * na metade do caminho até ele no parâmetro 0,5. Pôr o controle na sagita medida
+ * entregaria metade da curva — é o mesmo erro de fator que a rampa das facetas
+ * cometeu no Bloco 1c, num lugar em que ele custa uma unidade de forma em vez de
+ * cinco níveis de tom.
+ *
+ * A sobrancelha e a boca compartilham esta função porque são a mesma primitiva com
+ * sinais diferentes: uma arqueia para cima, a outra para baixo. Escrever as duas
+ * separadas seria duas descrições do mesmo arco.
  */
-export function pathOrelhaDir(): string {
-  const o = ORELHA_DIR;
+function arco(cx: number, cy: number, larg: number, sagita: number, inclinacao = 0): string {
+  const meia = larg / 2;
+  const dy = inclinacao / 2;
   return (
-    `M ${n(o.xBorda)} ${n(o.yTopo)} ` +
-    `C ${n(o.xPonta - 2)} ${n(o.yTopo + 2)} ${n(o.xPonta)} ${n(o.yPonta - 6)} ${n(o.xPonta)} ${n(o.yPonta)} ` +
-    `C ${n(o.xPonta)} ${n(o.yPonta + 12)} ${n(o.xPonta - 4)} ${n(o.yBase - 2)} ${n(o.xBorda)} ${n(o.yBase)} ` +
-    `Z`
+    `M ${n(cx - meia)} ${n(cy + dy)} ` +
+    `Q ${n(cx)} ${n(cy + 2 * sagita)} ${n(cx + meia)} ${n(cy - dy)}`
   );
 }
 
 /**
- * O especular: uma vírgula fina acompanhando o canto superior esquerdo.
+ * UMA SOBRANCELHA: arqueada para CIMA e inclinada, virando cápsula pelo
+ * `stroke-linecap`.
  *
- * A caixa é medida: x 121–175 · y 61–108. A vírgula anterior estava 15 unidades
- * baixa e larga demais (x 104–156 · y 76–132), e o desvio importa porque a
- * partição de tom a confundia com a faceta esquerda — ela é uma faixa clara que
- * começa 32 unidades PARA DENTRO da borda, e a faceta encosta na borda.
+ * Recebe o centro do olho do mesmo lado e sobe `SOBRANCELHA.acimaDoOlho`. Não há
+ * versão esquerda e versão direita — as duas arqueiam e inclinam para o mesmo lado,
+ * e o que as diferencia é só de qual olho elas penduram. Uma segunda função seria a
+ * segunda descrição da mesma peça.
  *
- * É `#FFFFFF` com opacidade, não uma cor: assim ele clareia qualquer um dos 8
- * tons de pele sem precisar de 8 valores.
+ * A sagita entra **negativa**: em SVG o y cresce para baixo, e o arco da sobrancelha
+ * sobe no meio.
  */
+export function pathSobrancelha(cxOlho: number, cyOlho: number): string {
+  return arco(
+    cxOlho,
+    cyOlho - SOBRANCELHA.acimaDoOlho,
+    SOBRANCELHA.larg,
+    -SOBRANCELHA.sagita,
+    SOBRANCELHA.subida,
+  );
+}
+
+/** A BOCA: o mesmo arco, para baixo, e sem inclinação — a régua mediu −0,0009. */
+export function pathBoca(): string {
+  return arco(OLHO_MEIO, OLHO.cy + BOCA.abaixoDoOlho, BOCA.larg, BOCA.sagita);
+}
+
+/**
+ * O ESPECULAR — uma mancha oval, **para dentro do rosto**, no canto da `LUZ`.
+ *
+ * ---------------------------------------------------------------------------
+ * ELE ERA UMA VÍRGULA COLADA NO CONTORNO, E ISSO ERA DUAS COISAS ERRADAS
+ * ---------------------------------------------------------------------------
+ *
+ * O Doug reprovou a folha do Bloco 1d por *"um mini kink na parte de cima da cabeça,
+ * lado esquerdo, acima do reflexo da luz — quase imperceptível"*, e a localização
+ * dele estava certa: o defeito mora entre o traço e o especular, não no traço.
+ *
+ * A vírgula anterior tinha 54 × 59 unidades e subia até y 59, e a **folga entre a
+ * borda interna do traço e o topo dela afinava para 1,8 unidade** em x 164, reabrindo
+ * dos dois lados. Uma nesga de pele que estreita e engorda entre duas manchas escuras
+ * lê como a linha engrossando — que é exatamente o que se vê.
+ *
+ * ---------------------------------------------------------------------------
+ * O QUE A REFERÊNCIA TEM, MEDIDO
+ * ---------------------------------------------------------------------------
+ *
+ * O `medir.ts` registra por que o gate NÃO mede o especular: limiarizar tom devolvia
+ * uma mancha de 241 × 54 unidades, quase metade da cabeça. A causa é a granulação da
+ * ilustração — o limiar pega pontinhos claros espalhados por todo lado, e a caixa
+ * deles não descreve mancha nenhuma.
+ *
+ * Desfocando 3 px antes de limiarizar e ficando com a **componente conexa** maior, a
+ * leitura fica estável e ela é outra:
+ *
+ * | limiar | caixa | área | centro | folga até o contorno |
+ * |--------|-------|------|--------|----------------------|
+ * | +4 | 39,8 × 28,6 | 781 | (138,7 · 92,4) | 30,6 |
+ * | +6 | 38,5 × 26,9 | 723 | (138,7 · 92,4) | 31,5 |
+ * | +8 | 37,7 × 26,1 | 681 | (138,7 · 92,4) | 31,9 |
+ *
+ * O centro não se move um décimo em três limiares. É uma **mancha compacta a 31
+ * unidades da linha**, e não uma faixa que a acompanha. Metade da altura e metade da
+ * folga do que estava desenhado.
+ *
+ * A elipse da caixa tem 894 u² contra os 781 medidos: os 13% de sobra são um
+ * entalhe na base da mancha que não é modelado. A 56 px são 0,4 pixel, e modelá-lo
+ * custaria dois pontos de controle numa forma que já é a menor do desenho.
+ *
+ * É `#FFFFFF` com opacidade, não uma cor: assim ele clareia qualquer um dos 8 tons de
+ * pele sem precisar de 8 valores.
+ */
+export const ESPECULAR = {
+  cx: 139.9,
+  cy: 93.4,
+  rx: 19.9,
+  ry: 14.3,
+} as const;
+
 export function pathEspecular(): string {
+  const { cx, cy, rx, ry } = ESPECULAR;
   return (
-    `M 124 108 ` +
-    `C 121 87 138 66 165 61 ` +
-    `C 173 59 175 67 169 71 ` +
-    `C 149 78 138 94 136 112 ` +
-    `C 135 118 126 117 124 108 Z`
+    `M ${n(cx - rx)} ${n(cy)} ` +
+    `A ${n(rx)} ${n(ry)} 0 1 0 ${n(cx + rx)} ${n(cy)} ` +
+    `A ${n(rx)} ${n(ry)} 0 1 0 ${n(cx - rx)} ${n(cy)} Z`
   );
 }
 
@@ -776,7 +1119,8 @@ export const FAIXA_FACETA = (() => {
     yTopo: CAIXA_CABECA.y0 + 0.16 * CAIXA_CABECA.alt,
     /**
      * ONDE A RAMPA VALE `deltaTopo` E `deltaBase` — o centro das janelas de medição
-     * de `medir.ts` (0,35 e 0,88 da altura externa da cabeça).
+     * de `medir.ts` (**0,34 e 0,89** da altura externa da cabeça; eram 0,35 e 0,88,
+     * e andaram no Bloco 1d junto com as janelas, pelo motivo registrado lá).
      *
      * Ancorar o gradiente nos EXTREMOS do path em vez de aqui foi um erro de uma
      * rodada: `deltaTopo` é o tom medido em `frac` 0,35, e declará-lo como o tom do
@@ -785,8 +1129,8 @@ export const FAIXA_FACETA = (() => {
      * referência tem −4,8 — e a correção não é afrouxar a tolerância: é a rampa
      * passar pelos dois pontos que foram medidos.
      */
-    yAmostraTopo: em(0.35),
-    yAmostraBase: em(0.88),
+    yAmostraTopo: em(0.34),
+    yAmostraBase: em(0.89),
     yQueixo: CAIXA_CABECA.y1 - TRACO / 2 - FACETAS.queixo.altura,
     yFundo: CAIXA_CABECA.y1,
   };
@@ -799,8 +1143,8 @@ const yQueixo = FAIXA_FACETA.yQueixo;
  * Interpola entre o valor medido no topo e o medido na base, **ancorando nas alturas
  * em que cada um foi medido** e segurando o valor fora delas.
  *
- * Segurar em vez de extrapolar é deliberado: acima de `frac` 0,35 a cúpula fecha e a
- * faixa some sozinha; abaixo de 0,88 vem o queixo, que tem tom próprio. Extrapolar
+ * Segurar em vez de extrapolar é deliberado: acima de `frac` 0,34 a cúpula fecha e a
+ * faixa some sozinha; abaixo de 0,89 vem o queixo, que tem tom próprio. Extrapolar
  * inventaria tom nos dois trechos onde a referência não tem faceta para medir.
  */
 const naAltura = (y: number, noTopo: number, naBase: number) => {
@@ -881,36 +1225,6 @@ export function pathFacetaDir(): string {
 }
 
 /**
- * A CONCHA — a dobra dentro da orelha esquerda.
- *
- * É a peça que substitui o traço a mais. A orelha esquerda não tem linha separando-a
- * do rosto: o que existe é a mudança de 221 para 192, começando 12 unidades para
- * dentro do traço da orelha. Desenhar essa mudança como TOM é o que faz a orelha ler
- * como dobra da cabeça; desenhá-la como linha é o que a fazia ler como adesivo.
- */
-export function pathConchaEsq(): string {
-  const c = FACETAS.concha;
-  const passos = 5;
-  const esq: { x: number; y: number }[] = [];
-  const dir: { x: number; y: number }[] = [];
-  for (let i = 0; i <= passos; i++) {
-    const y = c.yTopo + ((c.yBase - c.yTopo) * i) / passos;
-    // Estreita nas pontas: a concha é uma lente, não um retângulo. O fator sai do
-    // seno do progresso, o mesmo que fecha as duas extremidades em zero.
-    const k = Math.sin((Math.PI * i) / passos);
-    const x0 = bordasEm(y).esq + c.deDentro;
-    esq.push({ x: x0 + (c.largura / 2) * (1 - k), y });
-    dir.push({ x: x0 + c.largura * (0.5 + k / 2), y });
-  }
-  return (
-    `M ${n(esq[0].x)} ${n(esq[0].y)} ` +
-    spline(esq) +
-    spline([...dir].reverse()) +
-    `Z`
-  );
-}
-
-/**
  * A SOMBRA PROJETADA DA CABEÇA NO TRONCO — a faixa mais escura do boneco.
  *
  * −45 níveis contra o tom do tronco, quando a mais escura da cabeça tem −36. Ela não
@@ -968,10 +1282,32 @@ function alturaDaBaseEm(x: number): number {
  */
 export const PLANO_TRONCO = { esq: 16, dir: 19 } as const;
 
+/**
+ * METADE DOS PONTOS, e é aqui que o orçamento de bytes é pago.
+ *
+ * Estas duas faixas eram o maior `d=` do boneco depois do contorno da cabeça: 1 383
+ * bytes, 44 comandos, quatro bordas de dez pontos cada. Com um ponto sim, um não —
+ * mais o último, que fecha o arremate — elas caem para seis pontos por borda.
+ *
+ * **Onde o corte é seguro e onde não é.** O plano do bloco propunha economizar
+ * arredondando TODA coordenada do SVG para inteiro (~1,5 KB). Medido, isso derruba o
+ * raio mínimo da cabeça de 34,4 para **14,5** — abaixo do traço, que é o bico que o
+ * Bloco 1d existe para eliminar. Meia unidade derruba para 21,4. A precisão do
+ * contorno não é onde se economiza.
+ *
+ * Aqui é: a faixa é pintada a 42% de opacidade **dentro do clip do tronco**, a borda
+ * de fora é desenhada 20 unidades para fora e cortada, e o que o gate mede nela é a
+ * LARGURA em três alturas — não a forma da borda. O perfil do tronco é uma cápsula
+ * suave, e uma spline por seis pontos dela erra frações de unidade contra uma por
+ * dez.
+ */
+const ralo = (pts: { x: number; y: number }[]) =>
+  pts.filter((_, i) => i % 2 === 0 || i === pts.length - 1);
+
 export function pathPlanoLateralTronco(): string {
   const faixa = (lado: 1 | -1, banda: number) => {
-    const fora = perfilTronco(lado, -20, true);
-    const dentro = perfilTronco(lado, banda + TRACO / 2 + 2, true).reverse();
+    const fora = ralo(perfilTronco(lado, -20, true));
+    const dentro = ralo(perfilTronco(lado, banda + TRACO / 2 + 2, true)).reverse();
     return (
       `M ${n(fora[0].x)} ${n(fora[0].y)} ` +
       spline(fora) +

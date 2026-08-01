@@ -35,8 +35,27 @@
  * Cor do contorno de tudo. Precisa ficar longe de toda cor de preenchimento,
  * senão a silhueta some — cabelo preto sobre contorno quase preto vira um
  * borrão só.
+ *
+ * ---------------------------------------------------------------------------
+ * ERA `#241610`, E O MARROM NÃO ESTAVA NA REFERÊNCIA
+ * ---------------------------------------------------------------------------
+ *
+ * O `#241610` tem luminância 24,5 e veio de "contorno marrom-escuro", que era o
+ * Style Anchor do avatar v3. A referência do estilo kokeshi não tem isso: contando
+ * os pixels escuros da arte definitiva, as cores mais frequentes são `#010101`
+ * (23 384 px), `#020202` (18 118) e `#000000` (16 517). É **preto**, e o traço medido
+ * na borda lê luminância 3,0.
+ *
+ * A correção é a cor, e não a espessura. Um traço marrom parece mais fino que um
+ * preto da mesma largura, e a tentação é compensar engrossando — foi assim que
+ * `TRACO` virou 17 uma vez. Aqui os dois números são medidos em separado e cada um
+ * responde pelo que é seu.
+ *
+ * **Todas as folgas do validador melhoram**: o cabelo preto `#3A2F2A` sai de 42,2
+ * para **85,7** contra o contorno, o sapato para 101,6 e a calça para 138,7. O único
+ * efeito colateral está em `palette.test.ts`, e é o exemplo do teste — não a regra.
  */
-export const LINHA = "#241610";
+export const LINHA = "#000000";
 
 // ---------------------------------------------------------------------------
 // Rampas escolhíveis pelo aluno
@@ -68,8 +87,8 @@ export const PELE = [
  * enxuto os bonecos ficariam parecidos, e é exatamente esse o problema que o
  * D27 existe para resolver. Se destoarem do tom do clube, são duas linhas.
  *
- * O preto é `#3A2F2A`, não preto de verdade: contra o contorno `#241610` um
- * preto real apagaria a silhueta do cabelo. O validador reprova.
+ * O preto é `#3A2F2A`, não preto de verdade: contra o contorno um preto real
+ * apagaria a silhueta do cabelo. O validador reprova.
  */
 export const CABELO = [
   "#3A2F2A", // preto

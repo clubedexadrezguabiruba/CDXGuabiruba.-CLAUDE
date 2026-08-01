@@ -14,14 +14,14 @@
  *  (topo, lateral e base da cabeça; ombro, barriga e base do tronco). Reporta
  *  **erro médio absoluto, percentil 95 e máximo**, e não só o máximo: um pico
  *  isolado de antialiasing não pode pesar o mesmo que um topo sistematicamente
- *  chato. As linhas das orelhas ficam de fora — a saliência delas dominaria o
- *  erro e é medida em separado no (b).
+ *  chato. As linhas que saltam do núcleo da cabeça ficam de fora — na arte com
+ *  orelhas a saliência dominaria o erro. A arte definitiva não tem nenhuma, e o
+ *  filtro fica como guarda para uma protuberância futura.
  *
  *  **(b) Marcos da pose** — tudo que o perfil externo é cego para: para que lado
- *  os olhos andam, se um está mais alto, quanto cada orelha sai, se os eixos da
- *  cabeça e do tronco coincidem, se o plano lateral existe e de que lado, e se o
- *  eixo do rosto está limpo. Uma silhueta pode estar perfeita com a pose inteira
- *  errada.
+ *  os olhos andam, se um está mais alto, se os eixos da cabeça e do tronco
+ *  coincidem, se as duas facetas do rosto existem e em que razão, e se o eixo do
+ *  rosto está limpo. Uma silhueta pode estar perfeita com a pose inteira errada.
  *
  *  **(c) Unicidade de `id` no DOM** — com as instâncias renderizadas JUNTAS no
  *  mesmo documento, que é a única situação em que a colisão existe.
@@ -47,19 +47,23 @@
  * `verify:avatar-assets` ficou vermelho por meses sem ninguém saber.
  *
  * ---------------------------------------------------------------------------
- * AS CINCO FIXTURES
+ * AS QUATRO FIXTURES
  * ---------------------------------------------------------------------------
  *
  * Cada uma mata uma medida diferente, e é isso que prova que elas enxergam coisas
- * distintas. As duas últimas entraram no Bloco 1c e são os DOIS DEFEITOS QUE
- * PASSARAM VERDES no 1b — o rosto sem faceta esquerda e a orelha colada atrás. As
- * duas têm a silhueta externa exatamente certa, então elas passam no perfil e
- * reprovam nos marcos: é a demonstração, em código, de que a silhueta externa não
- * era régua suficiente.
+ * distintas. A do rosto chapado entrou no Bloco 1c e é UM DEFEITO QUE PASSOU VERDE
+ * no 1b — o rosto sem faceta esquerda. Ela tem a silhueta externa exatamente certa,
+ * então passa no perfil e reprova nos marcos: é a demonstração, em código, de que a
+ * silhueta externa não era régua suficiente.
  *
  * A do `id` é a que faz o teste deixar de ser teatro: com geometrias idênticas a
  * colisão resolve para o primeiro clip e **nada muda na tela**, então só clips
  * divergentes a tornam visível.
+ *
+ * **Eram cinco.** A quinta reproduzia a orelha esquerda colada atrás, e saiu no
+ * Bloco 1d porque a arte definitiva não tem orelha: ela reprovava um defeito que
+ * deixou de ser possível. Não entra outra no lugar — uma fixture sem um defeito real
+ * por trás é teatro, e o histórico deste arquivo mostra o custo disso.
  */
 
 import { readFileSync } from "fs";
@@ -67,7 +71,7 @@ import sharp from "sharp";
 import { chromium, type Browser } from "@playwright/test";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import {
-  CABECA,
+  BOCA,
   EIXO_CABECA,
   FAIXA_FACETA,
   FACETAS,
@@ -77,18 +81,18 @@ import {
   OLHO_CX_ESQ,
   OLHO_CY_DIR,
   OLHO_CY_ESQ,
-  ORELHA_DIR,
+  SOBRANCELHA,
   SOMBRA_CHAO,
   TRACO,
   VIEWBOX,
   fatorDeTom,
+  pathBoca,
   pathCabeca,
-  pathConchaEsq,
   pathEspecular,
   pathFacetaDir,
   pathFacetaEsq,
-  pathOrelhaDir,
   pathPlanoLateralTronco,
+  pathSobrancelha,
   pathSombraQueixoTronco,
   pathTronco,
 } from "../../../src/lib/avatar/estilo/geometria";
@@ -96,6 +100,29 @@ import { LINHA, PELE, TRAJE_BASE, escurecer } from "../../../src/lib/avatar/pale
 import { medir, type Bitmap, type Marcos } from "./medir";
 
 const REFERENCIA = "scripts/avatar/fonte/estilo-kokeshi/referencia-base.png";
+
+/**
+ * A SEGUNDA REFERÊNCIA, e ela existe para três marcos só.
+ *
+ * `referencia-base.png` é a arte definitiva, e ela foi exportada sem fundo. **A
+ * sombra do chão era pintada no fundo** e sumiu junto: medidos, sobram 69 px de
+ * ruído onde a arte anterior tem 7 940 px de sombra.
+ *
+ * Os três marcos da sombra — largura, eixo e escurecimento — passariam a comparar
+ * zero contra zero e ficariam **verdes por vacuidade**. Um marco assim é pior que
+ * marco nenhum: ele ocupa a linha do relatório e não reprova nada, que é como o
+ * `verify:avatar-assets` deste projeto ficou vermelho por meses sem ninguém saber
+ * (só que ao contrário).
+ *
+ * Então a arte ANTERIOR fica aqui, e é lida só por esses três. O que autoriza
+ * misturar duas fontes é a prova de que o corpo não se moveu, medida e registrada no
+ * docstring de `geometria.ts`: cabeça 376,0 contra 376,3, tronco 285,7 contra 287,9,
+ * corte 0,519 contra 0,520, platô 221,2 contra 221,4.
+ *
+ * **É dívida, e está declarada.** Uma reexportação da arte nova COM fundo apaga esta
+ * constante e a função que a lê.
+ */
+const REFERENCIA_SOMBRA = "scripts/avatar/fonte/estilo-kokeshi/referencia-sombra.png";
 
 /**
  * Altura de render, em pixel. 1400 dá ~2,3 unidades de `viewBox` por pixel, o
@@ -129,8 +156,8 @@ async function medirSvg(nav: Browser, svg: string): Promise<Marcos> {
   return medir(await bitmapDoHtml(nav, dimensionar(svg, ALTURA_RENDER), larg, ALTURA_RENDER));
 }
 
-async function medirReferencia(): Promise<Marcos> {
-  const { data, info } = await sharp(readFileSync(REFERENCIA))
+async function medirPng(caminho: string): Promise<Marcos> {
+  const { data, info } = await sharp(readFileSync(caminho))
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -146,8 +173,6 @@ interface Mutacao {
   escalaCabecaX?: number;
   /** Põe os olhos no eixo da cabeça e no mesmo nível. */
   olhosCentrados?: boolean;
-  /** Dá à orelha direita a saliência da esquerda. */
-  orelhasEspelhadas?: boolean;
   /** Não desenha plano lateral nenhum no tronco. */
   semPlanoTronco?: boolean;
   /**
@@ -155,40 +180,6 @@ interface Mutacao {
    * chapado em vez de gradiente. A silhueta fica exatamente certa.
    */
   rostoChapado?: boolean;
-  /**
-   * **O outro defeito do Bloco 1b.** A orelha esquerda vira elipse separada ATRÁS
-   * da cabeça, com a borda da cabeça passando reta por trás dela — dois traços onde
-   * a referência tem um. A silhueta externa fica idêntica.
-   */
-  orelhaColada?: boolean;
-}
-
-/**
- * O contorno da cabeça SEM a saliência da orelha esquerda.
- *
- * A borda passa reta por trás, ligando os dois pontos onde a orelha começa e acaba.
- * É o desenho do Bloco 1b, e serve à fixture `orelhaColada` — que põe uma elipse por
- * cima disto para reproduzir os dois traços.
- */
-function contornoSemOrelhaEsq(): { x: number; y: number }[] {
-  return CABECA.contorno.filter((p) => !(p.x < 90 && p.y > 205 && p.y < 285)).map((p) => ({ ...p }));
-}
-
-function pathDePontos(pts: { x: number; y: number }[]): string {
-  const N = pts.length;
-  const em = (i: number) => pts[(i + N) % N];
-  let d = `M ${pts[0].x} ${pts[0].y} `;
-  for (let i = 0; i < N; i++) {
-    const p0 = em(i - 1);
-    const p1 = em(i);
-    const p2 = em(i + 1);
-    const p3 = em(i + 2);
-    d +=
-      `C ${(p1.x + (p2.x - p0.x) / 6).toFixed(1)} ${(p1.y + (p2.y - p0.y) / 6).toFixed(1)} ` +
-      `${(p2.x - (p3.x - p1.x) / 6).toFixed(1)} ${(p2.y - (p3.y - p1.y) / 6).toFixed(1)} ` +
-      `${p2.x.toFixed(1)} ${p2.y.toFixed(1)} `;
-  }
-  return d + "Z";
 }
 
 /**
@@ -211,6 +202,17 @@ function fixture(mut: Mutacao): string {
   const olho = (cx: number, cy: number) =>
     `<rect x="${cx - OLHO.w / 2}" y="${cy - OLHO.h / 2}" width="${OLHO.w}" height="${OLHO.h}" ` +
     `rx="${OLHO.r}" fill="${LINHA}"/>`;
+  /**
+   * O risco de sobrancelha e de boca, igual ao do compositor.
+   *
+   * Elas entram na fixture mesmo não sendo o alvo de mutação nenhuma, pelo mesmo
+   * motivo que a sombra do chão entra: **uma fixture só prova alguma coisa se for
+   * idêntica à base exceto pelo defeito**. Uma fixture sem sobrancelha teria uma
+   * diferença a mais contra a referência, e aí não dá para dizer qual das duas fez o
+   * marco reprovar.
+   */
+  const risco = (d: string, w: number) =>
+    `<path d="${d}" fill="none" stroke="${LINHA}" stroke-width="${w}" stroke-linecap="round"/>`;
 
   /** A mesma aresta do queixo que o compositor emite. Ver `FAIXA_FACETA`. */
   const tQ = Number(
@@ -219,21 +221,7 @@ function fixture(mut: Mutacao): string {
       (FAIXA_FACETA.yFundo - FAIXA_FACETA.yAmostraTopo)
     ).toFixed(3),
   );
-  const dCabeca = mut.orelhaColada ? pathDePontos(contornoSemOrelhaEsq()) : pathCabeca();
-  const salDir = mut.orelhasEspelhadas ? 24 : ORELHA_DIR.xPonta - ORELHA_DIR.xBorda;
-  const dOrelhaDir = mut.orelhasEspelhadas
-    ? pathOrelhaDir().replace(
-        new RegExp(String(ORELHA_DIR.xPonta), "g"),
-        String(ORELHA_DIR.xBorda + salDir),
-      )
-    : pathOrelhaDir();
-
-  // A elipse colada: no lugar da saliência que o contorno perdeu, e por BAIXO da
-  // cabeça — que é onde o 1b a punha, e a razão de ela ler como adesivo.
-  const elipseColada = mut.orelhaColada
-    ? `<ellipse cx="66" cy="246" rx="26" ry="37" fill="${tom(FACETAS.esq.deltaBase)}"/>` +
-      `<ellipse cx="66" cy="246" rx="26" ry="37" ${traco}/>`
-    : "";
+  const dCabeca = pathCabeca();
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}">` +
@@ -265,22 +253,21 @@ function fixture(mut: Mutacao): string {
     `</g>` +
     `<path d="${pathTronco()}" ${traco}/>` +
     `<g transform="translate(${EIXO_CABECA} 0) scale(${k} 1) translate(${-EIXO_CABECA} 0)">` +
-    elipseColada +
-    `<path d="${dOrelhaDir}" fill="${tom(FACETAS.dir.deltaBase)}"/>` +
-    `<path d="${dOrelhaDir}" ${traco}/>` +
     `<path d="${dCabeca}" fill="${pele}"/>` +
     `<g clip-path="url(#fx-cabeca)">` +
     (mut.rostoChapado
       ? // Sem faceta esquerda; a direita de tom chapado. A base do 1b.
         `<path d="${pathFacetaDir()}" fill="${tom(FACETAS.dir.deltaTopo)}"/>`
       : `<path d="${pathFacetaEsq()}" fill="url(#fx-fe)"/>` +
-        `<path d="${pathFacetaDir()}" fill="${tom(FACETAS.dir.deltaBase)}"/>` +
-        `<path d="${pathConchaEsq()}" fill="${tom(FACETAS.concha.delta)}"/>`) +
+        `<path d="${pathFacetaDir()}" fill="${tom(FACETAS.dir.deltaBase)}"/>`) +
     `<path d="${pathEspecular()}" fill="#FFFFFF" opacity=".30"/>` +
     `</g>` +
     `<path d="${dCabeca}" ${traco}/>` +
     olho(cxOlhoE, cyOlhoE) +
     olho(cxOlhoD, cyOlhoD) +
+    risco(pathSobrancelha(cxOlhoE, cyOlhoE), SOBRANCELHA.espessura) +
+    risco(pathSobrancelha(cxOlhoD, cyOlhoD), SOBRANCELHA.espessura) +
+    risco(pathBoca(), BOCA.espessura) +
     `</g>` +
     `</svg>`
   );
@@ -403,7 +390,7 @@ interface Marco {
   tol: number;
 }
 
-function marcos(alvo: Marcos, ref: Marcos): Marco[] {
+function marcos(alvo: Marcos, ref: Marcos, refSombra: Marcos): Marco[] {
   const media = (xs: number[]) => xs.reduce((s, v) => s + v, 0) / xs.length;
   const troncoDir = (m: Marcos) => media(m.planoLateralTronco.map((p) => p.dir));
   const troncoEsq = (m: Marcos) => media(m.planoLateralTronco.map((p) => p.esq));
@@ -440,10 +427,6 @@ function marcos(alvo: Marcos, ref: Marcos): Marco[] {
 
   const volume: Marco[] = [
     { nome: "espessura do traço", medido: alvo.espessuraTraco, esperado: ref.espessuraTraco, tol: 1.5 },
-    // A CONTAGEM. É o marco que enxerga a orelha colada, e o único do gate inteiro
-    // que não é uma medida contínua: 1 à esquerda, 2 à direita, e não há meio-termo.
-    { nome: "traços na orelha esq", medido: alvo.tracosOrelha.esq, esperado: ref.tracosOrelha.esq, tol: 0.5 },
-    { nome: "traços na orelha dir", medido: alvo.tracosOrelha.dir, esperado: ref.tracosOrelha.dir, tol: 0.5 },
     { nome: "faceta esq · largura topo", medido: fTopo(alvo).largEsq, esperado: fTopo(ref).largEsq, tol: 6 },
     { nome: "faceta esq · delta topo", medido: rel(fTopo(alvo).deltaEsq, fTopo(alvo).plato), esperado: rel(fTopo(ref).deltaEsq, fTopo(ref).plato), tol: 5 },
     { nome: "faceta esq · delta base", medido: rel(fBase(alvo).deltaEsq, fBase(alvo).plato), esperado: rel(fBase(ref).deltaEsq, fBase(ref).plato), tol: 5 },
@@ -469,8 +452,6 @@ function marcos(alvo: Marcos, ref: Marcos): Marco[] {
      */
     { nome: "chato no ápice", medido: alvo.perfil[0].larg, esperado: ref.perfil[0].larg, tol: 12 },
     { nome: "eixo cabeça ↔ tronco", medido: alvo.giroDoEixo, esperado: ref.giroDoEixo, tol: 3 },
-    { nome: "saliência da orelha esq", medido: alvo.orelhas.esq, esperado: ref.orelhas.esq, tol: 4 },
-    { nome: "saliência da orelha dir", medido: alvo.orelhas.dir, esperado: ref.orelhas.dir, tol: 4 },
     {
       nome: "desvio do par de olhos",
       medido: alvo.olhos.desvioDoEixo,
@@ -506,12 +487,18 @@ function marcos(alvo: Marcos, ref: Marcos): Marco[] {
     // deslocada quando devia ser centrada) e não aparece no perfil externo, que
     // lê contorno escuro. Ela não estava na lista de marcos do plano; entra
     // porque deixá-la de fora seria repetir a razão de este gate existir.
-    { nome: "largura da sombra do chão", medido: alvo.sombra.larg, esperado: ref.sombra.larg, tol: 25 },
-    { nome: "eixo da sombra do chão", medido: alvo.sombra.desvio, esperado: ref.sombra.desvio, tol: 8 },
+    //
+    // OS TRÊS LEEM DE `refSombra`, E SÓ ELES. A arte definitiva foi exportada sem
+    // fundo e a sombra foi junto — 69 px de ruído contra 7 940 px de sombra na arte
+    // anterior. Comparar contra ela deixaria os três verdes medindo nada. Ver
+    // `REFERENCIA_SOMBRA`, no alto do arquivo, para a prova de que as duas artes têm
+    // o mesmo corpo.
+    { nome: "largura da sombra do chão", medido: alvo.sombra.larg, esperado: refSombra.sombra.larg, tol: 25 },
+    { nome: "eixo da sombra do chão", medido: alvo.sombra.desvio, esperado: refSombra.sombra.desvio, tol: 8 },
     {
       nome: "escurecimento da sombra",
       medido: alvo.sombra.escurecimento,
-      esperado: ref.sombra.escurecimento,
+      esperado: refSombra.sombra.escurecimento,
       tol: 10,
     },
   ];
@@ -569,10 +556,22 @@ function idsDe(html: string): string[] {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const ref = await medirReferencia();
+  const ref = await medirPng(REFERENCIA);
+  const refSombra = await medirPng(REFERENCIA_SOMBRA);
   console.log(
     `referência lida: altura útil ${ref.alturaUtilPx} px → 600 unidades (fator ${ref.fator.toFixed(4)})`,
   );
+  console.log(
+    `sombra do chão lida de ${REFERENCIA_SOMBRA} (${refSombra.alturaUtilPx} px) — ` +
+      `a arte definitiva foi exportada sem fundo e perdeu a sombra`,
+  );
+  // Se a arte definitiva um dia voltar com sombra, este aviso some junto com a
+  // segunda referência. Enquanto ele aparece, a dívida está na tela de quem roda.
+  if (ref.sombra.larg > 100)
+    console.log(
+      `    ⚠ a referência principal TEM sombra (${ref.sombra.larg.toFixed(0)} u): ` +
+        `dá para apagar REFERENCIA_SOMBRA e voltar a uma fonte só`,
+    );
 
   const falhas: string[] = [];
   const nav = await chromium.launch();
@@ -583,7 +582,7 @@ async function main() {
     console.log(`base autorada renderizada a ${ALTURA_RENDER} px de altura`);
 
     falhas.push(...relatarPerfil(compararPerfil(base, ref)));
-    falhas.push(...relatarMarcos(marcos(base, ref)));
+    falhas.push(...relatarMarcos(marcos(base, ref, refSombra)));
 
     // ---- (c) unicidade de id, com as instâncias JUNTAS ----
     console.log(`\n(c) UNICIDADE DE id — 30 instâncias no mesmo documento`);
@@ -596,8 +595,15 @@ async function main() {
     if (unicos !== ids.length)
       falhas.push(`unicidade de id: ${ids.length} emitidos e só ${unicos} únicos`);
 
-    // ---- as cinco fixtures ----
-    console.log(`\nAS CINCO FIXTURES — cada uma tem de reprovar num marco diferente`);
+    // ---- as quatro fixtures ----
+    //
+    // Eram cinco até o Bloco 1c. A quinta era a "orelha esquerda colada atrás", e ela
+    // saiu porque **perdeu objeto**: a arte definitiva não tem orelha, e a fixture
+    // reproduzia um defeito que não é mais possível cometer. Inventar outra no lugar,
+    // sem um defeito real por trás, seria teatro — e este gate já teve uma fixture de
+    // teatro (a do `ns` repetido, que reportava "nada mudou em pixel" porque os clips
+    // não divergiam) e ela foi consertada no 1c justamente por isso.
+    console.log(`\nAS QUATRO FIXTURES — cada uma tem de reprovar num marco diferente`);
 
     // 1. cabeça 10% estreita → perfil externo
     const f1 = await medirSvg(nav, fixture({ escalaCabecaX: 0.9 }));
@@ -610,12 +616,11 @@ async function main() {
     if (!pegou1) falhas.push(`a fixture "cabeça 10% estreita" PASSOU no perfil externo`);
 
     // 2. silhueta certa, pose errada → marcos
-    const f2 = await medirSvg(
-      nav,
-      fixture({ olhosCentrados: true, orelhasEspelhadas: true, semPlanoTronco: true }),
-    );
+    const f2 = await medirSvg(nav, fixture({ olhosCentrados: true, semPlanoTronco: true }));
     const perfil2 = compararPerfil(f2, ref);
-    const marcos2 = marcos(f2, ref).filter((m) => Math.abs(m.medido - m.esperado) > m.tol);
+    const marcos2 = marcos(f2, ref, refSombra).filter(
+      (m) => Math.abs(m.medido - m.esperado) > m.tol,
+    );
     const perfilLimpo2 = !perfil2.some(
       (e) => reprovou(e),
     );
@@ -633,19 +638,18 @@ async function main() {
           `então ou a fixture mudou de silhueta ou o perfil está medindo pose`,
       );
 
-    // ---- as duas fixtures do Bloco 1c, e cada uma é um defeito que PASSOU ----
+    // ---- a fixture do Bloco 1c que sobreviveu: um defeito que PASSOU verde ----
     //
-    // As duas têm a silhueta externa exatamente certa, e é isso que as torna úteis:
-    // elas provam que os marcos novos enxergam o que o perfil não enxerga. Se
-    // qualquer uma passasse, o gate estaria de volta ao estado em que aprovou a base
-    // que o Doug reprovou.
+    // Ela tem a silhueta externa exatamente certa, e é isso que a torna útil: prova
+    // que os marcos de volume enxergam o que o perfil não enxerga. Se ela passasse, o
+    // gate estaria de volta ao estado em que aprovou a base que o Doug reprovou.
     const olhaFixture = async (
       rotulo: string,
       mut: Mutacao,
       quais: string[],
     ): Promise<void> => {
       const m = await medirSvg(nav, fixture(mut));
-      const pegos = marcos(m, ref).filter(
+      const pegos = marcos(m, ref, refSombra).filter(
         (x) => quais.some((q) => x.nome.includes(q)) && Math.abs(x.medido - x.esperado) > x.tol,
       );
       const perfilLimpo = !compararPerfil(m, ref).some((e) => reprovou(e));
@@ -664,9 +668,8 @@ async function main() {
     };
 
     await olhaFixture("rosto chapado, sem faceta esquerda", { rostoChapado: true }, ["faceta"]);
-    await olhaFixture("orelha esquerda colada atrás", { orelhaColada: true }, ["traços na orelha"]);
 
-    // 5. duas instâncias, MESMO ns e clips DIFERENTES → unicidade de id
+    // 4. duas instâncias, MESMO ns e clips DIFERENTES → unicidade de id
     //
     // Sem clips divergentes este teste é teatro: a colisão resolve para o
     // primeiro clip e, com geometrias idênticas, nada muda na tela. Aqui a
@@ -710,7 +713,7 @@ async function main() {
     for (const f of falhas) console.error(`  - ${f}`);
     process.exitCode = 1;
   } else {
-    console.log(`\npose conferida: perfil, marcos e unicidade de id, com as 5 fixtures reprovando`);
+    console.log(`\npose conferida: perfil, marcos e unicidade de id, com as 4 fixtures reprovando`);
   }
 }
 

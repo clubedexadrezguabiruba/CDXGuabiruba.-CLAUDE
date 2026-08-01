@@ -50,19 +50,18 @@
  *   3. tronco: base opaca → tinta do traje (clipada) → decoração →
  *      **sombra projetada da cabeça** → planos laterais
  *   4. **contorno do tronco**
- *   5. orelha DIREITA: preenchimento + contorno   (a esquerda não está aqui — §)
- *   6. cabeça: preenchimento OPACO — cobre o topo do tronco e o contorno dele
- *   7. facetas, concha e especular, dentro do clip da cabeça
- *   8. **contorno da cabeça**
- *   9. olhos
- *  10. extensões frontais        (fecho de capa, ombreira) + contorno
+ *   5. cabeça: preenchimento OPACO — cobre o topo do tronco e o contorno dele
+ *   6. facetas e especular, dentro do clip da cabeça
+ *   7. **contorno da cabeça**
+ *   8. olhos, sobrancelhas e boca
+ *   9. extensões frontais        (fecho de capa, ombreira) + contorno
  *
- * **A orelha esquerda não aparece nesta lista, e é o conserto do Bloco 1c.** Ela
- * está dentro de `pathCabeca()`: é a saliência do próprio contorno, um traço só,
- * como na referência. O 1b desenhava as duas como elipses por cima da cabeça, o que
- * põe **dois traços** onde a referência tem um do lado esquerdo — e dois traços é
- * literalmente o que um adesivo colado atrás mostra. Era isso, e não a cor do
- * preenchimento, que fazia a peça ler errado.
+ * **A lista encurtou no Bloco 1d.** Saíram a orelha direita (que era um passo
+ * próprio, com preenchimento e contorno) e a concha da orelha esquerda: a arte nova
+ * não tem orelhas, e o motivo é de catálogo — orelha na base obriga cada um dos 92
+ * itens de chapéu e cabelo a decidir se cobre ou não. Entraram as sobrancelhas e a
+ * boca, no mesmo passo dos olhos, porque são a mesma natureza de peça: tinta da cor
+ * do contorno, por cima do contorno da cabeça, fora de todo clip.
  *
  * ---------------------------------------------------------------------------
  * O QUE ESTE ARQUIVO NÃO FAZ
@@ -76,6 +75,7 @@
 
 import { LINHA, TRAJE_BASE, escurecer } from "../palette";
 import {
+  BOCA,
   FACETAS,
   OLHO,
   OLHO_CX_DIR,
@@ -83,17 +83,18 @@ import {
   OLHO_CY_DIR,
   OLHO_CY_ESQ,
   FAIXA_FACETA,
+  SOBRANCELHA,
   SOMBRA_CHAO,
   TRACO,
   VIEWBOX,
   fatorDeTom,
+  pathBoca,
   pathCabeca,
-  pathConchaEsq,
   pathEspecular,
   pathFacetaDir,
   pathFacetaEsq,
-  pathOrelhaDir,
   pathPlanoLateralTronco,
+  pathSobrancelha,
   pathSombraQueixoTronco,
   pathTronco,
 } from "./geometria";
@@ -130,6 +131,12 @@ function estilo(ns: string, animado: boolean): string {
     `.${ns} .kk-pele{fill:var(--av-pele)}` +
     `.${ns} .kk-pele-s{fill:var(--av-pele-s)}` +
     `.${ns} .kk-tinta{fill:var(--av-linha)}` +
+    // O RISCO: sobrancelha e boca. É `stroke` e não `fill` porque as duas são
+    // cápsulas, e uma cápsula é o que `stroke-linecap:round` desenha de graça — sem
+    // path fechado, sem `transform` para inclinar, sem caso especial para a curva do
+    // sorriso. A espessura de cada uma vai no elemento: são duas medidas diferentes
+    // (8,2 e 5,3) e uma classe por medida custaria mais que o atributo.
+    `.${ns} .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}` +
     `.${ns} .kk-luz{fill:#FFFFFF;opacity:.30}` +
     `.${ns} .kk-olho{transform-box:fill-box;transform-origin:center}` +
     respiro
@@ -339,18 +346,24 @@ export function compor(estado: EstadoAvatar): string {
     extensoes(traje, true) +
     `<g clip-path="url(#${ns}-c-tronco)">${tintaTronco(ns, traje)}</g>` +
     `<use href="#${ns}-p-tronco" class="kk-traco"/>` +
-    `<path class="kk-pele-s" d="${pathOrelhaDir()}"/>` +
-    `<path class="kk-traco" d="${pathOrelhaDir()}"/>` +
     `<use href="#${ns}-p-cabeca" class="kk-pele"/>` +
     `<g clip-path="url(#${ns}-c-cabeca)">` +
     `<path d="${pathFacetaEsq()}" fill="url(#${ns}-fe)"/>` +
     `<path d="${pathFacetaDir()}" fill="url(#${ns}-fd)"/>` +
-    `<path d="${pathConchaEsq()}" fill="${tomPele(pele, FACETAS.concha.delta)}"/>` +
     `<path class="kk-luz" d="${pathEspecular()}"/>` +
     `</g>` +
     `<use href="#${ns}-p-cabeca" class="kk-traco"/>` +
     olho(OLHO_CX_ESQ, OLHO_CY_ESQ) +
     olho(OLHO_CX_DIR, OLHO_CY_DIR) +
+    // AS SOBRANCELHAS NÃO PISCAM E NÃO RESPIRAM DE FORMA PRÓPRIA. Elas ficam fora da
+    // classe `kk-olho` de propósito: o `scaleY(.08)` do piscar numa sobrancelha a
+    // achataria junto com o olho, e uma sobrancelha que encolhe quando o olho fecha
+    // lê como careta, não como piscada. Elas sobem e descem com o respiro porque
+    // estão dentro de `kk-respira`, que move a figura inteira — isso é a figura
+    // flutuando, e é o certo.
+    `<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}" d="${pathSobrancelha(OLHO_CX_ESQ, OLHO_CY_ESQ)}"/>` +
+    `<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}" d="${pathSobrancelha(OLHO_CX_DIR, OLHO_CY_DIR)}"/>` +
+    `<path class="kk-risco" stroke-width="${BOCA.espessura}" d="${pathBoca()}"/>` +
     extensoes(traje, false) +
     `</g>` +
     `</svg>`

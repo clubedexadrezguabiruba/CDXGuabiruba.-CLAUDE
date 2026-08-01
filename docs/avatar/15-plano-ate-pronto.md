@@ -276,7 +276,13 @@ desmontaria o recolorir.
 Duas decisões minhas que você pode vetar em uma linha: as duas últimas cores de
 cabelo são **roxo e azul**, fantasia deliberada (o D27 existe para 30 alunos não
 saírem iguais); e o preto do cabelo é `#3A2F2A`, não preto de verdade — contra o
-contorno `#241610`, um preto real apagaria a silhueta.
+contorno, um preto real apagaria a silhueta.
+
+> **Atualizado no Bloco 1d:** o contorno era `#241610` (marrom-escuro, herdado do
+> Style Anchor do v3) e passou a ser **`#000000`**. A referência do estilo kokeshi é
+> preta: as cores escuras mais frequentes dela são `#010101`, `#020202` e `#000000`,
+> e o traço mede luminância 3,0. A folga do cabelo preto contra o contorno **sobe**
+> de 42,2 para 85,7 com a troca.
 
 ---
 
@@ -636,21 +642,56 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     (`scripts/avatar/estilo/medir.ts`, em unidades do `viewBox` com a altura útil
     normalizada em 600) diz:
 
-    | sinal                                     | medido |
-    |-------------------------------------------|--------|
-    | a orelha ESQUERDA sai da cabeça            | 24,1   |
-    | a orelha DIREITA sai da cabeça             | 14,7   |
-    | o par de olhos, contra o eixo da cabeça    | +33,5  |
-    | plano lateral escuro: esquerda / direita   | 0 / 16 |
-    | eixo da cabeça, contra o eixo do tronco    | +7,4   |
+    | sinal                                      | medido |
+    |--------------------------------------------|--------|
+    | o par de olhos, contra o eixo da cabeça     | +33,9  |
+    | desnível entre os dois olhos                | 3,6    |
+    | desnível entre as duas sobrancelhas         | 3,5    |
+    | eixo da cabeça, contra o eixo do tronco     | +7,0   |
+    | razão entre as facetas laterais, no alto    | 2:1    |
+
+    ⚠️ *Atualizado no Bloco 1d.* A tabela citava as saliências das duas orelhas
+    (24,1 e 14,7) como os dois primeiros sinais; **a arte definitiva não tem
+    orelhas** — elas saíram porque orelha na base obriga cada um dos 92 itens de
+    chapéu e cabelo a decidir se cobre ou não. Entraram no lugar o desnível das
+    sobrancelhas e a razão das facetas. Os sinais que restam são todos medidos e
+    todos estão no gate.
 
     **Por que isso é regra de PEDIDO e não só de código.** A referência vai anexada
     idêntica em todo pedido ao gerador, e é dela que o gerador copia a leitura
-    espacial. Se o pedido não exigir o plano lateral direito e as orelhas
-    assimétricas, ele devolve simetria — e aí a base (que é assimétrica, por
-    medição) recebe tinta simétrica e briga consigo mesma em toda peça. O inverso
-    também vale: uma base simétrica com tinta assimétrica é o mesmo defeito pelo
-    outro lado.
+    espacial. Se o pedido não exigir a assimetria, ele devolve simetria — e aí a
+    base (que é assimétrica, por medição) recebe tinta simétrica e briga consigo
+    mesma em toda peça. O inverso também vale: uma base simétrica com tinta
+    assimétrica é o mesmo defeito pelo outro lado.
+
+15c. **Peça o "efeito cubo" com essas palavras: o rosto tem QUATRO facetas, não um
+    degradê.** ⚠️ *Escrito no Bloco 1c, corrigido no 1d.*
+
+    O Bloco 1b entregou um rosto chapado e o Doug reprovou assim: *"não há
+    sombreamento lateral do rosto do lado esquerdo — **efeito cubo**, e é um dos
+    principais fatores para entender que o rosto está levemente de lado"*. Não era
+    gosto: a referência tem uma **aresta dura** em cada lateral, e é a razão entre
+    as larguras das duas que carrega o giro.
+
+    | faceta | largura no topo | largura na base | tom no topo | tom na base |
+    |---|---|---|---|---|
+    | esquerda (vira para o observador) | 32,7 | 25,8 | −4,6 | −29,9 |
+    | direita (foge) | 16,0 | 22,5 | −29,9 | −33,2 |
+    | queixo (faixa acima do contorno) | — | largura toda | — | −33,1 |
+    | sombra da cabeça no tronco | — | 14,5 de altura | — | −45,3 |
+
+    Os tons são níveis de luminância contra o platô do rosto (221). **A esquerda é
+    o dobro da direita no alto** — essa razão *é* o giro, e é informação que a
+    silhueta não carrega: dois desenhos com o mesmo contorno podem ter um o rosto
+    virado e o outro chapado.
+
+    **Duas armadilhas de medição, as duas pagas com uma rodada cada.** A primeira:
+    perguntar *"quantos pixels seguidos, a partir da borda, são mais escuros que o
+    platô?"* tem o sinal embutido e mede ZERO onde a faceta cruza o tom frontal. A
+    pergunta certa não tem sinal — *onde está a descontinuidade?* A segunda: as
+    janelas de amostragem precisam **evitar a tinta do rosto**. Na arte definitiva,
+    sobrancelha em `fracCab` 0,398–0,438 e boca em 0,822–0,844; uma janela que
+    encoste nelas mede sobrancelha achando que mede faceta, e fica **verde**.
 
     **No pedido, escrever literalmente:** *"pose quase frontal, com um giro mínimo
     para a direita da imagem: a orelha esquerda aparece inteira e a direita fica
