@@ -38,9 +38,26 @@
 --   user_equipped ................. 2
 --   user_chests ................... 11
 --   users.avatar_config com 'hand' . 2
+--
+-- ------------------------------------------------------------
+-- ESTE ARQUIVO FOI EDITADO DEPOIS DE APLICADO, E O MOTIVO ESTÁ AQUI
+-- ------------------------------------------------------------
+-- A regra do projeto é não modificar migration já aplicada. A exceção está
+-- registrada porque o arquivo original era uma ARMADILHA para o próximo
+-- ambiente, não porque o conteúdo estava errado.
+--
+-- Ele abria com `BEGIN;` e fechava com `COMMIT;`. O `apply-migration.ts` usa
+-- postgres.js, e a biblioteca RECUSA transação explícita fora de `sql.begin`:
+-- ela lançou `UNSAFE_TRANSACTION` — depois de já ter mandado o texto ao
+-- servidor. Resultado medido: o PostgreSQL executou e confirmou tudo, e o
+-- terminal imprimiu um erro. **Cara de fracasso, resultado de sucesso**, que é
+-- o pior par possível: convida a rodar de novo.
+--
+-- Tirar as duas linhas não afrouxa nada. Um lote de comandos enviado numa só
+-- mensagem roda dentro de uma transação IMPLÍCITA — ou tudo, ou nada, do mesmo
+-- jeito. É por isso que as outras 69 migrations deste repositório nunca
+-- precisaram de `BEGIN`: esta era a única que tinha, e era a única que falhava.
 -- ============================================================
-
-BEGIN;
 
 -- ------------------------------------------------------------
 -- 1. O CACHE — antes de tudo, porque nenhum CASCADE o alcança
@@ -123,5 +140,3 @@ END;
 -- REPLACE — e por isso esta migration não os toca: mexer neles seria mudar a
 -- postura de segurança de carona numa remoção de slot.
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
-
-COMMIT;

@@ -194,11 +194,62 @@ export function escurecer(hex: string, fator = 0.82): string {
  *    sistema. Existem para os 60 desenhos terem um contorno só, definido num
  *    lugar só.
  *
- * `--av-cabelo` é de escopo **avatar**, não de camada, e isso é deliberado:
- * quem lê essa cor não é só o cabelo, é também a **sobrancelha**, que mora na
- * base. Cabelo loiro com sobrancelha preta não lê como loiro — é o detalhe que
- * separa "trocou de cabelo" de "colocou uma peruca". Se a cor vivesse no `<g>`
- * do cabelo, a base não a alcançaria.
+ * ---------------------------------------------------------------------------
+ * A SOBRANCELHA **NÃO** LÊ `--av-cabelo`, E ESTE PARÁGRAFO AFIRMAVA QUE SIM
+ * ---------------------------------------------------------------------------
+ * ⚠️ *Corrigido em 2026-07-31, na abertura do Bloco 2a.*
+ *
+ * O texto anterior dizia que `--av-cabelo` era de escopo **avatar** porque "quem
+ * lê essa cor não é só o cabelo, é também a sobrancelha, que mora na base", e
+ * concluía que cabelo loiro com sobrancelha preta "não lê como loiro". A arte
+ * nunca fez isso: a sobrancelha sai na classe `.kk-risco`, que é
+ * `stroke: var(--av-linha)` — a cor do CONTORNO —, como a referência kokeshi a
+ * pinta. O docstring descrevia uma intenção, não o código.
+ *
+ * **E a intenção estava errada, o que é o achado.** Medida a distância de cada
+ * cor de cabelo contra o PIOR dos 8 tons de pele, na régua de `MIN_CONTORNO`
+ * (40, o mínimo entre uma marca e o preenchimento sob ela):
+ *
+ * | cabelo         | cru | escurecido .82 | escurecido .60 |
+ * |----------------|-----|----------------|----------------|
+ * | preto  #3A2F2A |  51 |  63 |  79 |
+ * | castanho       |   9 |  18 |  47 |
+ * | castanho claro |  20 |  19 |  11 |
+ * | loiro          |  33 |  25 |  26 |
+ * | ruivo          |  29 |  21 |  13 |
+ * | grisalho       |  42 |  66 |  75 |
+ * | roxo           | 108 |  94 |  71 |
+ * | azul           | 149 | 125 |  98 |
+ * | **`#000000` (o de hoje)** | **127** | — | — |
+ *
+ * **Cinco das oito reprovam**, e são castanho, castanho claro, loiro e ruivo —
+ * as que a maioria das crianças escolhe. A causa é a regra 10 do §7b por outro
+ * ângulo: cabelo castanho e pele castanha moram no mesmo matiz. Escurecer não
+ * salva; a .60 o castanho claro cai para 11, pior que o cru. Uma sobrancelha
+ * loira sobre pele clara não fica sutil: ela **desaparece**.
+ *
+ * E há a escala. A sobrancelha mede 46,5 × 8,2 unidades, o que a **56 px** dá
+ * 3,7 × **0,66 px** — menos de um pixel de espessura. Ali a cor não decide nada;
+ * o que decide é haver contraste para o pixel existir.
+ *
+ * A convenção do estilo concorda: em desenho chibi/kokeshi com contorno preto
+ * grosso, a sobrancelha é lida como parte do TRAÇO DO ROSTO, não como pelo.
+ * Tingir a sobrancelha é convenção de estilo realista, onde ela tem volume e a
+ * pele tem sombreamento para sustentar contraste baixo. Este boneco não tem
+ * nenhum dos dois.
+ *
+ * **Decisão do usuário em 2026-07-31: a sobrancelha fica preta.** Fazer três das
+ * oito cores se comportarem diferente das outras cinco seria pior que uma regra
+ * só. `estilo/__tests__/rosto-cor.test.ts` prende isso ao código emitido, para
+ * não voltar a ser um docstring que ninguém confere.
+ *
+ * ---------------------------------------------------------------------------
+ *
+ * `--av-cabelo` continua de escopo **avatar**, e o motivo verdadeiro é mais
+ * simples que o falso: há **um cabelo por avatar**, então não existe a colisão
+ * entre camadas que o escopo `camada` foi criado para resolver, e declarar no
+ * `<svg>` poupa cada um dos 5 modelos de redeclarar. Se um segundo leitor
+ * aparecer, nada muda.
  *
  * O que saiu: `--av-roupa`, `--av-roupa-s`, `--av-detalhe`, `--av-calca`,
  * `--av-sapato`, `--av-item-a`, `--av-item-b`, `--av-fundo` e `--av-raridade`.
@@ -219,7 +270,7 @@ export const PROPRIEDADES = {
     "--av-linha", // cor do contorno
     "--av-pele",
     "--av-pele-s", // sombra da pele
-    "--av-cabelo", // lido pelo cabelo E pela sobrancelha da base
+    "--av-cabelo", // lido só pelo cabelo — a sobrancelha usa --av-linha (ver acima)
     "--av-cabelo-s",
   ],
   /**

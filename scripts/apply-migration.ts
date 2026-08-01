@@ -7,7 +7,7 @@
  * Requer SUPABASE_DB_URL no .env.local (connection string do pooler).
  */
 
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import postgres from "postgres";
 
@@ -32,11 +32,27 @@ if (!dbUrl) {
 
 const migrationFile = process.argv[2];
 if (!migrationFile) {
-  console.error("Uso: npx tsx scripts/apply-migration.ts <arquivo.sql>");
+  console.error("Uso: npx tsx scripts/apply-migration.ts supabase/migrations/<arquivo.sql>");
+  console.error("     (o caminho é resolvido a partir da raiz do projeto, não da pasta de migrations)");
   process.exit(1);
 }
 
 const sqlPath = resolve(process.cwd(), migrationFile);
+
+// O caminho é relativo à raiz, e a mensagem de uso já disse isso. Mas quem
+// digita só o nome do arquivo recebia um ENOENT cru do Node, com stack trace e
+// sem dica — custou uma rodada de verdade. Se o arquivo não está onde se pediu
+// mas está em supabase/migrations/, a mensagem diz a linha certa para colar.
+if (!existsSync(sqlPath)) {
+  console.error(`Arquivo não encontrado: ${sqlPath}`);
+  const provavel = resolve(process.cwd(), "supabase/migrations", migrationFile);
+  if (existsSync(provavel)) {
+    console.error("\nEle existe em supabase/migrations/. Rode assim:");
+    console.error(`  npx tsx scripts/apply-migration.ts supabase/migrations/${migrationFile}`);
+  }
+  process.exit(1);
+}
+
 const sql = readFileSync(sqlPath, "utf-8");
 
 console.log(`\nAplicando migration: ${migrationFile}`);

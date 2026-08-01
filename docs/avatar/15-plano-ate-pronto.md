@@ -378,24 +378,42 @@ que era o único ponto em que a B travava aquele bloco.
 
 ### 2a — Cabelo: 5 modelos × 8 cores
 
-- **2a.0 — A sobrancelha, ANTES do primeiro modelo.** O `palette.ts` afirma em
-  dois lugares ([linhas 197‑201](../../src/lib/avatar/palette.ts#L197-L201) e o
-  comentário da [linha 222](../../src/lib/avatar/palette.ts#L222)) que
-  `--av-cabelo` é lido "também pela sobrancelha, que mora na base", e justifica o
-  escopo `avatar` com isso — *"cabelo loiro com sobrancelha preta não lê como
-  loiro"*. **A arte não faz isso.** A sobrancelha sai na classe `.kk-risco`, que é
-  `stroke: var(--av-linha)` ([compositor.ts:139](../../src/lib/avatar/estilo/compositor.ts#L139)
-  e [:364](../../src/lib/avatar/estilo/compositor.ts#L364)) — cor do **contorno**,
-  preto, como a referência a pinta. Hoje isso não aparece porque não há cabelo
-  para contradizer; com 8 cores, o loiro sai com sobrancelha preta em oito de
-  oito.
+- **2a.0 — A sobrancelha** ✅ **DECIDIDA em 2026-07-31: fica PRETA.**
 
-  Decidir **qual dos dois está certo** é pré-requisito do primeiro modelo, não
-  consequência dele — a resposta muda a classe de emissão e o escopo da custom
-  property, e refazer depois é refazer os 5. Não vale corrigir só a prosa do
-  `palette.ts`: o docstring está errado sobre a arte hoje, e um docstring que
-  descreve o que o código não faz é exatamente a classe de defeito do `UPDATE`
-  sem `UPSERT`.
+  O `palette.ts` afirmava que `--av-cabelo` era lido "também pela sobrancelha, que
+  mora na base", e **justificava o escopo da propriedade com isso**. A arte nunca
+  fez: a sobrancelha sai em `.kk-risco` → `stroke: var(--av-linha)`, a cor do
+  contorno. O defeito não era a prosa — era o docstring descrever uma intenção
+  como se fosse o código, na mesma família do `UPDATE` sem `UPSERT`.
+
+  **E a intenção estava errada.** Distância de cada cor de cabelo contra o pior
+  dos 8 tons de pele, na régua de `MIN_CONTORNO` (40):
+
+  | cabelo | cru | escurecido .82 | escurecido .60 |
+  |---|---|---|---|
+  | preto `#3A2F2A` | 51 | 63 | 79 |
+  | **castanho** | **9** | **18** | 47 |
+  | **castanho claro** | **20** | **19** | **11** |
+  | **loiro** | **33** | **25** | **26** |
+  | **ruivo** | **29** | **21** | **13** |
+  | grisalho | 42 | 66 | 75 |
+  | roxo | 108 | 94 | 71 |
+  | azul | 149 | 125 | 98 |
+  | **`#000000`, o de hoje** | **127** | — | — |
+
+  **Cinco das oito reprovam**, e são as quatro que a maioria das crianças escolhe.
+  É a regra 10 do §7b por outro ângulo: cabelo castanho e pele castanha moram no
+  mesmo matiz. Escurecer não salva — a .60 o castanho claro cai para 11, pior que
+  o cru. E a escala confirma: a sobrancelha mede **3,7 × 0,66 px a 56 px**, menos
+  de um pixel de espessura, onde o que decide não é a cor e sim haver contraste
+  para o pixel existir. Em estilo chibi com contorno preto grosso, a sobrancelha é
+  parte do **traço do rosto**, não pelo — tingir é convenção de estilo realista,
+  que tem volume e sombreamento de pele para sustentar contraste baixo.
+
+  Preso por `estilo/__tests__/rosto-cor.test.ts`, que **reprova 3 de 4 quando a
+  sobrancelha é tingida** (verificado invertendo o compositor). O escopo `avatar`
+  de `--av-cabelo` fica, com o motivo verdadeiro: há um cabelo por avatar, então
+  não existe a colisão entre camadas que o escopo `camada` resolveria.
 
 - **2a.1** Os 5 modelos, sobre a base sem orelhas — que é o motivo de as orelhas
   terem saído no 1d: nenhum dos 5 precisa decidir se cobre.
@@ -461,8 +479,8 @@ que era o único ponto em que a B travava aquele bloco.
 
 - **(a)** os 5 cabelos se distinguem entre si **a 56 px**, nos 8 tons, sem vazar
   cor entre camadas — `avatar:folha-base` estendido;
-- **(b)** a sobrancelha faz o que o `palette.ts` diz que ela faz, ou o
-  `palette.ts` diz o que ela faz. Um teste, não um docstring;
+- **(b)** ✅ **feito no 2a.0** — a sobrancelha faz o que o `palette.ts` diz que
+  ela faz, e é um teste que confere, não um docstring;
 - **(c)** o arremate do tronco mede **40 a 60** de raio de canto, sem inversão de
   curvatura em ponto nenhum da base — a mesma régua de `getPointAtLength` que
   achou o bico de 10,7;
@@ -715,6 +733,28 @@ abaixo de 1 MB.
   derrota. Zero asset novo, porque o rosto já sai em paths próprios. *Nasce
   coberto pelo **3.4**: expressão é animação que esconde, e sem estado base a
   cara certa some onde a animação não roda.*
+
+  ⚠️ **A D8 estava dada como morta pela regra 13 do §7b, e voltou.** A regra dizia
+  que a promessa de "4 expressões de graça" não sobreviveu à arte traçada, porque
+  um rosto traçado não tem a boca alegre no arquivo — a expressão passaria a
+  custar 3 desenhos. **A arte kokeshi não é traçada: ela é código.** A sobrancelha
+  é uma cápsula construída de cinco números (`SOBRANCELHA`), a boca de outros
+  quatro (`BOCA`), e a piscada já prova o mecanismo — ela não troca o olho, ela o
+  **achata** (`scaleY(.08)`).
+
+  As quatro expressões cabem só em `transform`, sem forma nova, e a mais bonita é
+  a derrota: o sorriso tem sagita 3,6 para baixo, e **espelhado na vertical vira
+  uma boca triste** — um comando de CSS. Concentração é a boca achatada;
+  vitória e concentração movem a sobrancelha por deslocamento e rotação. Mudar o
+  `d` de um path é o que **não** dá — não anima de forma confiável entre
+  navegadores —, e a tabela acima foi montada para não precisar.
+
+  **O que custa, medido:** a folha reprova acima de 20 formas e **7 680 bytes**;
+  a base tem 19 e **7 418**, ou seja **262 bytes de folga**, e as regras das quatro
+  expressões custam ~400. Não cabe no orçamento de hoje — e não precisa caber:
+  expressão entra pela mesma chave que o `animado` já usa para desligar o piscar
+  no ranking. **Zero byte a 56 px numa lista de 30**, ~400 na tela de jogo e no
+  perfil, que é onde uma careta significa alguma coisa.
 - **10.2** **D29** — baú de escolha em marcos: a criança escolhe 1 entre 3. As
   3 opções vêm do servidor; escolher uma não permite pegar as outras.
 - **10.3** Capas `back` — as primeiras 3 ou 4.
@@ -818,6 +858,13 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     próprios. Rosto traçado não tem a forma da boca alegre no arquivo: a
     expressão passou a custar **3 desenhos**. Antes de contar com uma decisão que
     depende de *como* a arte foi feita, conferir se ela ainda foi feita assim.
+
+    ⚠️ *Atualizado em 2026-07-31.* **A regra vale, e a conclusão dela caducou** —
+    o que é a própria regra funcionando. A arte kokeshi não é traçada: o rosto é
+    construído por função a partir de números medidos, então a D8 voltou a ser de
+    graça. A lição a guardar não é "a D8 morreu", é **conferir de novo a cada
+    troca de pipeline de arte**. Ver o **10.1** para o custo real, que não é zero:
+    é ~400 bytes contra 262 de folga, resolvido por chave em vez de orçamento.
 14. **A cor que você escolher para roupa e acessório é definitiva.** Pela emenda à
     D27, só pele e cabelo recolorem. Então a cor do uniforme na arte de origem
     **é a cor final** — e ela é o sinal da patente. Duas peças da mesma patente

@@ -57,9 +57,16 @@ Antes de alterar qualquer bug/fluxo:
 ### Migrations
 - NUNCA modificar uma migration já aplicada — sempre criar nova
 - Formato: supabase/migrations/YYYYMMDDHHMMSS_descricao.sql
-- Aplicar no banco remoto: `npx tsx scripts/apply-migration.ts <arquivo.sql>`
+- Aplicar no banco remoto:
+  `npx tsx scripts/apply-migration.ts supabase/migrations/<arquivo.sql>`
+  - **O caminho é a partir da raiz do projeto** — só o nome do arquivo dá `ENOENT`
   - Conecta direto via connection string do .env.local (não requer Supabase CLI)
   - Supabase CLI NÃO está instalado nesta máquina
+  - **Nunca escrever `BEGIN;`/`COMMIT;` na migration.** O postgres.js recusa
+    transação explícita (`UNSAFE_TRANSACTION`) — e recusa DEPOIS de o servidor ter
+    executado, então o terminal imprime erro sobre uma migration que aplicou. Um
+    lote de comandos já roda em transação implícita; as 69 migrations anteriores
+    não têm `BEGIN` e são atômicas do mesmo jeito
 
 ## Workflow
 - Antes de iniciar fase/tarefa grande: `npm run build`
