@@ -75,6 +75,13 @@
 
 import { LINHA, TRAJE_BASE, escurecer } from "../palette";
 import {
+  CABELOS,
+  pathCabelo,
+  pathCabeloClaro,
+  pathExtensao,
+  type ModeloCabelo,
+} from "./cabelo";
+import {
   BOCA,
   FACETAS,
   OLHO,
@@ -114,7 +121,7 @@ import type { EstadoAvatar, Traje } from "./tipos";
  * screenshot de gate) o olho fica ABERTO. A folhinha ensinou isso pelo caminho
  * caro — pálpebra que nasce fechada entrega um boneco cego na folha de contato.
  */
-function estilo(ns: string, animado: boolean): string {
+function estilo(ns: string, animado: boolean, temCabelo: boolean): string {
   const respiro = animado
     ? `.${ns} .kk-respira{animation:${ns}-respira 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
       `.${ns} .kk-sombra{animation:${ns}-sombra 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
@@ -125,9 +132,30 @@ function estilo(ns: string, animado: boolean): string {
       `@media(prefers-reduced-motion:reduce){.${ns} .kk-respira,.${ns} .kk-sombra,.${ns} .kk-olho{animation:none}}`
     : "";
 
+  // AS TRÊS REGRAS DO CABELO SÓ SAEM QUANDO HÁ CABELO, como o `respiro`.
+  //
+  // Não é economia de byte por esporte: o teto da base é de REGRESSÃO (7 418, o
+  // valor medido no Bloco 1d), e regra emitida à toa faria a base careca crescer
+  // para pagar uma camada que ela não tem. O mesmo vale para as duas custom
+  // properties lá embaixo.
+  //
+  // São três e não duas porque o cabelo tem três papéis de tinta: a camada de baixo
+  // é escura E carrega o contorno (é a borda dela que vira a linha da franja), a de
+  // cima é clara e não tem contorno nenhum (um traço ali riscaria o meio do cabelo),
+  // e a extensão é clara COM contorno, porque ela é a borda externa da figura onde
+  // passa do crânio.
+  const cabelo = temCabelo
+    ? `.${ns} .kk-cabelo{fill:var(--av-cabelo)}` +
+      `.${ns} .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);` +
+      `stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}` +
+      `.${ns} .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);` +
+      `stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}`
+    : "";
+
   return (
     `.${ns} .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);` +
     `stroke-linejoin:round;stroke-linecap:round}` +
+    cabelo +
     `.${ns} .kk-pele{fill:var(--av-pele)}` +
     `.${ns} .kk-pele-s{fill:var(--av-pele-s)}` +
     `.${ns} .kk-tinta{fill:var(--av-linha)}` +
@@ -241,6 +269,46 @@ function extensoes(traje: Traje | undefined, atras: boolean): string {
   );
 }
 
+/**
+ * O CABELO SOBRE O CRÂNIO — duas passadas da MESMA forma, e é isso que dá o volume.
+ *
+ * A de baixo sai em `--av-cabelo-s` e leva o traço; a de cima é a mesma curva subida
+ * `DEGRAU` unidades, em `--av-cabelo`. O que sobra entre as duas é uma faixa escura
+ * de espessura constante ao longo de toda a franja — o degrau de sombra do item
+ * 2a.2 — sem ninguém desenhar uma segunda curva paralela. Desenhar a paralela é o
+ * que o `cabecaRecuada(k)` tentou e não funciona: recuar uma curva subtraindo de
+ * raios não produz uma paralela, ela corre para dentro depressa demais onde a
+ * curvatura aperta.
+ *
+ * As duas vivem dentro do `clipPath` da cabeça, que é quem resolve a lateral. O
+ * cabelo não sabe onde o crânio termina, e é de propósito (ver `cabelo.ts`).
+ */
+function cabeloNoCranio(modelo: ModeloCabelo | undefined): string {
+  if (!modelo) return "";
+  const escuro = pathCabelo(modelo);
+  // O moicano não tem touca — ele é só extensão. Emitir dois `<path d="">` vazios
+  // custaria duas formas do orçamento para desenhar nada.
+  if (!escuro) return "";
+  return (
+    `<path class="kk-cabelo-s" d="${escuro}"/>` +
+    `<path class="kk-cabelo" d="${pathCabeloClaro(modelo)}"/>`
+  );
+}
+
+/**
+ * As extensões do cabelo: coque, trança, crista, volume de cacho.
+ *
+ * Mesma natureza das extensões de traje — elas EXCEDEM a silhueta, então têm forma
+ * própria e contorno próprio, emitido aqui e não pela peça. `atras` põe a forma sob
+ * a cabeça, e é o que faz um coque parecer preso atrás em vez de colado na testa: a
+ * cabeça é opaca e come a emenda, oclusão em vez de máscara.
+ */
+function extensoesCabelo(modelo: ModeloCabelo | undefined, atras: boolean): string {
+  if (!modelo) return "";
+  const lista = (CABELOS[modelo].extensoes ?? []).filter((e) => Boolean(e.atras) === atras);
+  return lista.map((e) => `<path class="kk-cabelo-e" d="${pathExtensao(e)}"/>`).join("");
+}
+
 /** Um olho. Cápsula vertical, com o `rx` fazendo as pontas semicirculares. */
 function olho(cx: number, cy: number): string {
   return (
@@ -288,12 +356,19 @@ function gradiente(id: string, y0: number, y1: number, paradas: [number, string]
  * porque o tipo não impede alguém de passar a mesma string duas vezes.
  */
 export function compor(estado: EstadoAvatar): string {
-  const { ns, traje, animado = false } = estado;
+  const { ns, traje, animado = false, modeloCabelo } = estado;
   const pele = estado.pele;
 
+  // As duas do cabelo entram SÓ quando há cabelo. `escurecer` sem fator é o 0,82 do
+  // item 2.4, e o docstring dele já nomeia "embaixo da franja" como um dos três
+  // lugares para que existe — este é o terceiro a usar a mesma régua.
+  const varsCabelo = modeloCabelo
+    ? `;--av-cabelo:${estado.cabelo};--av-cabelo-s:${escurecer(estado.cabelo)}`
+    : "";
   const vars =
     `--av-traco:${TRACO};--av-linha:${LINHA};` +
-    `--av-pele:${pele};--av-pele-s:${escurecer(pele, 0.88)}`;
+    `--av-pele:${pele};--av-pele-s:${escurecer(pele, 0.88)}` +
+    varsCabelo;
 
   // A rampa vai de uma âncora de medição à outra, e não de ponta a ponta do path.
   // `spreadMethod` padrão é `pad`, então acima e abaixo das âncoras o tom segura —
@@ -309,7 +384,7 @@ export function compor(estado: EstadoAvatar): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}" ` +
     `class="${ns}" style="${vars}">` +
-    `<style>${estilo(ns, animado)}</style>` +
+    `<style>${estilo(ns, animado, Boolean(modeloCabelo))}</style>` +
     `<defs>` +
     `<path id="${ns}-p-cabeca" d="${pathCabeca()}"/>` +
     `<path id="${ns}-p-tronco" d="${pathTronco()}"/>` +
@@ -346,13 +421,26 @@ export function compor(estado: EstadoAvatar): string {
     extensoes(traje, true) +
     `<g clip-path="url(#${ns}-c-tronco)">${tintaTronco(ns, traje)}</g>` +
     `<use href="#${ns}-p-tronco" class="kk-traco"/>` +
+    extensoesCabelo(modeloCabelo, true) +
     `<use href="#${ns}-p-cabeca" class="kk-pele"/>` +
     `<g clip-path="url(#${ns}-c-cabeca)">` +
     `<path d="${pathFacetaEsq()}" fill="url(#${ns}-fe)"/>` +
     `<path d="${pathFacetaDir()}" fill="url(#${ns}-fd)"/>` +
+    cabeloNoCranio(modeloCabelo) +
+    // O ESPECULAR PASSOU A SER DESENHADO DEPOIS DO CABELO, e a base careca não
+    // mudou um byte com isso — a camada some quando não há modelo, e a ordem entre
+    // as facetas e a luz continua a mesma.
+    //
+    // A mancha mora em (139,9 · 93,4), que é ACIMA da franja dos cinco modelos: com
+    // cabelo, ela cai inteira sobre o cabelo. É o certo, e de graça — ela é
+    // `#FFFFFF` com opacidade, não uma cor, então clareia a superfície que estiver
+    // ali, seja pele em 8 tons ou cabelo em 8. Desenhada antes, seria um brilho de
+    // pele por baixo de um cabelo opaco: invisível, e a cabeça perderia o ponto de
+    // luz justamente nos avatares que têm cabelo, que são todos.
     `<path class="kk-luz" d="${pathEspecular()}"/>` +
     `</g>` +
     `<use href="#${ns}-p-cabeca" class="kk-traco"/>` +
+    extensoesCabelo(modeloCabelo, false) +
     olho(OLHO_CX_ESQ, OLHO_CY_ESQ) +
     olho(OLHO_CX_DIR, OLHO_CY_DIR) +
     // AS SOBRANCELHAS NÃO PISCAM E NÃO RESPIRAM DE FORMA PRÓPRIA. Elas ficam fora da

@@ -52,8 +52,26 @@ import {
   pathSombraQueixoTronco,
   pathTronco,
 } from "../../../src/lib/avatar/estilo/geometria";
+import {
+  CABELOS,
+  FOLGA_ROSTO,
+  MODELOS_CABELO,
+  folgaDoRosto,
+  type ModeloCabelo,
+} from "../../../src/lib/avatar/estilo/cabelo";
 import { conferirSvg } from "../../../src/lib/avatar/svgContrato";
-import { LINHA, PELE } from "../../../src/lib/avatar/palette";
+import { CABELO, LINHA, PELE } from "../../../src/lib/avatar/palette";
+
+/**
+ * O contador de formas do orçamento. **`use` CONTA.**
+ *
+ * A cabeça e o tronco viraram `<path>` em `<defs>` referenciados por `<use>` para o
+ * contorno de 29 pontos não ser escrito três vezes; se o contador ignorasse `use`, o
+ * orçamento passaria a mentir para menos justamente por causa da mudança que o fez
+ * caber.
+ */
+const contarFormas = (svg: string) =>
+  (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
 
 /**
  * A PELE DA COMPARAÇÃO. `PELE[1]` (#F7CBA4) e não `PELE[2]`, e a troca é medida.
@@ -69,6 +87,17 @@ import { LINHA, PELE } from "../../../src/lib/avatar/palette";
  */
 const PELE_COMPARACAO = PELE[1];
 
+/**
+ * O cabelo dos painéis: `CABELO[0]`, o preto `#3A2F2A`.
+ *
+ * Era o literal `"#3A2F2A"` escrito à mão em quatro lugares deste arquivo. É a mesma
+ * cor, e é exatamente por isso que era um problema: no dia em que a paleta mexer no
+ * preto, esta folha continuaria desenhando o antigo e a comparação passaria a ser
+ * contra uma cor que não está mais no catálogo. Segunda cópia de um valor é a que
+ * diverge.
+ */
+const CABELO_COMPARACAO = CABELO[0];
+
 const DIAG = ".scratch/estilo";
 const FOLHA = `${DIAG}/folha-base.png`;
 const REFERENCIA = "scripts/avatar/fonte/estilo-kokeshi/referencia-base.png";
@@ -77,22 +106,77 @@ const REFERENCIA = "scripts/avatar/fonte/estilo-kokeshi/referencia-base.png";
 const TAMANHOS = [56, 100, 200, 425] as const;
 
 /**
- * OS DOIS TETOS DO ORÇAMENTO, e eles **reprovam** — não são mais só impressos.
+ * O ORÇAMENTO, PARTIDO EM DOIS NO BLOCO 2a.1 — e a partição corrigiu o que ele media.
  *
- * Eram dois números no relatório, e número impresso é número que se aprende a
- * ignorar. Este projeto tem a lição medida: o `verify:avatar-assets` ficou vermelho
- * por meses sem ninguém saber. Um teto que não reprova não é teto.
+ * Ele era um teto só (20 formas, 7 680 bytes) sobre a saída de `compor()`, e o
+ * racional escrito aqui era sobre o **ranking**: 30 bonecos juntos a 56 px. Só que
+ * ninguém no ranking é careca — todo avatar carrega um cabelo. O teto media a base
+ * e o texto falava do composto, e no dia em que o cabelo entrasse ele reprovaria por
+ * uma folga (262 bytes) que nunca foi orçamento de nada: era o resto da conta do
+ * Bloco 1d.
  *
- * **20 formas** porque o boneco é a base de 60 desenhos e 30 deles aparecem juntos
- * no ranking a 56 px; **7 680 bytes** (7,5 KB) porque cada aluno carrega um destes e
- * o alvo do doc 15 é o app abrir em rede de escola.
+ * **A BASE, 19 formas e 7 418 bytes — o valor MEDIDO, não um teto com folga.**
+ * É teto de REGRESSÃO: a base careca não pode crescer nem um byte, porque crescer
+ * significa alguém tendo achado espaço na base para pagar uma camada que não é dela.
+ * Quem precisar mexer na base muda estes dois números de propósito, e a mudança
+ * aparece no diff.
+ *
+ * **O COMPOSTO, 26 formas e 10 240 bytes** — base mais UM cabelo, que é o que um
+ * aluno de verdade carrega. Nunca há dois cabelos num render, então somar os cinco
+ * seria orçar uma composição que não existe. Os 10 KB saem do mesmo alvo de sempre
+ * (o app abrir em rede de escola) com a conta do ranking explícita: 30 × 10 KB são
+ * 300 KB de marcação, que comprime como texto.
+ *
+ * Medido em 2026-08-01, com os 5 modelos do Bloco 2a.1: o mais caro é o `cacheado`,
+ * com 22 formas e 8 995 bytes. A folga do composto é real e é para os 39 desenhos
+ * do Bloco 8, não para o cabelo.
  *
  * Onde o corte do Bloco 1d foi feito, e onde ele NÃO podia ser feito, está em
  * `pathPlanoLateralTronco()` — arredondar coordenada para inteiro pagaria 1,5 KB e
  * derruba o raio mínimo do contorno de 34,4 para 14,5.
  */
-const TETO_FORMAS = 20;
-const TETO_BYTES = 7680;
+const TETO_BASE_FORMAS = 19;
+const TETO_BASE_BYTES = 7418;
+const TETO_COMPOSTO_FORMAS = 26;
+const TETO_COMPOSTO_BYTES = 10240;
+
+/**
+ * O GATE (a) DO BLOCO 2, EM NÚMERO: quanto dois cabelos precisam diferir a 56 px.
+ *
+ * "Os 5 se distinguem entre si a 56 px" é a exigência do plano, e ela não se cumpre
+ * olhando — a folha do Bloco 1b passou verde com as duas orelhas idênticas numa
+ * referência que tem 24 de um lado e 15 do outro, justamente porque alguém olhou.
+ *
+ * A régua: renderiza cada modelo a 56 px, conta os pixels que diferem em mais de 24
+ * níveis em algum canal, e divide pela área do quadro (40 × 56 = 2 240 px).
+ *
+ * **5% é o piso, e ele NÃO sai do par mais parecido que existe** — essa seria a
+ * justificativa circular de calibrar o gate pelo desenho que ele deveria julgar.
+ * Sai de pixel: 5% de 2 240 são **112 pixels**, um bloco de ~10 × 11 na miniatura.
+ * Menos que isso é uma diferença que se acha comparando as duas lado a lado e não se
+ * acha numa lista de 30 — e a lista de 30 é o caso de uso, não a comparação.
+ *
+ * A primeira rodada mediu `Corte curto × Trança` em 3,66%, e a resposta certa foi
+ * engrossar a trança até ela ser outra silhueta, não baixar o piso até ela passar.
+ */
+const PISO_DISTINCAO = 0.05;
+
+/**
+ * O piso CONTRA A BASE CARECA, e ele é outro de propósito — 2%.
+ *
+ * A careca não é um dos cinco: pela **D5**, nenhum aluno aparece sem cabelo, e o
+ * `criar-personagem` obriga a escolher um modelo. Exigir 5% entre "moicano" e
+ * "careca" seria cobrar distinção entre duas opções que nunca disputam a mesma
+ * escolha, e o moicano — que é uma crista estreita sobre um crânio à mostra —
+ * reprovaria por ser justamente o que ele é.
+ *
+ * O que a comparação contra a careca testa é outra coisa, e essa sim importa: **o
+ * cabelo aparece?** 2% de 2 240 são 45 pixels, e uma camada que mova menos que isso
+ * a 56 px está desenhada e não está sendo vista. É o gate contra a peça que existe
+ * no código, passa em todo teste de unidade e some na tela — o modo de falha que
+ * este projeto pagou com o `verify:avatar-assets` vermelho por meses.
+ */
+const PISO_VISIBILIDADE = 0.02;
 
 // ---------------------------------------------------------------------------
 // O alinhamento da referência — calculado, não ajustado
@@ -263,30 +347,62 @@ function mapaDeFacetas(ns: string): string {
 async function main() {
   mkdirSync(DIAG, { recursive: true });
 
-  const svg = compor({ pele: PELE_COMPARACAO, cabelo: "#3A2F2A", animado: true, ns: "kk" });
+  const svg = compor({ pele: PELE_COMPARACAO, cabelo: CABELO_COMPARACAO, animado: true, ns: "kk" });
   const problemas = conferirSvg(svg);
-  // `use` CONTA. A cabeça e o tronco viraram `<path>` em `<defs>` referenciados por
-  // `<use>` para o contorno de 29 pontos não ser escrito três vezes; se o contador
-  // ignorasse `use`, o orçamento de formas passaria a mentir para menos justamente
-  // por causa da mudança que o fez caber.
-  const formas = (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
+  const formas = contarFormas(svg);
   const bytes = Buffer.byteLength(svg, "utf-8");
+  const estourou: string[] = [];
 
-  console.log(`base autorada:`);
-  const estourou = [
-    formas > TETO_FORMAS ? `formas: ${formas} contra o teto de ${TETO_FORMAS}` : "",
-    bytes > TETO_BYTES ? `bytes: ${bytes} contra o teto de ${TETO_BYTES}` : "",
-  ].filter(Boolean);
+  console.log(`base careca — teto de REGRESSÃO, o valor medido no Bloco 1d:`);
+  if (formas !== TETO_BASE_FORMAS) {
+    estourou.push(`formas da base: ${formas} contra as ${TETO_BASE_FORMAS} congeladas`);
+  }
+  if (bytes !== TETO_BASE_BYTES) {
+    estourou.push(`bytes da base: ${bytes} contra os ${TETO_BASE_BYTES} congelados`);
+  }
   console.log(
-    `  formas ............ ${formas}   (teto ${TETO_FORMAS})${formas > TETO_FORMAS ? "   ✗ ESTOUROU" : ""}`,
+    `  formas ............ ${formas}   (congelado ${TETO_BASE_FORMAS})` +
+      `${formas !== TETO_BASE_FORMAS ? "   ✗ MUDOU" : ""}`,
   );
   console.log(
     `  bytes ............. ${bytes} (${(bytes / 1024).toFixed(2)} KB)   ` +
-      `(teto ${TETO_BYTES})${bytes > TETO_BYTES ? "   ✗ ESTOUROU" : `   folga ${TETO_BYTES - bytes}`}`,
+      `(congelado ${TETO_BASE_BYTES})${bytes !== TETO_BASE_BYTES ? "   ✗ MUDOU" : ""}`,
   );
   console.log(`  conferirSvg ....... ${problemas.length} problema(s)`);
   for (const p of problemas) console.log(`    - ${p.detalhe}`);
   writeFileSync(`${DIAG}/base.svg`, svg);
+
+  // ---- o composto: base + UM cabelo, que é o que um aluno carrega -------------
+  console.log(
+    `\ncomposto — base + 1 cabelo (teto ${TETO_COMPOSTO_FORMAS} formas / ${TETO_COMPOSTO_BYTES} bytes):`,
+  );
+  for (const m of MODELOS_CABELO) {
+    const comCabelo = compor({
+      pele: PELE_COMPARACAO,
+      cabelo: CABELO_COMPARACAO,
+      modeloCabelo: m,
+      animado: true,
+      ns: "kk",
+    });
+    const f = contarFormas(comCabelo);
+    const b = Buffer.byteLength(comCabelo, "utf-8");
+    const folga = folgaDoRosto(m);
+    const ruimSvg = conferirSvg(comCabelo);
+    if (f > TETO_COMPOSTO_FORMAS) estourou.push(`${m}: ${f} formas`);
+    if (b > TETO_COMPOSTO_BYTES) estourou.push(`${m}: ${b} bytes`);
+    if (ruimSvg.length) estourou.push(`${m}: ${ruimSvg.length} problema(s) de contrato`);
+    // A folga do rosto é a amarra 1 de `cabelo.ts`: franja que encosta na
+    // sobrancelha apaga a expressão no tamanho do ranking.
+    const pior = Math.min(folga.esq, folga.dir);
+    if (pior < FOLGA_ROSTO) estourou.push(`${m}: folga do rosto ${pior.toFixed(1)}`);
+    const fmt = (v: number) => (v === Infinity ? "  —  " : v.toFixed(1).padStart(5));
+    console.log(
+      `  ${CABELOS[m].nome.padEnd(12)} ${String(f).padStart(2)} formas (+${f - formas})   ` +
+        `${String(b).padStart(5)} bytes (+${String(b - bytes).padStart(4)})   ` +
+        `folga do rosto esq ${fmt(folga.esq)} dir ${fmt(folga.dir)}` +
+        `${pior < FOLGA_ROSTO ? "   ✗" : ""}`,
+    );
+  }
 
   // A referência entra na folha uma vez POR PAINEL, e são treze. O PNG original
   // tem 964 KB, e treze cópias em base64 passam de 16 MB de HTML — o
@@ -320,7 +436,7 @@ async function main() {
      */
     const base = (h: number, ns: string, vb = `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, pele: string = PELE_COMPARACAO) => {
       const [, , w0, h0] = vb.split(" ").map(Number);
-      return compor({ pele, cabelo: "#3A2F2A", ns })
+      return compor({ pele, cabelo: CABELO_COMPARACAO, ns })
         .replace(`viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}"`, `viewBox="${vb}"`)
         .replace("<svg ", `<svg width="${Math.round((h * w0) / h0)}" height="${h}" `);
     };
@@ -336,12 +452,102 @@ async function main() {
       );
     };
 
+    /** A base com um cabelo, num tamanho. */
+    const comCabelo = (
+      h: number,
+      ns: string,
+      modelo: ModeloCabelo | undefined,
+      cor: string = CABELO_COMPARACAO,
+    ) =>
+      compor({ pele: PELE_COMPARACAO, cabelo: cor, modeloCabelo: modelo, ns }).replace(
+        "<svg ",
+        `<svg width="${Math.round((h * VIEWBOX.w) / VIEWBOX.h)}" height="${h}" `,
+      );
+
     const fig = (rot: string, dentro: string) =>
       `<figure style="margin:0;text-align:center">${dentro}` +
       `<figcaption style="font:10px system-ui;color:#777;margin-top:3px">${rot}</figcaption></figure>`;
     const titulo = (t: string, sub = "") =>
       `<p style="margin:20px 0 6px;font:13px system-ui"><b>${t}</b>` +
       (sub ? ` <span style="color:#888;font-weight:400">— ${sub}</span>` : "") + `</p>`;
+
+    // ---- GATE (a): distinguibilidade a 56 px, MEDIDA ------------------------
+    //
+    // Não há como fazer isto sem renderizar: o que decide é o pixel, e dois paths
+    // muito diferentes podem colapsar no mesmo desenho a 40 × 56. É o tamanho do
+    // ranking, e pela regra 8 da §7 é o que manda.
+    const L56 = { w: Math.round((56 * VIEWBOX.w) / VIEWBOX.h), h: 56 };
+    const chapas: [string, Buffer][] = [];
+    await pg.setViewportSize({ width: 120, height: 120 });
+    for (const m of [undefined, ...MODELOS_CABELO] as (ModeloCabelo | undefined)[]) {
+      await pg.setContent(
+        `<body style="margin:0;background:#FFFFFF">${comCabelo(56, `g${m ?? "careca"}`, m)}</body>`,
+      );
+      const png = await pg.screenshot({ clip: { x: 0, y: 0, width: L56.w, height: L56.h } });
+      chapas.push([m ? CABELOS[m].nome : "careca", await sharp(png).ensureAlpha().raw().toBuffer()]);
+    }
+
+    /** Fração de pixels que diferem em mais de 24 níveis em algum canal. */
+    const distancia56 = (a: Buffer, b: Buffer): number => {
+      let n = 0;
+      for (let i = 0; i < a.length; i += 4) {
+        const d = Math.max(
+          Math.abs(a[i] - b[i]),
+          Math.abs(a[i + 1] - b[i + 1]),
+          Math.abs(a[i + 2] - b[i + 2]),
+        );
+        if (d > 24) n++;
+      }
+      return n / (a.length / 4);
+    };
+
+    console.log(
+      `\ndistinção a 56 px (${L56.w}×${L56.h} = ${L56.w * L56.h} px) — ` +
+        `entre modelos ${(PISO_DISTINCAO * 100).toFixed(0)}%, contra a careca ` +
+        `${(PISO_VISIBILIDADE * 100).toFixed(0)}%:`,
+    );
+    // `careca` é a primeira chapa, e comparar com ela testa VISIBILIDADE, não
+    // distinção de catálogo. Os dois pisos são diferentes porque as duas perguntas
+    // são diferentes — ver os docstrings das constantes.
+    let piorPar = { a: "", b: "", d: 1 };
+    for (let i = 0; i < chapas.length; i++) {
+      for (let j = i + 1; j < chapas.length; j++) {
+        const contraCareca = i === 0;
+        const piso = contraCareca ? PISO_VISIBILIDADE : PISO_DISTINCAO;
+        const d = distancia56(chapas[i][1], chapas[j][1]);
+        if (!contraCareca && d < piorPar.d) piorPar = { a: chapas[i][0], b: chapas[j][0], d };
+        if (d < piso) {
+          estourou.push(
+            `${chapas[i][0]} × ${chapas[j][0]}: ${(d * 100).toFixed(2)}% a 56 px, ` +
+              `abaixo do piso de ${(piso * 100).toFixed(0)}%`,
+          );
+        }
+        console.log(
+          `  ${chapas[i][0].padEnd(12)} × ${chapas[j][0].padEnd(12)} ${(d * 100).toFixed(2)}%` +
+            `${contraCareca ? "   (visibilidade)" : ""}${d < piso ? "   ✗" : ""}`,
+        );
+      }
+    }
+    console.log(
+      `  par de catálogo mais parecido: ${piorPar.a} × ${piorPar.b} — ` +
+        `${(piorPar.d * 100).toFixed(2)}%`,
+    );
+
+    // ---- os painéis do cabelo ----------------------------------------------
+    const fileiraCabelo = (h: number, tag: string) =>
+      `<div style="display:flex;gap:10px;align-items:flex-end">` +
+      fig("careca", comCabelo(h, `${tag}careca`, undefined)) +
+      MODELOS_CABELO.map((m) => fig(CABELOS[m].nome, comCabelo(h, `${tag}${m}`, m))).join("") +
+      `</div>`;
+
+    const secaoCabeloCor = MODELOS_CABELO.map((m) =>
+      fig(
+        CABELOS[m].nome,
+        `<div style="display:flex;gap:2px">` +
+          CABELO.map((c, i) => fig("", comCabelo(84, `cc${m}${i}`, m, c))).join("") +
+          `</div>`,
+      ),
+    ).join("");
 
     // 1. os 4 tamanhos, e a referência ao lado em cada um
     const secaoTamanhos = TAMANHOS.map((t) =>
@@ -452,6 +658,16 @@ async function main() {
           "o rosto é um cubo: existir ou não existir cada faceta é binário aqui, e invisível na comparação lado a lado",
         ) +
         secaoFacetas +
+        titulo(
+          "OS CINCO CABELOS a 56 px — o gate (a)",
+          `o par mais parecido é ${piorPar.a} × ${piorPar.b}, com ${(piorPar.d * 100).toFixed(2)}% ` +
+            `de pixels diferentes contra o piso de ${(PISO_DISTINCAO * 100).toFixed(1)}%`,
+        ) +
+        fileiraCabelo(56, "a") +
+        titulo("Os mesmos a 200 px", "a franja, o degrau de sombra e o encontro com a sobrancelha") +
+        fileiraCabelo(200, "b") +
+        titulo("As 8 cores de cabelo, em cada modelo", "var(--av-cabelo) e o degrau var(--av-cabelo-s)") +
+        `<div style="display:flex;gap:12px;flex-wrap:wrap">${secaoCabeloCor}</div>` +
         titulo("Os quatro tamanhos", "56 px é o teste do ranking — se ele falhar, os outros três não salvam") +
         `<div style="display:flex;gap:14px;align-items:flex-end">${secaoTamanhos}</div>` +
         titulo("As 8 peles", "prova que var(--av-pele) recolore de verdade, e que a sombra da pele acompanha") +

@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { compor } from "@/lib/avatar/estilo/compositor";
 import { CABELO, PELE } from "@/lib/avatar/palette";
+import { CABELOS, MODELOS_CABELO, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
 
 /** Os quatro tamanhos do `SIZE_CONFIG`. 56 é o do ranking e é o que manda. */
@@ -25,22 +26,31 @@ const TAMANHOS = [
 
 function Boneco({
   pele,
+  cabelo,
+  modelo,
   h,
   animado,
   ns,
 }: {
   pele: string;
+  cabelo: string;
+  modelo: ModeloCabelo | undefined;
   h: number;
   animado: boolean;
   ns: string;
 }) {
-  const svg = compor({ pele, cabelo: CABELO[0], animado, ns })
+  const svg = compor({ pele, cabelo, modeloCabelo: modelo, animado, ns })
     .replace("<svg ", `<svg width="${Math.round((h * VIEWBOX.w) / VIEWBOX.h)}" height="${h}" `);
   return <span dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
 export default function AvatarKokeshiClient() {
   const [pele, setPele] = useState<string>(PELE[2]);
+  const [cabelo, setCabelo] = useState<string>(CABELO[0]);
+  // `curto` é o padrão porque é o padrão do `criar-personagem` (D5): ninguém
+  // aparece careca. A opção "careca" fica no seletor como controle — é a base do
+  // Bloco 1d, e é contra ela que se vê o que o cabelo acrescenta.
+  const [modelo, setModelo] = useState<ModeloCabelo | undefined>("curto");
   const [animado, setAnimado] = useState(true);
   const [fundo, setFundo] = useState<string>("#EFEAE2");
 
@@ -79,6 +89,38 @@ export default function AvatarKokeshiClient() {
           ))}
         </div>
         <div className="flex items-center gap-1">
+          <span className="text-zinc-500">cabelo:</span>
+          {CABELO.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCabelo(c)}
+              aria-label={c}
+              className={`h-6 w-6 rounded-full border-2 ${
+                c === cabelo ? "border-zinc-900" : "border-transparent"
+              }`}
+              style={{ background: c }}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-zinc-500">modelo:</span>
+          {[undefined, ...MODELOS_CABELO].map((m) => (
+            <button
+              key={m ?? "careca"}
+              type="button"
+              onClick={() => setModelo(m)}
+              className={`rounded border px-2 py-1 text-xs ${
+                m === modelo
+                  ? "border-zinc-900 bg-zinc-900 text-white"
+                  : "border-zinc-300 text-zinc-600"
+              }`}
+            >
+              {m ? CABELOS[m].nome : "careca"}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
           <span className="text-zinc-500">fundo:</span>
           {["#EFEAE2", "#FF00FF", "#1B1B1F", "#FFFFFF"].map((f) => (
             <button
@@ -107,7 +149,14 @@ export default function AvatarKokeshiClient() {
       >
         {TAMANHOS.map((t) => (
           <figure key={t.rot} className="m-0 text-center">
-            <Boneco pele={pele} h={t.h} animado={animado} ns={`kk-${t.h}`} />
+            <Boneco
+              pele={pele}
+              cabelo={cabelo}
+              modelo={modelo}
+              h={t.h}
+              animado={animado}
+              ns={`kk-${t.h}`}
+            />
             <figcaption className="mt-1 text-[10px] text-zinc-500">{t.rot}</figcaption>
           </figure>
         ))}
@@ -130,6 +179,10 @@ export default function AvatarKokeshiClient() {
           <Boneco
             key={i}
             pele={PELE[i % PELE.length]}
+            // A lista varia pele, cor E modelo: 30 bonecos iguais medem o cache do
+            // navegador, não o caso de uso. É a lição 19 da §7c, uma camada acima.
+            cabelo={CABELO[i % CABELO.length]}
+            modelo={MODELOS_CABELO[i % MODELOS_CABELO.length]}
             h={78}
             animado={animado}
             ns={`kkr-${i}`}
@@ -162,6 +215,17 @@ export default function AvatarKokeshiClient() {
         </li>
         <li>
           <b>fundo magenta e preto</b> — revelam furo e halo que o fundo claro esconde.
+        </li>
+        <li>
+          <b>o cabelo não vaza pela lateral do crânio</b> — troque de modelo com o fundo em
+          magenta. A franja é a única borda que o cabelo desenha; os lados são o{" "}
+          <code>clipPath</code> da cabeça. Um pixel de magenta entre o cabelo e o contorno
+          significa que alguém passou a declarar silhueta em dois lugares.
+        </li>
+        <li>
+          <b>o degrau de sombra sob a franja</b> — visível no <code>xl</code>, e é onde{" "}
+          <code>--av-cabelo-s</code> aparece. No preto <code>#3A2F2A</code> ele quase some
+          contra o contorno, e isso é esperado: cabelo preto não tem sombra para mostrar.
         </li>
       </ul>
     </main>

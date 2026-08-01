@@ -415,12 +415,81 @@ que era o único ponto em que a B travava aquele bloco.
   de `--av-cabelo` fica, com o motivo verdadeiro: há um cabelo por avatar, então
   não existe a colisão entre camadas que o escopo `camada` resolveria.
 
-- **2a.1** Os 5 modelos, sobre a base sem orelhas — que é o motivo de as orelhas
-  terem saído no 1d: nenhum dos 5 precisa decidir se cobre.
-- **2a.2** As 8 cores da paleta, com `--av-cabelo-s` para o degrau de sombra
-  sob a franja (o 2.4 já entregou a régua de escurecimento).
-- **2a.3** Cada modelo lido **a 56 px** contra os outros 4, e o preto (`#3A2F2A`,
-  não preto de verdade) contra o contorno `#000000` — a folga medida no 1d é 85,7.
+- **2a.1 / 2a.2 / 2a.3** ✅ **FEITOS em 2026-08-01**, num bloco só — os três se
+  provam no mesmo artefato, e separá-los teria significado três rodadas de render
+  para julgar o mesmo desenho. `src/lib/avatar/estilo/cabelo.ts` (novo),
+  `EstadoAvatar.modeloCabelo`, três camadas no compositor, `cabelo.test.ts` e o
+  `avatar:folha-base` estendido.
+
+  **O ORÇAMENTO FOI PARTIDO EM DOIS, e a partição corrigiu o que ele media.** Ele
+  era um teto só (20 formas / 7 680 bytes) sobre a saída de `compor()`, com um
+  racional escrito sobre o **ranking** — 30 bonecos juntos a 56 px. Só que ninguém
+  no ranking é careca: todo avatar carrega um cabelo. O teto media a base e o texto
+  falava do composto, e a "folga" de 262 bytes nunca foi orçamento de nada — era o
+  resto da conta do Bloco 1d.
+
+  | | teto | medido |
+  |---|---|---|
+  | **base careca** — regressão, não folga | 19 formas · 7 418 bytes | 19 · 7 418 |
+  | **composto** — base + 1 cabelo | 26 formas · 10 240 bytes | pior: `cacheado`, 22 · 8 995 |
+
+  A base virou teto de **regressão**: ela não pode crescer nem um byte, porque
+  crescer significa alguém ter achado espaço nela para pagar uma camada que não é
+  dela. E o composto é `base + UM` cabelo porque nunca há dois num render — somar
+  os cinco orçaria uma composição que não existe.
+
+  **Como o cabelo não declara a lateral do crânio.** Cada ponto de franja é
+  `{ t, y }`, com `t` **fração da largura da cabeça naquela altura**, lida de
+  `bordasEm(y)`. As pontas têm `t` fora de [0, 1] de propósito: elas terminam fora
+  da silhueta e o `clipPath` da cabeça é quem corta. Não existe segunda descrição
+  do crânio para divergir da primeira, que é a regra do `geometria.ts` um slot
+  acima.
+
+  **Estes números são desenhados, não medidos, e isso está escrito no arquivo.** A
+  referência é um boneco careca — não há régua de onde extrair a forma de cinco
+  cabelos. No lugar da medição entraram quatro amarras que reprovam:
+
+  1. **folga do rosto ≥ 24 unidades** sobre cada sobrancelha (1,9 px a 56). Foi ela
+     que pegou o defeito não óbvio do bloco: **o giro aperta o lado direito**. A
+     sobrancelha direita é 3 unidades mais alta, e a primeira tabela do `curto`
+     dava 25,5 à esquerda e **8,3** à direita — um cabelo simétrico em `t` sai
+     assimétrico em folga. Três dos cinco reprovaram na primeira medição;
+  2. **ancoragem ≥ `SANGRIA`** de toda extensão dentro da cabeça — o análogo, um
+     slot acima, do gate (d) que o `tipos.ts:65` promete aos trajes. Sem ela um
+     coque pode ficar tangente ao crânio e abrir fresta de fundo;
+  3. **pontas da franja fora da silhueta**;
+  4. **a base careca não paga nada** pelo slot: sem modelo, `compor()` não emite
+     camada, nem as três regras de CSS, nem `--av-cabelo`/`--av-cabelo-s`, e o SVG
+     sai byte a byte igual ao aprovado no 1d.
+
+  As três primeiras foram verificadas **invertendo o dado** (franja 40 u mais
+  baixa → folga −13,3; coque subido 40 u → ancoragem 0,0; ponta em `t` 0,1 → dentro
+  da silhueta). Teste que não reprova quando devia é relatório.
+
+  **O `--av-cabelo` estava morto, e ninguém tinha como saber.** O `compor()` nunca
+  lia `estado.cabelo` e nunca emitia as duas propriedades, embora as duas estejam
+  congeladas em `PROPRIEDADES.avatar` desde o Bloco 1. O `conferirSvg` não pegava:
+  ele reprova propriedade **a mais**, não **a menos**. É a mesma família do
+  docstring da sobrancelha que o 2a.0 consertou.
+
+  **Duas correções de desenho que só apareceram renderizando** (regra 9 da §7):
+
+  - o **moicano** saiu como pluma de capacete, e a causa não era de gosto: no
+    espaço `{t, y}`, `t` constante é um **funil que abre para baixo**, porque a
+    largura da cabeça vai de 206 unidades em y 54 a 362 em y 126. Ele deixou de ter
+    touca e virou **só extensão**, em coordenada absoluta — e ficou o mais barato
+    dos cinco (+1 forma, +715 bytes). A topologia `faixa`, que existia só para ele,
+    saiu do arquivo junto com o defeito;
+  - o **coque** era um ovo deitado de 124 × 104 e, com o crânio comendo a metade de
+    baixo, o que sobrava na tela era uma laje de topo reto — boina, não coque. Uma
+    circunferência resolve: calota de círculo é redonda em qualquer altura.
+
+  **O especular passou a ser desenhado DEPOIS do cabelo.** A mancha mora em
+  (139,9 · 93,4), acima da franja dos cinco: com cabelo, ela cai inteira sobre o
+  cabelo, que é o certo e é de graça — ela é `#FFFFFF` com opacidade, não uma cor.
+  Desenhada antes, seria um brilho de pele sob um cabelo opaco, e a cabeça perderia
+  o ponto de luz justamente nos avatares que têm cabelo, que são todos. A base
+  careca não mudou um byte com a troca.
 
 ---
 
@@ -477,8 +546,22 @@ que era o único ponto em que a B travava aquele bloco.
 
 🔒 **Gate do Bloco 2:**
 
-- **(a)** os 5 cabelos se distinguem entre si **a 56 px**, nos 8 tons, sem vazar
-  cor entre camadas — `avatar:folha-base` estendido;
+- **(a)** ✅ **FEITO em 2026-08-01.** Os 5 se distinguem **a 56 px**, e agora isso é
+  um número e não uma impressão: o `avatar:folha-base` renderiza cada modelo a
+  40 × 56, conta os pixels que diferem em mais de 24 níveis em algum canal, e
+  reprova abaixo de **5%** (112 px de 2 240 — um bloco de ~10 × 11 na miniatura).
+
+  **São dois pisos, porque são duas perguntas.** Contra a **careca** o piso é 2%, e
+  ele não mede distinção de catálogo: careca não é escolha de aluno (D5), então
+  exigir 5% entre "moicano" e "careca" cobraria distinção entre duas opções que
+  nunca disputam a mesma escolha. O que aquela coluna testa é **o cabelo aparece?**
+  — o gate contra a camada que existe no código, passa em todo teste de unidade e
+  some na tela.
+
+  Medido: o par de catálogo mais parecido é `Corte curto × Trança`, **5,18%**. A
+  primeira rodada deu **3,66%**, e a resposta certa foi engrossar a trança até ela
+  ser outra silhueta, não baixar o piso até ela passar — calibrar o gate pelo
+  desenho que ele deveria julgar é justificativa circular.
 - **(b)** ✅ **feito no 2a.0** — a sobrancelha faz o que o `palette.ts` diz que
   ela faz, e é um teste que confere, não um docstring;
 - **(c)** o arremate do tronco mede **40 a 60** de raio de canto, sem inversão de

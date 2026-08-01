@@ -745,7 +745,17 @@ export const SOMBRA_CHAO = {
 // Os paths
 // ---------------------------------------------------------------------------
 
-const n = (v: number) => (Math.round(v * 10) / 10).toString();
+/**
+ * Uma coordenada, com uma casa decimal.
+ *
+ * **Exportada no Bloco 2a.1**, junto com `spline()`. As duas são PRIMITIVAS de
+ * emissão, não formas: quem as importa (`cabelo.ts`) não ganha com isso nenhum
+ * poder de declarar silhueta — ele continua obrigado a perguntar a borda da cabeça
+ * a `bordasEm()`. Compartilhar a primitiva é o contrário de duplicar a forma: se o
+ * cabelo tivesse a própria spline, duas curvas do mesmo desenho passariam a ser
+ * parametrizadas diferente, e a emenda entre elas apareceria.
+ */
+export const n = (v: number) => (Math.round(v * 10) / 10).toString();
 
 /**
  * Uma spline de Catmull-Rom **CENTRÍPETA**, emitida como cúbicas de Bézier.
@@ -782,7 +792,7 @@ const n = (v: number) => (Math.round(v * 10) / 10).toString();
  * fórmula abaixo colapsa em `(P[i+1] − P[i−1])/6`, ponto por ponto. Onde o contorno
  * já estava liso, nada muda; onde ele repuxava, a alça encurta na medida do trecho.
  */
-function spline(pts: readonly { x: number; y: number }[], fechada = false): string {
+export function spline(pts: readonly { x: number; y: number }[], fechada = false): string {
   const N = pts.length;
   const em = (i: number) => (fechada ? pts[(i + N) % N] : pts[Math.min(N - 1, Math.max(0, i))]);
   /** `|ΔP|^0,5` — o expoente 0,5 é o que faz a parametrização ser centrípeta. */

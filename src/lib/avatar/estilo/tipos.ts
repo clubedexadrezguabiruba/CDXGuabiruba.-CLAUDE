@@ -22,6 +22,8 @@
  * segunda cópia da silhueta para divergir da primeira.
  */
 
+import type { ModeloCabelo } from "./cabelo";
+
 /**
  * O que uma peça que ocupa a silhueta do tronco pode declarar.
  *
@@ -80,6 +82,21 @@ export interface Traje {
 export interface EstadoAvatar {
   pele: string;
   cabelo: string;
+  /**
+   * QUAL dos 5 cabelos, contra o `cabelo` acima, que é a COR de um.
+   *
+   * São dois campos e não um objeto porque são duas escolhas separadas na tela
+   * (`criar-personagem`, 5.10) e duas colunas separadas no banco (`users.avatar_hair`
+   * e `avatar_hair_color`, Bloco 4). Um objeto aqui teria de ser desmontado nas duas
+   * pontas.
+   *
+   * **Opcional, e o opcional é a base careca.** Sem modelo, `compor()` não emite
+   * nem a camada, nem as duas regras de CSS, nem `--av-cabelo`/`--av-cabelo-s` — o
+   * SVG sai byte a byte igual ao que o Bloco 1d aprovou, e é isso que mantém o teto
+   * da base em 7 418 sendo teto de regressão e não de folga. `rosto-cor.test.ts`
+   * confere justamente essa ausência.
+   */
+  modeloCabelo?: ModeloCabelo;
   traje?: Traje;
   /**
    * Liga o piscar e o respiro. Desligado no ranking, onde 30 bonecos numa lista
