@@ -39,15 +39,6 @@ export function getSlotMask(slot: AvatarSlot, gender: GenderVariant): SlotMask {
         notes: "Cabeça inteira sem pescoço, corte no queixo. Canvas do asset: 1024×1024.",
       };
 
-    case "hand":
-      return {
-        slot: "hand",
-        label: "Hand Region",
-        region: regions.hand,
-        requiresGenderVariant: false,
-        notes: "Item na mão direita do personagem (lado esquerdo da tela). Canvas do asset: 512×512.",
-      };
-
     case "outfit":
       return {
         slot: "outfit",

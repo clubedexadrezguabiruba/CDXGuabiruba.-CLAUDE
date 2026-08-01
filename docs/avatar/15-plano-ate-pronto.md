@@ -224,7 +224,7 @@ aponte o que estiver claramente errado.
 | 3 | Cor vai em **custom property**, não embutida na regra CSS | Medido: com a cor na regra, dois bonecos na mesma página colidem e o último pinta todos. Inviabilizava o D30 inteiro |
 | 4 | Renderizador headless é **Chromium**, não `sharp` | O destino é o navegador; `sharp` usa librsvg, com suporte diferente. E o Playwright já é dependência |
 | 5 | ~~A régua da patente volta a ser questão aberta~~ **Decidida:** trilha de nível de 15 aulas (Passo 1–7), régua em `title_tiers` | Ver D-A |
-| 6 | **Mãos** entram no orçamento do boneco base | Os braços do protótipo terminam em cápsula. O slot `hand` tem 6 relíquias para segurar |
+| 6 | ~~**Mãos** entram no orçamento do boneco base~~ **Revogado em 2026-07-31 pela D-E: o slot `hand` sai por completo** | A linha valia para o protótipo antigo, cujos braços terminavam em cápsula. O kokeshi não tem braços, e o tronco mede **21 × 25 px a 56 px** — não cabe emblema que distinga 6 relíquias. Orçamento de arte cai de 39 para **33** |
 | 7 | A causa da patente morta **não era a régua** — era `UPDATE` sem `UPSERT` | Medido contra produção em 2026-07-29. Ver seção 1 |
 | 8 | O Bloco 7 vira **7a** (concessão, feito) e **7b** (uniforme, espera o render) | 7a não depende de arte e entrega valor hoje; 7b entregaria item invisível |
 | 9 | Orçamento de arte do Bloco 8 cai de 44 para **39 desenhos** | Com marcos de 15 aulas e 30 aulas no banco, 2 uniformes são alcançáveis. Os outros 5 esperam conteúdo |
@@ -286,29 +286,217 @@ contorno, um preto real apagaria a silhueta.
 
 ---
 
-## Bloco 2 — F1 curta: o boneco base
+## Bloco 2 — F1 curta: o boneco base ⚠️ **RE-ESCOPADO em 2026-07-31**
 
 *Aqui mora o carisma. É o único bloco que depende do seu olho.*
 
-O protótipo lê bem, mas é rígido. O que precisa mudar, concretamente:
+A lista original foi escrita contra o **protótipo antigo** — braços em cápsula,
+pernas, macacão, retângulos arredondados. A troca de estilo para kokeshi
+(2026-07-31) e os sub-blocos **1b, 1c e 1d** consumiram metade dela e deixaram um
+item **sem objeto**. O que está abaixo é o saldo, medido contra o código de hoje.
 
-- **2.1 Rosto.** Hoje são dois pontos e uma curva. Precisa de sobrancelhas com
-  forma, insinuação de nariz, e uma boca com caráter. O rosto sai em **paths
-  próprios com classes**, que é o que torna as 4 expressões (D8) gratuitas.
-- **2.2 Mãos.** Os braços terminam em cápsula. Sem mão não há onde ancorar as 6
-  relíquias do slot `hand`.
-- **2.3 Silhueta.** Tudo é retângulo arredondado. Falta peso: um quadril
-  levemente mais largo, ombro com queda, pescoço encaixado.
-- **2.4 Um degrau de sombra.** Chapado com contorno duro ainda comporta uma
-  segunda tonalidade — sob o queixo, dentro da manga, embaixo da franja. É o
-  que separa "clipart vetorial" de "storybook".
-- **2.5 Cabelo.** Hoje é uma tampa. Precisa de silhueta, porque ele também é o
-  primeiro dos 5 modelos do slot `hair`.
-- **2.6 Uniforme de Soldado**, como prova do `garment` sobre o corpo.
-- **2.7 Você critica** — principalmente 2.1. Eu regero.
+| item original | estado | onde ficou |
+|---|---|---|
+| **2.1** Rosto | ✅ **feito e aprovado** | 1c: olhos e facetas. 1d: sobrancelhas arqueadas e boca. `OLHO`, `SOBRANCELHA`, `BOCA` em `geometria.ts` |
+| **2.2** Mãos | ⛔ **sem objeto** | o boneco não tem braços. Vira a **D-E**, abaixo |
+| **2.3** Silhueta | ✅ **feito** | 1c: linha de centro medida no line-art, `CABECA.contorno` e `TRONCO.perfil` ponto a ponto |
+| **2.4** Degrau de sombra | ✅ **feito** | 1c: `FACETAS`, plano lateral, sombra do queixo e `SOMBRA_CHAO` |
+| **2.5** Cabelo | ⬜ **é o trabalho** | vira o **2a** |
+| **2.6** Uniforme de Soldado | ⬜ **é o trabalho, e mudou de natureza** | vira o **2b** |
+| **2.7** Você critica | ✅ **aconteceu três vezes** | reprovou o 1b, o 1c e a primeira volta do 1d |
 
-🔒 **Gate:** lê a 56 px · registra nos 8 tons sem vazar cor · a paleta não funde
-nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
+O que sobra, então, são **duas peças de arte e uma decisão**. E as duas peças
+carregam, cada uma, uma pendência declarada por escrito no código — elas entram
+como o primeiro item de cada uma, não como nota de rodapé, porque as duas
+**precedem** o desenho.
+
+---
+
+### D-E — o slot `hand` ✅ **DECIDIDA em 2026-07-31: REMOVER por completo**
+
+**O fato que abriu a questão:** o slot `hand` existe no banco (`CHECK` em
+`items.slot` e `user_equipped.slot`), tem **8 itens semeados** — não 6; os 6 são o
+alvo do Bloco 9 — e o v4 lhe reserva 6 desenhos no Bloco 8. No boneco kokeshi
+**não há braço, mão nem antebraço**, e nunca houve intenção de haver: a proporção
+1:2 e a ausência de membros são o estilo, não uma etapa faltando.
+
+Havia três saídas. A recomendação inicial foi a **B** (virar `emblema` pintado no
+tronco), e **a medição a derrubou** — o que é o motivo de a condição ter sido
+escrita como medida, e não como gosto.
+
+**A medição.** Do `pathTronco()` canônico, com o canvas de 700 unidades:
+
+| canvas | figura | tronco |
+|---|---|---|
+| **56 px** | 47,1 px | **21,0 × 25,1 px** |
+| 96 px | 80,7 px | 35,9 × 43,1 px |
+| 340 px | 285,9 px | 127,3 × 152,5 px |
+
+Um emblema que **não** compita com o uniforme cabe numa fração de 21 × 25 —
+ordem de 7 × 7 px. E o `TRACO` é 12 unidades, o que a 56 px dá **0,96 px**: o
+contorno do próprio sistema já é uma linha de um pixel ali. Um emblema com
+detalhe interno — peão, livro, cetro, orbe — precisaria de traço **mais fino que
+o traço do sistema**, dentro de 7 px, e ainda assim distinguir 6 relíquias em 2
+famílias × 3 tiers. É exatamente o que a **definição 4 de pronto** exige, e não é
+alcançável: a 7 px os seis viram a mesma mancha escura.
+
+O tronco também não está vazio a 56 px. Ele já carrega a cor do uniforme, a
+sombra do queixo (14,5 unidades ≈ 1,2 px), o plano lateral e a decoração vetorial
+da patente. O emblema seria o **quinto** elemento em 21 × 25 px.
+
+A **C** (objeto flutuante ao lado) caiu antes, por outro motivo: é literalmente a
+mesma âncora do pet (doc 01, §"anchor profiles de hand e pet"), e o pet tem **20**
+itens contra 6. Dois objetos soltos ao lado de uma figura de duas cabeças é
+entulho que estragaria também os 20 desenhos do pet.
+
+**E o mérito não cai para um canal só.** Sobram dois: o **uniforme** e a
+**moldura**. A moldura é `frame_ui` — CSS na camada z=10, **fora do SVG** (§2.3).
+Ela não gasta superfície nenhuma do boneco e lê a 56 px porque é a borda do cartão
+inteiro, não uma marca dentro dele. O doc 10 já roteia conquistas para frames, e a
+lista do pool de baú do 9.3 já a deixa de fora. É o lugar do papel que a relíquia
+ia ocupar, e custa **zero desenho novo**.
+
+**O que a remoção alcança**, medido contra produção em 2026-07-31:
+
+| | |
+|---|---|
+| `items` com `slot='hand'` | **8** (ids 17–24) |
+| conquistas com `reward_item_id` → item de `hand` | **0** — *o único risco apontado não existe* |
+| linhas em `user_inventory` | **12**, em 7 usuários (contas de teste) |
+| equipados agora (`user_equipped`) | **2** |
+| já sorteados em baú (`user_chests.item_id`) | **11** |
+
+As 12 + 11 + 2 linhas são FK para `items(id)`: a migration de remoção tem de
+desfazê-las antes de apagar as 8 linhas de `items`, e é por isso que **isto é um
+bloco próprio** — não entra junto com o cabelo nem com o uniforme.
+
+**Efeito colateral bom:** com a remoção, o `CHECK` de slot do **Bloco 4 volta a
+ser puramente aditivo** (`+= hair, back`, menos `hand` numa migration à parte), o
+que era o único ponto em que a B travava aquele bloco.
+
+---
+
+### 2a — Cabelo: 5 modelos × 8 cores
+
+- **2a.0 — A sobrancelha, ANTES do primeiro modelo.** O `palette.ts` afirma em
+  dois lugares ([linhas 197‑201](../../src/lib/avatar/palette.ts#L197-L201) e o
+  comentário da [linha 222](../../src/lib/avatar/palette.ts#L222)) que
+  `--av-cabelo` é lido "também pela sobrancelha, que mora na base", e justifica o
+  escopo `avatar` com isso — *"cabelo loiro com sobrancelha preta não lê como
+  loiro"*. **A arte não faz isso.** A sobrancelha sai na classe `.kk-risco`, que é
+  `stroke: var(--av-linha)` ([compositor.ts:139](../../src/lib/avatar/estilo/compositor.ts#L139)
+  e [:364](../../src/lib/avatar/estilo/compositor.ts#L364)) — cor do **contorno**,
+  preto, como a referência a pinta. Hoje isso não aparece porque não há cabelo
+  para contradizer; com 8 cores, o loiro sai com sobrancelha preta em oito de
+  oito.
+
+  Decidir **qual dos dois está certo** é pré-requisito do primeiro modelo, não
+  consequência dele — a resposta muda a classe de emissão e o escopo da custom
+  property, e refazer depois é refazer os 5. Não vale corrigir só a prosa do
+  `palette.ts`: o docstring está errado sobre a arte hoje, e um docstring que
+  descreve o que o código não faz é exatamente a classe de defeito do `UPDATE`
+  sem `UPSERT`.
+
+- **2a.1** Os 5 modelos, sobre a base sem orelhas — que é o motivo de as orelhas
+  terem saído no 1d: nenhum dos 5 precisa decidir se cobre.
+- **2a.2** As 8 cores da paleta, com `--av-cabelo-s` para o degrau de sombra
+  sob a franja (o 2.4 já entregou a régua de escurecimento).
+- **2a.3** Cada modelo lido **a 56 px** contra os outros 4, e o preto (`#3A2F2A`,
+  não preto de verdade) contra o contorno `#000000` — a folga medida no 1d é 85,7.
+
+---
+
+### 2b — Uniforme de Soldado
+
+- **2b.0 — O arremate do tronco, ANTES de assar qualquer traje.** O fundo do
+  tronco fecha hoje com raio de canto **80** onde a referência mede **40 a 60**,
+  e a causa está declarada em
+  [geometria.ts:879‑905](../../src/lib/avatar/estilo/geometria.ts#L879-L905): o
+  modelo é uma elipse de 103 × 18,7, que tem raio de curvatura **3,4** na ponta
+  lateral — um quarto de traço. A amostra única em `t = 0,7` só escolheu o menos
+  ruim entre os que não invertem a curvatura; o modelo continua errado desde o 1b.
+
+  O próprio docstring diz que fechar isso "é trabalho de um bloco que tenha o
+  tronco no escopo, não deste". **Este é esse bloco** — e a ordem importa: os 14
+  trajes clipam em `pathTronco()`, então assar o Soldado contra uma base errada
+  significa reassar os 14 depois. O conserto é remedir `TRONCO.ryArremate` contra
+  a base extraída por coluna, não mexer na tabela do perfil, que é geometria
+  aprovada.
+
+- **2b.1 — O `avatar:garment` de hoje NÃO serve para este boneco, e isso não é
+  ajuste.** O `mascara-base.ts` deriva as três máscaras do **macacão da base
+  antiga** (`public/items/base/avatar-base-neutro.svg`, seu padrão na linha 322),
+  e os marcos que ele mede são `topoTraje`, `tornozelo`, `yGola` e `yBota` — ombro,
+  tornozelo, gola e bota. O kokeshi não tem tornozelo, bota, mão, orelha nem
+  macacão; a `peleFrente` recorta "cabeça, orelhas, pescoço e mãos", e três dessas
+  quatro não existem. Rodá-lo mediria contra o nada e ficaria **verde por
+  vacuidade**, que é o defeito que este projeto já pagou duas vezes.
+
+  A substituição **já está escrita e já tem trava**: a `interface Traje`
+  ([tipos.ts:31](../../src/lib/avatar/estilo/tipos.ts#L31)) declara só `tinta`,
+  `decoracao` e `extensoes`, e o `tintaTronco()` do compositor já pinta os três
+  casos dentro do `clipPath` do tronco. Não há máscara, não há `registro()`, não
+  há dilatação. **Nenhum traje existe ainda** — o Soldado é o primeiro, e é o que
+  prova o caminho.
+
+  O que fica **em aberto** e este bloco decide medindo: se as **5 variantes por
+  DPR** e os **gates de alfa** do doc 16 ainda se aplicam a um PNG clipado por
+  `pathTronco()`, ou se com o clip do sistema a arte vira `decoracao` vetorial e
+  o PNG deixa de ser necessário para uma peça chapada.
+
+- **2b.2** O Soldado como **cor + decoração vetorial** primeiro (é o estado que o
+  `Traje.tinta.cor` existe para servir), e só então a pergunta de se ele precisa
+  de PNG. A cor sai da tabela travada por `verify:paleta-patentes`, não de escolha
+  nova.
+
+- **2b.3** Marcar no **doc 16** que ele descreve o pipeline da base antiga. Ele é
+  o runbook que o §"Referências" do `CLAUDE.md` manda ler antes de gerar arte de
+  uniforme, e hoje manda para o caminho errado. As §2.1 (tabela de matiz), §2.2
+  (as cinco armadilhas) e §7.0 continuam valendo — são sobre a **arte de origem** e
+  sobre o **conversor**, não sobre as máscaras.
+
+---
+
+🔒 **Gate do Bloco 2:**
+
+- **(a)** os 5 cabelos se distinguem entre si **a 56 px**, nos 8 tons, sem vazar
+  cor entre camadas — `avatar:folha-base` estendido;
+- **(b)** a sobrancelha faz o que o `palette.ts` diz que ela faz, ou o
+  `palette.ts` diz o que ela faz. Um teste, não um docstring;
+- **(c)** o arremate do tronco mede **40 a 60** de raio de canto, sem inversão de
+  curvatura em ponto nenhum da base — a mesma régua de `getPointAtLength` que
+  achou o bico de 10,7;
+- **(d)** o Soldado compõe sobre a base, e a `extensao` (se houver) sobrepõe o
+  tronco em **≥ `SANGRIA`** — o gate que o `tipos.ts:65` já promete a este bloco;
+- **(e)** `avatar:pose`, `avatar:animacao`, `avatar:folha-base`, `verify:all`,
+  `build` e a suíte continuam verdes.
+
+**Fora do gate, e agora sem sucessor:** a régua antiga (*"o `hand` ancora na
+mão"*) some junto com o slot, pela **D-E**.
+
+---
+
+### Bloco 2c — a remoção do slot `hand`
+
+*Bloco próprio, e não pedaço do 2a nem do 2b: ele mexe em banco de produção com
+FK a desfazer, e misturar isso com arte é como se perde a chance de rodar o gate
+certo.*
+
+- **2c.1 Migration.** Desfazer as FK antes de apagar as linhas — `user_equipped`
+  (2), `user_inventory` (12) e `user_chests.item_id` (11) —, depois as 8 linhas de
+  `items`, depois o `CHECK` de `items.slot` e de `user_equipped.slot`, e a lista
+  dentro do `unequip_slot`/`equip` (que é a segunda cópia do `CHECK`, e o gate já
+  confere que as duas batem).
+- **2c.2 Código.** `ItemSlot`, `ALL_SLOTS`, `Z_INDEX`, `renderModes`,
+  `slotDefinitions`, `templateGuides`, `templateMasks`, `bodyFamilies`,
+  `renderability`, `resolvedAvatar`, `AvatarDisplay`, `assetManifest` e os rótulos
+  de `constants/items.ts`. É deleção, então **`grep` prova o fim** — ao contrário
+  da adição que a B exigiria.
+- **2c.3 Assets.** Os 8 PNG de `public/items/hand/`, e regerar o manifesto.
+
+🔒 **Gate:** `grep -r "hand" src/ supabase/` não devolve nenhum slot ·
+`verify:phase8` verde (incl. `avatar-db`, que compara `CHECK` com a lista da RPC)
+· `verify:all` · `build` · a suíte.
 
 ---
 
@@ -355,7 +543,9 @@ nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
 
 ## Bloco 4 — F2 banco: a migration
 
-- **4.1** Migration `avatar_v4`, **aditiva**:
+- **4.1** Migration `avatar_v4`, **aditiva** — e ela só volta a ser puramente
+  aditiva porque a **D-E** removeu o `hand` numa migration à parte (**2c**), que
+  roda antes:
   - `items.slot` e `user_equipped.slot` CHECK **+= `hair`, `back`**
   - `user_inventory.source` CHECK **+= `title`**
   - `users.avatar_skin` (8 tons, default `medio`)
@@ -478,9 +668,11 @@ agora entregaria item invisível.*
 | 1 | Uniformes: **Aspirante feito**. Restam **Capitão, Comandante, General e Mestre** — 4, não 5, porque o tier 7 (Lenda) saiu da escada. O **design das 4 já está pronto e travado por gate**: cor, bota, detalhe e o pedido colável em [17](17-patentes-uniformes-design.md) e [18](18-uniformes-blocos.md). Falta só gerar a imagem, e quem gera é o Doug | ~~6~~ **4** | Doug gera, eu asso |
 | 2 | Cabelos | 5 | eu |
 | 3 | Chapéus | 6 | eu |
-| 4 | Relíquias (2 famílias × 3 tiers) | 6 | eu |
+| ~~4~~ | ~~Relíquias (2 famílias × 3 tiers)~~ **cortadas pela D-E** — o slot `hand` não existe neste boneco | ~~6~~ **0** | — |
 | 5 | Backgrounds | 8 | eu |
 | 6 | **Pets** | 20 | **você refina bastante** |
+
+**Total: ~~39~~ → 33 desenhos**, pela D-E.
 
 **Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
 seguinte começar. Trinta e nove desenhos revisados só no fim é como se descobre,
@@ -494,20 +686,25 @@ invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo do
 
 ## Bloco 9 — F4 dados: o catálogo novo
 
-- **9.1** Reseed: **77 → 60 itens** (7 uniforme + 6 head + 5 hair + 6 hand +
-  20 pet + 8 background + 8 frame).
+- **9.1** Reseed: **77 → ~~60~~ 54 itens** (7 uniforme + 6 head + 5 hair +
+  20 pet + 8 background + 8 frame). O `hand` saiu pela **D-E**, e as suas 8 linhas
+  já terão sido removidas no **2c** — aqui não sobra nada dele para reseed.
 - **9.2** Pirâmide de raridade **40/30/20/10** (hoje 19/20/20/18 — um quarto do
   catálogo é lendário, então lendário não quer dizer nada).
 - **9.3** **D16** — pool de baú só com estético (`head`, `hair`, `background`,
-  `pet`, `back`). **Nunca** uniforme nem relíquia: esses são mérito, e sorteá-los
-  faz o boneco parar de contar a história do aluno.
+  `pet`, `back`). **Nunca** uniforme nem `frame`: esses são mérito, e sorteá-los
+  faz o boneco parar de contar a história do aluno. *A relíquia saiu da frase pela
+  **D-E**; a moldura entrou no lugar dela, e é o segundo canal de mérito que
+  sobra.* ⚠️ Hoje o `claim_chest` **não filtra slot nenhum** — as três consultas
+  dele (`FROM items WHERE rarity = …`) sorteiam qualquer item, e 11 relíquias já
+  saíram de baú em produção. O D16 é código a escrever, não descrição do que há.
 - **9.4** **D27** — escolha de cor de cabelo e fundo, validada no servidor
   contra a paleta.
 - **9.5** Limpeza: remover os PNG órfãos de `public/items/` (hoje 7,0 MB, dos
   quais 4,0 MB são um único pet), regerar manifesto, zerar baseline.
 
 🔒 **Gate:** `verify:phase8` verde com o catálogo novo · a distribuição bate a
-pirâmide · abrir 60 baús não devolve uniforme nem relíquia · `public/items/`
+pirâmide · abrir 60 baús não devolve uniforme nem moldura · `public/items/`
 abaixo de 1 MB.
 
 ---
@@ -822,7 +1019,7 @@ Marque só com evidência medida, não com impressão.
 - [ ] Avatar em navbar, ranking geral, ranking de turma, mural e Companhia
 - [ ] 12 alunos diferentes numa lista saem **visualmente diferentes**
 - [ ] Uniforme concedido e vestido ao atingir a patente, visível no ranking
-- [ ] Baú não sorteia uniforme nem relíquia
+- [ ] Baú não sorteia uniforme nem moldura
 - [ ] Distribuição de raridade em 40/30/20/10
 - [ ] Os 8 tons de pele registram com todos os 7 uniformes
 - [ ] Cada slot: os itens irmãos se distinguem a 56 px na folha de contato

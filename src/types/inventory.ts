@@ -1,4 +1,4 @@
-export type ItemSlot = "head" | "outfit" | "hand" | "background" | "frame" | "pet";
+export type ItemSlot = "head" | "outfit" | "background" | "frame" | "pet";
 export type ItemRarity = "common" | "rare" | "epic" | "legendary";
 
 export interface InventoryItem {

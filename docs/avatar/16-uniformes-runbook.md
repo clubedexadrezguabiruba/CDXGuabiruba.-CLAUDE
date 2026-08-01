@@ -1,5 +1,24 @@
 # Uniformes — o processo, de ponta a ponta
 
+> ⚠️ **PARE — este runbook descreve o pipeline da BASE ANTIGA.** *Marcado em
+> 2026-07-31, no re-escopo do Bloco 2.*
+>
+> As máscaras de `scripts/avatar/mascara-base.ts` são derivadas do **macacão** da
+> base vetorizada, e os marcos que elas medem são `topoTraje`, `tornozelo`,
+> `yGola` e `yBota`. O boneco **kokeshi** não tem braços, mãos, pernas, bota,
+> orelhas nem macacão: rodar o `avatar:garment` contra ele mede contra o nada e
+> fica **verde por vacuidade**.
+>
+> **O que ainda vale aqui, e vale inteiro:** a **§2** (o que pedir ao gerador), a
+> **§2.1** (tabela de matiz) e a **§2.2** (as cinco armadilhas — em especial a
+> quinta, que diz qual saída do conversor da Adobe é fonte de medida). São regras
+> sobre a **arte de origem** e sobre o **conversor**, não sobre o recorte.
+>
+> **O que está suspenso:** §3 (da arte ao arquivo, a partir do `avatar:garment`),
+> §4, §5, §6, §7 e §8. O substituto é a `interface Traje`
+> (`src/lib/avatar/estilo/tipos.ts`) clipada em `pathTronco()`, e o **2b** do doc
+> 15 é quem decide o que sobrevive destas seções.
+
 > **Leia isto antes de gerar arte de uniforme.** Cada regra e cada número aqui
 > saiu de uma rodada que falhou. Seguir o documento custa minutos; redescobrir
 > custou um dia.

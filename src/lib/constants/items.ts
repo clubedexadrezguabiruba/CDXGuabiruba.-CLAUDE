@@ -35,7 +35,6 @@ export const RARITY_LABELS: Record<string, string> = {
 export const SLOT_LABELS: Record<string, string> = {
   head: "Cabeça",
   outfit: "Roupa",
-  hand: "Mão",
   background: "Fundo",
   frame: "Moldura",
   pet: "Pet",
@@ -44,13 +43,12 @@ export const SLOT_LABELS: Record<string, string> = {
 export const SLOT_EMOJIS: Record<string, string> = {
   head: "👑",
   outfit: "🎽",
-  hand: "⚔️",
   background: "🏰",
   frame: "🖼️",
   pet: "🐾",
 };
 
-export const ALL_SLOTS = ["head", "outfit", "hand", "background", "frame", "pet"] as const;
+export const ALL_SLOTS = ["head", "outfit", "background", "frame", "pet"] as const;
 export const ALL_RARITIES = ["common", "rare", "epic", "legendary"] as const;
 
 // --- Egg Hatching System ---

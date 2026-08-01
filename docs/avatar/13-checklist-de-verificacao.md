@@ -39,7 +39,7 @@
 Todo caminho precisa ser **server-side, idempotente e transacional**.
 
 - [ ] `claim_chest`: sorteio respeita raridade; duplicata vira XP (`scrapped_xp`)
-- [ ] `claim_chest`: não sorteia uniforme nem relíquia (**D16** — verificar após reseed)
+- [ ] `claim_chest`: não sorteia uniforme nem moldura (**D16** — verificar após reseed). *A relíquia saiu da frase com o slot `hand`, removido pela **D-E** do doc 15 em 2026-07-31.*
 - [ ] `claim_chest`: baú já reclamado retorna `already_claimed`, não concede de novo
 - [ ] Conquistas concedem via `reward_item_id` sem duplicar
 - [ ] Level-up, streak e welcome concedem pelo mesmo caminho idempotente

@@ -29,15 +29,6 @@ export const SLOT_DEFINITIONS: SlotDefinition[] = [
     hasAnimatedVariant: false,
   },
   {
-    slot: "hand",
-    renderMode: "overlay",
-    zIndex: Z_INDEX.hand,
-    requiresGenderVariant: false,
-    insideCharacterRoot: true,
-    localAnimation: "none", // forearm_prop: herda global, sem motion local (braço relaxado)
-    hasAnimatedVariant: false,
-  },
-  {
     slot: "head",
     renderMode: "head_swap",
     zIndex: Z_INDEX.head,

@@ -37,15 +37,7 @@ const ITEMS: ItemSeed[] = [
   { name: "Armadura Real", slot: "outfit", rarity: "epic", imagePath: "items/outfit/armadura-real.png" },
   { name: "Manto Lendário", slot: "outfit", rarity: "legendary", imagePath: "items/outfit/manto-lendario.png" },
   { name: "Armadura do Grande Mestre", slot: "outfit", rarity: "legendary", imagePath: "items/outfit/armadura-gm.png" },
-  // Hand (8)
-  { name: "Peão de Madeira", slot: "hand", rarity: "common", imagePath: "items/hand/peao-madeira.png" },
-  { name: "Relógio Simples", slot: "hand", rarity: "common", imagePath: "items/hand/relogio-simples.png" },
-  { name: "Espada-Peão", slot: "hand", rarity: "rare", imagePath: "items/hand/espada-peao.png" },
-  { name: "Escudo de Torre", slot: "hand", rarity: "rare", imagePath: "items/hand/escudo-torre.png" },
-  { name: "Cetro da Rainha", slot: "hand", rarity: "epic", imagePath: "items/hand/cetro-rainha.png" },
-  { name: "Livro dos Gambitos", slot: "hand", rarity: "epic", imagePath: "items/hand/livro-gambitos.png" },
-  { name: "Cetro do Rei", slot: "hand", rarity: "legendary", imagePath: "items/hand/cetro-rei.png" },
-  { name: "Orbe de Sabedoria", slot: "hand", rarity: "legendary", imagePath: "items/hand/orbe-sabedoria.png" },
+  // Hand: removido em 2026-07-31 (D-E do doc 15) — o boneco kokeshi não tem mãos
   // Background (8)
   { name: "Sala de Aula", slot: "background", rarity: "common", imagePath: "items/bg/sala-aula.png" },
   { name: "Parque", slot: "background", rarity: "common", imagePath: "items/bg/parque.png" },
@@ -87,7 +79,6 @@ const RARITY_COLORS: Record<string, { bg: string; text: string; label: string }>
 const SLOT_EMOJI: Record<string, string> = {
   head: "👑",
   outfit: "🎽",
-  hand: "⚔",
   background: "🏰",
   frame: "🖼",
   pet: "🐾",
@@ -96,7 +87,6 @@ const SLOT_EMOJI: Record<string, string> = {
 const SLOT_DIMENSIONS: Record<string, { w: number; h: number }> = {
   head: { w: 100, h: 60 },
   outfit: { w: 140, h: 160 },
-  hand: { w: 60, h: 80 },
   background: { w: 200, h: 280 },
   frame: { w: 220, h: 300 },
   pet: { w: 80, h: 80 },
@@ -219,7 +209,7 @@ async function main() {
   console.log("Gerando placeholders para Fase 8...\n");
 
   // Criar diretórios
-  const dirs = ["items/base", "items/head", "items/outfit", "items/hand", "items/bg", "items/frame", "items/pet"];
+  const dirs = ["items/base", "items/head", "items/outfit", "items/bg", "items/frame", "items/pet"];
   for (const dir of dirs) {
     const fullPath = join(PUBLIC_DIR, dir);
     if (!existsSync(fullPath)) {

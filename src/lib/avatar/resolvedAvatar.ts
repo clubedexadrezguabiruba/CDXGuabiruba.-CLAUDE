@@ -89,7 +89,6 @@ export interface ResolvedAvatar {
 // --- Motion profile por slot ---
 
 const SLOT_MOTION: Partial<Record<AvatarSlot, MotionProfile>> = {
-  // hand: sem motion local — forearm_prop herda apenas global (braço relaxado)
   head: HEAD_TILT,
 };
 
@@ -127,7 +126,7 @@ export function resolveAvatar(
   // Resolver cada slot
   const layers: Partial<Record<AvatarSlot, ResolvedLayer>> = {};
 
-  const slotsToResolve: AvatarSlot[] = ["background", "head", "hand", "pet", "frame"];
+  const slotsToResolve: AvatarSlot[] = ["background", "head", "pet", "frame"];
 
   for (const slot of slotsToResolve) {
     const def = SLOT_DEFINITION_MAP[slot];
@@ -151,10 +150,9 @@ export function resolveAvatar(
       : null;
     const animatedSrc = animado?.src ?? null;
 
-    // Anchor: head e hand têm AnchorProfile, pet tem PetAnchor
+    // Anchor: head tem AnchorProfile, pet tem PetAnchor
     let anchor: AnchorProfile | PetAnchor | null = null;
     if (slot === "head") anchor = anchors.head;
-    else if (slot === "hand") anchor = anchors.hand;
     else if (slot === "pet") anchor = anchors.pet;
 
     layers[slot] = {

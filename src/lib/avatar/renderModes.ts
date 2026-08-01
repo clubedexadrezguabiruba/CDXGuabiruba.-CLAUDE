@@ -12,14 +12,12 @@ import type { AvatarSlot, RenderMode } from "./types";
  * - underlay: preenche canvas inteiro (background)
  * - dressed_base: substitui body quando outfit equipado
  * - head_swap: substitui head region com variante por gênero
- * - overlay: sobreposto ao body na posição do anchor
  * - companion: fora do character-root, posição independente
  * - frame_ui: CSS, fora do render stack de imagens
  */
 export const SLOT_RENDER_MODES: Record<AvatarSlot, RenderMode> = {
   background: "underlay",
   outfit: "dressed_base",
-  hand: "overlay",
   head: "head_swap",
   pet: "companion",
   frame: "frame_ui",

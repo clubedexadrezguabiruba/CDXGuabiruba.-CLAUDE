@@ -25,7 +25,7 @@ interface AvatarDisplayProps {
  *
  * Arquitetura (doc 03):
  * - background: FORA do character-root (cenário estático)
- * - character-root: motion.div com breathing global (body + head + hand)
+ * - character-root: motion.div com breathing global (body + head)
  * - pet: FORA do character-root (companion independente)
  * - frame: CSS decorativo (border + glow por rarity), fora do render stack
  */
@@ -38,7 +38,6 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
 
   const bg = layers.background;
   const head = layers.head;
-  const hand = layers.hand;
   const pet = layers.pet;
 
   // Frame: CSS decorativo por rarity (border + glow)
@@ -69,7 +68,7 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
         )}
 
         {/* CHARACTER ROOT — motion.div com breathing global */}
-        {/* Head e hand são filhos: herdam o transform via CSS composition */}
+        {/* Head é filho: herda o transform via CSS composition */}
         <motion.div
           className="absolute bottom-0 z-1"
           style={{
@@ -95,28 +94,6 @@ export default function AvatarDisplay({ equipped, avatarBase = "male", size = "l
             fallbackSrc={baseSkinPath(avatarBase)}
             headKnockout={headKnockout}
           />
-
-          {/* z:3 — Prop/Hand (forearm_prop: sem motion local, herda apenas global) */}
-          {/* Motion local removida: braço relaxado não sustenta swing de item */}
-          {hand?.src && (
-            <MotionAnchor
-              anchor={hand.anchor as AnchorProfile}
-              motionProfile={null}
-              animated={animated}
-              zIndex={Z_INDEX.hand}
-              canvasW={cfg.w}
-              canvasH={cfg.h}
-              rootOffsetTop={cfg.h * (1 - bodyScale)}
-              rootOffsetLeft={(cfg.w - cfg.w * bodyScale) / 2}
-            >
-              <AvatarLayer
-                src={hand.src}
-                alt="Hand"
-                className="h-full w-full"
-                style={{}}
-              />
-            </MotionAnchor>
-          )}
 
           {/* z:4 — Head (LOCAL tilt, aditivo ao global) */}
           {head?.src && (() => {
