@@ -97,6 +97,11 @@ O usuário digita `/prototype` e `/review-animations` quando quiser — as duas 
 `disable-model-invocation` e **nunca** disparam sozinhas. Se o caso pedir uma
 delas, sugira em uma linha em vez de tentar invocar.
 
+**As três de avatar quase sempre olham PNG — a imagem vai por subagente.** Quem
+lê o arquivo é o subagente; o thread principal recebe a descrição medida em
+texto. As de `.scratch/` chegam a 500 KB e ficam sendo relidas até o fim da
+sessão. Regra completa na seção **Imagens** do `~/.claude/CLAUDE.md`.
+
 ## Verificação (rodar antes de concluir)
 - `npm run typecheck` (tsc --noEmit)
 - `npm run lint`
@@ -153,4 +158,7 @@ quando não há `.env.local` — é assim que funcionam em CI.
   - `docs/avatar/13-checklist-de-verificacao.md` — os ~90 itens de auditoria
   - `docs/avatar/14-backlog-execucao.md` — as 63 tarefas, **é onde o progresso
     fica marcado**
-  - O v4 supersede o `10-avatar-v3-definitive.md` e os docs 00–09 daquela pasta
+  - As gerações v2 e v3 (os antigos docs 00–11) foram arquivadas em
+    `docs/avatar/_superado/` — **não valem como instrução**, e o README de lá diz
+    o que substituiu cada uma. O mesmo para `docs/_superado/` (Art Guide e
+    Relatório da v2). Não leia nenhum dos dois sem motivo histórico
