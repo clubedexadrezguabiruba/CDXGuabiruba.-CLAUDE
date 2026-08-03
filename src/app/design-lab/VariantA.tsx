@@ -9,7 +9,7 @@ import { ALUNO, ATALHOS, HONRA, INSIGNIAS, ORDENS } from "./data";
  */
 export default function VariantA() {
   return (
-    <div className="min-h-full bg-warm-ivory pb-10 font-sans text-[#1B2432]">
+    <div className="min-h-full bg-warm-ivory pb-10 font-sans text-ink">
       {/* Faixa de comando */}
       <header className="bg-deep-navy px-5 pb-7 pt-6 text-warm-ivory">
         <p className="font-heading text-[11px] uppercase tracking-[0.22em] text-gold">
@@ -45,7 +45,7 @@ export default function VariantA() {
             <button
               key={a.titulo}
               type="button"
-              className="flex w-full min-h-14 items-center gap-3 rounded-lg border border-[#1B2432]/10 bg-white px-4 py-3 text-left transition-colors hover:border-gold/60"
+              className="flex w-full min-h-14 items-center gap-3 rounded-lg border border-ink/10 bg-white px-4 py-3 text-left transition-colors hover:border-gold/60"
             >
               <span
                 aria-hidden
@@ -53,9 +53,9 @@ export default function VariantA() {
               />
               <span className="flex-1">
                 <span className="block text-sm font-semibold">{a.titulo}</span>
-                <span className="block text-xs text-[#1B2432]/55">{a.legenda}</span>
+                <span className="block text-xs text-ink/55">{a.legenda}</span>
               </span>
-              <span aria-hidden className="text-[#1B2432]/30">
+              <span aria-hidden className="text-ink/30">
                 &rarr;
               </span>
             </button>
@@ -74,7 +74,7 @@ export default function VariantA() {
                     className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] font-bold ${
                       feita
                         ? "border-gold bg-gold text-deep-navy"
-                        : "border-[#1B2432]/20 text-transparent"
+                        : "border-ink/20 text-transparent"
                     }`}
                   >
                     &#10003;
@@ -83,7 +83,7 @@ export default function VariantA() {
                     {o.texto}
                     <span className="sr-only">{feita ? " — concluída" : " — em andamento"}</span>
                   </span>
-                  <span className="text-xs tabular-nums text-[#1B2432]/45">
+                  <span className="text-xs tabular-nums text-ink/45">
                     {o.feito}/{o.total}
                   </span>
                 </li>
@@ -96,7 +96,7 @@ export default function VariantA() {
         <div className="grid grid-cols-2 gap-3">
           <Section titulo="Sequência">
             <p className="font-heading text-3xl font-bold tabular-nums">{ALUNO.streak}</p>
-            <p className="mt-0.5 text-xs text-[#1B2432]/55">dias de campanha</p>
+            <p className="mt-0.5 text-xs text-ink/55">dias de campanha</p>
           </Section>
           <Section titulo="Insígnias">
             {/* Fila única em 375px: 4 × 24px + 3 × 4px cabe nos ~113px úteis do
@@ -110,12 +110,12 @@ export default function VariantA() {
                   className={`h-6 w-6 shrink-0 rounded-sm border ${
                     ins.ganha
                       ? "border-gold/50 bg-gold/25"
-                      : "border-dashed border-[#1B2432]/25 bg-transparent"
+                      : "border-dashed border-ink/25 bg-transparent"
                   }`}
                 />
               ))}
             </div>
-            <p className="mt-2 text-xs text-[#1B2432]/55">3 de 4</p>
+            <p className="mt-2 text-xs text-ink/55">3 de 4</p>
           </Section>
         </div>
 
@@ -131,11 +131,11 @@ export default function VariantA() {
               >
                 {/* Número em Inter, não em Cinzel: a regra "Cinzel Scarcity" do
                     DESIGN.md — a capitalis some em corpo pequeno no celular. */}
-                <span className="w-4 text-xs font-semibold tabular-nums text-[#1B2432]/70">
+                <span className="w-4 text-xs font-semibold tabular-nums text-ink/70">
                   {h.pos}
                 </span>
                 <span className="flex-1 truncate">{h.nome}</span>
-                <span className="text-xs text-[#1B2432]/70">{h.patente}</span>
+                <span className="text-xs text-ink/70">{h.patente}</span>
                 <span className="w-11 text-right text-xs font-semibold tabular-nums">
                   {h.rating}
                 </span>
@@ -150,8 +150,8 @@ export default function VariantA() {
 
 function Section({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-[#1B2432]/10 bg-white p-4">
-      <h2 className="mb-3 font-heading text-[13px] font-semibold uppercase tracking-[0.14em] text-[#1B2432]/70">
+    <section className="rounded-lg border border-ink/10 bg-white p-4">
+      <h2 className="mb-3 font-heading text-[13px] font-semibold uppercase tracking-[0.14em] text-ink/70">
         {titulo}
       </h2>
       {children}

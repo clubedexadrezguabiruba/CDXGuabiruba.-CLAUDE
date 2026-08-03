@@ -103,6 +103,21 @@ ambienta) e a escada de patentes (que sinaliza progresso, e é medida por gate).
 - **Dark Base** (`#060F18`): o mais escuro, para rodapé e para o degrau abaixo do
   navy.
 
+### Onde os tokens moram
+
+**`src/app/globals.css`, no bloco `@theme`. Fonte única.** No Tailwind v4 o
+`@theme` gera a CSS var e a utility de uma vez, então não há como declarar duas
+vezes. `tailwind.config.ts` foi deletado; a régua espelhada em TS é
+`scripts/design/tokens.ts`, e `npm run verify:design-tokens` mede que os dois
+continuam de acordo.
+
+Além dos 8 de marca, três tokens que a direção A pediu:
+- **Ink** (`#1B2432`): a cor de texto do app. Não é preto — preto sobre marfim
+  é duro demais para leitura longa em celular.
+- **Ok** (`#16A34A`) e **Erro** (`#DC2626`): semânticos. O matiz é **provisório**
+  — foi herdado do que o código já usava (green-600/red-600) para a migração ser
+  neutra. Refiná-los dentro da direção A é trabalho registrado, não feito.
+
 ### A escada de patentes
 As seis cores de progressão. **Não são decorativas: são a régua do produto**, e
 vêm de `scripts/avatar/patentes.ts`, que é a fonte única e é medida por
