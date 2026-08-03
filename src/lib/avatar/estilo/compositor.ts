@@ -289,9 +289,13 @@ function cabeloNoCranio(modelo: CabeloOuModelo | undefined): string {
   // O moicano não tem touca — ele é só extensão. Emitir dois `<path d="">` vazios
   // custaria duas formas do orçamento para desenhar nada.
   if (!escuro) return "";
+  // Uma peça traçada pode ser CHAPADA: massa sem região clara. Ela não é o degrau
+  // paramétrico com a sombra zerada — é uma camada a menos, e cobrar dela uma forma
+  // vazia seria o mesmo desperdício que o moicano acabou de não pagar.
+  const claro = pathCabeloClaro(modelo);
   return (
     `<path class="kk-cabelo-s" d="${escuro}"/>` +
-    `<path class="kk-cabelo" d="${pathCabeloClaro(modelo)}"/>`
+    (claro ? `<path class="kk-cabelo" d="${claro}"/>` : "")
   );
 }
 
@@ -302,11 +306,19 @@ function cabeloNoCranio(modelo: CabeloOuModelo | undefined): string {
  * própria e contorno próprio, emitido aqui e não pela peça. `atras` põe a forma sob
  * a cabeça, e é o que faz um coque parecer preso atrás em vez de colado na testa: a
  * cabeça é opaca e come a emenda, oclusão em vez de máscara.
+ *
+ * **As do mesmo grupo saem num `<path>` só, com subpaths `M…Z M…Z`.** Elas
+ * compartilham classe, ordem e — por definição do grupo — a mesma posição na pilha,
+ * então dividi-las em elementos separados não muda um pixel e cobra uma forma do
+ * orçamento por peça. Com os modelos de hoje, que têm no máximo uma extensão por
+ * grupo, a saída é byte a byte a mesma de antes; com uma peça traçada de três
+ * lóbulos espetados, a diferença é 3 formas contra 1.
  */
 function extensoesCabelo(modelo: CabeloOuModelo | undefined, atras: boolean): string {
   if (!modelo) return "";
   const lista = (resolverCabelo(modelo).extensoes ?? []).filter((e) => Boolean(e.atras) === atras);
-  return lista.map((e) => `<path class="kk-cabelo-e" d="${pathExtensao(e)}"/>`).join("");
+  if (!lista.length) return "";
+  return `<path class="kk-cabelo-e" d="${lista.map(pathExtensao).join(" ")}"/>`;
 }
 
 /** Um olho. Cápsula vertical, com o `rx` fazendo as pontas semicirculares. */

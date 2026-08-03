@@ -56,6 +56,7 @@ import {
   CABELOS,
   FOLGA_ROSTO,
   MODELOS_CABELO,
+  ORCAMENTO_COMPOSTO,
   folgaDoRosto,
   type ModeloCabelo,
 } from "../../../src/lib/avatar/estilo/cabelo";
@@ -127,6 +128,11 @@ const TAMANHOS = [56, 100, 200, 425] as const;
  * (o app abrir em rede de escola) com a conta do ranking explícita: 30 × 10 KB são
  * 300 KB de marcação, que comprime como texto.
  *
+ * **Os dois números do composto moram em `cabelo.ts`** (`ORCAMENTO_COMPOSTO`), e não
+ * aqui, porque este script, o `variantes.ts` e o teste de unidade os liam de três
+ * cópias — três chances de duas discordarem, sobre um número que a peça traçada tem
+ * autorização para mudar. O racional continua sendo este parágrafo; o valor é de lá.
+ *
  * Medido em 2026-08-01, com os 5 modelos do Bloco 2a.1: o mais caro é o `cacheado`,
  * com 22 formas e 8 995 bytes. A folga do composto é real e é para os 39 desenhos
  * do Bloco 8, não para o cabelo.
@@ -137,8 +143,8 @@ const TAMANHOS = [56, 100, 200, 425] as const;
  */
 const TETO_BASE_FORMAS = 19;
 const TETO_BASE_BYTES = 7418;
-const TETO_COMPOSTO_FORMAS = 26;
-const TETO_COMPOSTO_BYTES = 10240;
+const TETO_COMPOSTO_FORMAS = ORCAMENTO_COMPOSTO.formas;
+const TETO_COMPOSTO_BYTES = ORCAMENTO_COMPOSTO.bytes;
 
 /**
  * O GATE (a) DO BLOCO 2, EM NÚMERO: quanto dois cabelos precisam diferir a 56 px.

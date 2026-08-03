@@ -52,6 +52,7 @@ import { chromium } from "@playwright/test";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import {
   FOLGA_ROSTO,
+  ORCAMENTO_COMPOSTO,
   ancoragemDasExtensoes,
   folgaDoRosto,
   type Cabelo,
@@ -92,8 +93,9 @@ const PISO_DISTINCAO = 0.05;
 const contarFormas = (svg: string) =>
   (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
 
-const TETO_FORMAS = 26;
-const TETO_BYTES = 10240;
+/** O mesmo teto de `folha-base.ts` e do teste — um valor só, em `cabelo.ts`. */
+const TETO_FORMAS = ORCAMENTO_COMPOSTO.formas;
+const TETO_BYTES = ORCAMENTO_COMPOSTO.bytes;
 
 interface Reprovacao {
   variante: string;

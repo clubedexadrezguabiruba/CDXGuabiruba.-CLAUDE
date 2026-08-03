@@ -80,7 +80,7 @@ import {
 export type ModeloCabelo = "curto" | "cacheado" | "tranca" | "coque" | "moicano";
 
 /** Um ponto da franja: altura absoluta, e fração da largura da cabeça NAQUELA altura. */
-interface PontoFranja {
+export interface PontoFranja {
   /** 0 = borda esquerda do crânio, 1 = borda direita. Fora de [0,1] é fora da silhueta. */
   t: number;
   /** Altura em unidades do `viewBox`. */
@@ -88,7 +88,7 @@ interface PontoFranja {
 }
 
 /** Um ponto em coordenada absoluta do `viewBox`. */
-interface Ponto {
+export interface Ponto {
   x: number;
   y: number;
 }
@@ -105,7 +105,7 @@ interface Ponto {
  * para a peça — e o moicano, que passou a ser só extensão, cairia justamente na
  * cegueira. Dado guardado como dado é dado que o gate consegue medir.
  */
-interface Extensao {
+export interface Extensao {
   /** O laço fechado, em coordenada absoluta. */
   forma: readonly Ponto[];
   /**
@@ -115,6 +115,33 @@ interface Extensao {
   atras?: boolean;
 }
 
+/**
+ * UM CABELO, EM UMA DE DUAS FAMÍLIAS — e a segunda existe porque a primeira não
+ * tem onde guardar o que a arte tem.
+ *
+ * **Paramétrico** (`pontos` + `sombra`): uma franja aberta que atravessa a cabeça,
+ * fechada por um retângulo fora da silhueta. É o que os cinco modelos de hoje são,
+ * e o que a seção "estes números são desenhados, não medidos" do topo descreve.
+ *
+ * **Traçado** (`massa` + `clara`): um laço FECHADO, medido sobre a arte pelo mesmo
+ * pipeline que produziu o contorno do crânio — PNG → linha de centro do preto →
+ * decimação por erro de corda → literal colado aqui. Ele existe porque o
+ * paramétrico reprovou medido: a folha de fidelidade HSHC93 comparou a arte
+ * `curto-espetada` com o melhor traço paramétrico possível e deu **IoU 61,7%**, com
+ * desvio médio de borda de 36,1 unidades (≈ 3 px a 56). Quatro coisas da arte não
+ * cabiam no modelo, e a maior delas — a **cortina**, a massa que desce ao lado do
+ * rosto até a bochecha, DENTRO da silhueta — sozinha segurava ~220 unidades de
+ * desvio, porque uma franja aberta mais retângulo não consegue descrever uma borda
+ * que volta a subir.
+ *
+ * Um laço fechado consegue. E ele não afrouxa a lei da fronteira: continua sendo
+ * `{t, y}`, continua sem declarar onde o crânio termina, continua sendo o
+ * `clipPath` quem corta. O que muda é que a curva pode ir e voltar.
+ *
+ * **As duas famílias são exclusivas por modelo**, e isso é gate: um cabelo tem
+ * `pontos` OU `massa`, nunca os dois. Com os dois, existiriam duas descrições da
+ * mesma borda — a lição de seis medições do pipeline morto, de novo.
+ */
 export interface Cabelo {
   /** Slug: chave do catálogo e do banco (`users.avatar_hair`). */
   id: ModeloCabelo;
@@ -151,8 +178,60 @@ export interface Cabelo {
    * outras amarras enxerga.
    */
   sombra?: readonly PontoFranja[];
+  /**
+   * A MASSA DE CABELO COMO LAÇO FECHADO — touca e cortina na mesma curva.
+   *
+   * Mesmo espaço `{t, y}` da franja, e pelo mesmo motivo: `t` é fração da largura da
+   * cabeça naquela altura, então a peça acompanha o `GIRO` sem ninguém somar
+   * deslocamento. A diferença é topológica — o laço fecha em si mesmo, e é isso que
+   * deixa a borda descer, virar e voltar a subir. A franja aberta não conseguia:
+   * ela é uma função de `x`, e cortina não é.
+   *
+   * **Ela não substitui o `clipPath`, e as excursões fora dele são de propósito.**
+   * O laço medido na arte passa por fora do crânio em vários trechos, exatamente
+   * como as pontas da franja saíam por `t` fora de [0, 1]. Quem corta continua sendo
+   * a faca do compositor. O que a peça declara é onde há cabelo, não onde há cabeça.
+   *
+   * Quem produz estes números é `scripts/avatar/estilo/tracar-cabelo.ts`, e a
+   * colagem é manual — o mesmo pipeline dos 42 pontos do crânio, pelo mesmo motivo:
+   * um literal colado aparece no diff, um literal gerado em tempo de build não.
+   */
+  massa?: readonly PontoFranja[];
+  /**
+   * A REGIÃO CLARA, também laço fechado — o par de `massa`, como `sombra` é de
+   * `pontos`.
+   *
+   * Ela é a posterização do degradê da arte em fronteira medida: a regra 15c (o
+   * efeito cubo) aplicada ao cabelo. Não é degradê, e não vira degradê — o estilo
+   * inteiro é chapado, e um cabelo com rampa seria a única peça do sistema a ter uma.
+   *
+   * **Ela vive DENTRO da massa, e isso é gate (`contencaoDaClara`), não convenção.**
+   * A camada clara é a única do cabelo desenhada sem contorno — o traço mora na
+   * escura. Um ponto da clara fora da massa é tinta clara sem borda no meio do
+   * fundo: não invade rosto, não estoura orçamento, não muda contagem de formas.
+   * Passaria inteiro. É o mesmo defeito que `sombraSobreAFranja` pega no
+   * paramétrico, medido do jeito que um laço fechado permite medir.
+   *
+   * Ausente, o cabelo é chapado — uma passada só. `pathCabeloClaro` devolve `""` e o
+   * compositor não emite a forma, em vez de gastar uma do orçamento com `d=""`.
+   */
+  clara?: readonly PontoFranja[];
   extensoes?: readonly Extensao[];
 }
+
+/**
+ * O TETO DO COMPOSTO — base mais UM cabelo, que é o que um aluno de verdade carrega.
+ *
+ * Ele morava em três lugares: `folha-base.ts`, `variantes.ts` e o teste. Três cópias
+ * de um número que a peça traçada tem autorização para mudar (doc 15:463 — teto de
+ * bytes não veta arte aprovada) são três chances de duas discordarem, e este
+ * repositório já pagou esse erro com a contagem de gates aparecendo em seis
+ * documentos com quatro valores.
+ *
+ * O racional dos números está no docstring do orçamento em `folha-base.ts`: 26
+ * formas e 10 240 bytes, com a conta do ranking (30 bonecos a 56 px) explícita.
+ */
+export const ORCAMENTO_COMPOSTO = { formas: 26, bytes: 10240 } as const;
 
 // ---------------------------------------------------------------------------
 // As amarras
@@ -226,6 +305,17 @@ function pontosElipse(cx: number, cy: number, rx: number, ry: number): Ponto[] {
 /** Uma forma livre em coordenada absoluta, fechada por spline. */
 function laco(pts: readonly Ponto[]): string {
   return `M ${n(pts[0].x)} ${n(pts[0].y)} ` + spline(pts, true) + `Z`;
+}
+
+/**
+ * O mesmo laço, para pontos em `{t, y}` — a peça traçada.
+ *
+ * É `laco()` sobre `ponto()`, e não uma segunda emissão: a spline centrípeta
+ * fechada já existia para as extensões, e a única diferença de uma massa de cabelo
+ * é de onde vem a coordenada. `dy` sobe a forma inteira, como na touca.
+ */
+function lacoTY(pts: readonly PontoFranja[], dy: number): string {
+  return laco(pts.map((p) => ponto(p, dy)));
 }
 
 // ---------------------------------------------------------------------------
@@ -457,9 +547,18 @@ function touca(franja: readonly PontoFranja[], dy: number): string {
   );
 }
 
+/**
+ * O PATH DA CAMADA ESCURA. Laço fechado se a peça é traçada, touca se é paramétrica.
+ *
+ * O ramo da massa vem primeiro porque ele é o estado-alvo: quando o último modelo
+ * paramétrico for re-traçado, `touca()`, `FORA`, `DEGRAU` e `liberarORosto` saem do
+ * arquivo junto com o ramo de baixo. Enquanto isso os dois convivem, e o gate de
+ * exclusividade garante que nenhum modelo esteja nos dois.
+ */
 export function pathCabelo(modelo: CabeloOuModelo, dy = 0): string {
-  const franja = resolverCabelo(modelo).pontos;
-  return franja ? touca(franja, dy) : "";
+  const c = resolverCabelo(modelo);
+  if (c.massa) return lacoTY(c.massa, dy);
+  return c.pontos ? touca(c.pontos, dy) : "";
 }
 
 /**
@@ -472,6 +571,10 @@ export function pathCabelo(modelo: CabeloOuModelo, dy = 0): string {
  */
 export function pathCabeloClaro(modelo: CabeloOuModelo): string {
   const c = resolverCabelo(modelo);
+  // Peça traçada: a região clara é um laço próprio, ou não existe. Um cabelo
+  // chapado é legítimo — o que não pode é a clara ser inventada por deslocamento,
+  // que é justamente a faixa paralela reprovada como arte.
+  if (c.massa) return c.clara ? lacoTY(c.clara, 0) : "";
   if (!c.pontos) return "";
   return c.sombra ? touca(c.sombra, 0) : touca(c.pontos, -DEGRAU);
 }
@@ -493,36 +596,65 @@ export function pathExtensao(e: Extensao): string {
  * contorno do crânio, a maior distância até esse contorno. Devolve 0 se nenhum ponto
  * entra — que é o caso a reprovar.
  */
+/**
+ * Ray casting horizontal: um ponto está dentro do laço fechado `poli`?
+ *
+ * Nasceu local à `ancoragemDasExtensoes` e subiu quando a peça traçada passou a
+ * precisar do mesmo contra a massa — copiá-lo criaria duas versões da mesma
+ * pergunta, que é o defeito que este arquivo inteiro existe para não ter.
+ */
+function dentroDe(poli: readonly Ponto[], p: Ponto): boolean {
+  let bate = false;
+  for (let i = 0, j = poli.length - 1; i < poli.length; j = i++) {
+    const a = poli[i];
+    const b = poli[j];
+    if (a.y > p.y !== b.y > p.y) {
+      const x = a.x + ((p.y - a.y) * (b.x - a.x)) / (b.y - a.y);
+      if (p.x < x) bate = !bate;
+    }
+  }
+  return bate;
+}
+
+/** Distância de um ponto a um laço fechado, medida segmento a segmento. */
+function ateAPoligonal(poli: readonly Ponto[], p: Ponto): number {
+  let melhor = Infinity;
+  for (let i = 0, j = poli.length - 1; i < poli.length; j = i++) {
+    const a = poli[i];
+    const b = poli[j];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)));
+    melhor = Math.min(melhor, Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy)));
+  }
+  return melhor;
+}
+
+/**
+ * O LAÇO DA CAMADA ESCURA, como polígono — o que as réguas medem.
+ *
+ * Peça traçada: é a massa. Peça paramétrica: é a franja mais os dois cantos do
+ * retângulo de fechamento, que é literalmente o que `touca()` emite — repetir a
+ * geometria aqui em vez de derivá-la dela seria a segunda descrição de sempre, e
+ * por isso os três números saem das mesmas constantes.
+ *
+ * `null` para o modelo que não tem camada de touca nenhuma (o moicano, que é só
+ * extensão). Quem chama trata o `null` pelo nome, em vez de receber um número que
+ * aprova por vacuidade.
+ */
+function poligonoDaTouca(c: Cabelo): Ponto[] | null {
+  if (c.massa) return c.massa.map((p) => ponto(p, 0));
+  if (!c.pontos) return null;
+  return [
+    ...c.pontos.map((p) => ponto(p, 0)),
+    { x: CAIXA_CABECA.x1 + FORA, y: CAIXA_CABECA.y0 - FORA },
+    { x: CAIXA_CABECA.x0 - FORA, y: CAIXA_CABECA.y0 - FORA },
+  ];
+}
+
 export function ancoragemDasExtensoes(modelo: CabeloOuModelo): number[] {
-  const contorno = CABECA.contorno;
-
-  /** Ray casting horizontal: quantas vezes a semirreta para a direita cruza. */
-  const dentro = (p: Ponto): boolean => {
-    let bate = false;
-    for (let i = 0, j = contorno.length - 1; i < contorno.length; j = i++) {
-      const a = contorno[i];
-      const b = contorno[j];
-      if (a.y > p.y !== b.y > p.y) {
-        const x = a.x + ((p.y - a.y) * (b.x - a.x)) / (b.y - a.y);
-        if (p.x < x) bate = !bate;
-      }
-    }
-    return bate;
-  };
-
-  /** Distância de um ponto ao contorno, medida segmento a segmento. */
-  const ateOContorno = (p: Ponto): number => {
-    let melhor = Infinity;
-    for (let i = 0, j = contorno.length - 1; i < contorno.length; j = i++) {
-      const a = contorno[i];
-      const b = contorno[j];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)));
-      melhor = Math.min(melhor, Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy)));
-    }
-    return melhor;
-  };
+  const dentro = (p: Ponto) => dentroDe(CABECA.contorno, p);
+  const ateOContorno = (p: Ponto) => ateAPoligonal(CABECA.contorno, p);
 
   return (resolverCabelo(modelo).extensoes ?? []).map((e) => {
     let fundo = 0;
@@ -563,7 +695,8 @@ export function ancoragemDasExtensoes(modelo: CabeloOuModelo): number[] {
  * afasta da corda menos que um traço em todo o percurso (o mesmo argumento de
  * `bordasEm`), e a folga tem margem de sobra para isso.
  *
- * **Ela mede a franja E as extensões da frente**, e a segunda metade não é zelo: o
+ * **Ela mede a franja (ou a massa) E as extensões da frente**, e a segunda metade
+ * não é zelo: o
  * moicano deixou de ter franja, e uma régua que só olhasse `pontos` daria `Infinity`
  * para ele — aprovação por vacuidade, o defeito que este projeto já pagou duas
  * vezes. As de trás ficam de fora com motivo: peça atrás da cabeça é ocultada por
@@ -573,6 +706,14 @@ export function folgaDoRosto(modelo: CabeloOuModelo): { esq: number; dir: number
   const m = resolverCabelo(modelo);
   const trechos: { x: number; y: number }[][] = [];
   if (m.pontos) trechos.push(m.pontos.map((p) => ponto(p, 0)));
+  // A massa entra fechada, e o fechamento não é zelo: a cortina desce ao lado do
+  // rosto pelo trecho de VOLTA do laço, e uma régua que parasse no último ponto
+  // mediria justamente o lado que não chega perto da sobrancelha. Sem esta linha, a
+  // peça traçada devolveria `Infinity` — aprovação por vacuidade, de novo.
+  if (m.massa) {
+    const pts = m.massa.map((p) => ponto(p, 0));
+    trechos.push([...pts, pts[0]]);
+  }
   for (const e of m.extensoes ?? []) {
     if (!e.atras) trechos.push([...e.forma, e.forma[0]]);
   }
@@ -635,6 +776,12 @@ export function folgaDoRosto(modelo: CabeloOuModelo): { esq: number; dir: number
  * A comparação é por faixa de `x` e não ponto a ponto: as duas curvas não têm o
  * mesmo número de pontos nem os mesmos `t`, e parear por índice compararia lugares
  * diferentes da testa. Mesma escolha, e mesmo motivo, do `maisBaixo` acima.
+ *
+ * **Ela é PARAMÉTRICA-ONLY, e o motivo é geométrico.** Perfil por faixa de `x`
+ * pressupõe que cada curva tem um único `y` por coluna, e é exatamente isso que
+ * deixa de valer num laço fechado com cortina. Quem mede o mesmo defeito na peça
+ * traçada é `contencaoDaClara`, e ela mede melhor: distância com sinal ao laço
+ * inteiro, em vez de diferença vertical coluna a coluna.
  */
 export function sombraSobreAFranja(modelo: CabeloOuModelo): { min: number; max: number } {
   const m = resolverCabelo(modelo);
@@ -673,4 +820,116 @@ export function sombraSobreAFranja(modelo: CabeloOuModelo): { min: number; max: 
     max = Math.max(max, d);
   }
   return { min, max };
+}
+
+/**
+ * A CLARA ESTÁ CONTIDA NA MASSA? — o vazamento sem contorno, virado número.
+ *
+ * Devolve a **menor distância COM SINAL** entre a borda da região clara e a borda
+ * da massa: positiva onde a clara está dentro, negativa onde ela saiu. O gate é
+ * `≥ 0`, e um zero é legítimo — a clara encostando na borda da massa é uma mecha
+ * cuja luz vai até o traço, que é desenho, não defeito.
+ *
+ * **O defeito que ela pega é invisível para todas as outras réguas.** A camada
+ * clara é a única peça do cabelo desenhada sem contorno: o traço mora na escura. Um
+ * trecho de clara fora da massa é tinta clara sem borda sobre o fundo — não invade
+ * rosto, não estoura orçamento, não muda a contagem de formas, não muda uma linha do
+ * contrato de custom properties. Passaria inteiro, e só apareceria na folha.
+ *
+ * **Por que com sinal, e não "quantos pontos vazaram".** Contar pontos fora diz que
+ * há defeito, e não diz quanto — e "quanto" é a diferença entre um ponto que passou
+ * 0,3 unidade (ruído da decimação, projeta e segue) e um que passou 40 (a região
+ * clara foi medida no lugar errado). O traçador usa este mesmo número para decidir
+ * qual dos dois é o caso, e imprime o ajuste quando projeta.
+ *
+ * `Infinity` quando não há o que conter: peça paramétrica (quem mede é
+ * `sombraSobreAFranja`) ou massa sem clara (cabelo chapado, e sem clara não há como
+ * vazar). Os dois casos são nomeados, e nenhum deles é o `Infinity` por vacuidade
+ * que este projeto já pagou duas vezes.
+ */
+export function contencaoDaClara(modelo: CabeloOuModelo): number {
+  const c = resolverCabelo(modelo);
+  if (!c.massa || !c.clara) return Infinity;
+
+  const massa = c.massa.map((p) => ponto(p, 0));
+  const clara = c.clara.map((p) => ponto(p, 0));
+  const pts = [...clara, clara[0]];
+
+  let menor = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    for (let k = 0; k <= 12; k++) {
+      const p = {
+        x: a.x + ((b.x - a.x) * k) / 12,
+        y: a.y + ((b.y - a.y) * k) / 12,
+      };
+      const d = ateAPoligonal(massa, p);
+      menor = Math.min(menor, dentroDe(massa, p) ? d : -d);
+    }
+  }
+  return menor;
+}
+
+/**
+ * Onde a coroa começa: o quarto de cima da caixa da cabeça.
+ *
+ * Não é escolha de gosto e não é a peça que a define — é a região do crânio que
+ * **nenhum** dos modelos com touca deixa à mostra, nem o coque, que é o de franja
+ * mais alta. Definir a coroa pela peça faria o gate se calibrar pelo desenho que ele
+ * deveria julgar, que é o mesmo erro que o piso de distinção de 5% evitou quando foi
+ * derivado de pixel em vez do par mais parecido.
+ */
+const COROA = 0.25;
+
+/**
+ * A MASSA COBRE A COROA? — a amarra que substitui "as pontas caem fora da silhueta".
+ *
+ * A régua antiga perguntava se o primeiro e o último ponto da franja tinham `t` fora
+ * de [0, 1], e ela media a coisa certa enquanto a peça era uma curva aberta que
+ * atravessava a cabeça: pontas dentro significavam cabelo que para no meio do crânio
+ * e deixa um degrau de couro cabeludo aparecendo do lado.
+ *
+ * Num laço fechado a pergunta não faz sentido — o laço volta, então o "último ponto"
+ * é vizinho do primeiro e os dois podem estar em qualquer lugar. O que continua
+ * fazendo sentido é o **defeito** que ela pegava, e ele se pergunta direto: a coroa
+ * do crânio está dentro da peça? Devolve a fração do arco superior do
+ * `CABECA.contorno` contida na camada escura, e o gate é **1.0** — qualquer pedaço
+ * de fora é couro cabeludo à mostra onde não devia haver.
+ *
+ * A fração é por comprimento de arco e não por ponto do contorno: os 42 pontos são
+ * decimados por erro de corda, então eles são densos onde a curva vira e esparsos na
+ * reta. Contar ponto pesaria a cúpula muito mais que a lateral, e é a lateral que a
+ * cortina de um cabelo traçado cobre ou não.
+ *
+ * `null` para o modelo sem camada de touca — o moicano, que mostra couro cabeludo
+ * dos dois lados de propósito. Ele é `null` e não zero porque zero seria uma
+ * reprovação, e o que ele tem não é defeito: é a peça.
+ */
+export function coberturaDaCoroa(modelo: CabeloOuModelo): number | null {
+  const poli = poligonoDaTouca(resolverCabelo(modelo));
+  if (!poli) return null;
+
+  const limite = CAIXA_CABECA.y0 + COROA * CAIXA_CABECA.alt;
+  const contorno = CABECA.contorno;
+
+  let dentro = 0;
+  let total = 0;
+  for (let i = 0; i < contorno.length; i++) {
+    const a = contorno[i];
+    const b = contorno[(i + 1) % contorno.length];
+    // Um passo a cada ~2 unidades: um sexto de traço, e o que sobra de erro de
+    // amostragem é menor que a espessura da linha que se está medindo.
+    const passos = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2));
+    for (let k = 0; k < passos; k++) {
+      const p = {
+        x: a.x + ((b.x - a.x) * k) / passos,
+        y: a.y + ((b.y - a.y) * k) / passos,
+      };
+      if (p.y > limite) continue;
+      total++;
+      if (dentroDe(poli, p)) dentro++;
+    }
+  }
+  return total ? dentro / total : 0;
 }
