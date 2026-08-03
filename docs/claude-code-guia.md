@@ -4,6 +4,29 @@
 > mas filtrado: aqui só entra o que faz diferença **neste projeto**, do jeito que
 > você trabalha. O que é genérico e você acha no link, eu cortei.
 
+> ## ⚠️ Estado em 2026-08-03 — leia antes de aplicar qualquer bloco daqui
+>
+> Este doc foi escrito em 30/07 dizendo "nada aqui está instalado". **Isso mudou.**
+> O que já foi feito, e portanto **não deve ser reaplicado**:
+>
+> | Item | Estado |
+> |---|---|
+> | Os 4 `deny` da §6 | ✅ instalados em `.claude/settings.json` |
+> | `.claude/commands/gate.md` (§5) | ✅ criado — e ganhou um **5º passo** que este doc não previa |
+> | O hook da migration (§6) | ✅ instalado — mas **a receita desta §6 estava errada**, ver lá |
+> | `/fewer-permission-prompts` (§7) | ✅ rodado; 2 entradas perigosas removidas do `settings.local.json` |
+> | `.gitignore` liberando `.claude/` (§5) | ✅ feito |
+> | Tabela gatilho → skill | ✅ **nova**, mora no `CLAUDE.md`, não existia neste doc |
+> | `effortLevel` (§4) | ⬜ decisão do usuário, em aberto |
+> | Os outros 4 slash commands da §5 | ⬜ não criados |
+>
+> **A §0 (diagnóstico medido) é um retrato de 30/07 e envelheceu bem:** ela mediu
+> 16 sessões / 187 prompts / **0 slash commands**. Em 03/08 são 45 sessões, e os
+> `/clear`, `/compact` e `/model` passaram a ser usados — a taxa de estouro de
+> contexto caiu pela metade. O conselho de contexto **funcionou**. O que não pegou
+> foi tudo que exigia configuração, e é por isso que hoje virou config instalada
+> em vez de recomendação repetida.
+
 Nada neste doc está instalado. Os blocos de configuração são para copiar quando
 você decidir — não mexi em `.claude/` nem em `settings.json`.
 
@@ -469,33 +492,44 @@ Por que cada um:
 
 ### O hook da migration
 
+✅ **INSTALADO E PROVADO em 2026-08-03.** Está em `.claude/settings.json`, e a
+lógica mora em `scripts/hooks/bloqueia-migration-aplicada.mjs`. **Não recolar a
+versão antiga daqui — ela nunca funcionou.** O texto abaixo fica como registro
+do erro, porque o erro é a parte instrutiva.
+
 A regra "nunca modificar uma migration já aplicada" é a única do CLAUDE.md que
-depende inteiramente de eu lembrar dela. Um hook a transforma em garantia:
+depende inteiramente de eu lembrar dela. Um hook a transforma em garantia.
+
+**A versão que este guia propunha, e que estava errada:**
 
 ```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -Command \"$p = ($env:CLAUDE_TOOL_INPUT_FILE_PATH -replace '\\\\','/'); if ($p -match 'supabase/migrations/') { $rel = $p -replace '.*?(supabase/migrations/.*)$','$1'; git ls-files --error-unmatch $rel 2>$null; if ($LASTEXITCODE -eq 0) { Write-Error 'Migration ja commitada — crie uma nova, nao edite esta.'; exit 2 } }\""
-          }
-        ]
-      }
-    ]
-  }
-}
+"command": "powershell -NoProfile -Command \"$p = ($env:CLAUDE_TOOL_INPUT_FILE_PATH ...)\""
 ```
 
-Bloqueia edição de qualquer arquivo em `supabase/migrations/` que já esteja
-rastreado pelo git. Migration nova (ainda não commitada) passa normal. Saída 2 é o
-código que o Claude Code lê como "bloqueado, e o motivo está no stderr".
+Errada em duas frentes, as duas descobertas por leitura do hook do plugin
+`impeccable` — que comprovadamente roda nesta máquina:
 
-> Vale testar esse hook uma vez antes de confiar nele: tente me pedir para editar
-> uma migration antiga e confirme que trava.
+1. **A variável `CLAUDE_TOOL_INPUT_FILE_PATH` não existe.** O Claude Code entrega
+   o evento como **JSON no stdin**, na forma
+   `{ "hook_event_name": ..., "tool_name": ..., "cwd": ..., "tool_input": { "file_path": ... } }`.
+2. **Os hooks não rodam em PowerShell**, e sim em **sh POSIX** (Git Bash).
+
+Ou seja: aquele hook nunca teria bloqueado nada, e teria ficado instalado
+parecendo proteção. **Hook que nunca bloqueia é indistinguível de hook que
+funciona** — é "verde por vacuidade" aplicado à própria ferramenta.
+
+Duas consequências de projeto que valem além deste hook:
+
+- **Contrato de ferramenta se descobre por evidência, não por documentação.** O
+  jeito barato foi ler um hook que já funciona na máquina, em vez de deduzir.
+- **O hook novo falha FECHADO**: stdin vazio ou formato mudado → bloqueia, em vez
+  de deixar passar. Falso positivo custa dez segundos para remover; falso negativo
+  custa uma migration aplicada editada em silêncio.
+
+> **Provado nas duas direções, não só numa:** editar
+> `20260321100000_avatar_base.sql` (commitada) foi bloqueado de verdade; criar uma
+> migration nova passou. Um hook só testado no caso que bloqueia não distingue
+> "funciona" de "bloqueia tudo".
 
 ---
 
