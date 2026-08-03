@@ -15,9 +15,18 @@
 > sobre a **arte de origem** e sobre o **conversor**, não sobre o recorte.
 >
 > **O que está suspenso:** §3 (da arte ao arquivo, a partir do `avatar:garment`),
-> §4, §5, §6, §7 e §8. O substituto é a `interface Traje`
+> §4, §5, §6, **§7** e §8. O substituto é a `interface Traje`
 > (`src/lib/avatar/estilo/tipos.ts`) clipada em `pathTronco()`, e o **2b** do doc
 > 15 é quem decide o que sobrevive destas seções.
+>
+> ⚠️ **Divergência resolvida em 2026-08-03: a §7 está suspensa INTEIRA, §7.0
+> incluída.** O item 2b.3 do doc 15 abria uma exceção para a §7.0 ("continua
+> valendo"); este banner suspendia a §7 sem ressalva, e as duas leituras estavam
+> no repositório ao mesmo tempo. **Vence o banner**, porque os 9 gates da §7 medem
+> contra as máscaras de `mascara-base.ts` — derivadas do macacão da base antiga —
+> e um gate que mede contra o que não existe fica **verde por vacuidade**, que é o
+> defeito que este projeto já pagou duas vezes. O que sobrevive da §7 é decidido
+> pelo **2b.1**, medindo, e não por herança.
 
 > **Leia isto antes de gerar arte de uniforme.** Cada regra e cada número aqui
 > saiu de uma rodada que falhou. Seguir o documento custa minutos; redescobrir

@@ -18,10 +18,39 @@ está dito — e o script avisa em voz alta em vez de ficar verde por vacuidade.
 | contrato de custom properties | 0 problemas | `conferirSvg` |
 | distinção contra as irmãs do slot, a 56 px | **≥ 5%** dos pixels de 40×56 | `avatar:folha-base` |
 | a peça não declara silhueta do corpo | não compila se tentar | `typecheck` |
+| **o topo da peça cabe no canvas** | nenhum ponto acima de **`y = 8`** | ninguém ainda — ver abaixo |
+| **(f) o Doug aprovou a folha** | não é número, e não deve ser | o Doug |
 
 **O teto da base é de REGRESSÃO, comparado com `!==`.** Ela não pode crescer *nem
 encolher* — crescer significa alguém ter achado espaço na base para pagar uma camada
 que não é dela.
+
+**O canvas tem 39 unidades acima da cabeça, e elas acabam sem aviso.** Medido em
+2026-08-03: a figura base ocupa de `y = 39` a `y = 655` num `viewBox` de 700, e
+`CAIXA_CABECA.y0` é 45,5 — sobram **3,1 px acima da coroa no tamanho do ranking**.
+Tudo que uma peça desenhe acima de `y = 0` é cortado pelo viewport, e o corte não
+levanta erro: ele produz uma **barra reta**, que lê como *laje* e como *topo de
+boné*. O piso é 8 e não 0 porque o traço tem 12 unidades — em `y = 8` a borda de
+cima da tinta cai em `y = 2` e o contorno inteiro aparece; em `y = 0` some metade
+dele e a peça volta a ler sem borda no topo.
+
+**Não é hipótese e não é só de peça nova:** o `moicano` do catálogo sai com 147 px
+de largura CONSTANTE nas seis primeiras linhas do raster — a crista dele (`y` −34,
+−76, −60) é guilhotinada desde o 2a.1 —, e o `coque` perde 34 unidades da calota
+pelo mesmo caminho. **Sobra que passa do teto se comprime em torno da linha da
+coroa, não se corta**: comprimir preserva a razão entre pico e vale, e um perfil de
+três tufos continua com três tufos, mais baixos. Cortar achata os três contra a
+mesma reta, que é o defeito de origem.
+
+**O (f) é o item que faltava existir, e ele fecha um buraco medido.** Os gates
+mediram distinção, cor, geometria e verde de suíte, e **os cinco cabelos do 2a.1
+passaram em todos e foram reprovados de olho pelo Doug**. Gate verde não fecha
+peça. O que o (f) exige é registro, não sentimento: uma linha no
+`docs/avatar/14-backlog-execucao.md` com o **selo da folha** que o Doug abriu, a
+**data** e o **veredito em uma frase**. O que ele deliberadamente não é: uma
+métrica — a regra 10 desta skill já diz que o gate julga número e o Doug julga
+arte, e tentar escrever régua de beleza foi o que produziu cinco cabelos
+matematicamente válidos e artisticamente quadrados.
 
 **O composto é base + UM item**, medido, nunca somado: nunca há dois cabelos num
 render, então somar os cinco orçaria uma composição que não existe.
@@ -41,6 +70,16 @@ engrossar a trança, não baixar o piso.
 | ancoragem de cada extensão dentro da cabeça | **≥ 10** (`SANGRIA`) | `ancoragemDasExtensoes()` |
 | pontas da franja fora da silhueta | `t` fora de [0, 1] | `avatar:variantes` |
 | degrau de sombra sob a franja | 22 unidades (`DEGRAU`) | `pathCabeloClaro()` |
+| desvio do traço contra a arte de origem | **≤ 6 u** (meio traço) | `.scratch/estilo/franja.ts` |
+
+**A amarra de desvio é a que faltava, e a falta dela é o que deixou passar um cabelo
+que o Doug reprovou.** Toda peça traçada de PNG tem um número dizendo quanto ela se
+afasta da referência — sem ele, trocar critério de traçado é trocar um palpite por
+outro, e "parece melhor" é o que quem acabou de mexer sempre acha.
+
+Meio traço porque abaixo disso as duas curvas caem dentro da mesma tinta preta. **Vale
+por curva** — franja, sombra e contorno externo de cada lóbulo, cada uma com o seu
+número —, e não como média: uma média esconde a curva que errou.
 
 **A folga é medida nos DOIS lados, e os dois números diferem.** O `GIRO` deixa a
 sobrancelha direita 3 unidades mais alta, então sobra menos testa daquele lado: a

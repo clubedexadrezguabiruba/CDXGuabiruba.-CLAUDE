@@ -11,10 +11,20 @@
 
 <!-- AGORA:inicio -->
 **Em execução:** avatar kokeshi, branch `avatar/estilo-kokeshi`. Base visual
-aprovada no Bloco 1d. O próximo é o **Bloco 2b** — arremate do tronco (2b.0) e o
-`avatar:garment`, que hoje passa por vacuidade (2b.1).
+aprovada no Bloco 1d. Duas frentes abertas, e **elas não dependem uma da outra**:
+
+- **2a — o cabelo voltou.** O código está pronto e a medição passou; **a arte
+  reprovou em 2026-08-03** ("tudo muito quadrado, sem toque humano"). Diagnóstico
+  com as quatro causas medidas no **2a.4** do doc 15; briefing para a sessão de
+  desenho em `.scratch/estilo/BRIEFING-CABELO.md`.
+- **2b** — arremate do tronco (2b.0) e o `avatar:garment`, que hoje passa por
+  vacuidade (2b.1). Mexe em tronco; o cabelo é cortado pelo `clipPath` da cabeça.
 
 **Decisões travando trabalho:**
+
+- **Cabelo — por qual caminho a arte volta.** Desenho em código pela skill
+  `avatar-desenho` (que nunca rodou nesta peça), arte gerada pelo Doug e convertida
+  por régua, ou line-art vetorial. Trava o 2a. As quatro perguntas estão no briefing.
 
 - **Régua da patente — três versões vivas e incompatíveis.** 15 aulas por nível
   (doc 15 §3), 30 aulas (memória do `UPDATE` sem `UPSERT`), e 0·26·47·66·84·101·115·126
@@ -36,9 +46,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/estilo-kokeshi` |
-| **Commits à frente de `origin/main`** | 27 |
-| **Árvore** | **13 arquivos sujos** |
-| **Último commit** | 6f9a18b · 2026-08-03 · docs: imagem vai por subagente, e a pasta _superado entra no mapa |
+| **Commits à frente de `origin/main`** | 30 |
+| **Árvore** | **18 arquivos sujos** |
+| **Último commit** | cac2f55 · 2026-08-03 · feat(avatar): o pedido ao gerador de imagem vira fonte única, com dois provedores |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -69,7 +79,7 @@ Backlog do avatar, fase a fase:
 
 | F0 | F1 | F2 | F3 | F4 | F5 |
 |---|---|---|---|---|---|
-| 19/23 | 2/4 | 0/16 | 3/5 | 1/12 | 0/6 |
+| 19/23 | 2/5 | 0/16 | 3/5 | 1/11 | 0/6 |
 
 _Conta tarefas numeradas (`**T0.1**`), que é a régua do próprio doc 14. Contar todos os checkboxes dá um número maior porque inclui as linhas de gate._
 

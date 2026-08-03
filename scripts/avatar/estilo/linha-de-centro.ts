@@ -76,7 +76,15 @@
 import { readFileSync } from "fs";
 import sharp from "sharp";
 import { CENTRO_X, TRACO } from "../../../src/lib/avatar/estilo/geometria";
-import { ALTURA_CANONICA, medir, naColuna, naLinha, type Bitmap, type Corrida } from "./medir";
+import {
+  ALTURA_CANONICA,
+  decimarPorCorda,
+  medir,
+  naColuna,
+  naLinha,
+  type Bitmap,
+  type Corrida,
+} from "./medir";
 
 const LINE_ART = "scripts/avatar/fonte/estilo-kokeshi/referencia-linha-de-centro.svg";
 const PNG = "scripts/avatar/fonte/estilo-kokeshi/referencia-base.png";
@@ -615,75 +623,20 @@ function suavizar(pts: Ponto[], janela: number): Ponto[] {
 }
 
 /**
- * Reduz o contorno a `alvo` pontos, **pelo erro de corda** e não por passo fixo.
+ * Reduz o contorno a `alvo` pontos, pelo erro de corda.
  *
- * Passo fixo gasta pontos onde a curva é reta e falta onde ela vira — e é justamente
- * nas viradas (a cúpula, o queixo) que a forma mora. Aqui um ponto só sobrevive se
- * removê-lo afastasse a curva mais que os outros: a cada rodada some o ponto cuja
- * retirada custa menos.
+ * **O critério não mora mais aqui** — ele foi para `decimarPorCorda()` em `medir.ts`
+ * quando a régua de cabelo passou a precisar do mesmo, e a alternativa era ter duas
+ * cópias livres para divergir. A tabela das três alternativas medidas, e o porquê de
+ * mais pontos piorarem no contorno do crânio, estão no docstring de lá.
  *
- * ---------------------------------------------------------------------------
- * DUAS ALTERNATIVAS FORAM MEDIDAS CONTRA ELE, E AS DUAS PERDERAM
- * ---------------------------------------------------------------------------
- *
- * O erro de corda é o critério clássico para **aproximar uma poligonal por outra**, e
- * estes pontos não são uma poligonal: são pontos de controle de uma spline. A
- * objeção é legítima e foi testada, medindo no path EMITIDO (amostrado com
- * `getPointAtLength`) o máximo de `|dκ/ds|` e o menor raio de curvatura:
- *
- * | critério | dκ/ds máx | raio mínimo | caixa preservada |
- * |---|---|---|---|
- * | **erro de corda** | 3,6e-3 | **32,6** | sim |
- * | arco uniforme | **2,3e-3** | 31,4 | sim |
- * | densidade ∝ curvatura | 1,2e-2 | 13,8 | **não** — o ápice cai 1,7 u |
- *
- * A densidade por curvatura é a que parecia mais certa no papel e é a pior: ela
- * adensa os cantos e deixa a cúpula — que é gentil e longa — com pontos de menos, e o
- * ápice da cabeça desce quase duas unidades. Arco uniforme empata dentro do ruído.
- *
- * **Mais pontos também não ajudam**, e isso é contraintuitivo o bastante para ficar
- * escrito: com 48 pontos o raio mínimo cai para 16,8 e com 88 para 16,4, porque o
- * critério passa a gastar pontos reproduzindo detalhe de amostragem em vez de forma.
- *
- * O ganho real da rodada não estava aqui. O "mini kink acima do reflexo da luz" que o
- * Doug viu era o **especular**, que crowdeava o contorno a 1,8 unidade — ver
- * `pathEspecular()` em `geometria.ts`.
+ * Os dois parâmetros que sobram aqui são os que descrevem ESTA curva, e não o
+ * critério: o contorno do crânio é **fechado**, e as emendas entre a varredura por
+ * linha e a por coluna pedem o colapso de 5 unidades — menos de meio traço, então
+ * nada que se veja cabe entre dois pontos colapsados.
  */
-function decimar(pts: Ponto[], alvo: number): Ponto[] {
-  // Primeiro colapsa vizinhos quase coincidentes. Eles aparecem nas EMENDAS entre a
-  // varredura por linha e a por coluna — os dois trechos descrevem o mesmo pedaço de
-  // borda e cada um contribui o seu ponto final. Erro de corda não os remove (dois
-  // pontos colados são colineares com quase tudo, então custam pouco pelos dois
-  // lados), e uma Catmull-Rom que passa por dois pontos a 3 unidades de distância
-  // ganha um laço ali. Distância bruta é o critério certo, e não curvatura — 5
-  // unidades é menos de meio traço, então nada que se veja cabe entre eles.
-  const juntos: Ponto[] = [];
-  for (const p of pts) {
-    const ult = juntos[juntos.length - 1];
-    if (ult && Math.hypot(p.x - ult.x, p.y - ult.y) < 5) continue;
-    juntos.push(p);
-  }
-  const v = juntos;
-  while (v.length > alvo) {
-    let pior = 1;
-    let menorCusto = Infinity;
-    for (let i = 0; i < v.length; i++) {
-      const a = v[(i - 1 + v.length) % v.length];
-      const p = v[i];
-      const c = v[(i + 1) % v.length];
-      const dx = c.x - a.x;
-      const dy = c.y - a.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const custo = Math.abs(dx * (a.y - p.y) - dy * (a.x - p.x)) / len;
-      if (custo < menorCusto) {
-        menorCusto = custo;
-        pior = i;
-      }
-    }
-    v.splice(pior, 1);
-  }
-  return v;
-}
+const decimar = (pts: Ponto[], alvo: number): Ponto[] =>
+  decimarPorCorda(pts, alvo, { fechado: true, colapso: 5 });
 
 /**
  * A CONFERÊNCIA CRUZADA — as mesmas medidas, nas duas fontes.

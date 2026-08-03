@@ -932,3 +932,174 @@ export function medir(b: Bitmap): Marcos {
     perfil,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Decimação — o critério que escolhe QUAIS pontos sobrevivem
+// ---------------------------------------------------------------------------
+
+export interface OpcoesDecimar {
+  /**
+   * `true` para curva FECHADA (o contorno do crânio, o perfil do tronco): o primeiro
+   * e o último ponto são vizinhos e podem ser removidos como qualquer outro.
+   *
+   * `false` para curva ABERTA (uma franja, o lado externo de um lóbulo): as duas
+   * pontas são ancoradas e nunca saem. Numa franja as pontas são o que o `clipPath`
+   * corta — perdê-las encurtaria a peça pela lateral, que é defeito de silhueta e
+   * não de suavidade.
+   */
+  fechado?: boolean;
+  /**
+   * Distância abaixo da qual dois vizinhos colapsam num só, ANTES do erro de corda.
+   * `0` desliga, e é o padrão.
+   *
+   * Existe para as EMENDAS do contorno do crânio, onde a varredura por linha e a por
+   * coluna descrevem o mesmo pedaço de borda e cada uma contribui o seu ponto final.
+   * Erro de corda não os remove — dois pontos colados são colineares com quase tudo,
+   * então custam pouco pelos dois lados — e uma Catmull-Rom que passa por dois pontos
+   * a 3 unidades de distância ganha um laço ali. Distância bruta é o critério certo,
+   * e não curvatura.
+   *
+   * Numa varredura de franja não há emenda, e um colapso de 5 unidades viraria uma
+   * reamostragem uniforme por comprimento de arco antes do critério de verdade —
+   * exatamente o que o erro de corda existe para não ser. Por isso o padrão é 0.
+   */
+  colapso?: number;
+}
+
+/**
+ * Reduz uma poligonal a `alvo` pontos, **pelo erro de corda** e não por passo fixo.
+ *
+ * Passo fixo gasta pontos onde a curva é reta e falta onde ela vira — e é justamente
+ * nas viradas (a cúpula, o queixo, o vão entre duas mechas) que a forma mora. Aqui um
+ * ponto só sobrevive se removê-lo afastasse a curva mais que os outros: a cada rodada
+ * some o ponto cuja retirada custa menos.
+ *
+ * ---------------------------------------------------------------------------
+ * DUAS ALTERNATIVAS FORAM MEDIDAS CONTRA ELE, E AS DUAS PERDERAM
+ * ---------------------------------------------------------------------------
+ *
+ * O erro de corda é o critério clássico para **aproximar uma poligonal por outra**, e
+ * estes pontos não são uma poligonal: são pontos de controle de uma spline. A objeção
+ * é legítima e foi testada, medindo no path EMITIDO (amostrado com `getPointAtLength`)
+ * o máximo de `|dκ/ds|` e o menor raio de curvatura:
+ *
+ * | critério | dκ/ds máx | raio mínimo | caixa preservada |
+ * |---|---|---|---|
+ * | **erro de corda** | 3,6e-3 | **32,6** | sim |
+ * | arco uniforme | **2,3e-3** | 31,4 | sim |
+ * | densidade ∝ curvatura | 1,2e-2 | 13,8 | **não** — o ápice cai 1,7 u |
+ *
+ * A densidade por curvatura é a que parecia mais certa no papel e é a pior: ela adensa
+ * os cantos e deixa a cúpula — que é gentil e longa — com pontos de menos, e o ápice
+ * da cabeça desce quase duas unidades. Arco uniforme empata dentro do ruído.
+ *
+ * **Mais pontos também não ajudam NO CONTORNO DO CRÂNIO**, e isso é contraintuitivo o
+ * bastante para ficar escrito: com 48 pontos o raio mínimo cai para 16,8 e com 88 para
+ * 16,4, porque o critério passa a gastar pontos reproduzindo detalhe de amostragem em
+ * vez de forma.
+ *
+ * **Essa lição é do crânio e não se transporta para uma mecha**, e confundir as duas
+ * custou uma rodada. O crânio é uma convexa lisa: ali curvatura alta é ruído de
+ * amostragem, e gastar ponto nela é gastar ponto em nada. Numa franja os extremos
+ * **são** a forma — o que distingue mecha de reta é onde ela sobe e onde ela desce. O
+ * `alvo` certo é medido por curva, e não herdado por analogia.
+ *
+ * O ganho real da rodada do crânio não estava aqui. O "mini kink acima do reflexo da
+ * luz" que o Doug viu era o **especular**, que crowdeava o contorno a 1,8 unidade —
+ * ver `pathEspecular()` em `geometria.ts`.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ELE MORA AQUI, E NÃO NO ARQUIVO QUE O USA
+ * ---------------------------------------------------------------------------
+ *
+ * Ele nasceu local a `linha-de-centro.ts`. Quando a régua de cabelo precisou do mesmo
+ * critério, copiá-lo teria criado **duas cópias que divergem** — a lição de seis
+ * medições do pipeline morto, citada no topo do `cabelo.ts`. O contorno do crânio e a
+ * franja de um cabelo têm de ser reduzidos pela mesma régua, ou a comparação entre os
+ * dois passa a medir a diferença entre os critérios.
+ */
+export function decimarPorCorda<T extends { x: number; y: number }>(
+  pts: readonly T[],
+  alvo: number,
+  opc: OpcoesDecimar = {},
+): T[] {
+  const colapso = opc.colapso ?? 0;
+  const v: T[] = [];
+  for (const p of pts) {
+    const ult = v[v.length - 1];
+    if (colapso > 0 && ult && Math.hypot(p.x - ult.x, p.y - ult.y) < colapso) continue;
+    v.push(p);
+  }
+
+  while (v.length > alvo) {
+    const n = v.length;
+    // Numa curva ABERTA as pontas não entram no laço. O erro de corda de um extremo
+    // seria medido contra os seus dois vizinhos ciclados — e numa curva aberta um
+    // deles é o outro extremo, do lado oposto da peça. A conta perde o sentido e a
+    // franja encolhe pelas duas beiradas, que é justamente onde o `clipPath` já corta.
+    const de = opc.fechado ? 0 : 1;
+    const ate = opc.fechado ? n : n - 1;
+    if (ate <= de) break;
+    let pior = de;
+    let menorCusto = Infinity;
+    for (let i = de; i < ate; i++) {
+      const a = v[(i - 1 + n) % n];
+      const p = v[i];
+      const c = v[(i + 1) % n];
+      const dx = c.x - a.x;
+      const dy = c.y - a.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const custo = Math.abs(dx * (a.y - p.y) - dy * (a.x - p.x)) / len;
+      if (custo < menorCusto) {
+        menorCusto = custo;
+        pior = i;
+      }
+    }
+    v.splice(pior, 1);
+  }
+  return v;
+}
+
+/**
+ * QUANTO A POLIGONAL DECIMADA SE AFASTA DA VARREDURA DENSA — o número que escolhe N.
+ *
+ * É o par do `decimarPorCorda`: ele decide QUAIS pontos ficam, e este diz QUANTO
+ * custou tê-los reduzido. Sem ele, escolher `alvo` é analogia — e analogia foi o que
+ * pôs `PONTOS_FINAIS = 10` na régua de cabelo (*"dez pontos são o dobro do que os
+ * cinco modelos usam"*), sem uma medição por trás.
+ *
+ * Mede distância ponto-a-**segmento**, e não ponto-a-ponto: o que a curva reduzida
+ * representa entre dois pontos de controle é o segmento entre eles, e comparar com o
+ * vértice mais próximo devolveria zero em todo ponto sobrevivente e um número enorme
+ * no meio de cada corda.
+ *
+ * **É uma aproximação por baixo do erro real**, e isso fica declarado: os pontos são
+ * de controle de uma Catmull-Rom, que passa por eles mas não segue as cordas. Quem
+ * fecha essa lacuna é `.scratch/estilo/fidelidade.ts`, que rasteriza o composto e
+ * compara com a arte — este aqui é o número barato, que roda sem chromium e por isso
+ * pode varrer N de 8 a 48.
+ */
+export function desvioDaCorda(
+  densa: readonly { x: number; y: number }[],
+  reduzida: readonly { x: number; y: number }[],
+): { max: number; medio: number } {
+  if (reduzida.length < 2 || densa.length === 0) return { max: 0, medio: 0 };
+  let max = 0;
+  let soma = 0;
+  for (const p of densa) {
+    let melhor = Infinity;
+    for (let i = 0; i < reduzida.length - 1; i++) {
+      const a = reduzida[i];
+      const b = reduzida[i + 1];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const l2 = dx * dx + dy * dy;
+      const t =
+        l2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+      melhor = Math.min(melhor, Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy)));
+    }
+    max = Math.max(max, melhor);
+    soma += melhor;
+  }
+  return { max, medio: soma / densa.length };
+}

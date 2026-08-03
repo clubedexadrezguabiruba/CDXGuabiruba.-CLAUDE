@@ -155,6 +155,196 @@ de onde sai `FOLGA_ROSTO`.
 
 ---
 
+## Volume acima da coroa lê como LAJE, porque o canvas acaba a 39 unidades
+
+Medido em 2026-08-03: a figura base ocupa de `y = 39` a `y = 655` num `viewBox` de
+700, e o topo do crânio está em 45,5. **Sobram 39 unidades acima da cabeça — 3,1 px
+no tamanho do ranking.** Quem desenha volume para cima está desenhando num espaço
+que quase não existe.
+
+O que acontece quando se ignora isso não é um erro: é uma **barra reta**. A primeira
+rodada das três variantes do `curto` saiu com a primeira linha de tinta em `y = 0`
+medindo **314, 324 e 341 px** de largura — 63 a 68% do quadro — e a leitura foi
+unânime: *laje*, *topo de boné*, *cogumelo*. Os três tufos que davam nome à
+"Espetada" tinham os vales acima do corte, e não foram encurtados: foram **fundidos
+numa barra só**.
+
+E não é defeito de peça nova. O **`moicano` do catálogo** sai com 147 px de largura
+CONSTANTE nas seis primeiras linhas do raster — a crista (`y` −34, −76, −60) é
+guilhotinada desde o 2a.1 — e o **`coque`** perde 34 unidades da calota do mesmo
+jeito. Nenhum gate viu, porque nenhum gate olha o topo.
+
+**A correção é comprimir, não cortar.** Cortar em `y = 8` achata os picos contra a
+mesma reta, que é o defeito de origem com outro nome. Comprimir a saliência **em
+torno da linha da coroa** — `y' = y0 − (y0 − y)·k`, e só onde `y < y0`, para não
+encolher a massa lateral junto — preserva a razão entre pico e vale: três tufos
+continuam três tufos, mais baixos.
+
+Medido nas mesmas três, antes e depois: a distinção a 56 px **subiu** de 5,04–5,98%
+para 6,70–7,41%. Contraintuitivo e tem causa: a barra guilhotinada era **idêntica
+nas três**, então ela não separava — ela igualava. Tirar volume aumentou distinção.
+
+**Onde há espaço é para os LADOS**: 68 unidades de margem de cada lado contra 39 em
+cima. Volume lateral cabe; volume vertical quase não.
+
+---
+
+## Extensão só ancora onde a cabeça COBRE, e o teste é no destino
+
+Uma extensão é empurrada para dentro do crânio para não ler como adesivo colado ao
+lado (`ancoragemDasExtensoes`, piso `SANGRIA`). Três coisas que custaram rodada:
+
+**Empurre um lado só.** A primeira versão empurrava todo ponto que caísse fora da
+silhueta — e como o lóbulo inteiro é, por construção, feito de pontos fora da
+silhueta, os dois lados iam para o mesmo lugar. Um lóbulo de têmpora medido de
+`esq−40` a `esq` viraria uma tira em `esq+25`: o volume colapsa, sem erro e com a
+ancoragem passando verde. O sentido se decide **uma vez por lóbulo**, pela posição
+da massa.
+
+**Ancore a partir da borda mais funda, não da medida.** Onde a arte já cobre a
+cabeça, o empurrão sai da arte; onde ela para antes, sai do crânio —
+`max(medido, borda) + ANCORA`. Sem isso a Domada deixava a borda de baixo da coroa
+**24 unidades acima da cabeça**: uma faixa de fundo atravessando a coroa inteira,
+com a ancoragem passando (19,8 contra piso de 10, medida em outro trecho do mesmo
+laço). `ancoragemDasExtensoes` pergunta *"a peça entra na cabeça?"*, não *"a peça
+encosta na cabeça em todo o percurso?"*.
+
+**Pergunte se o destino é coberto, não se a coluna tem crânio.** A cabeça é redonda:
+uma coluna que a cruza no meio da altura não a cruza embaixo. Empurrar para onde não
+há cabeça atrás estica a silhueta visível e pendura um esporão no vazio.
+
+---
+
+## Ponta de laço fechada em esquadro lê como ABA
+
+Cabelo não termina em canto reto. Quando os dois lados de um laço são amostrados nas
+**mesmas** posições ao longo do eixo, a ponta fecha com um segmento perpendicular — e
+se um dos lados foi empurrado para ancorar, esse segmento vira uma parede: medidas
+25,8 unidades na Domada, que a 425 px é uma quina cega de 16 px pendurada na têmpora.
+
+A parede não estava na arte. Na ponta do lóbulo a massa afina e os dois lados quase
+se encostam — medidos, 116,5 e 117,3, oito décimos de distância. **A parede inteira
+foi criada pela ancoragem.**
+
+Amostrar o lado interno em `(i + ½)/n` em vez de `i/(n − 1)` mantém todos os pontos
+no miolo: a ponta passa a ser feita só pelo lado externo e a spline fecha em bico.
+
+---
+
+## Amostragem uniforme mata recorte — mas a cura era N, não um critério novo
+
+**Esta entrada corrige a versão anterior dela mesma.** A parte que continua valendo:
+ponto a cada N colunas cai na encosta tanto quanto no extremo, e a spline liga duas
+encostas por curva lisa — o recorte morre na interpolação, não na rasterização. Isso
+vale para a borda de baixo do cabelo **e** para o contorno externo de uma extensão, e
+esquecê-lo custou uma rodada: com amostragem uniforme a "Espetada" (três tufos) e a
+"Tigela" (arco parelho) mediram **4,51%** de distinção contra piso de 5%. As duas
+artes não são parecidas; foi a amostragem que as igualou.
+
+A parte que **estava errada** era a conclusão. A rodada seguinte trocou a amostragem
+uniforme por um critério de extremos com prominência, inventado no bloco, e mediu que
+ele ajudava (4,51 → 5,04%). Um critério novo que melhora um número ruim parece a
+resposta; era compensação. Medido contra o **erro de corda** — o mesmo critério que
+reduziu o contorno do crânio a 42 pontos —, no mesmo N:
+
+| critério | N | desvio da curva | IoU contra a arte |
+|---|---|---|---|
+| extremos com prominência | 10 | 33,0 u | 49,4% |
+| erro de corda | 10 | 15,9 u | **61,1%** |
+| erro de corda | 20 | **3,6 u** | 61,7% |
+
+**O critério inventado perdia por 12 pontos de IoU antes de qualquer ajuste de N.**
+Ele só parecia necessário porque 8 a 12 pontos são poucos demais para a forma existir:
+a 20 pontos o erro de corda **subsome** os extremos sozinho, porque tirar um extremo
+tem custo de corda alto e ele sobrevive sem regra especial.
+
+Duas complicações somem junto com o critério, e as duas eram sintoma do mesmo aperto:
+a rotação de 90° do lóbulo de têmpora (erro de corda é isotrópico, não tem eixo
+preferido) e a decimação uniforme da sombra (com o mesmo critério nas duas, elas se
+reduzem em fase).
+
+**A regra generalizável:** antes de inventar critério, meça o que já existe no
+repositório com pontos suficientes. Critério novo é a última hipótese, não a primeira.
+
+---
+
+## IoU não escolhe quantos pontos — desvio de borda escolhe
+
+Duas réguas para a mesma peça, e elas discordam de propósito:
+
+| N | IoU contra a arte | desvio da curva |
+|---|---|---|
+| 10 | 61,1% | 15,9 u |
+| 20 | 61,7% | 3,6 u |
+
+Dobrar os pontos moveu o IoU em **0,6 ponto** e o desvio em **12 unidades**. Os
+números não brigam: **IoU mede área, e área é insensível a recorte.** Um dente de 15
+unidades numa borda de 500 é ruído na conta de área e é a diferença entre "cabelo" e
+"boina" no olho.
+
+O que o Doug reprova é recorte. Então **o N sai do desvio de borda**, e o IoU serve
+para outra pergunta — se a massa está no lugar certo. Escolher N por IoU teria parado
+em 10, com o desenho que ele já tinha reprovado.
+
+Limiar: **meio traço, 6 unidades.** Abaixo disso as duas curvas caem dentro da mesma
+tinta preta e não há onde a diferença aparecer.
+
+---
+
+## Desvio que não cai com mais pontos é parede vertical, não bug
+
+Numa varredura de N, o desvio do lóbulo caiu de 32,6 para 5,63 unidades e depois
+**empacou**: 5,63 em N=20, em N=32 e em N=48. Desvio que ignora mais pontos é a
+assinatura de um bug de régua, e valeu investigar antes de aceitar o número.
+
+Não era bug: a ponta do lóbulo é uma **parede quase vertical** — a varredura densa cai
+de `y` 187,6 para 123,9 em 1,6 unidade de `x`. Erro de corda não aproxima melhor uma
+vertical gastando pontos em outro lugar, e os pontos *sobre* a parede são colineares
+entre si, então custam pouco e saem primeiro.
+
+**A leitura certa é que 5,63 é o piso da arte, não um teto do critério** — e o N que
+importa é aquele em que a curva **encosta** no piso, não o primeiro que cruza um
+limiar. A distinção entre piso e joelho é o que impede escolher N cedo demais.
+
+---
+
+## A cor do teste agrava a leitura de chapéu
+
+A régua pede o cabelo num **teal instrumental** (~177°) para separar cabelo de
+contorno por matiz. Julgar forma nessa cor é certo — e julgar *"lê como chapéu?"*
+nela **não é**.
+
+Teal é de croma alta e se separa do contorno preto: a massa vira um objeto discreto
+pousado na cabeça. No marrom da paleta de verdade, contorno e cabelo ficam próximos em
+valor, a massa lê mais espessa e mais orgânica, e a mesma peça melhora sem um byte de
+diferença. É a mesma entrada de *"quem lê é a fronteira"*, aplicada à cor do
+instrumento em vez de à do desenho.
+
+**Toda folha de crítica repete a peça na paleta de verdade a 56 px.** Sem essa linha,
+parte do defeito que se nomeia é da tinta do teste — e parte é forma de verdade, que é
+o que interessa. Sem as duas lado a lado não dá para separar.
+
+---
+
+## Mecha ao lado do rosto POR DENTRO da silhueta não cabe no modelo
+
+`Cabelo` tem três lugares para pôr massa: `pontos` (a franja, clipada pelo crânio),
+`sombra` (a fronteira entre os dois tons) e `extensoes` (o que passa da silhueta). A
+**cortina** — a mecha que desce ao lado do rosto sem sair do contorno da cabeça — não
+entra em nenhum: a extração de lóbulos só recolhe o que passa do crânio, e o perfil por
+coluna toma a **primeira** corrida, que é a touca (foi corrigido justamente para não
+confundir a cortina com a franja).
+
+Medido: ela segura o desvio de borda contra a arte em **~220 unidades** em três
+configurações diferentes de critério e de N. Número que não responde a critério nem a
+N **não é decimação** — é falta de campo onde guardar a forma.
+
+Consequência prática: ao pedir arte, ou o pedido proíbe cortina, ou o modelo de dados
+ganha um campo. Traçar melhor não resolve, e insistir em N é gastar bytes contra uma
+massa que o compositor não tem como desenhar.
+
+---
+
 ## Herdadas da fase anterior, e continuam valendo
 
 **Esclera fina em pele escura.** Olho totalmente preenchido some contra pele escura;

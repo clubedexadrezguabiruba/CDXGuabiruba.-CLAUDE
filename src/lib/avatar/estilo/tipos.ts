@@ -18,6 +18,16 @@
  * mantém a trava viva pelo caminho contrário: se alguém ACRESCENTAR o campo, o
  * `@ts-expect-error` de lá deixa de ter erro para consumir e o typecheck quebra.
  *
+ * ATÉ ONDE ELA ALCANÇA, dito honestamente (registrado em 2026-08-03). A checagem
+ * de propriedade em excesso do TypeScript vale para **literal de objeto atribuído
+ * direto**. Passar por uma variável intermediária, `as`, `any`, ou dado vindo de
+ * JSON escapa dela. Hoje isso não abre buraco nenhum, porque todo traje nasce como
+ * literal neste repositório e não há catálogo carregado de fora — mas se um dia
+ * um traje vier de arquivo ou de banco, a trava deixa de ser estrutural para
+ * aquele caminho, e ali é preciso validação de schema, não tipo. O que **não**
+ * muda em nenhum cenário é o efeito real: mesmo que um campo de silhueta passasse,
+ * o `compositor.ts` não o leria — ele só desenha o que vem de `geometria.ts`.
+ *
  * Foi assim que a identidade deixou de ser comparada e virou estrutural: não há
  * segunda cópia da silhueta para divergir da primeira.
  */

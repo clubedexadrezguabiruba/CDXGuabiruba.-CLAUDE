@@ -242,6 +242,23 @@ Bloqueia todo o resto da arte.
       - **cabelo curto baked: não.** O boneco é careca, e a **D5** existe para que ninguém
         apareça careca por um 404. Ou a base ganha cabelo assado, ou a D5 muda e careca
         passa a ser estado de falha aceito. **Decisão do usuário, em aberto**
+- [ ] **T1.5** 🤖 **O `moicano` e o `coque` do catálogo estão guilhotinados pelo `viewBox`**
+      → achado em 2026-08-03, medido por `.scratch/estilo/topo-corte.ts`, **sem correção**.
+      A figura base ocupa de `y = 39` a `y = 655` num canvas de 700: sobram **39 unidades
+      acima da cabeça**, 3,1 px no tamanho do ranking. Tudo que uma peça desenhe acima de
+      `y = 0` o viewport corta, **sem erro e sem aviso**.
+      - o **moicano** sai com **147 px de largura constante nas seis primeiras linhas** —
+        a crista dele (`y` −34, −76, −60) é cortada desde o 2a.1, e o que resta lê como
+        barra reta;
+      - o **coque** perde **34 unidades** do mesmo jeito.
+      → A régua de cabelo já resolveu isto do lado dela: `TETO_Y = 8` em
+      `.scratch/estilo/franja.ts` **comprime** o excesso em torno da linha da coroa em vez
+      de guilhotinar, e a distinção das três variantes subiu de 5,04–5,98% para 6,70–7,41%
+      só com essa troca. O catálogo não passou pela régua e continua com os números de
+      2026-08-01. **Duas saídas, e a escolha é medida, não de gosto:** ou as duas peças
+      re-traçam pela régua (barato, cabe no Bloco 2a), ou o `viewBox` ganha altura no topo
+      (caro — mexe em `VIEWBOX`, na `folha-base` congelada em 19 formas / 7 418 bytes e em
+      todo asset já assado).
 - [ ] **T1.2** 🤖 Uniforme Soldado — prova do `garment` sobre o corpo
 - [x] **T1.3** 👤 **Criticar e refinar** — principalmente o rosto, que é onde mora o carisma
       → quatro rodadas de arte e oito defeitos do traçador corrigidos, cada um com a
@@ -367,7 +384,11 @@ Soldado no backfill, e o ranking já mostra.
       ver a §7.0 do doc 16
 - [ ] **T4.2** 🤖 5 cabelos
 - [ ] **T4.3** 🤖 6 chapéus
-- [ ] **T4.4** 🤖 6 relíquias (2 famílias × 3 tiers)
+- [x] ~~**T4.4** 🤖 6 relíquias (2 famílias × 3 tiers)~~ — **CORTADA pela D-E**
+      (doc 15, 2026-07-31): o slot `hand` não existe neste boneco, e as 8 linhas
+      dele já saíram do banco em `20260731100000_remover_slot_hand.sql`. O
+      orçamento de arte caiu de 39 para 33 desenhos. *Marcada aqui em 2026-08-03 —
+      continuava aberta neste doc contra o plano vigente.*
 - [ ] **T4.5** 👤 Verificar se os 8 backgrounds antigos combinam com o estilo novo
 - [ ] **T4.6** 🤖 Redesenhar backgrounds, **se** destoarem (+8)
 - [ ] **T4.7** 🤖/👤 20 pets — eu sou fraco em orgânico, então aqui você provavelmente refina bastante
@@ -433,12 +454,24 @@ Soldado no backfill, e o ranking já mostra.
 | fase | tarefas | fechadas | depende de você? |
 |---|---|---|---|
 | F0 | 23 | **19** | T0.12 e T0.14 delegadas e decididas |
-| F1 | 4 | **2** | T1.3 (crítica da arte) |
+| F1 | 5 | **2** | T1.3 (crítica da arte) |
 | F2 | 16 | **0** | não |
 | F3 | 5 | **3** | não |
-| F4 | 12 | **1** | T4.5, T4.7, T4.8 (refino) |
+| F4 | 11 | **1** | T4.5, T4.7, T4.8 (refino) |
 | F5 | 6 | **0** | T5.5 (medir no celular) |
 | **total** | **66** | **25 (38%)** | **7 pontos** |
+
+> **A F1 subiu de 4 para 5 tarefas em 2026-08-03**, e o total de 65 para 66: a
+> **T1.5** (moicano e coque guilhotinados pelo `viewBox`) é achado da rodada de
+> fidelidade do cabelo, medido e **sem correção**. Tarefa nova entra na conta como
+> pendente — foi o `verify:estado` que cobrou a atualização desta tabela na mesma
+> rodada em que ela nasceu.
+>
+> **A F4 caiu de 12 para 11 tarefas em 2026-08-03**, e o total de 66 para 65: a
+> **T4.4** (6 relíquias) foi **cortada** pela D-E, não concluída. Tarefa cortada
+> não é pendente nem fechada — ela sai da conta, e a linha riscada acima fica só
+> como registro. *O `verify:estado` pegou a primeira tentativa, em que ela tinha
+> sido marcada `[x]`: teria contado como trabalho feito.*
 
 ---
 

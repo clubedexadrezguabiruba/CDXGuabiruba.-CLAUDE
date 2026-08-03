@@ -234,7 +234,24 @@ aponte o que estiver claramente errado.
 # 5. O plano
 
 Dez blocos. Cada um cabe numa sessão de trabalho e fecha com um gate.
-**Nada começa antes de o gate anterior passar.**
+
+> ⚠️ **EMENDA DE SEQUENCIAMENTO — 2026-08-03.** A regra original desta linha era
+> *"nada começa antes de o gate anterior passar"*, e ela **custou o alcance do
+> avatar**: escrita para proteger codepath, foi aplicada a roadmap, e o resultado
+> medido é que a **F2 — o alcance social, que o próprio D-C chama de "onde o
+> investimento inteiro passa a motivar alguém" — está 0 de 16 tarefas**, presa
+> atrás de arte de cabelo da qual **não depende tecnicamente**: a base foi
+> aprovada no Bloco 1d e o cabelo é dado trocável, o que é precisamente a
+> propriedade que a arquitetura foi construída para ter.
+>
+> **A regra passa a ser:** um gate de arte trava **a arte e o flip de
+> lançamento** daquela peça — nunca a construção do que vem depois. Os blocos
+> **2c, 4, 5 e 6** correm em paralelo ao 2a, com o cabelo de hoje como
+> provisório. O que continua travado por gate anterior é tudo que **consome
+> forma**: os 33 desenhos do Bloco 8 e o reseed do 9.
+>
+> Isto não afrouxa gate nenhum: o Bloco 5 continua não podendo **lançar** com
+> arte reprovada. Ele passa a poder **existir** enquanto ela é refeita.
 
 ---
 
@@ -415,9 +432,14 @@ que era o único ponto em que a B travava aquele bloco.
   de `--av-cabelo` fica, com o motivo verdadeiro: há um cabelo por avatar, então
   não existe a colisão entre camadas que o escopo `camada` resolveria.
 
-- **2a.1 / 2a.2 / 2a.3** ✅ **FEITOS em 2026-08-01**, num bloco só — os três se
-  provam no mesmo artefato, e separá-los teria significado três rodadas de render
-  para julgar o mesmo desenho. `src/lib/avatar/estilo/cabelo.ts` (novo),
+- **2a.1 / 2a.2 / 2a.3** ⚠️ **CÓDIGO FEITO em 2026-08-01; ARTE REPROVADA em
+  2026-08-03** — o gate (a) passou e o Doug não. Ver **2a.4**, abaixo, que é o
+  saldo aberto. O que segue neste item continua valendo: é a arquitetura, e ela
+  não foi contestada.
+
+  Feitos num bloco só — os três se provam no mesmo artefato, e separá-los teria
+  significado três rodadas de render para julgar o mesmo desenho.
+  `src/lib/avatar/estilo/cabelo.ts` (novo),
   `EstadoAvatar.modeloCabelo`, três camadas no compositor, `cabelo.test.ts` e o
   `avatar:folha-base` estendido.
 
@@ -437,6 +459,16 @@ que era o único ponto em que a B travava aquele bloco.
   crescer significa alguém ter achado espaço nela para pagar uma camada que não é
   dela. E o composto é `base + UM` cabelo porque nunca há dois num render — somar
   os cinco orçaria uma composição que não existe.
+
+  ⚠️ **OS DOIS TETOS NÃO TÊM A MESMA AUTORIDADE — 2026-08-03.** O da **base** é
+  regressão medida e continua absoluto: crescer é sintoma de defeito, não de
+  ambição. O do **composto** (26 formas · 10 240 bytes) é um número **escolhido**,
+  não medido, e ele **não pode vetar arte que o Doug aprovou**. Se um cabelo
+  medido a partir da arte estourar o teto, quem decide é o **benchmark do 10.6**
+  — 30 avatares num celular fraco, tempo até pintar — e não o número. Byte bruto
+  não é custo: SVG comprime, e o que pesa numa lista é nó de DOM, path e tempo de
+  composição. Sacrificar mecha para economizar 2 KB antes de existir a medição é
+  otimizar contra uma suposição, e o projeto já pagou por decisão assim.
 
   **Como o cabelo não declara a lateral do crânio.** Cada ponto de franja é
   `{ t, y }`, com `t` **fração da largura da cabeça naquela altura**, lida de
@@ -490,6 +522,68 @@ que era o único ponto em que a B travava aquele bloco.
   Desenhada antes, seria um brilho de pele sob um cabelo opaco, e a cabeça perderia
   o ponto de luz justamente nos avatares que têm cabelo, que são todos. A base
   careca não mudou um byte com a troca.
+
+- **2a.4 — A ARTE FOI REPROVADA em 2026-08-03, e o gate não tinha como pegar.**
+
+  Veredito do Doug, olhando a `folha-base`: *"está tudo muito quadrado, sem toque
+  humano"*. **Quatro causas, todas visíveis no código** — não são impressão:
+
+  1. **a franja do `curto` é uma reta.** Quatro pontos, `y` = 134, 124, 123, 130 de
+     `t` 0,2 a 0,88 ([cabelo.ts:225‑234](../../src/lib/avatar/estilo/cabelo.ts#L225-L234)):
+     onze unidades de variação em toda a largura da cabeça, ou **0,9 px a 56**;
+  2. **nenhum dos cinco tem mecha, ponta afinada ou recorte interno.** Um cabelo é
+     *uma* borda mais o retângulo de fechamento fora da silhueta. Não há um único
+     path de detalhe interno no arquivo;
+  3. **os cinco moram na mesma faixa de altura** — `y` entre 100 e 140, espremidos
+     entre a coroa e o `FOLGA_ROSTO`. São cinco variações de uma reta na mesma faixa
+     de 40 unidades, e é a explicação de o par apertado ter dado **5,18% contra piso
+     de 5%**: a margem de 0,18 ponto é sintoma, não sorte;
+  4. **a sombra é a mesma forma subida 22 unidades** (`DEGRAU`): faixa de espessura
+     constante, paralela em todo o percurso. Cabelo desenhado tem sombra que segue a
+     mecha.
+
+  **A raiz está escrita no próprio arquivo, linha 28:** *"estes números são
+  desenhados, não medidos"*. As três amarras que substituem a régua impedem
+  **defeito** — franja no rosto, extensão flutuando, orçamento estourado. Nenhuma
+  exige **forma**, e nenhuma poderia: não há régua de beleza.
+
+  **A ferramenta que existe para isto nunca rodou nesta peça.** O
+  `scripts/avatar/estilo/variantes.ts` abre dizendo, sobre este bloco, que *"os cinco
+  cabelos foram desenhados em **uma** versão cada, e depois consertados — o primeiro
+  resultado plausível, refinado, que não é a mesma coisa que uma escolha"*. Os 5
+  cabelos são de **2026-08-01 07:14** (`63a13ba`); a skill `avatar-desenho` e o
+  `avatar:variantes` que a forçam, de **2026-08-03 08:03** (`d6caed8`). A trava
+  nasceu dois dias depois da peça que a motivou.
+
+  **AS TRÊS DECISÕES FORAM TOMADAS — 2026-08-03** (briefing em
+  `.scratch/estilo/BRIEFING-CABELO.md`):
+
+  1. **Caminho:** arte gerada pelo Doug e convertida por régua. Ele gera à mão no
+     AI Studio (grátis; a API foi tentada e o Gemini responde `limit: 0` no plano
+     livre), e `.scratch/estilo/franja.ts` mede. **Desenho em código está
+     descartado por evidência, não por gosto** — é a causa raiz deste próprio item.
+  2. **Escopo da primeira rodada: DOIS modelos extremos, não um nem os cinco.**
+     `curto` prova franja, sombra variável e leitura a 56 px; `coque` (ou `trança`)
+     prova extensão externa, ancoragem e o plano de trás. Um modelo só não exercita
+     `Extensao`, e os cinco de uma vez repetem exatamente o erro de 2026-08-01 —
+     cinco peças autoradas antes de o caminho estar provado. Os outros três só
+     depois de o piloto fechar.
+  3. **"Toque humano" vira item de gate com o olho do Doug**, não número — é o
+     item **(f)** do gate deste bloco, abaixo.
+
+  **O que está bloqueando é uma coisa só, e é técnica:** a régua produz `pontos`,
+  e `pontos` é clipado pelo `clipPath` do crânio — toda a expansão medida (7,6 a
+  13,3% lateral, 12,2 a 20,1% vertical) vive FORA da silhueta e é descartada. Por
+  isso as três variantes medidas dão **2,41 a 2,99%** contra o piso de 5%: o gate
+  está comparando três franjas dentro da mesma silhueta. A extração da massa
+  externa como `Extensao.forma` já está escrita em `franja.ts` (`lobos()`, por
+  componente conexa); falta fechar o laço.
+
+  **O piso de 5% não se discute antes disso.** Se, com a massa externa entrando,
+  um par que o olho do Doug distingue ainda reprovar, aí sim o piso é recalibrado
+  — contra os pares que ele já julgou, que é dado rotulado. Baixar o piso agora,
+  com a causa técnica conhecida e por fechar, seria a justificativa circular que o
+  gate (a) já recusou uma vez.
 
 ---
 
@@ -546,7 +640,8 @@ que era o único ponto em que a B travava aquele bloco.
 
 🔒 **Gate do Bloco 2:**
 
-- **(a)** ✅ **FEITO em 2026-08-01.** Os 5 se distinguem **a 56 px**, e agora isso é
+- **(a)** ✅ **A MEDIÇÃO passou em 2026-08-01** — e só ela; o desenho reprovou em
+  2026-08-03, ver **2a.4**. Os 5 se distinguem **a 56 px**, e agora isso é
   um número e não uma impressão: o `avatar:folha-base` renderiza cada modelo a
   40 × 56, conta os pixels que diferem em mais de 24 níveis em algum canal, e
   reprova abaixo de **5%** (112 px de 2 240 — um bloco de ~10 × 11 na miniatura).
@@ -571,6 +666,23 @@ que era o único ponto em que a B travava aquele bloco.
   tronco em **≥ `SANGRIA`** — o gate que o `tipos.ts:65` já promete a este bloco;
 - **(e)** `avatar:pose`, `avatar:animacao`, `avatar:folha-base`, `verify:all`,
   `build` e a suíte continuam verdes.
+- **(f)** ✅ **ACRESCENTADO em 2026-08-03 — A APROVAÇÃO ARTÍSTICA DO DOUG.**
+
+  Os itens (a)–(e) medem distinção, cor, geometria e verde de suíte, e **os cinco
+  passaram num cabelo que o Doug reprovou de olho**. A §"F1 curta" e a D-D sempre
+  exigiram essa aprovação; o gate nunca a listou, e é assim que uma peça reprovada
+  atravessa um bloco "verde". **Trabalho verde e trabalho completo não são a mesma
+  coisa** — o (f) é onde a diferença passa a estar escrita.
+
+  **O que ele exige, e é registro e não sentimento:** uma linha no doc 14, com o
+  **selo da folha** que o Doug abriu (os 6 caracteres que `avatar:variantes`
+  desenha no canto e não imprime no terminal), a **data**, e o **veredito em uma
+  frase**. Sem os três, o bloco não fecha — mesmo com (a)–(e) verdes.
+
+  **O que ele deliberadamente NÃO é:** uma métrica. Não há régua de beleza, e
+  tentar escrever uma foi o que produziu cinco cabelos matematicamente válidos e
+  artisticamente quadrados. **O gate julga número; o Doug julga arte** — a regra 10
+  da skill `avatar-desenho`, agora com efeito no plano.
 
 **Fora do gate, e agora sem sucessor:** a régua antiga (*"o `hand` ancora na
 mão"*) some junto com o slot, pela **D-E**.
@@ -658,6 +770,16 @@ certo.*
   - `users.avatar_base` **deprecada, não dropada**
 - **4.2** Migração suave: os 17 usuários existentes recebem tom default,
   mantêm `avatar_chosen = true`, sem re-onboarding forçado.
+
+  ✅ **A D5 FECHA AQUI — 2026-08-03.** A T1.1 do doc 14 deixou em aberto: *"ou a
+  base ganha cabelo assado, ou a D5 muda e careca passa a ser estado de falha
+  aceito"*. **É a terceira saída, e ela não custa arte nenhuma:**
+  `users.avatar_hair` nasce com **default `'curto'`** e `NOT NULL`. Careca deixa
+  de ser alcançável por aluno — que é exatamente o que a D5 pede ("ninguém aparece
+  careca por um 404") — sem assar cabelo na base, o que quebraria o teto de
+  regressão do Bloco 1d. **A base careca continua existindo**, e continua sendo o
+  artefato que aquele teto mede; ela só deixa de ser um estado que a criança
+  alcança.
 - **4.3** `unequip_slot` passa a aceitar `hair` e `back` — a lista dentro da
   função é uma segunda cópia do CHECK, e o gate já confere que as duas batem.
 
@@ -691,9 +813,17 @@ banco vivo, nunca de migration antiga.** E ele **não emite o `;`** depois de
   D27. A cor do cabelo move também a **sobrancelha**, que é camada própria na base.
 - **5.11** `viewBox` de cabeça, para o avatar servir de foto de perfil.
 
-🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` inteiro · gate de assets
-100% · avatar antigo degrada sem erro · **nenhum código per-gender restante**
-(grep por `male`/`female` em `src/lib/avatar/` volta vazio).
+🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` inteiro · **sem
+regressão contra o `asset-baseline.json`** · avatar antigo degrada sem erro ·
+**nenhum código per-gender restante** (grep por `male`/`female` em
+`src/lib/avatar/` volta vazio).
+
+> ⚠️ **O "gate de assets 100%" saiu daqui em 2026-08-03, e foi para o Bloco 9,
+> que é onde ele pertence.** Exigir catálogo 100% renderável para **construir** o
+> render novo é circular: os itens só passam a renderizar depois de o render novo
+> existir. O que este bloco tem de provar é que **nada regrediu** — o ratchet do
+> `asset-baseline.json` já é exatamente essa medida. Zerar o baseline continua
+> sendo obrigação, e continua sendo o gate do Bloco 8/9.
 
 ---
 
@@ -778,6 +908,28 @@ agora entregaria item invisível.*
 **Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
 seguinte começar. Trinta e nove desenhos revisados só no fim é como se descobre,
 tarde, que a régua de estilo derivou.
+
+### ⚠️ ANTES DOS 6 CHAPÉUS: a regra de chapéu × cabelo — 2026-08-03
+
+**Um chapéu e um cabelo disputam a mesma cabeça, e hoje nada no sistema diz quem
+cede.** Cada chapéu precisa de uma destas quatro respostas: mostra o cabelo
+inteiro · esconde só a franja · esconde o cabelo todo · pede uma **variante
+achatada** (o *hat hair* dos jogos). Uma boina deixa a franja aparecer; um elmo
+fechado não pode ter mecha atravessando o metal.
+
+**A resposta vive no item, nunca no compositor.** Um campo declarado no chapéu
+(`escondeCabelo?: "nada" | "franja" | "tudo"`) e o `compor()` obedecendo — o
+mesmo idioma do `atras` que as extensões já usam. A alternativa é um `if` por
+chapéu dentro do compositor, e seis chapéus × cinco cabelos são **30 combinações**
+para consertar caso a caso.
+
+**Decidir isto depois de os 6 chapéus estarem desenhados custa redesenho**, porque
+a resposta muda a forma da peça: um chapéu que esconde a franja pode ser mais
+raso, um que a mostra precisa de aba que não brigue com ela. É a mesma lição do
+2b.0 — arremate do tronco antes dos 14 trajes, não depois.
+
+*(Achado do parecer externo de 2026-08-03; é a única lacuna estrutural que as três
+análises daquele dia apontaram e que o plano ainda não cobria.)*
 
 🔒 **Gate:** manifesto 100% coberto · folha de contato revisada · nenhum item
 invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo dos
