@@ -14,7 +14,25 @@
       "Bash(npm run verify:*)",
       "Bash(git status)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(npm run avatar:pose)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/bloqueia-migration-aplicada.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Conferindo migration"
+          }
+        ]
+      }
     ]
   }
 }

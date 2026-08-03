@@ -75,6 +75,26 @@ Antes de alterar qualquer bug/fluxo:
 - Se precisar de informação ou ação do usuário para avançar ou para realizar um tarefa de forma mais rápida e/ou efetiva, perguntar imediatamente — não assumir
 - Se o prompt do usuário for ambíguo, incompleto ou puder ser melhorado, apontar antes de executar
 
+## Skills — invocar, não torcer para lembrar
+
+Este projeto tem skills escritas para si mesmo e elas quase nunca dispararam: em
+45 sessões, o tool `Skill` foi chamado **4 vezes**, e nem `design-recruta64` nem
+`/gate` estavam entre elas — inclusive nos commits de design em que a primeira
+era obrigatória. Skill que depende de eu lembrar é skill que não roda. **Invoque
+pelo gatilho abaixo, antes de começar, sem esperar o usuário pedir.**
+
+| Gatilho | Invocar |
+|---|---|
+| Qualquer tela, componente, cor, tipografia, animação, texto de UI — e sempre ao trazer tela do v0.app/Gemini | `design-recruta64` (regras vinculantes) |
+| Construir componente novo, migrar tela para os primitivos de `src/components/ui/`, ou mexer em espaçamento/hierarquia/estado vazio | `impeccable` |
+| Bug, comportamento errado, "isso não devia acontecer" | `/gate` |
+| Detalhe de movimento, transição, o que faz a interface "sentir" bem | `emil-design-eng` |
+| Antes de mexer em auth, RLS, RPC de recompensa, ou qualquer coisa que o repositório público exponha | `security-review` |
+
+O usuário digita `/prototype` e `/review-animations` quando quiser — as duas têm
+`disable-model-invocation` e **nunca** disparam sozinhas. Se o caso pedir uma
+delas, sugira em uma linha em vez de tentar invocar.
+
 ## Verificação (rodar antes de concluir)
 - `npm run typecheck` (tsc --noEmit)
 - `npm run lint`

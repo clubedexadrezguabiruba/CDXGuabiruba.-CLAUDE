@@ -30,10 +30,10 @@
 
 Nada aqui depende de arte. Pode começar hoje.
 
-> **Estado em 2026-07-29:** 13 das 22 tarefas fechadas. Falta o pipeline de
-> vetorização (T0.6–T0.9) e os testes unitários de ordem de camadas e offset
-> (T0.20, T0.22). As duas decisões do usuário (T0.12, T0.14) foram delegadas e
-> estão tomadas, com a evidência renderizada.
+> **Estado em 2026-08-03:** **19 das 23 tarefas da F0 fechadas.** Abertas:
+> T0.9 (folha de contato), T0.20 e T0.22 (testes unitários de ordem de camadas
+> e de offset) e T0.23. As duas decisões do usuário (T0.12, T0.14) foram
+> delegadas e estão tomadas, com a evidência renderizada.
 >
 > Para **ver o boneco**: `/dev/avatar-base` no app (professor/admin), ou
 > `npm run avatar:base`, que regera o SVG e a folha de conferência em `.scratch/`.
@@ -422,15 +422,23 @@ Soldado no backfill, e o ranking já mostra.
 
 # Resumo
 
-| fase | tarefas | depende de você? |
-|---|---|---|
-| F0 | 23 — **13 fechadas** | T0.12 e T0.14 delegadas e decididas |
-| F1 | 4 | T1.3 (crítica da arte) |
-| F2 | 16 | não |
-| F3 | 6 — **5 fechadas** (F3a) | não |
-| F4 | 12 | T4.5, T4.7, T4.8 (refino) |
-| F5 | 6 | T5.5 (medir no celular) |
-| **total** | **64** | **7 pontos** |
+> **Contado em 2026-08-03**, checkbox a checkbox. A versão anterior desta tabela
+> dizia "F0 — 13 fechadas" e "total 64" e estava desatualizada em ambos: número
+> escrito à mão envelhece calado. Para recontar:
+>
+> ```bash
+> grep -oE '^- \[x\] \*\*T[0-9]+\.[0-9]+[a-z]?\*\*' docs/avatar/14-backlog-execucao.md | sort -u | wc -l
+> ```
+
+| fase | tarefas | fechadas | depende de você? |
+|---|---|---|---|
+| F0 | 23 | **19** | T0.12 e T0.14 delegadas e decididas |
+| F1 | 4 | **2** | T1.3 (crítica da arte) |
+| F2 | 16 | **0** | não |
+| F3 | 5 | **3** | não |
+| F4 | 12 | **1** | T4.5, T4.7, T4.8 (refino) |
+| F5 | 6 | **0** | T5.5 (medir no celular) |
+| **total** | **66** | **25 (38%)** | **7 pontos** |
 
 ---
 

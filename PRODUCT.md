@@ -77,8 +77,14 @@ Zustand · Howler.js. Deploy em Vercel + Supabase.
   redesenha à vontade.
 - **Sem dark mode** hoje (`color-scheme: light` fixo). Introduzir tema escuro é
   decisão em aberto, não um dado.
-- Não existe biblioteca de componentes (sem shadcn, sem Radix). Tudo à mão.
-  `src/components/ui/` existe **vazia**.
+- Não existe biblioteca de componentes de terceiros (sem shadcn, sem Radix).
+  `src/components/ui/` tem a **wave 1 própria** — `Button`, `Card`, `Badge`,
+  `ProgressBar` — construída em 2026-08-03. A wave 2 declarada no `DESIGN.md`
+  (Modal, Field, Toast, Spinner, EmptyState) ainda não existe, e o produto
+  continua majoritariamente à mão: `verify:design-tokens` mede **1.154 cores
+  cruas em 59 arquivos** (baseline 1.331), contra 107 usos de token — e apenas
+  **1 primitivo** é usado em tela real de produto (`ProgressBar` em
+  `FaixaDeComando.tsx`). O número que vale é o do gate, não uma contagem à mão.
 - `npm run test:e2e` bate no **Supabase de produção** e cria usuários reais.
   Verificação visual não pode depender dele.
 
