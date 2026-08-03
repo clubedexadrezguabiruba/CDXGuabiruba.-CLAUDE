@@ -125,6 +125,32 @@ export interface Cabelo {
    * seção sobre ele no topo do arquivo.
    */
   pontos?: readonly PontoFranja[];
+  /**
+   * ONDE A SOMBRA TERMINA — a borda de baixo da camada CLARA, quando ela não é
+   * simplesmente a franja subida `DEGRAU`.
+   *
+   * **Existe porque o degrau constante foi reprovado como arte.** O Doug olhou os
+   * cinco modelos do 2a.1 e disse *"tudo muito quadrado, sem toque humano"*, e uma
+   * das quatro causas é esta: com `DEGRAU` sozinho a sombra é a mesma forma subida
+   * 22 unidades, ou seja uma faixa **de espessura constante, paralela em todo o
+   * percurso**. Cabelo desenhado tem sombra que engrossa onde a mecha é grossa e
+   * afina onde ela afina; espessura constante lê como impressão gráfica.
+   *
+   * Quando ausente, o comportamento é o de sempre — `pontos` subida `DEGRAU` —, e
+   * é por isso que os cinco modelos existentes não mudaram um byte ao ganharem
+   * este campo. Quando presente, ela é a borda de baixo da camada clara e o
+   * degrau varia sozinho ao longo da franja.
+   *
+   * **Não custa forma nem byte de CSS:** a camada clara já era desenhada. O que
+   * muda é de onde vêm os pontos dela.
+   *
+   * **Ela tem de ficar ACIMA da franja em todo o percurso**, e isso é gate
+   * (`sombraSobreAFranja`), não convenção. A camada clara é a única do cabelo
+   * desenhada **sem contorno** — se ela descer abaixo da escura, sobra tinta clara
+   * fora da silhueta preta, e o defeito é um vazamento sem borda que nenhuma das
+   * outras amarras enxerga.
+   */
+  sombra?: readonly PontoFranja[];
   extensoes?: readonly Extensao[];
 }
 
@@ -418,9 +444,7 @@ export const resolverCabelo = (m: CabeloOuModelo): Cabelo =>
  * Devolve `""` para o modelo sem touca (o moicano), e quem emite trata a string
  * vazia. É mais barato que um `null` para o compositor concatenar.
  */
-export function pathCabelo(modelo: CabeloOuModelo, dy = 0): string {
-  const franja = resolverCabelo(modelo).pontos;
-  if (!franja) return "";
+function touca(franja: readonly PontoFranja[], dy: number): string {
   const pts = franja.map((p) => ponto(p, dy));
 
   const x0 = CAIXA_CABECA.x0 - FORA;
@@ -433,9 +457,23 @@ export function pathCabelo(modelo: CabeloOuModelo, dy = 0): string {
   );
 }
 
-/** A camada clara: a mesma forma, subida o degrau de sombra. */
+export function pathCabelo(modelo: CabeloOuModelo, dy = 0): string {
+  const franja = resolverCabelo(modelo).pontos;
+  return franja ? touca(franja, dy) : "";
+}
+
+/**
+ * A CAMADA CLARA. Duas origens possíveis, e a segunda é a que existe para a arte.
+ *
+ * Sem `sombra` declarada, é a franja subida `DEGRAU` — o comportamento do 2a.2, e
+ * o dos cinco modelos de hoje, byte a byte. Com ela, a borda de baixo da camada
+ * clara é a curva declarada, e a espessura da faixa escura passa a variar ao longo
+ * da franja em vez de ser paralela. Ver o docstring de `Cabelo.sombra`.
+ */
 export function pathCabeloClaro(modelo: CabeloOuModelo): string {
-  return pathCabelo(modelo, -DEGRAU);
+  const c = resolverCabelo(modelo);
+  if (!c.pontos) return "";
+  return c.sombra ? touca(c.sombra, 0) : touca(c.pontos, -DEGRAU);
 }
 
 /** O path de uma extensão. Laço fechado, coordenada absoluta, sem clip. */
@@ -569,4 +607,70 @@ export function folgaDoRosto(modelo: CabeloOuModelo): { esq: number; dir: number
     esq: folga(OLHO_CX_ESQ, OLHO_CY_ESQ),
     dir: folga(OLHO_CX_DIR, OLHO_CY_DIR),
   };
+}
+
+/**
+ * A ESPESSURA DA FAIXA DE SOMBRA, ponta a ponta — a amarra que o campo `sombra`
+ * obriga a existir.
+ *
+ * Devolve `{ min, max }` da distância vertical entre a franja (borda de baixo da
+ * camada escura) e a curva de sombra (borda de baixo da camada clara), em unidades.
+ *
+ * **`min` NEGATIVO é o defeito, e ele é invisível para todas as outras amarras.**
+ * A camada clara é a única peça do cabelo desenhada **sem contorno** — o traço
+ * mora na escura. Se a clara descer abaixo da escura em algum trecho, sobra tinta
+ * clara fora da silhueta preta: um vazamento sem borda, que não invade rosto (a
+ * `folgaDoRosto` continua verde, porque ela mede a franja), não estoura orçamento
+ * e não muda a contagem de formas. Passaria inteiro.
+ *
+ * **`min` ZERO é legítimo, e é por isso que o piso é 0 e não `TRACO/2`.** Uma mecha
+ * cuja sombra afina até sumir na ponta é exatamente o desenho que se está
+ * procurando — foi a espessura *constante* que reprovou, não a espessura pequena.
+ * Um piso de meio traço proibiria justamente o afinamento.
+ *
+ * `max` não é gate: é o número que a crítica lê para saber se a sombra chegou a
+ * existir. Com `DEGRAU` sozinho, `min` e `max` são ambos 22 — e os dois iguais são
+ * a assinatura numérica da faixa paralela que o Doug reprovou.
+ *
+ * A comparação é por faixa de `x` e não ponto a ponto: as duas curvas não têm o
+ * mesmo número de pontos nem os mesmos `t`, e parear por índice compararia lugares
+ * diferentes da testa. Mesma escolha, e mesmo motivo, do `maisBaixo` acima.
+ */
+export function sombraSobreAFranja(modelo: CabeloOuModelo): { min: number; max: number } {
+  const m = resolverCabelo(modelo);
+  if (!m.pontos) return { min: Infinity, max: Infinity }; // moicano: não há touca
+  if (!m.sombra) return { min: DEGRAU, max: DEGRAU };
+
+  const FAIXAS = 60;
+
+  /** O `y` mais baixo de uma poligonal em cada faixa vertical da caixa da cabeça. */
+  const perfil = (pts: readonly PontoFranja[]): number[] => {
+    const out = new Array<number>(FAIXAS).fill(-Infinity);
+    const xy = pts.map((p) => ponto(p, 0));
+    const larg = CAIXA_CABECA.x1 - CAIXA_CABECA.x0;
+    for (let i = 0; i < xy.length - 1; i++) {
+      const a = xy[i];
+      const b = xy[i + 1];
+      for (let k = 0; k <= 20; k++) {
+        const x = a.x + ((b.x - a.x) * k) / 20;
+        const y = a.y + ((b.y - a.y) * k) / 20;
+        const f = Math.floor(((x - CAIXA_CABECA.x0) / larg) * FAIXAS);
+        if (f >= 0 && f < FAIXAS) out[f] = Math.max(out[f], y);
+      }
+    }
+    return out;
+  };
+
+  const pf = perfil(m.pontos);
+  const ps = perfil(m.sombra);
+
+  let min = Infinity;
+  let max = -Infinity;
+  for (let f = 0; f < FAIXAS; f++) {
+    if (pf[f] === -Infinity || ps[f] === -Infinity) continue;
+    const d = pf[f] - ps[f];
+    min = Math.min(min, d);
+    max = Math.max(max, d);
+  }
+  return { min, max };
 }

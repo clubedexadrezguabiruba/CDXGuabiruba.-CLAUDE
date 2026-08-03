@@ -28,7 +28,10 @@ import {
   ancoragemDasExtensoes,
   folgaDoRosto,
   pathCabelo,
+  pathCabeloClaro,
+  sombraSobreAFranja,
 } from "../cabelo";
+import type { Cabelo } from "../cabelo";
 import { compor } from "../compositor";
 import { SANGRIA, bordasEm } from "../geometria";
 import { conferirSvg } from "../../svgContrato";
@@ -134,5 +137,63 @@ describe("a touca é uma curva aberta fechada FORA da silhueta", () => {
 
   it("o moicano não tem touca, e `pathCabelo` devolve vazio", () => {
     expect(pathCabelo("moicano")).toBe("");
+  });
+});
+
+/**
+ * A SOMBRA QUE SEGUE A FORMA — a causa 4 da reprovação de 2026-08-03.
+ *
+ * O Doug reprovou os cinco com *"tudo muito quadrado, sem toque humano"*, e uma
+ * das quatro causas era a sombra ser a mesma forma subida 22 unidades: faixa de
+ * espessura constante, paralela em todo o percurso. O campo `Cabelo.sombra` deixa
+ * a borda de baixo da camada clara ser uma curva própria.
+ *
+ * O primeiro teste daqui é o de REGRESSÃO e é o que garante que o campo saiu de
+ * graça: sem `sombra` declarada, nada muda.
+ */
+describe("a faixa de sombra", () => {
+  it("nos cinco de hoje é paralela — min e max iguais a 22, que é a assinatura do defeito", () => {
+    for (const modelo of MODELOS_CABELO) {
+      const { min, max } = sombraSobreAFranja(modelo);
+      if (!CABELOS[modelo].pontos) {
+        expect(min).toBe(Infinity); // moicano: não há touca para ter sombra
+        continue;
+      }
+      expect(min).toBe(22);
+      expect(max).toBe(22);
+    }
+  });
+
+  /** A franja do `curto`, com a sombra afinando e engrossando ao longo dela. */
+  const comSombra: Cabelo = {
+    id: "curto",
+    nome: "curto (sombra própria)",
+    pontos: CABELOS.curto.pontos,
+    sombra: CABELOS.curto.pontos!.map((p, i) => ({ t: p.t, y: p.y - (12 + 22 * (i % 2)) })),
+  };
+
+  it("declarada, muda o path da camada clara — e não o da escura", () => {
+    // O que falha antes do Bloco 2a.5: sem o campo, `pathCabeloClaro` só sabe
+    // devolver a franja subida DEGRAU, e os dois lados seriam idênticos.
+    expect(pathCabeloClaro(comSombra)).not.toBe(pathCabelo(comSombra, -22));
+    expect(pathCabelo(comSombra)).toBe(pathCabelo("curto"));
+  });
+
+  it("declarada, a espessura VARIA ao longo da franja", () => {
+    const { min, max } = sombraSobreAFranja(comSombra);
+    expect(min).toBeGreaterThan(0);
+    expect(max - min).toBeGreaterThan(10);
+  });
+
+  it("reprova quando a sombra desce abaixo da franja", () => {
+    // Verificado invertendo o dado, como as três amarras do 2a.2. Este é o
+    // vazamento que nenhuma outra régua enxerga: a camada clara é a única sem
+    // contorno, então tinta clara abaixo da escura sai fora da silhueta preta —
+    // e a folga do rosto continua verde, porque ela mede a franja.
+    const invertida: Cabelo = {
+      ...comSombra,
+      sombra: CABELOS.curto.pontos!.map((p) => ({ t: p.t, y: p.y + 15 })),
+    };
+    expect(sombraSobreAFranja(invertida).min).toBeLessThan(0);
   });
 });
