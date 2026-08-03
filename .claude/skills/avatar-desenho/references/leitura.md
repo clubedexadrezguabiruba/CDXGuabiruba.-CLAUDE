@@ -49,19 +49,75 @@ ela ser **larga**, não ser detalhada.
 
 ---
 
-## Contorno liso lê como mancha; ziguezague lê como trançado
+## Contorno liso lê como mancha — mas ziguezague lê como ONDA, não como trança
 
 **O caso.** A trança era um contorno suave e afilado caindo do lado da cabeça. Leu
-como borrão escuro colado na bochecha.
+como borrão escuro colado na bochecha. Trocada por oito pontos alternando de lado,
+passou a ler como **mecha ao vento** — melhor, e ainda errado.
 
-**A causa.** Trançado é uma textura, e textura some a 56 px. O que **não** some é o
-perfil: a alternância da borda externa.
+**A causa, e ela corrige a versão anterior desta entrada.** Transferir textura para a
+silhueta é certo, mas *qual* oscilação importa:
 
-**A regra.** Quando a característica de uma peça é textura, **transfira-a para a
-silhueta**. Oito pontos alternando de lado, ligados por spline centrípeta, dão uma
-corda ondulada — e onda de borda sobrevive à miniatura onde trama nenhuma sobrevive.
+> **Numa onda, o EIXO se move. Numa trança, a LARGURA pulsa em torno de um eixo
+> reto.**
 
-Vale para o resto do elenco: pelo de pet, franja de capa, penacho, corrente.
+Os oito pontos alternados moviam o eixo — daí a mecha. Uma trança é um ritmo de
+segmentos idênticos: ela engorda e afina **dos dois lados ao mesmo tempo**, enquanto
+o eixo apenas afina, sem nunca serpentear.
+
+**A regra.** Antes de alternar pontos, pergunte se a peça é uma coisa que *ondula*
+(mecha, fita, cauda) ou que *se repete em segmentos* (trança, corrente, vértebra,
+crina). As duas se desenham de formas opostas.
+
+Vale para o resto do elenco: cauda de pet ondula; corrente e trança segmentam.
+
+---
+
+## O pulso precisa de 24 unidades para existir na miniatura
+
+**O caso.** A primeira trança "enfeixada" tinha seis nós com 14 unidades de amplitude
+de meia-largura. Leu como **borda serrilhada** da cabeça, não como peça.
+
+**A causa.** 14 unidades são **1,1 px a 56 px** — abaixo do limiar da tabela de escala
+acima. O olho vê um contorno grosso e irregular, não segmentos.
+
+**A regra.** **Menos segmentos e maiores leem; mais segmentos e menores viram
+textura, e textura some.** Quatro nós com amplitude 26 leem onde seis com 14 não
+leem — e custam menos bytes.
+
+Toda característica que se repete tem esse teto de resolução. Se o número de
+repetições que você quer não cabe com amplitude ≥ 24, o que cabe é menos repetições.
+
+---
+
+## Massa lateral na altura dos olhos lê como ORELHA
+
+**O caso.** As "chiquinhas" nasciam em y 204–210, uma de cada lado. Leram como duas
+orelhas grandes.
+
+**A causa, e ela é de catálogo, não de desenho.** A base **perdeu as orelhas no Bloco
+1d de propósito** — orelha na base obriga cada um dos 92 itens de chapéu e cabelo a
+decidir se cobre ou não. Uma peça que lê como orelha desfaz a decisão que custou uma
+base inteira.
+
+**A regra.** Massa colada à lateral do crânio **na faixa de altura dos olhos** lê como
+orelha, qualquer que seja a forma dela. Peça lateral tem de nascer **abaixo da linha
+da boca** e pendurar, ou ficar acima da linha da sobrancelha.
+
+---
+
+## Faixa sobre tinta da mesma cor: quem lê é a fronteira, e ela não pode ser reta
+
+**O caso.** A coroa era uma faixa trançada por cima da touca, com o bordo de cima
+pulsando e o de baixo liso. Leu como **aba de chapéu**.
+
+**A causa.** Faixa e touca são a mesma cor (`--av-cabelo`). A única coisa que separa
+as duas na tela é a **linha entre elas** — e essa linha era o bordo de baixo, que
+saiu reto. Reto e contínuo é a assinatura de aba, não de trançado.
+
+**A regra.** Ao pôr peça sobre tinta da mesma cor, identifique **qual bordo é a
+fronteira visível** e ponha o detalhe nele. Detalhe no bordo que ninguém vê é byte
+gasto: aqui o pulso estava no lado errado, e mover para o outro custou zero forma.
 
 ---
 
