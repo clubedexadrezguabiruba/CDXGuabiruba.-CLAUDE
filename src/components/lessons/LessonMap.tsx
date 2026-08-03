@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import FaixaDeComando from "@/components/layout/FaixaDeComando";
 import type { LessonMapEntry, ReviewGateEntry } from "@/types/lesson";
 import { TRAILS } from "@/types/lesson";
 
@@ -13,7 +14,7 @@ function StarDisplay({ count }: { count: number }) {
   return (
     <div className="flex gap-0.5 text-xs">
       {[1, 2, 3].map((i) => (
-        <span key={i} className={i <= count ? "text-yellow-400" : "text-zinc-300"}>
+        <span key={i} className={i <= count ? "text-gold" : "text-ink/20"}>
           ★
         </span>
       ))}
@@ -32,22 +33,22 @@ function LessonBubble({ lesson }: { lesson: LessonMapEntry }) {
       className={`
         flex h-20 w-20 flex-col items-center justify-center rounded-2xl border-2 transition-all
         ${lesson.status === "locked"
-          ? "cursor-not-allowed border-zinc-200 bg-zinc-100 opacity-50"
+          ? "cursor-not-allowed border-ink/15 bg-ink/4 opacity-60"
           : lesson.status === "available"
-            ? "cursor-pointer border-green-400 bg-white shadow-md hover:shadow-lg hover:scale-105"
+            ? "cursor-pointer border-ok/50 bg-white hover:border-ok"
             : lesson.status === "in_progress"
-              ? "cursor-pointer border-blue-400 bg-blue-50 shadow-md hover:shadow-lg hover:scale-105"
-              : "cursor-pointer border-green-300 bg-green-50 hover:shadow-md hover:scale-105"
+              ? "cursor-pointer border-gold bg-gold/10 hover:border-gold"
+              : "cursor-pointer border-ok/30 bg-ok/8 hover:border-ok/60"
         }
       `}
     >
       {lesson.status === "locked" && (
-        <svg className="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="h-6 w-6 text-ink/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       )}
       {lesson.status === "available" && (
-        <svg className="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+        <svg className="h-6 w-6 text-ok" fill="currentColor" viewBox="0 0 24 24">
           <path d="M8 5v14l11-7z" />
         </svg>
       )}
@@ -57,25 +58,25 @@ function LessonBubble({ lesson }: { lesson: LessonMapEntry }) {
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              stroke="#e5e7eb"
+              stroke="currentColor" className="text-ink/15"
               strokeWidth="3"
             />
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              stroke="#3b82f6"
+              stroke="currentColor" className="text-gold"
               strokeWidth="3"
               strokeDasharray={`${(lesson.steps_completed / lesson.total_steps) * 100}, 100`}
             />
           </svg>
-          <span className="absolute text-xs font-bold text-blue-600">
+          <span className="absolute text-xs font-bold text-ink">
             {lesson.steps_completed}/{lesson.total_steps}
           </span>
         </div>
       )}
       {lesson.status === "completed" && (
         <>
-          <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <svg className="h-5 w-5 text-ok" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           <StarDisplay count={lesson.stars} />
@@ -88,7 +89,7 @@ function LessonBubble({ lesson }: { lesson: LessonMapEntry }) {
     return (
       <Link href={`/aulas/${lesson.id}`} className="flex flex-col items-center gap-1">
         {bubble}
-        <span className="max-w-[80px] truncate text-center text-xs text-zinc-600">
+        <span className="max-w-20 truncate text-center text-xs text-ink/70">
           {lesson.trail_order}. {lesson.title}
         </span>
       </Link>
@@ -98,7 +99,7 @@ function LessonBubble({ lesson }: { lesson: LessonMapEntry }) {
   return (
     <div className="flex flex-col items-center gap-1" title="Complete a aula anterior">
       {bubble}
-      <span className="max-w-[80px] truncate text-center text-xs text-zinc-400">
+      <span className="max-w-20 truncate text-center text-xs text-ink/45">
         {lesson.trail_order}. {lesson.title}
       </span>
     </div>
@@ -122,18 +123,18 @@ function ReviewGateBubble({
       className={`
         flex h-20 w-20 flex-col items-center justify-center rounded-2xl border-2 transition-all
         ${passed
-          ? "cursor-pointer border-yellow-400 bg-yellow-50"
+          ? "cursor-pointer border-gold bg-gold/15"
           : isAvailable
-            ? "cursor-pointer border-yellow-400 bg-white shadow-md hover:shadow-lg hover:scale-105"
-            : "cursor-not-allowed border-zinc-200 bg-zinc-100 opacity-50"
+            ? "cursor-pointer border-gold bg-white hover:bg-gold/10"
+            : "cursor-not-allowed border-ink/15 bg-ink/4 opacity-60"
         }
       `}
     >
-      <svg className={`h-7 w-7 ${passed ? "text-yellow-500" : isAvailable ? "text-yellow-600" : "text-zinc-400"}`} fill="currentColor" viewBox="0 0 24 24">
+      <svg className={`h-7 w-7 ${passed ? "text-gold" : isAvailable ? "text-gold" : "text-ink/40"}`} fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
       </svg>
       {passed && (
-        <span className="text-xs font-bold text-yellow-600">
+        <span className="text-xs font-bold text-ink">
           {gate?.best_score}/10
         </span>
       )}
@@ -144,7 +145,7 @@ function ReviewGateBubble({
     return (
       <Link href={`/aulas/review/${trail}`} className="flex flex-col items-center gap-1">
         {bubble}
-        <span className="text-center text-xs text-zinc-600">Desafio Final</span>
+        <span className="text-center text-xs text-ink/70">Desafio Final</span>
       </Link>
     );
   }
@@ -152,15 +153,22 @@ function ReviewGateBubble({
   return (
     <div className="flex flex-col items-center gap-1" title="Complete todas as aulas da trilha">
       {bubble}
-      <span className="text-center text-xs text-zinc-400">Desafio Final</span>
+      <span className="text-center text-xs text-ink/45">Desafio Final</span>
     </div>
   );
 }
 
 export default function LessonMap({ lessons, reviewGates }: LessonMapProps) {
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-4 py-6">
-      <h1 className="text-2xl font-bold text-zinc-900">Aulas</h1>
+    <div className="min-h-full bg-warm-ivory pb-10 text-ink">
+      {/* "Aulas" violava o vocabulário oficial da Bíblia Tonal §8. */}
+      <FaixaDeComando
+        supertitulo="Reino das 64 Casas"
+        titulo="Trilhas de Formação"
+        saudacao="Sua rota de campanha, trilha a trilha."
+      />
+
+      <div className="mx-auto max-w-2xl space-y-8 px-4 pt-6">
 
       {TRAILS.map((trail) => {
         const trailLessons = lessons.filter((l) => l.trail === trail.key);
@@ -178,10 +186,10 @@ export default function LessonMap({ lessons, reviewGates }: LessonMapProps) {
                 style={{ backgroundColor: trail.color }}
               />
               <div>
-                <h2 className="text-lg font-bold text-zinc-900">
+                <h2 className="font-heading text-lg font-bold">
                   {trail.name}
                 </h2>
-                <p className="text-sm text-zinc-500">{trail.description}</p>
+                <p className="text-sm text-ink/55">{trail.description}</p>
               </div>
             </div>
 
@@ -198,6 +206,7 @@ export default function LessonMap({ lessons, reviewGates }: LessonMapProps) {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
