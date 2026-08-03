@@ -4,7 +4,6 @@ import { useMissions } from "@/hooks/useMissions";
 import { useUser } from "@/hooks/useUser";
 import MissionPanel from "./MissionPanel";
 import StreakDisplay from "./StreakDisplay";
-import XPBar from "./XPBar";
 import AchievementPanel from "./AchievementPanel";
 import ChestPanel from "./ChestPanel";
 import EggCard from "./EggCard";
@@ -23,11 +22,9 @@ export default function DailyPanel({ title }: { title: string }) {
   const { profile, loading: profileLoading } = useUser();
 
   return (
-    <div className="space-y-4">
-      {/* XP */}
-      {profile && !profileLoading && (
-        <XPBar xp={profile.xp} level={profile.level} />
-      )}
+    <div className="space-y-5">
+      {/* O XP subiu para a FaixaDeComando — o comp da direção A o põe lá, e
+          manter o card aqui deixaria duas barras de XP na mesma tela. */}
 
       {/* Ordens do Dia */}
       <MissionPanel

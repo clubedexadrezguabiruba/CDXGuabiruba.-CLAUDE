@@ -1,4 +1,5 @@
 "use client";
+import Card, { CardTitle } from "@/components/ui/Card";
 
 import { useState } from "react";
 import { useChests, type PendingChest, type ClaimResult } from "@/hooks/useChests";
@@ -49,21 +50,21 @@ export default function ChestPanel() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Baús</h2>
-        <div className="flex items-center justify-center py-4 text-sm text-zinc-400">
+      <Card>
+        <CardTitle>Baús</CardTitle>
+        <div className="flex items-center justify-center py-4 text-sm text-ink/45">
           Carregando...
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Baús</h2>
-        <p className="text-sm text-red-600">Erro: {error}</p>
-      </div>
+      <Card>
+        <CardTitle>Baús</CardTitle>
+        <p className="text-sm text-erro">Erro: {error}</p>
+      </Card>
     );
   }
 
@@ -72,18 +73,18 @@ export default function ChestPanel() {
 
   return (
     <>
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
+      <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Baús</h2>
+          <CardTitle className="mb-0">Baús</CardTitle>
           {chests.length > 0 && (
-            <span className="text-sm font-medium text-zinc-500">
+            <span className="text-sm font-medium text-ink/55">
               {chests.length} pendente{chests.length > 1 ? "s" : ""}
             </span>
           )}
         </div>
 
         {chests.length === 0 ? (
-          <p className="py-4 text-center text-sm text-zinc-400">
+          <p className="py-4 text-center text-sm text-ink/45">
             Nenhum baú pendente.
           </p>
         ) : (
@@ -91,13 +92,13 @@ export default function ChestPanel() {
             {visibleChests.map((chest) => (
               <div
                 key={chest.id}
-                className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-3 shadow-sm transition-all hover:shadow"
+                className="flex items-center justify-between rounded-lg border border-ink/10 bg-white p-3 shadow-sm transition-all hover:shadow"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🎁</span>
                   <div>
                     <span className="text-sm font-medium">Baú</span>
-                    <span className="ml-1.5 text-xs text-zinc-400">
+                    <span className="ml-1.5 text-xs text-ink/45">
                       {SOURCE_LABELS[chest.source_type] ?? chest.source_type}
                     </span>
                   </div>
@@ -105,7 +106,7 @@ export default function ChestPanel() {
                 <button
                   onClick={() => handleOpen(chest)}
                   disabled={opening !== null}
-                  className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50"
+                  className="rounded-lg bg-gold px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-gold disabled:opacity-50"
                 >
                   {opening === chest.id ? "Abrindo..." : "Abrir"}
                 </button>
@@ -115,7 +116,7 @@ export default function ChestPanel() {
             {!expanded && hiddenCount > 0 && (
               <button
                 onClick={() => setExpanded(true)}
-                className="w-full rounded-lg border border-dashed border-zinc-300 py-2 text-sm font-medium text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
+                className="w-full rounded-lg border border-dashed border-ink/15 py-2 text-sm font-medium text-ink/55 transition-colors hover:border-ink/25 hover:text-ink/80"
               >
                 Ver mais {hiddenCount} {hiddenCount === 1 ? "baú" : "baús"}
               </button>
@@ -124,9 +125,9 @@ export default function ChestPanel() {
         )}
 
         {openError && (
-          <p className="mt-2 text-sm text-red-600">{openError}</p>
+          <p className="mt-2 text-sm text-erro">{openError}</p>
         )}
-      </div>
+      </Card>
 
       {claimResult && (
         <ChestOpeningModal

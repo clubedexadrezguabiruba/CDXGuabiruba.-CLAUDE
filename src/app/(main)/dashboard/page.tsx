@@ -3,6 +3,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import DailyPanel from "@/components/gamification/DailyPanel";
 import TaskPanel from "@/components/gamification/TaskPanel";
+import FaixaDeComando from "@/components/layout/FaixaDeComando";
+import Card, { CardTitle } from "@/components/ui/Card";
+import { xpForLevel } from "@/lib/gamification/xp";
+
+const ATALHOS = [
+  { href: "/aulas", titulo: "Continuar Treinamento" },
+  { href: "/puzzles/rating", titulo: "Desafio Tático" },
+  { href: "/bots", titulo: "Enfrentar Bot" },
+] as const;
 
 interface RankingEntry {
   user_id: string;
@@ -27,16 +36,21 @@ export default async function DashboardPage() {
 
   if (!data.user) redirect("/login");
 
-  // Verificar se o aluno já escolheu avatar
-  const { data: avatarCheck } = await supabase
+  // Avatar + XP na mesma ida: o XP subiu para a faixa de comando, e buscá-lo
+  // aqui evita o segundo round-trip que o XPBar fazia pelo useUser no client.
+  const { data: perfil } = await supabase
     .from("users")
-    .select("avatar_chosen")
+    .select("avatar_chosen, xp, level, display_name, name")
     .eq("id", data.user.id)
     .single();
 
-  if (avatarCheck && !avatarCheck.avatar_chosen) {
+  if (perfil && !perfil.avatar_chosen) {
     redirect("/criar-personagem");
   }
+
+  const primeiroNome = (perfil?.display_name ?? perfil?.name ?? "")
+    .trim()
+    .split(" ")[0];
 
   // Buscar título do aluno
   const { data: titleData } = await supabase
@@ -55,115 +69,94 @@ export default async function DashboardPage() {
   const entries: RankingEntry[] = response?.entries ?? [];
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
-      {/* Header — Quartel-General */}
-      <div className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Quartel-General</h1>
-        <p className="mt-1 flex items-center gap-2 text-sm text-zinc-500">
-          Seu centro de comando
-          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-            {title}
-          </span>
-        </p>
-      </div>
+    <div className="min-h-full bg-warm-ivory pb-10 text-ink">
+      <FaixaDeComando
+        supertitulo="Reino das 64 Casas"
+        titulo="Quartel-General"
+        saudacao={primeiroNome ? `Bom te ver de volta, ${primeiroNome}.` : undefined}
+        patente={title}
+        xp={perfil?.xp}
+        xpTotal={perfil ? xpForLevel(perfil.level) : undefined}
+      />
 
-      {/* Atalhos rápidos */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        <Link
-          href="/aulas"
-          className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm transition-all hover:scale-[1.02] hover:border-blue-200 hover:bg-blue-50 hover:shadow-md"
-        >
-          <span className="text-3xl">&#128218;</span>
-          <span className="text-xs font-medium text-zinc-700">
-            Continuar Treinamento
-          </span>
-        </Link>
-        <Link
-          href="/puzzles/rating"
-          className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm transition-all hover:scale-[1.02] hover:border-amber-200 hover:bg-amber-50 hover:shadow-md"
-        >
-          <span className="text-3xl">&#9876;&#65039;</span>
-          <span className="text-xs font-medium text-zinc-700">
-            Desafio Tático
-          </span>
-        </Link>
-        <Link
-          href="/bots"
-          className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm transition-all hover:scale-[1.02] hover:border-red-200 hover:bg-red-50 hover:shadow-md"
-        >
-          <span className="text-3xl">&#129302;</span>
-          <span className="text-xs font-medium text-zinc-700">
-            Enfrentar Bot
-          </span>
-        </Link>
-      </div>
+      <div className="mx-auto max-w-2xl space-y-5 px-4 pt-5">
+        {/* Atalhos — a barra de ênfase marca o primeiro; ver comp em VariantA */}
+        <nav className="space-y-2.5">
+          {ATALHOS.map((a, i) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-ink/10 bg-white px-4 py-3 text-left transition-colors hover:border-gold/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-warm-ivory"
+            >
+              <span
+                aria-hidden
+                className={`h-8 w-0.75 rounded-full ${i === 0 ? "bg-gold" : "bg-deep-navy/25"}`}
+              />
+              <span className="flex-1 text-sm font-semibold">{a.titulo}</span>
+              <span aria-hidden className="text-ink/30">
+                &rarr;
+              </span>
+            </Link>
+          ))}
+        </nav>
 
-      {/* Blocos client-side: XP, missões, streak, baús, insígnias */}
-      <DailyPanel title={title} />
+        {/* Blocos client-side: missões, streak, baús, insígnias */}
+        <DailyPanel title={title} />
 
-      {/* Tarefas da companhia (só aparece se aluno tem tarefas) */}
-      <div className="mt-6">
+        {/* Tarefas da companhia (só aparece se aluno tem tarefas) */}
         <TaskPanel />
-      </div>
 
-      {/* Quadro de Honra — preview top 5 */}
-      <div className="mt-6 rounded-xl border bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Quadro de Honra</h2>
-          <Link
-            href="/ranking"
-            className="text-xs font-medium text-blue-600 hover:underline"
-          >
-            Ver ranking completo &rarr;
-          </Link>
-        </div>
+        {/* Quadro de Honra — preview top 5 */}
+        <Card>
+          <div className="mb-3 flex items-baseline justify-between">
+            <CardTitle className="mb-0">Quadro de Honra</CardTitle>
+            <Link
+              href="/ranking"
+              className="rounded text-xs font-medium text-ink/60 underline-offset-2 hover:text-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            >
+              Ver completo &rarr;
+            </Link>
+          </div>
 
-        {rankingError ? (
-          <p className="text-sm text-red-600">
-            Erro ao carregar ranking.
-          </p>
-        ) : entries.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            Nenhum jogador no ranking ainda.
-          </p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b bg-zinc-50 text-zinc-500">
-                <th className="rounded-tl-lg px-3 py-2">#</th>
-                <th className="px-3 py-2">Jogador</th>
-                <th className="px-3 py-2">Rating</th>
-                <th className="rounded-tr-lg px-3 py-2">Título</th>
-              </tr>
-            </thead>
-            <tbody>
+          {rankingError ? (
+            <p className="text-sm text-erro">Erro ao carregar ranking.</p>
+          ) : entries.length === 0 ? (
+            <p className="text-sm text-ink/55">Nenhum jogador no ranking ainda.</p>
+          ) : (
+            <ol className="space-y-2">
               {entries.map((entry) => (
-                <tr
+                <li
                   key={entry.user_id}
-                  className={`border-b transition-colors last:border-0 hover:bg-zinc-50 ${
-                    entry.user_id === data.user!.id ? "bg-blue-50 font-medium" : ""
+                  className={`flex items-center gap-3 rounded-md px-2 py-1.5 text-sm ${
+                    entry.user_id === data.user!.id
+                      ? "bg-gold/12 font-medium ring-1 ring-gold/40"
+                      : ""
                   }`}
                 >
-                  <td className="px-3 py-2.5 font-medium">
-                    {entry.position <= 3 ? MEDAL[entry.position - 1] : entry.position}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <Link
-                      href={`/perfil/${entry.user_id}`}
-                      className="hover:underline"
-                    >
-                      {entry.public_name}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2.5 tabular-nums">{entry.metric_value}</td>
-                  <td className="px-3 py-2.5 text-zinc-500">
+                  {/* Medalha no top 3 — forma além da cor. Do 4º em diante, o
+                      número em Inter: Cinzel some em corpo pequeno. */}
+                  <span className="w-4 shrink-0 text-xs font-semibold tabular-nums text-ink/70">
+                    {entry.position <= 3
+                      ? MEDAL[entry.position - 1]
+                      : entry.position}
+                  </span>
+                  <Link
+                    href={`/perfil/${entry.user_id}`}
+                    className="flex-1 truncate rounded underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                  >
+                    {entry.public_name}
+                  </Link>
+                  <span className="text-xs text-ink/70">
                     {entry.title ?? "Aprendiz"}
-                  </td>
-                </tr>
+                  </span>
+                  <span className="w-11 shrink-0 text-right text-xs font-semibold tabular-nums">
+                    {entry.metric_value}
+                  </span>
+                </li>
               ))}
-            </tbody>
-          </table>
-        )}
+            </ol>
+          )}
+        </Card>
       </div>
     </div>
   );

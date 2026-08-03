@@ -1,5 +1,7 @@
 "use client";
 
+import Card, { CardTitle } from "@/components/ui/Card";
+
 import Link from "next/link";
 import type { Mission } from "@/hooks/useMissions";
 
@@ -25,41 +27,41 @@ function MissionRow({ mission }: { mission: Mission }) {
     <div
       className={`rounded-lg border p-3 transition-all ${
         mission.completed
-          ? "border-green-200 bg-green-50"
-          : "border-zinc-200 bg-white shadow-sm hover:border-blue-200 hover:shadow-md"
+          ? "border-ok/30 bg-ok/10"
+          : "border-ink/10 bg-white shadow-sm hover:border-gold/60 hover:shadow-md"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium leading-tight">
           {mission.completed && (
-            <span className="mr-1 text-green-600" aria-label="Completada">
+            <span className="mr-1 text-ok" aria-label="Completada">
               &#10003;
             </span>
           )}
           {mission.title}
         </span>
-        <span className="shrink-0 text-xs font-semibold text-amber-600">
+        <span className="shrink-0 text-xs font-semibold text-gold">
           +{mission.reward_xp} XP
         </span>
       </div>
 
       <div className="mt-2 flex items-center gap-2">
-        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-zinc-200">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-ink/10">
           <div
             className={`h-full rounded-full transition-all duration-300 ${
-              mission.completed ? "bg-green-500" : "bg-blue-500"
+              mission.completed ? "bg-ok" : "bg-deep-navy"
             }`}
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="text-xs tabular-nums text-zinc-500">
+        <span className="text-xs tabular-nums text-ink/55">
           {mission.progress}/{mission.target}
         </span>
       </div>
 
       {!mission.completed && (
         <div className="mt-1 text-right">
-          <span className="text-xs font-medium text-blue-600">Iniciar &rarr;</span>
+          <span className="text-xs font-medium text-ink/70">Iniciar &rarr;</span>
         </div>
       )}
     </div>
@@ -93,31 +95,31 @@ export default function MissionPanel({
 }: MissionPanelProps) {
   if (loading) {
     return (
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Ordens do Dia</h2>
-        <div className="flex items-center justify-center py-6 text-sm text-zinc-400">
+      <Card>
+        <CardTitle>Ordens do Dia</CardTitle>
+        <div className="flex items-center justify-center py-6 text-sm text-ink/45">
           Carregando missões...
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Ordens do Dia</h2>
-        <p className="text-sm text-red-600">Erro: {error}</p>
-      </div>
+      <Card>
+        <CardTitle>Ordens do Dia</CardTitle>
+        <p className="text-sm text-erro">Erro: {error}</p>
+      </Card>
     );
   }
 
   const completedCount = missions.filter((m) => m.completed).length;
 
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
+    <Card>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Ordens do Dia</h2>
-        <span className="text-sm font-medium text-zinc-500">
+        <CardTitle className="mb-0">Ordens do Dia</CardTitle>
+        <span className="text-sm font-medium text-ink/55">
           {completedCount}/{missions.length}
         </span>
       </div>
@@ -125,21 +127,21 @@ export default function MissionPanel({
       {allCompleted ? (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <span className="text-4xl">&#127942;</span>
-          <p className="text-sm font-medium text-zinc-700">
-            Parabéns, <span className="font-bold text-amber-700">{title}</span>!
+          <p className="text-sm font-medium text-ink/80">
+            Parabéns, <span className="font-bold text-ink/80">{title}</span>!
             Você concluiu todas as ordens do dia!
           </p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-ink/55">
             Volte amanhã para novas missões.
           </p>
           {chestAvailable && (
-            <p className="mt-1 text-xs font-medium text-amber-600">
+            <p className="mt-1 text-xs font-medium text-gold">
               Abra seu baú no painel de baús!
             </p>
           )}
         </div>
       ) : missions.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink/55">
           Nenhuma missão disponível hoje.
         </p>
       ) : (
@@ -149,6 +151,6 @@ export default function MissionPanel({
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
