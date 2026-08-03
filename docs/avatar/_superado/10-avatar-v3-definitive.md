@@ -1,7 +1,13 @@
 # Avatar v3 — "O Estrategista": Versão Definitiva (Avatar/Cosméticos)
 
-> **Status: este é o plano vigente do subsistema de avatar.**
-> Ele **supersede** os documentos `01`–`09` desta pasta onde houver conflito.
+> ⚠️ **ARQUIVADO em 2026-08-03 — não é mais o plano vigente.** Este texto se
+> declarava vigente porque superou a v2; ele mesmo caiu com o **v4**. O plano de
+> execução de hoje é [`../15-plano-ate-pronto.md`](../15-plano-ate-pronto.md), e o
+> racional está em [`../12-avatar-v4-plano-completo.md`](../12-avatar-v4-plano-completo.md).
+> Ver [README](README.md).
+>
+> _(status original, mantido como registro:)_ Ele **supersede** os documentos
+> `01`–`09` desta pasta onde houver conflito.
 > Em especial, a **Fase 6 do doc 09** (produção de assets `dressed_base`) **não
 > deve ser executada** — `dressed_base` foi descartado por este documento.
 >

@@ -1,7 +1,7 @@
 # 01 — Modelo de Domínio do Avatar
 
 > [!WARNING]
-> **Parcialmente superado pelo [doc 10 — Avatar v3 "O Estrategista"](10-avatar-v3-definitive.md).**
+> ⚠️ **ARQUIVADO em 2026-08-03 — não vale como instrução.** O banner original mandava ler o doc 10 (v3), que **também** caiu. O plano vigente é o v4: [`../15-plano-ate-pronto.md`](../15-plano-ate-pronto.md). Ver [README](README.md).
 >
 > A v3 é o plano vigente. Onde este documento conflitar com o 10, vale o 10.
 > O que caiu:

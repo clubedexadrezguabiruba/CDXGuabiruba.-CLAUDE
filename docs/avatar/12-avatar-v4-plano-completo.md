@@ -1,11 +1,11 @@
 # Avatar v4 — Plano Completo (decisões tomadas + execução)
 
 > **Para o usuário verificar e aprovar.** Todas as decisões do
-> `11-checklist-de-decisoes.md` estão respondidas aqui, cada uma com o motivo em
+> `_superado/11-checklist-de-decisoes.md` estão respondidas aqui, cada uma com o motivo em
 > uma linha. Discordou de alguma? Diga qual — várias se encadeiam, e eu recalculo
 > o que muda.
 >
-> **Supersede:** o `10-avatar-v3-definitive.md` nos pontos de **canvas, estilo de
+> **Supersede:** o `_superado/10-avatar-v3-definitive.md` nos pontos de **canvas, estilo de
 > arte e catálogo**. O resto do v3 permanece e está incorporado aqui: corpo único,
 > `garment` no lugar de `dressed_base`, knockout deletado, server-authority,
 > uniforme por patente, anti-palhaço.
