@@ -75,11 +75,11 @@
 
 import { LINHA, TRAJE_BASE, escurecer } from "../palette";
 import {
-  CABELOS,
   pathCabelo,
   pathCabeloClaro,
   pathExtensao,
-  type ModeloCabelo,
+  resolverCabelo,
+  type CabeloOuModelo,
 } from "./cabelo";
 import {
   BOCA,
@@ -283,7 +283,7 @@ function extensoes(traje: Traje | undefined, atras: boolean): string {
  * As duas vivem dentro do `clipPath` da cabeça, que é quem resolve a lateral. O
  * cabelo não sabe onde o crânio termina, e é de propósito (ver `cabelo.ts`).
  */
-function cabeloNoCranio(modelo: ModeloCabelo | undefined): string {
+function cabeloNoCranio(modelo: CabeloOuModelo | undefined): string {
   if (!modelo) return "";
   const escuro = pathCabelo(modelo);
   // O moicano não tem touca — ele é só extensão. Emitir dois `<path d="">` vazios
@@ -303,9 +303,9 @@ function cabeloNoCranio(modelo: ModeloCabelo | undefined): string {
  * a cabeça, e é o que faz um coque parecer preso atrás em vez de colado na testa: a
  * cabeça é opaca e come a emenda, oclusão em vez de máscara.
  */
-function extensoesCabelo(modelo: ModeloCabelo | undefined, atras: boolean): string {
+function extensoesCabelo(modelo: CabeloOuModelo | undefined, atras: boolean): string {
   if (!modelo) return "";
-  const lista = (CABELOS[modelo].extensoes ?? []).filter((e) => Boolean(e.atras) === atras);
+  const lista = (resolverCabelo(modelo).extensoes ?? []).filter((e) => Boolean(e.atras) === atras);
   return lista.map((e) => `<path class="kk-cabelo-e" d="${pathExtensao(e)}"/>`).join("");
 }
 

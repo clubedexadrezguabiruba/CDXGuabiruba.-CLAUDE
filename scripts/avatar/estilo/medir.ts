@@ -79,6 +79,91 @@ export function silhueta(b: Bitmap): (Linha | null)[] {
 }
 
 // ---------------------------------------------------------------------------
+// O ENQUADRAMENTO — os quatro números dos quais todo o resto deriva
+// ---------------------------------------------------------------------------
+
+/**
+ * ONDE A FIGURA COMEÇA, ONDE ELA ACABA, E QUANTO VALE UM PIXEL.
+ *
+ * Extraído de dentro de `medir()` no Bloco 2a.2, e a extração é o ponto: este
+ * cálculo estava **copiado em quatro lugares** — aqui, em `folha-base.ts` (como a
+ * constante `REF`), e em dois scripts de `.scratch/estilo`. Quatro cópias de um
+ * enquadramento cuja divergência muda **toda** medida derivada, que é a mesma
+ * família de defeito que a silhueta duplicada já custou seis vezes a este projeto.
+ *
+ * O número que prova o risco já aconteceu: uma medição anterior leu a altura útil
+ * como 837 px onde o valor é 896, porque lia a silhueta como "pixel diferente do
+ * fundo" e a sombra do chão é tinta clara. Todo derivado saiu 7% grande. Com uma
+ * cópia só, esse erro se conserta uma vez.
+ *
+ * `yCorte` é a linha mais estreita entre 40% e 78% da altura — o pescoço. Não é
+ * "a metade": numa figura de cabeça grande a metade cai dentro do crânio.
+ */
+export interface Enquadramento {
+  /** A silhueta linha a linha, já calculada — quem chama não precisa refazer. */
+  linhas: (Linha | null)[];
+  /** Primeira e última linha com contorno escuro. */
+  utilY0: number;
+  utilY1: number;
+  alturaUtilPx: number;
+  /** Multiplicador de pixel para unidade do `viewBox`: `600 / alturaUtilPx`. */
+  fator: number;
+  /** A linha do pescoço: a mais estreita entre 40% e 78% da altura útil. */
+  yCorte: number;
+  /** O eixo do TRONCO, em pixel. Não é o eixo da figura — a cabeça tem o dela. */
+  eixoTroncoPx: number;
+}
+
+export function enquadramento(b: Bitmap): Enquadramento {
+  const linhas = silhueta(b);
+  const ys: number[] = [];
+  for (let y = 0; y < b.h; y++) if (linhas[y]) ys.push(y);
+  if (ys.length < 20) throw new Error("enquadramento: quase nenhum contorno escuro na imagem");
+
+  const utilY0 = ys[0];
+  const utilY1 = ys[ys.length - 1];
+  const alturaUtilPx = utilY1 - utilY0 + 1;
+
+  let yCorte = utilY0 + Math.round(alturaUtilPx * 0.5);
+  let menor = Infinity;
+  for (
+    let y = utilY0 + Math.round(alturaUtilPx * 0.4);
+    y <= utilY0 + Math.round(alturaUtilPx * 0.78);
+    y++
+  ) {
+    const l = linhas[y];
+    if (l && l.larg < menor) {
+      menor = l.larg;
+      yCorte = y;
+    }
+  }
+
+  // O eixo sai da linha MAIS LARGA abaixo do corte — o ombro. Tomar o meio de uma
+  // linha qualquer do tronco daria um eixo que anda com o afunilamento.
+  let tMax = 0;
+  let tx0 = 0;
+  let tx1 = 0;
+  for (let y = yCorte; y <= utilY1; y++) {
+    const l = linhas[y];
+    if (l && l.larg > tMax) {
+      tMax = l.larg;
+      tx0 = l.x0;
+      tx1 = l.x1;
+    }
+  }
+
+  return {
+    linhas,
+    utilY0,
+    utilY1,
+    alturaUtilPx,
+    fator: ALTURA_CANONICA / alturaUtilPx,
+    yCorte,
+    eixoTroncoPx: (tx0 + tx1) / 2,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // A LINHA DE CENTRO — a irmã de `silhueta()`, e o que ela enxerga a mais
 // ---------------------------------------------------------------------------
 
@@ -368,29 +453,12 @@ const AMOSTRAS = 240;
  * escondido sob a cabeça), que é um mínimo inequívoco nos dois desenhos.
  */
 export function medir(b: Bitmap): Marcos {
-  const linhas = silhueta(b);
-  const ys: number[] = [];
-  for (let y = 0; y < b.h; y++) if (linhas[y]) ys.push(y);
-  if (ys.length < 20) throw new Error("medir: quase nenhum contorno escuro na imagem");
-
-  const utilY0 = ys[0];
-  const utilY1 = ys[ys.length - 1];
-  const alturaUtilPx = utilY1 - utilY0 + 1;
-  const fator = ALTURA_CANONICA / alturaUtilPx;
+  // O enquadramento é função própria desde o Bloco 2a.2 — ver o docstring dela para
+  // por que quatro cópias deste cálculo eram um risco e não uma repetição inocente.
+  const { linhas, utilY0, utilY1, alturaUtilPx, fator, yCorte } = enquadramento(b);
   const u = (v: number) => v * fator;
 
   const L = (y: number) => linhas[y] as Linha;
-
-  // --- o corte cabeça ↔ tronco: a linha mais estreita entre 40% e 78% ---
-  let yCorte = utilY0 + Math.round(alturaUtilPx * 0.5);
-  let menor = Infinity;
-  for (let y = utilY0 + Math.round(alturaUtilPx * 0.4); y <= utilY0 + Math.round(alturaUtilPx * 0.78); y++) {
-    const l = linhas[y];
-    if (l && l.larg < menor) {
-      menor = l.larg;
-      yCorte = y;
-    }
-  }
 
   // --- a cabeça, SEM as orelhas: a maior largura do terço superior ---
   const topo0 = utilY0;

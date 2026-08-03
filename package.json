@@ -51,7 +51,9 @@
     "avatar:preview": "npm run avatar:garment && node -e \"require('fs').mkdirSync('public/dev/uniformes',{recursive:true});for(const f of require('fs').readdirSync('scripts/avatar/uniformes'))require('fs').copyFileSync('scripts/avatar/uniformes/'+f,'public/dev/uniformes/'+f)\"",
     "avatar:pose": "tsx scripts/avatar/estilo/verificar-pose.ts",
     "avatar:linha-de-centro": "tsx scripts/avatar/estilo/linha-de-centro.ts",
-    "verify:pose": "npm run avatar:pose"
+    "verify:pose": "npm run avatar:pose",
+    "avatar:curvatura": "tsx scripts/avatar/estilo/curvatura.ts",
+    "avatar:variantes": "tsx scripts/avatar/estilo/variantes.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.70",

@@ -22,7 +22,7 @@
  * segunda cópia da silhueta para divergir da primeira.
  */
 
-import type { ModeloCabelo } from "./cabelo";
+import type { CabeloOuModelo } from "./cabelo";
 
 /**
  * O que uma peça que ocupa a silhueta do tronco pode declarar.
@@ -96,7 +96,7 @@ export interface EstadoAvatar {
    * da base em 7 418 sendo teto de regressão e não de folga. `rosto-cor.test.ts`
    * confere justamente essa ausência.
    */
-  modeloCabelo?: ModeloCabelo;
+  modeloCabelo?: CabeloOuModelo;
   traje?: Traje;
   /**
    * Liga o piscar e o respiro. Desligado no ranking, onde 30 bonecos numa lista

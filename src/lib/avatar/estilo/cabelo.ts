@@ -387,6 +387,24 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
 /** A lista na ordem do catálogo, para as folhas e para o `criar-personagem`. */
 export const MODELOS_CABELO = Object.keys(CABELOS) as ModeloCabelo[];
 
+/**
+ * UM CABELO DO CATÁLOGO, **ou um literal** — e o "ou" existe para o desenho.
+ *
+ * Em produção o aluno escolhe um dos cinco, e é um slug que viaja até o banco. Mas
+ * uma peça que ainda não está no catálogo não tem slug: é justamente o que se está
+ * desenhando. Sem esta união, `avatar:variantes` teria de montar o SVG por conta
+ * própria para mostrar três candidatos — e aí existiriam duas composições, que é o
+ * defeito que o `compositor.ts` inteiro existe para não ter.
+ *
+ * A união não afrouxa nada: continua sendo `Cabelo` dos dois lados, com as mesmas
+ * amarras medidas pelas mesmas funções. O que ela permite é o literal viver fora
+ * do `CABELOS` enquanto ninguém escolheu.
+ */
+export type CabeloOuModelo = ModeloCabelo | Cabelo;
+
+export const resolverCabelo = (m: CabeloOuModelo): Cabelo =>
+  typeof m === "string" ? CABELOS[m] : m;
+
 // ---------------------------------------------------------------------------
 // Os paths
 // ---------------------------------------------------------------------------
@@ -400,8 +418,8 @@ export const MODELOS_CABELO = Object.keys(CABELOS) as ModeloCabelo[];
  * Devolve `""` para o modelo sem touca (o moicano), e quem emite trata a string
  * vazia. É mais barato que um `null` para o compositor concatenar.
  */
-export function pathCabelo(modelo: ModeloCabelo, dy = 0): string {
-  const franja = CABELOS[modelo].pontos;
+export function pathCabelo(modelo: CabeloOuModelo, dy = 0): string {
+  const franja = resolverCabelo(modelo).pontos;
   if (!franja) return "";
   const pts = franja.map((p) => ponto(p, dy));
 
@@ -416,7 +434,7 @@ export function pathCabelo(modelo: ModeloCabelo, dy = 0): string {
 }
 
 /** A camada clara: a mesma forma, subida o degrau de sombra. */
-export function pathCabeloClaro(modelo: ModeloCabelo): string {
+export function pathCabeloClaro(modelo: CabeloOuModelo): string {
   return pathCabelo(modelo, -DEGRAU);
 }
 
@@ -437,7 +455,7 @@ export function pathExtensao(e: Extensao): string {
  * contorno do crânio, a maior distância até esse contorno. Devolve 0 se nenhum ponto
  * entra — que é o caso a reprovar.
  */
-export function ancoragemDasExtensoes(modelo: ModeloCabelo): number[] {
+export function ancoragemDasExtensoes(modelo: CabeloOuModelo): number[] {
   const contorno = CABECA.contorno;
 
   /** Ray casting horizontal: quantas vezes a semirreta para a direita cruza. */
@@ -468,7 +486,7 @@ export function ancoragemDasExtensoes(modelo: ModeloCabelo): number[] {
     return melhor;
   };
 
-  return (CABELOS[modelo].extensoes ?? []).map((e) => {
+  return (resolverCabelo(modelo).extensoes ?? []).map((e) => {
     let fundo = 0;
     const pts = [...e.forma, e.forma[0]];
     for (let i = 0; i < pts.length - 1; i++) {
@@ -513,8 +531,8 @@ export function ancoragemDasExtensoes(modelo: ModeloCabelo): number[] {
  * vezes. As de trás ficam de fora com motivo: peça atrás da cabeça é ocultada por
  * ela, e o que a cabeça oculta não invade rosto nenhum.
  */
-export function folgaDoRosto(modelo: ModeloCabelo): { esq: number; dir: number } {
-  const m = CABELOS[modelo];
+export function folgaDoRosto(modelo: CabeloOuModelo): { esq: number; dir: number } {
+  const m = resolverCabelo(modelo);
   const trechos: { x: number; y: number }[][] = [];
   if (m.pontos) trechos.push(m.pontos.map((p) => ponto(p, 0)));
   for (const e of m.extensoes ?? []) {
