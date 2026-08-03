@@ -1,16 +1,23 @@
+import Card, { CardTitle } from "@/components/ui/Card";
+import ProgressBar from "@/components/ui/ProgressBar";
 import { ALUNO, ATALHOS, HONRA, INSIGNIAS, ORDENS } from "./data";
 
 /**
- * Direção A — Continuidade.
+ * O comp do Quartel-General — direção A (Continuidade).
  *
- * Estende o que a landing (src/app/page.tsx) já provou: navy, ouro, Cinzel,
- * marfim. Premium e sóbrio. O ouro aparece UMA vez por bloco — a regra do
- * "One Gold" no DESIGN.md.
+ * Reconstruído com os primitivos de `src/components/ui/`. É a prova de que a
+ * API os expressa: se um primitivo não consegue produzir o comp aprovado, é o
+ * primitivo que está errado, e é melhor descobrir aqui do que na tela real.
+ *
+ * O que NÃO virou primitivo, de propósito: os atalhos. Eles são navegação com
+ * duas linhas de texto e barra de ênfase — forçar um variant "tile" no Button
+ * para acomodá-los seria inventar API por causa de um consumidor. Ficam como
+ * composição local sobre os tokens.
  */
 export default function VariantA() {
   return (
     <div className="min-h-full bg-warm-ivory pb-10 font-sans text-ink">
-      {/* Faixa de comando */}
+      {/* Faixa de comando — o componente-assinatura da direção A */}
       <header className="bg-deep-navy px-5 pb-7 pt-6 text-warm-ivory">
         <p className="font-heading text-[11px] uppercase tracking-[0.22em] text-gold">
           Reino das 64 Casas
@@ -30,22 +37,23 @@ export default function VariantA() {
             {ALUNO.xpAtual} / {ALUNO.xpProximo} XP
           </span>
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-warm-ivory/15">
-          <div
-            className="h-full rounded-full bg-gold"
-            style={{ width: `${(ALUNO.xpAtual / ALUNO.xpProximo) * 100}%` }}
-          />
-        </div>
+        <ProgressBar
+          className="mt-2"
+          tone="gold"
+          valor={ALUNO.xpAtual}
+          total={ALUNO.xpProximo}
+          rotulo={`Experiência: ${ALUNO.xpAtual} de ${ALUNO.xpProximo}`}
+        />
       </header>
 
       <div className="space-y-5 px-5 pt-5">
-        {/* Atalhos */}
+        {/* Atalhos — composição local, ver docstring */}
         <nav className="space-y-2.5">
           {ATALHOS.map((a, i) => (
             <button
               key={a.titulo}
               type="button"
-              className="flex w-full min-h-14 items-center gap-3 rounded-lg border border-ink/10 bg-white px-4 py-3 text-left transition-colors hover:border-gold/60"
+              className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-ink/10 bg-white px-4 py-3 text-left transition-colors hover:border-gold/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-warm-ivory"
             >
               <span
                 aria-hidden
@@ -62,8 +70,8 @@ export default function VariantA() {
           ))}
         </nav>
 
-        {/* Ordens do Dia */}
-        <Section titulo="Ordens do Dia">
+        <Card>
+          <CardTitle>Ordens do Dia</CardTitle>
           <ul className="space-y-3">
             {ORDENS.map((o) => {
               const feita = o.feito >= o.total;
@@ -81,7 +89,9 @@ export default function VariantA() {
                   </span>
                   <span className="flex-1 text-sm">
                     {o.texto}
-                    <span className="sr-only">{feita ? " — concluída" : " — em andamento"}</span>
+                    <span className="sr-only">
+                      {feita ? " — concluída" : " — em andamento"}
+                    </span>
                   </span>
                   <span className="text-xs tabular-nums text-ink/45">
                     {o.feito}/{o.total}
@@ -90,18 +100,19 @@ export default function VariantA() {
               );
             })}
           </ul>
-        </Section>
+        </Card>
 
-        {/* Sequência + Insígnias */}
         <div className="grid grid-cols-2 gap-3">
-          <Section titulo="Sequência">
-            <p className="font-heading text-3xl font-bold tabular-nums">{ALUNO.streak}</p>
+          <Card>
+            <CardTitle>Sequência</CardTitle>
+            <p className="font-heading text-3xl font-bold tabular-nums">
+              {ALUNO.streak}
+            </p>
             <p className="mt-0.5 text-xs text-ink/55">dias de campanha</p>
-          </Section>
-          <Section titulo="Insígnias">
-            {/* Fila única em 375px: 4 × 24px + 3 × 4px cabe nos ~113px úteis do
-                card. Com 28px e gap 6 quebrava linha e desalinhava do bloco ao
-                lado. */}
+          </Card>
+          <Card>
+            <CardTitle>Insígnias</CardTitle>
+            {/* Fila única em 375px: 4 × 24px + 3 × 4px cabe nos ~113px úteis. */}
             <div className="flex gap-1">
               {INSIGNIAS.map((ins) => (
                 <span
@@ -116,11 +127,11 @@ export default function VariantA() {
               ))}
             </div>
             <p className="mt-2 text-xs text-ink/55">3 de 4</p>
-          </Section>
+          </Card>
         </div>
 
-        {/* Quadro de Honra */}
-        <Section titulo="Quadro de Honra">
+        <Card>
+          <CardTitle>Quadro de Honra</CardTitle>
           <ol className="space-y-2">
             {HONRA.map((h) => (
               <li
@@ -129,12 +140,17 @@ export default function VariantA() {
                   "eu" in h && h.eu ? "bg-gold/12 ring-1 ring-gold/40" : ""
                 }`}
               >
-                {/* Número em Inter, não em Cinzel: a regra "Cinzel Scarcity" do
-                    DESIGN.md — a capitalis some em corpo pequeno no celular. */}
+                {/* Número em Inter, não em Cinzel: "Cinzel Scarcity" — a
+                    capitalis some em corpo pequeno no celular. */}
                 <span className="w-4 text-xs font-semibold tabular-nums text-ink/70">
                   {h.pos}
                 </span>
                 <span className="flex-1 truncate">{h.nome}</span>
+                {/* Texto, não Badge. A "Colorblind Rule" pede cor nunca
+                    sozinha — não cor sempre. Cinco pílulas coloridas numa
+                    lista de cinco competem com o nome e o rating, que é a
+                    informação. O Badge é para onde a patente é protagonista
+                    (faixa de comando, perfil), não para linha de lista. */}
                 <span className="text-xs text-ink/70">{h.patente}</span>
                 <span className="w-11 text-right text-xs font-semibold tabular-nums">
                   {h.rating}
@@ -142,19 +158,8 @@ export default function VariantA() {
               </li>
             ))}
           </ol>
-        </Section>
+        </Card>
       </div>
     </div>
-  );
-}
-
-function Section({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-lg border border-ink/10 bg-white p-4">
-      <h2 className="mb-3 font-heading text-[13px] font-semibold uppercase tracking-[0.14em] text-ink/70">
-        {titulo}
-      </h2>
-      {children}
-    </section>
   );
 }

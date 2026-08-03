@@ -250,13 +250,15 @@ sóbria.
 
 ## Components
 
-**Ainda não existem primitivos.** `src/components/ui/` está vazia, `clsx` e
-`tailwind-merge` estão instalados e nunca foram importados, não há `cn()`, e cada
-modal reimplementa o próprio overlay. O que segue é a **especificação para
-construí-los**, não o registro de algo que já existe — a referência viva é
-`src/app/design-lab/VariantA.tsx`.
+**Wave 1 existe** em `src/components/ui/`: `Button`, `Card`/`CardTitle`, `Badge`,
+`ProgressBar`, mais o helper `cn()` em `src/lib/cn.ts`. A referência viva é
+`src/app/design-lab/VariantA.tsx`, que os consome — e que renderiza **pixel a
+pixel idêntico** à versão escrita à mão, medido por screenshot do elemento.
 
-Ordem de construção: `cn()` → `Button` → `Card` → `Badge` → `Modal` → `Input`.
+Ainda **não** existem (wave 2, nascem com a tela que os pedir): `Modal` +
+`ConfirmDialog`, `Field`/`Input`/`Select`, `Toast`, `Spinner`/`Skeleton`,
+`EmptyState`/`ErrorBanner`. Até lá, cada modal segue reimplementando o próprio
+overlay — 4 deles, nenhum com ESC, foco preso ou `role="dialog"`.
 
 ### Buttons
 - **Shape:** `rounded-lg`, altura mínima **44px** (alvo de toque).
@@ -275,8 +277,14 @@ Ordem de construção: `cn()` → `Button` → `Card` → `Badge` → `Modal` �
 - **Título:** Cinzel 13px, versalete, `tracking-[0.14em]`, em `/70` de opacidade.
 
 ### Badge de patente
-- **Style:** pílula, Cinzel, com a cor da patente vinda de
-  `scripts/avatar/patentes.ts` — e **o nome escrito junto**, nunca a cor sozinha.
+- **Style:** pílula com o ponto de cor da patente vindo de
+  `scripts/avatar/patentes.ts` (importado, nunca copiado) — e **o nome escrito
+  junto**, nunca a cor sozinha.
+- **Onde:** só onde a patente é protagonista — faixa de comando, perfil, tela de
+  promoção. **Não em linha de lista.** A "Colorblind Rule" pede cor nunca
+  sozinha, não cor sempre: cinco pílulas coloridas numa lista de cinco competem
+  com o nome e o número, que são a informação. Em lista, a patente é texto.
+- Título que não é patente ("Aprendiz") usa o tone `neutro`, sem inventar cor.
 
 ### Inputs / Fields
 - **Style:** fundo branco, fio `border-[#1B2432]/10`, `rounded-lg`, altura 44px.
@@ -365,5 +373,8 @@ bloqueados por `deny` em `.claude/settings.json`, e o bloqueio é para ficar.
 - **Onde a patente aparece.** Ficou como badge e como cor de marca no ranking. Se
   isso é sinal suficiente de progressão só se descobre com o aluno.
 
-As duas direções descartadas continuam em `/design-lab` como registro do que foi
-comparado. Podem ser removidas assim que a decisão estiver commitada.
+As duas direções descartadas **foram removidas do código** (commit da wave 1 de
+primitivos). O registro do que foi comparado, e por que cada uma caiu, está na
+seção *Overview* deste arquivo — que é onde ele sobrevive a um `git log`.
+`/design-lab` agora tem duas abas: o comp do Quartel-General e a folha de
+estados dos primitivos.

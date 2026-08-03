@@ -10,17 +10,14 @@
  * compara nada.
  */
 
-/** As 6 patentes, na ordem da escada. Fonte: scripts/avatar/patentes.ts. */
-export const PATENTES = [
-  { nome: "Soldado", pano: "#78833B", bota: "#2d3012", detalhe: "#C3CE8E" },
-  { nome: "Aspirante", pano: "#384966", bota: "#1e2b44", detalhe: "#859DAB" },
-  { nome: "Capitão", pano: "#3E8C81", bota: "#1C4A45", detalhe: "#B4D2C9" },
-  { nome: "Comandante", pano: "#3A55B5", bota: "#1D2A63", detalhe: "#C6D2E2" },
-  { nome: "General", pano: "#7A3168", bota: "#421539", detalhe: "#D9BCD1" },
-  { nome: "Mestre", pano: "#AEBCCE", bota: "#4B5A70", detalhe: "#B5AE4A" },
-] as const;
-
-export type Patente = (typeof PATENTES)[number];
+/**
+ * A tabela das patentes MORAVA AQUI, copiada à mão — e a cópia divergiu da
+ * fonte em silêncio (o Soldado ganhou um `detalhe` que em `patentes.ts` é
+ * `null`). Régua se importa, não se copia: quem precisa de cor de patente usa
+ * o `<Badge patente>`, que lê `scripts/avatar/patentes.ts` direto.
+ *
+ * É o segundo dos dois incidentes que `verify:design-tokens` nomeia.
+ */
 
 export const ALUNO = {
   nome: "Ana",
@@ -57,7 +54,3 @@ export const INSIGNIAS = [
   { nome: "Cem Desafios", ganha: true },
   { nome: "Duelo Perfeito", ganha: false },
 ] as const;
-
-export function patentePorNome(nome: string): Patente {
-  return PATENTES.find((p) => p.nome === nome) ?? PATENTES[0];
-}
