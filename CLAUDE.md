@@ -80,7 +80,7 @@ Antes de alterar qualquer bug/fluxo:
 - `npm run lint`
 - `npm test` (vitest)
 - `npm run build`
-- `npm run verify:all` (os 11 gates de banco/segurança — substitui rodar um a um)
+- `npm run verify:all` (a cadeia inteira de gates — substitui rodar um a um)
 - `npm run test:e2e` (quando mexer em UI/auth) — **ATENÇÃO: bate no Supabase de
   PRODUÇÃO**, cria e remove usuários reais. Rodar com intenção, nunca em CI.
 

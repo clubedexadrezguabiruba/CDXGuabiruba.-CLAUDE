@@ -6,7 +6,8 @@
 // graça e que ninguém rodava, porque `npm run typecheck` não olhava para cá.
 //
 // `scripts/verify/**` fica de FORA de propósito, registrado como dívida no
-// runbook. O escopo é o que esta fase mexe.
+// runbook — EXCETO `scripts/verify/design/**`, que nasceu depois desta nota e
+// entra na régua desde o primeiro dia. O escopo é o que cada fase mexe.
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
@@ -14,6 +15,10 @@
     // próprio. Desligar é mais barato que administrar um segundo cache.
     "incremental": false
   },
-  "include": ["scripts/avatar/**/*.ts"],
+  "include": [
+    "scripts/avatar/**/*.ts",
+    "scripts/design/**/*.ts",
+    "scripts/verify/design/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
