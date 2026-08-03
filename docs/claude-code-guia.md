@@ -46,8 +46,8 @@ dependem de você reconstruir o estado. **Gestão de contexto e de sessão é su
 alavanca**, muito mais que aprender comandos novos.
 
 **2. Você é dirigido por documento e por gate.** 17 docs em `docs/avatar/`, um
-backlog onde o progresso fica marcado, a Regra de Evidência no CLAUDE.md, 14 gates
-no `verify:all`. Plano antes de execução já é seu hábito. O Claude Code tem duas
+backlog onde o progresso fica marcado, a Regra de Evidência no CLAUDE.md, a cadeia
+de gates do `verify:all`. Plano antes de execução já é seu hábito. O Claude Code tem duas
 features desenhadas exatamente para isso (plan mode e slash commands) e você não
 usa nenhuma das duas.
 

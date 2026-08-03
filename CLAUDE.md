@@ -124,6 +124,12 @@ quando não há `.env.local` — é assim que funcionam em CI.
 - scripts/verify/ → gates de validação por fase
 
 ## Referências (ler antes de mudanças grandes)
+- **Onde estamos: `docs/ESTADO.md` — comece por aqui.** É **gerado**, não escrito:
+  `npm run estado` reconta tudo do repositório, e `verify:estado` reprova se
+  envelhecer. Existe porque o estado deste projeto vivia em 13 documentos que
+  discordavam — a contagem de gates do `verify:all` aparecia à mão em seis lugares,
+  com quatro valores diferentes. **Não escreva número de progresso em doc nenhum:
+  ou o painel já mede, ou é caso de ensinar `scripts/estado.ts` a medir**
 - Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md — **a §5 (aulas) está
   superada** pelo currículo abaixo
 - Currículo das aulas: `docs/curriculo/01-curriculo-definitivo-v1.md` — **aprovado em
@@ -156,8 +162,8 @@ quando não há `.env.local` — é assim que funcionam em CI.
   - `docs/avatar/12-avatar-v4-plano-completo.md` — as 30 decisões e o porquê,
     mais a **emenda à D27**: só pele e cabelo recolorem
   - `docs/avatar/13-checklist-de-verificacao.md` — os ~90 itens de auditoria
-  - `docs/avatar/14-backlog-execucao.md` — as 63 tarefas, **é onde o progresso
-    fica marcado**
+  - `docs/avatar/14-backlog-execucao.md` — **é onde o progresso fica marcado**,
+    tarefa a tarefa. Quantas são e quantas fecharam: `docs/ESTADO.md`
   - As gerações v2 e v3 (os antigos docs 00–11) foram arquivadas em
     `docs/avatar/_superado/` — **não valem como instrução**, e o README de lá diz
     o que substituiu cada uma. O mesmo para `docs/_superado/` (Art Guide e

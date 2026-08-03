@@ -57,7 +57,7 @@ npm run typecheck    # tsc --noEmit
 npm run lint         # eslint src/
 npm test             # vitest run
 npm run build        # next build
-npm run verify:all   # 11 gates contra o banco remoto
+npm run verify:all   # a cadeia inteira de gates, contra o banco remoto
 npm run test:e2e     # Playwright — ver aviso abaixo
 ```
 

@@ -200,7 +200,7 @@ fundiu (`#4a3526` com `#3d2b1f`). Folha: `.scratch/proporcao/paleta/`.
       (todo mundo tem linha; ninguém abaixo do que a contagem lhe dá) e o alcance
       (uniforme só em patente que o conteúdo alcança)
 - [x] **T0.18** 🤖 Adicionar `verify:phase8` ao `verify:all` e ao CI
-      → `verify:all` foi de 11 para 14 gates. O CI já roda `verify:all`, então não precisou de passo novo
+      → `verify:all` ganhou os gates novos. O CI já roda `verify:all`, então não precisou de passo novo
 
 ## Testes unitários — não existe nenhum hoje
 
@@ -296,7 +296,7 @@ Bloqueia todo o resto da arte.
 - [ ] **T2.14** 🤖 **D30** — avatar no **ranking de turma**
 - [ ] **T2.15** 🤖 **D30** — avatar no **mural**
 - [ ] **T2.16** 🤖 **D30** — avatar na **Companhia** (lista de membros)
-- [ ] 🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` 12/12 · gate de assets 100% · avatar antigo degrada sem erro · nenhum código per-gender restante
+- [ ] 🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` inteiro · gate de assets 100% · avatar antigo degrada sem erro · nenhum código per-gender restante
 
 ---
 

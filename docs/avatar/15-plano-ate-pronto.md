@@ -27,7 +27,7 @@
 |---|---|
 | **Ponte dos baús** | `items.renderable` filtra o sorteio. Medido: antes, 60 aberturas davam 36 itens distintos com **25 invisíveis**; agora dão 20 distintos com **0 invisíveis** |
 | **Manifesto de assets** | `public/items/` é uma lista consultável; o resolver pergunta a ela. `prebuild` quebra se o manifesto divergir do disco |
-| **Gates** | `npm run verify:all` roda **14** (eram 11). Três novos: catálogo×assets, banco do avatar, pool dos baús |
+| **Gates** | `npm run verify:all` cresceu com três novos: catálogo×assets, banco do avatar, pool dos baús. Quantos são hoje: `docs/ESTADO.md` |
 | **Testes unitários** | **164**. `src/lib/avatar/` tinha zero |
 | **Página de teste** | `/dev/avatar-base`, trancada em professor/admin (404 para aluno) |
 | **Boneco base** | Arte do usuário, vetorizada e **recolorível**: um arquivo serve aos 8 tons de pele por uma variável. 478 KB no disco, **83 KB em brotli**. O protótipo gerado em código foi apagado — ver a T0.10 do doc 14 |
@@ -41,7 +41,7 @@
 | Itens sem miniatura no inventário | **30 de 77** (todos pets) |
 | Telas onde o avatar aparece | **2**, nenhuma social |
 | Peso de `public/items/` | **7,0 MB**, dos quais 4,0 MB são **um** pet |
-| Usuários com título acima de "Aprendiz" | **0 de 17** — mesmo com 46 aulas concluídas por 7 deles |
+| ~~Usuários com título acima de "Aprendiz"~~ | **resolvido em 2026-07-29.** Era `UPDATE` sem `UPSERT`, não a régua — ver a §3 (D-A), onde o `teacherdoug001` aparece promovido a Soldado. Esta linha dizia "0 de 17" e contradizia a §3 do próprio documento |
 | Uniformes equipados em produção que não renderizam | 1 de 1 (Camiseta do Clube) |
 
 O render de produção continua sendo o **v2**: PNG, variante por gênero,
@@ -691,7 +691,7 @@ banco vivo, nunca de migration antiga.** E ele **não emite o `;`** depois de
   D27. A cor do cabelo move também a **sobrancelha**, que é camada própria na base.
 - **5.11** `viewBox` de cabeça, para o avatar servir de foto de perfil.
 
-🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` 14/14 · gate de assets
+🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` inteiro · gate de assets
 100% · avatar antigo degrada sem erro · **nenhum código per-gender restante**
 (grep por `male`/`female` em `src/lib/avatar/` volta vazio).
 
@@ -1171,4 +1171,5 @@ Marque só com evidência medida, não com impressão.
 - [ ] Ranking com 30 alunos medido em celular fraco
 - [ ] `alt`, contraste, teclado, `prefers-reduced-motion`, raridade não só por cor
 - [ ] e2e completo verde, com os 5 testes novos
-- [ ] `docs/avatar/14-backlog-execucao.md` com as 63 tarefas marcadas
+- [ ] `docs/avatar/14-backlog-execucao.md` com todas as tarefas marcadas —
+      `docs/ESTADO.md` mostra quantas faltam

@@ -36,8 +36,8 @@ está.
   connection string.
 - Testes: **Vitest** (unit) + **Playwright** (e2e). O e2e bate no Supabase de
   **produção** e por isso fica fora do CI.
-- CI real: `.github/workflows/ci.yml` — typecheck, lint, test, build e os 11 gates
-  de `npm run verify:all`.
+- CI real: `.github/workflows/ci.yml` — typecheck, lint, test, build e a cadeia de
+  gates de `npm run verify:all`. Quantos são hoje: `docs/ESTADO.md`.
 
 **Só existem contas de teste no banco** — nenhum aluno real ainda. Decisões de
 balanceamento e migração de dados são baratas agora e caras depois do lançamento.
@@ -207,7 +207,7 @@ O fluxo ideal para cada tarefa é:
 
 3. Claude aplica no banco e valida:
    → npx tsx scripts/apply-migration.ts <arquivo>.sql  (aplica a migration)
-   → npm run verify:all                               (11 gates contra o banco)
+   → npm run verify:all                               (a cadeia de gates, contra o banco)
    → npm run test:e2e                                 (Playwright — bate em produção)
 
 4. Claude escreve o código e aplica no projeto

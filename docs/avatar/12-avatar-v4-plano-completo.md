@@ -298,7 +298,7 @@ desenhos, não com 37.
 - **Migração suave:** usuários existentes recebem tom `medio`, mantêm
   `avatar_chosen=true`, sem re-onboarding forçado.
 
-**Gate:** `npm run build`, e2e 149/149, `verify:all` 11/11, e um gate novo que
+**Gate:** `npm run build`, e2e 149/149, `verify:all` inteiro, e um gate novo que
 assere que nenhum item do catálogo está sem asset.
 
 ## F3 — Patente → uniforme (maior ROI de produto)
