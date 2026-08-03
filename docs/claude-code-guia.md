@@ -19,6 +19,7 @@
 > | Tabela gatilho → skill | ✅ **nova**, mora no `CLAUDE.md`, não existia neste doc |
 > | `effortLevel` (§4) | ⬜ decisão do usuário, em aberto |
 > | Os outros 4 slash commands da §5 | ⬜ não criados |
+> | Skills `avatar-regua` e `avatar-desenho` | ✅ criadas em 03/08 — **este doc não as descreve**; o repositório foi de slash command para skill |
 >
 > **A §0 (diagnóstico medido) é um retrato de 30/07 e envelheceu bem:** ela mediu
 > 16 sessões / 187 prompts / **0 slash commands**. Em 03/08 são 45 sessões, e os
@@ -26,9 +27,6 @@
 > contexto caiu pela metade. O conselho de contexto **funcionou**. O que não pegou
 > foi tudo que exigia configuração, e é por isso que hoje virou config instalada
 > em vez de recomendação repetida.
-
-Nada neste doc está instalado. Os blocos de configuração são para copiar quando
-você decidir — não mexi em `.claude/` nem em `settings.json`.
 
 > **Procurando o texto pronto para colar?** Está em
 > [claude-code-blocos.md](claude-code-blocos.md). Este aqui é para ler e entender;

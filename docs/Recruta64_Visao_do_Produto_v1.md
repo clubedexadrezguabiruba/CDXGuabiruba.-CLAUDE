@@ -97,6 +97,11 @@ O sistema usa eventos idempotentes para evitar duplicação de recompensas:
 
 ## 5. Core Feature: Aulas Globais
 
+> ⚠️ **Esta seção inteira está superada.** A fonte de verdade do conteúdo
+> pedagógico é `docs/curriculo/01-curriculo-definitivo-v1.md` (rev. 4,
+> 2026-07-31): **126 aulas em 7 trilhas**, não as 100/30 descritas abaixo. Leia a
+> §5 só como registro da intenção original.
+
 ### 5.1 Estrutura
 
 - **100 aulas progressivas** (v1 lança com **30 aulas**, restante adicionado progressivamente)

@@ -18,10 +18,10 @@ está.
 | 2. Banco de Dados | ✅ feita |
 | 3. Autenticação | ✅ feita |
 | 4. Puzzles | ✅ feita — **50.001 puzzles** importados do Lichess |
-| 5. Aulas | ✅ feita — 30 aulas (15 recruta + 15 soldado) |
+| 5. Aulas | ✅ feita — 30 aulas (15 recruta + 15 soldado); **superadas** pelo currículo de 126 aulas, ver `docs/curriculo/01-curriculo-definitivo-v1.md` |
 | 6. Bots | ✅ feita — 10 bots, Stockfish WASM no browser |
 | 7. Gamificação | ✅ feita — missões, streak, 17 conquistas, baús, títulos |
-| 8. Avatar/Inventário | ✅ feita (v2) — **v3 é o plano vigente**, ver `docs/avatar/10-avatar-v3-definitive.md` |
+| 8. Avatar/Inventário | ✅ feita (v2) — **o v4 é o plano vigente**, ver `docs/avatar/15-plano-ate-pronto.md` (a v3 caiu; está em `docs/avatar/_superado/`) |
 | 9. Painel do Professor | ✅ feita |
 | 10. Rankings | ✅ feita |
 | **11. Sound Design + PWA + Polish** | ❌ **não iniciada** — não existe manifest nem service worker |
