@@ -56,7 +56,8 @@
     "verify:pose": "npm run avatar:pose",
     "avatar:curvatura": "tsx scripts/avatar/estilo/curvatura.ts",
     "avatar:variantes": "tsx scripts/avatar/estilo/variantes.ts",
-    "avatar:gerar": "tsx scripts/avatar/estilo/gerar.ts"
+    "avatar:gerar": "tsx scripts/avatar/estilo/gerar.ts",
+    "avatar:tracar": "tsx scripts/avatar/estilo/tracar-cabelo.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.70",
