@@ -1085,6 +1085,21 @@ para os 39 desenhos do Bloco 8, não só para a base.*
 
 **Comandos:**
 
+**Os do estilo kokeshi** (as duas skills `avatar-regua` e `avatar-desenho` roteiam
+para eles; a tabela de gatilhos do `CLAUDE.md` invoca as skills):
+
+```
+npm run avatar:linha-de-centro  extrai contorno e perfil de uma referência nova
+npm run avatar:curvatura        onde a curva EMITIDA repuxa — reporta, não reprova
+npm run avatar:variantes        N candidatas com as amarras medidas + o selo
+npm run avatar:pose             perfil, 26 marcos, unicidade de id, 4 fixtures
+npm run avatar:folha-base       orçamento, distinção a 56 px, folha para o Doug
+npm run avatar:animacao         nasce aberto, pisca, respira, obedece reduced-motion
+npm run dev                     e abrir /dev/avatar-kokeshi ou /dev/avatar-variantes
+```
+
+**Os da base antiga**, que o banner do doc 16 declara mortos para este boneco:
+
 ```
 npm run avatar:base         regera o boneco base e a folha de conferência
 npm run avatar:garment      assa um uniforme vestível, com as 5 variantes e os gates

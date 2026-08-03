@@ -88,6 +88,8 @@ pelo gatilho abaixo, antes de começar, sem esperar o usuário pedir.**
 | Qualquer tela, componente, cor, tipografia, animação, texto de UI — e sempre ao trazer tela do v0.app/Gemini | `design-recruta64` (regras vinculantes) |
 | Construir componente novo, migrar tela para os primitivos de `src/components/ui/`, ou mexer em espaçamento/hierarquia/estado vazio | `impeccable` |
 | Bug, comportamento errado, "isso não devia acontecer" | `/gate` |
+| Desenhar peça do elenco do avatar — cabelo, chapéu, traje, pet, fundo — ou refazer uma que lê errado | `avatar-desenho` (3 variantes, crítica renderizada) |
+| Referência de arte nova, ou qualquer número de `geometria.ts` que precise sair de medição | `avatar-regua` |
 | Detalhe de movimento, transição, o que faz a interface "sentir" bem | `emil-design-eng` |
 | Antes de mexer em auth, RLS, RPC de recompensa, ou qualquer coisa que o repositório público exponha | `security-review` |
 
