@@ -73,16 +73,53 @@ Do `docs/avatar/16-uniformes-runbook.md` §2.2, que continua vivo apesar do bann
 | saída | o que é | serve para |
 |---|---|---|
 | **line-art** | traço virado região preenchida, poucos paths, `fill="#000000"` | **forma — sim** |
-| **colorido** | auto-trace de tudo, centenas de paths e de cores | **nada** |
+| **colorido** | auto-trace de tudo, centenas de paths e de cores | **forma e RÓTULO — sim. Cor — não** |
 
 Números das duas rodadas do kokeshi: o line-art veio com **3 paths** na arte anterior
 e **6** na definitiva. O colorido veio com **640 paths e 558 tons** na primeira e
 **563 paths e 532 tons** na segunda — numa ilustração de oito tons chapados.
 
-**Por que o colorido não serve nem para cor.** Um trace é um redesenho: ajusta curvas
-aos pixels **e quantiza a cor**. Os 532 tons são invenção do traçador, assados em
-`fill=` literais que não recolorem — e o `conferirSvg` **aprova mesmo assim**, porque
-ele confere as custom properties declaradas, não a ausência de cor assada.
+**Por que o colorido não serve para cor.** Um trace é um redesenho: ajusta curvas aos
+pixels **e quantiza a cor**. Os 532 tons são invenção do traçador, assados em `fill=`
+literais que não recolorem — e o `conferirSvg` **aprova mesmo assim**, porque ele
+confere as custom properties declaradas, não a ausência de cor assada.
+
+**Por que ele SERVE para forma e para rótulo — e esta linha era "nada" até
+2026-08-04.** A régua do cabelo passou a lê-lo (`scripts/avatar/estilo/fonte-svg.ts`),
+e a conferência de fonte mede o que ele custa: `npm run avatar:fidelidade --
+--fonte-conferencia` segmenta a MESMA arte pelos dois caminhos — o PNG por matiz, o
+SVG por família de path — e imprime **IoU 92,99%**, desvio de borda **4,7 u médio**
+(abaixo de meio traço), área a **−1,3%**. É o mesmo argumento que autorizou o line-art
+a substituir o PNG na base, com o mesmo limiar.
+
+O que ele compra, e o line-art não: **rótulo**. Cada path traz o seu `fill`, então a
+separação corpo / sombra / traço sai de `particao(v, 3)` sobre as luminâncias
+ponderadas por área — exata, contra o histograma de vale que a régua de matiz precisa
+fazer no pixel. Medido nesta arte: 68,1% / 22,8% / 9,1% do teal, com vãos de 0,20 e
+0,18 entre as modas.
+
+**Três coisas que a leitura dele exige, e as três foram medidas errando primeiro:**
+
+1. **A moldura sai por área ≥ 95% do `viewBox`, nunca por índice.** O conversor põe um
+   retângulo do tamanho do canvas atrás de tudo. Ele não pode ser arrancado do `d`: o
+   preenchimento é `nonzero`, e é ele que faz o interior da figura ficar vazio no path
+   do contorno — sem ele a cabeça inteira sai preta.
+2. **O colorido não traça contorno.** O fundo preto e o traço preto são a **mesma
+   região** para o conversor: medido, o path da moldura pinta 72,7% do quadro, os
+   subpaths úteis dele pintam 27,0%, e 72,7 + 27,0 = 99,7 — não sobra banda. Por isso
+   o **enquadramento sai do PNG irmão**, não do SVG: tirá-lo da pegada da figura
+   encolhe o vão tronco→pescoço em 3,3% e a régua lê a arte inteira 3,3% maior (IoU
+   caiu para 81,7% e a borda foi a 20,0 u antes de a causa aparecer).
+3. **Comando desconhecido em `d` LANÇA.** Hoje o arquivo só tem `M C z`. Um `L` ou um
+   `a` pulado em silêncio deforma o subpath sem sintoma — a curva sai mais curta, a
+   área menor, e todo número derivado dela continua plausível.
+
+**E ler o colorido achou um defeito na régua de matiz.** Nas colunas em que as duas
+fontes mais discordavam, o pixel do PNG é `(0, 2, 1)` — preto. A saturação de `hsl()`
+é normalizada por `255 − |mx + mn − 255|`, e esse denominador colapsa perto do preto:
+`s = 2/2 = 1,00`, matiz exatos 150°, dentro da janela do teal. A guarda `s > 0,25` é
+relativa e não tinha como pegar. O conserto é um piso de **croma bruta** (`max − min`,
+que não colapsa), e a borda de baixo do gate caiu de **27,3 para 20,4 u** só com ele.
 
 **Por que o line-art serve, apesar de ser redesenho.** Porque isso é verificável, e é
 verificado: `npm run avatar:linha-de-centro` mede a mesma coisa nas duas fontes e

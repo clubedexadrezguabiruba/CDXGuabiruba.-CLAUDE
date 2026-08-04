@@ -400,12 +400,15 @@ async function main() {
     // A folga do rosto é a amarra 1 de `cabelo.ts`: franja que encosta na
     // sobrancelha apaga a expressão no tamanho do ranking.
     //
-    // **Na peça TRAÇADA ela é aviso, e não reprovação.** No paramétrico a franja é
-    // desenhada, então folga curta é escolha de quem desenhou. Na traçada ela é um
-    // fato da arte: o gerador não conhece `FOLGA_ROSTO`. A régua antiga resolvia
-    // subindo a peça inteira, e foi isso que produziu a faixa de testa nua da folha
-    // HSHC93 — o traçador não sobe mais nada, e quem decide entre re-gerar a arte e
-    // re-ancorar a amarra é o olho. Ver `tracar()` em `tracar-cabelo.ts`.
+    // **Na peça TRAÇADA o piso é outro, e ele não é verificável aqui.** No paramétrico
+    // a franja é desenhada, então folga curta é escolha de quem desenhou e 24 é a
+    // régua. Na traçada a folga é um fato da arte — o gerador não conhece
+    // `FOLGA_ROSTO` —, e o que o traço controla é não piorá-la: o piso vira `folga da
+    // arte − meio traço`, medido por `avatar:fidelidade` (gate 3), que é o único lugar
+    // com a arte e o render lado a lado. Aqui sobra o aviso do número absoluto, que é
+    // legibilidade a 56 px. A régua antiga resolvia subindo a peça inteira, e foi isso
+    // que produziu a faixa de testa nua da folha HSHC93 — o traçador não sobe mais
+    // nada. Ver `tracar()` em `tracar-cabelo.ts`.
     const pior = Math.min(folga.esq, folga.dir);
     const curta = pior < FOLGA_ROSTO;
     const tracada = Boolean(CABELOS[m].massa);
@@ -415,7 +418,7 @@ async function main() {
       `  ${CABELOS[m].nome.padEnd(12)} ${String(f).padStart(2)} formas (+${f - formas})   ` +
         `${String(b).padStart(5)} bytes (+${String(b - bytes).padStart(4)})   ` +
         `folga do rosto esq ${fmt(folga.esq)} dir ${fmt(folga.dir)}` +
-        `${curta ? (tracada ? "   ⚠ é a folga DA ARTE, item (f)" : "   ✗") : ""}`,
+        `${curta ? (tracada ? "   ⚠ é a folga DA ARTE — gate 3 de `avatar:fidelidade`" : "   ✗") : ""}`,
     );
   }
 

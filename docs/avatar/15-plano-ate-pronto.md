@@ -635,10 +635,116 @@ que era o único ponto em que a B travava aquele bloco.
   **A folha nova (XHHXP9) foi REPROVADA**, e os quatro defeitos estão nomeados com
   causa medida no doc 14, T1.6. O `curto` do catálogo **continua paramétrico**.
 
+  **A folga do rosto foi RE-ANCORADA — 2026-08-04, escolha do Doug.** A amarra dos 24
+  u de testa (`FOLGA_ROSTO`) foi escrita para peça desenhada, e com o traço fiel passou
+  a brigar com a arte: a `curto-espetada` deixa **6,2 u**. O commit 5bf6bbd tinha
+  parado o sangramento transformando a folga em aviso na peça traçada, e o resultado
+  era pior do que parecia — **na traçada não sobrou gate nenhum**, e um traço que
+  comesse 40 u de testa que a arte não come passava em silêncio.
+
+  | | peça PARAMÉTRICA (`pontos`) | peça TRAÇADA (`massa`) |
+  |---|---|---|
+  | régua | folga ≥ **24 u**, absoluto | folga do traço ≥ **folga da arte − 6 u** |
+  | porquê | franja desenhada: folga curta é escolha de quem desenhou | folga é fato da arte; o que o traço controla é não piorá-la |
+  | quem mede | `variantes`, `folha-base`, `cabelo.test.ts` | **`avatar:fidelidade`, gate 3** |
+  | arte abaixo de 24 u | — | **avisa alto** (u e px a 56) e segue verde: item (f) |
+
+  A subtração é honesta pelo mesmo argumento do `limiar()` do gate 1: a sobrancelha
+  **canônica** do `geometria.ts` entra dos dois lados, então o desvio do boneco do
+  gerador cancela. Não se mede sobrancelha dentro do PNG.
+
+  **Os números medidos**, todos em 2026-08-04 na `curto-espetada`: a arte deixa **4,0 u
+  (esq) e 1,0 (dir)** pela régua da grade — mesma ordem dos 6,2 u que `folgaDoRosto`
+  imprime sobre a peça, e a diferença é espaço de raster contra espaço de polígono. O
+  render deixa **12,0 u dos dois lados**, contra pisos de −2,0 e −5,0: passa. A
+  inversão (`--inverter-folga`, a franja empurrada 40 u sobre as sobrancelhas) leva o
+  render a **−6,5 e −7,0** e reprova nos dois lados. Rodada antes do gate 3 existir,
+  ela saía **verde**: a invasão localizada não move a média do gate 1 (29,0 contra o
+  teto de 33,6) e é invisível para o gate 2, que mede presença e não posição.
+
+  **A régua do gate 3 é o fim do CORPO da coluna**, e as duas mais simples foram
+  medidas e reprovadas: a célula mais baixa leva junto a cortina, que cruza a faixa da
+  sobrancelha na máscara da arte (y≈270 → folga −111 u) e não na do render — veneno que
+  entra de um lado só não cancela na subtração; a primeira corrida a partir do topo
+  quebra nas espículas e dava **o mesmo número com e sem a inversão**, que é a
+  assinatura de uma régua medindo outra coisa.
+
   **Estado-alvo, quando o último paramétrico morrer:** somem `pontos`, `sombra`,
   `touca()`, `FORA`, `DEGRAU`, `sombraSobreAFranja()` e `liberarORosto()`. Enquanto
   houver modelo paramétrico no catálogo eles ficam, e a exclusividade
   `pontos` × `massa` é gate.
+
+- **2a.6 — A FONTE DA MEDIÇÃO PASSA A SER O SVG, E OS 27 u NÃO ERAM DELA —
+  2026-08-04.**
+
+  O pipeline padrão passou a ser **PNG → conversor Adobe → SVG → a régua extrai traço,
+  curva e tom**, por decisão do Doug. A execução mediu antes de trocar, e a primeira
+  coisa que ela produziu foi a resposta a uma pergunta que estava aberta desde o
+  2a.5: **onde moram os 27,3 u da borda de baixo?** `avatar:fidelidade -- --onde`
+  reparte a soma, e ela fecha:
+
+  | parcela | valor | como foi medida |
+  |---|---|---|
+  | o **clip** do crânio | **5,1 u (19%)** | a mesma peça com o `clip-path` desligado, e nada mais |
+  | a **decimação** | **−0,3 u** | a peça de 64 pontos contra a densa de 1 193 |
+  | o **laço vazado** | **22,2 u (81%)** | 2 auto-interseções, uma na ponta de cada cortina |
+
+  **A causa dos 81% é topológica, não de fonte.** O laço se cruza em `(70, 247)` e
+  `(463, 175)`, e o `nonzero` do SVG esvazia o trecho entre o cruzamento e a ponta —
+  a prova é a coluna do próprio cruzamento, onde a tinta do render **para** enquanto
+  a arte segue 90 u abaixo. O traçador já imprimia o aviso; ninguém tinha ligado os
+  dois números. Fonte melhor entrega a mesma topologia com o mesmo vazamento, e o
+  `--fonte svg` confirmou pelo lado ruim: **de 2 cruzamentos passa a 4** — três na
+  cortina direita e um na esquerda —, porque a borda mais precisa afina mais a ponta
+  da cortina antes de a decimação chegar nela.
+
+  **O que o SVG comprou, medido:**
+
+  | | PNG (hoje) | SVG |
+  |---|---|---|
+  | IoU da massa | 68,85% | **71,16%** |
+  | borda de baixo (médio) | 20,4 u | **18,1 u** |
+  | borda de cima (médio) | 9,2 u | 9,8 u |
+  | massa só na arte (gate 2) | 1,9% ✓ | **2,9% ✗** |
+  | cortina, colunas com 2ª corrida | 15,9% | **31,4%** |
+  | auto-interseções do laço | 2 | **4** |
+  | contenção da clara | +1,45 u ✓ | **−0,98 u ✗** |
+
+  O gate 2 reprova pela fonte nova, e reprova **com razão**: o SVG vê o dobro de
+  cortina, então o defeito do laço vazado deixa de caber nos 2% e aparece. Régua
+  melhor não conserta peça — ela para de esconder.
+
+  **A conferência de fonte é o gate 4** (`--fonte-conferencia`): a mesma arte
+  segmentada pelos dois caminhos, sem render no meio. IoU **92,99%**, desvio de borda
+  **4,7 u médio** contra o piso de meio traço, área a −1,3%. A inversão — a moldura do
+  canvas dentro da máscara — derruba o IoU a **35,0%**.
+
+  **Dois defeitos foram achados pela conferência, e os dois eram antigos:**
+
+  1. **A régua de matiz lia PRETO como teal.** Em `(0, 2, 1)` a saturação normalizada
+     de `hsl()` colapsa e devolve 1,00, com matiz em exatos 150° — a borda da janela.
+     O conserto é um piso de croma bruta, e a borda de baixo do gate caiu de **27,3
+     para 20,4 u** só com ele, sem trocar fonte nenhuma. A medida é estável de croma
+     3 a 12 e só se move em 0.
+  2. **O colorido não traça contorno.** Fundo preto e traço preto são a mesma região
+     para o conversor (72,7% + 27,0% = 99,7% do quadro, sem banda), então o
+     **enquadramento continua saindo do PNG irmão**. Tirá-lo da pegada do SVG encolhe
+     o vão tronco→pescoço em 3,3% e a régua lê a arte inteira 3,3% maior — o IoU da
+     conferência caiu a 81,7% antes de a causa aparecer.
+
+  **O âncora ficou onde estava, e agora tem número** (`avatar:tracar -- --ancoras`).
+  Resíduos do tronco contra o canônico: olhos **2,3 · 2,7 u**, separação **1,6 u
+  (1,0%)**, base da cabeça **0,4 u** — tudo dentro de meio traço. A inversão (a arte
+  5% maior) leva o pior resíduo de 2,7 a 8,0 e cruza o limiar. A **bochecha dá 35–39 u
+  nas três ancoragens candidatas**, inclusive na que acerta os olhos em 0,5 u: isso
+  não é resíduo de âncora, é o crânio da arte contra o crânio canônico, e por isso
+  não vota. Se um dia a troca tiver causa, a candidata é **olho + queixo** — dois
+  pontos quase horizontais condicionam mal a escala vertical.
+
+  **O literal NÃO foi colado em `cabelo.ts`.** A peça sai com dois cruzamentos e as
+  duas cortinas vazadas; entregá-la seria assar o defeito de 22 u no catálogo. O
+  próximo bloco é fechar a cortina sem cruzar — e ele vale 3× mais que a troca de
+  fonte que este item executou.
 
 ---
 

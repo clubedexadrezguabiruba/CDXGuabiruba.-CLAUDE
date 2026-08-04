@@ -155,8 +155,21 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     expect(contencaoDaClara(modelo)).toBeGreaterThanOrEqual(0);
   });
 
-  it(`deixa ≥ ${FOLGA_ROSTO} unidades de testa sobre cada sobrancelha`, () => {
+  it(`deixa testa sobre cada sobrancelha — ${FOLGA_ROSTO} u na desenhada, a arte na traçada`, () => {
     const f = folgaDoRosto(modelo);
+    if (cabelo.massa) {
+      // O piso da peça TRAÇADA não é `FOLGA_ROSTO` e não é verificável aqui: a folga
+      // dela é um fato da arte, e o que o traço controla é não piorá-la — `folga da
+      // arte − meio traço`, que exige o PNG do lado e é o gate 3 de
+      // `avatar:fidelidade`. Um piso absoluto aqui reprovaria a arte, não o traço.
+      //
+      // O que sobra é a não-vacuidade, e ela não é formalidade: sem a massa nos
+      // trechos, `folgaDoRosto` devolveria `Infinity` por não ter o que medir — o
+      // modo de falha que o R10 de `folgaDoRosto enxerga a massa` guarda.
+      expect(f.esq).toBeLessThan(Infinity);
+      expect(f.dir).toBeLessThan(Infinity);
+      return;
+    }
     expect(Math.min(f.esq, f.dir)).toBeGreaterThanOrEqual(FOLGA_ROSTO);
   });
 

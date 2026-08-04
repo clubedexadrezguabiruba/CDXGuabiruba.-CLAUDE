@@ -303,10 +303,18 @@ Bloqueia todo o resto da arte.
       medido da própria arte, e o piso é **27,6 u**: rodado com a decimação DESLIGADA
       (1 193 pontos) o desvio é o mesmo da peça de 64 pontos, ou seja **a decimação custa
       0,3 unidade** e o resto é o boneco do gerador não ser o do `geometria.ts`.
-      **Em aberto e declarado:** a arte deixa **6,2 u** de testa contra o piso de 24, e o
-      traçador **não sobe mais a peça** — subir foi o que produziu a faixa de testa nua da
-      HSHC93. A escolha entre re-gerar a arte com a franja mais alta e re-ancorar a amarra
-      é do usuário. O menor período de recorte sai em **0,35 px a 56**, abaixo de 1 px:
+      **A folga do rosto foi RE-ANCORADA (2026-08-04), e a escolha em aberto fechou.** A
+      arte deixa **6,2 u** de testa contra o piso de 24, e o traçador **não sobe mais a
+      peça** — subir foi o que produziu a faixa de testa nua da HSHC93. Entre re-gerar a
+      arte e re-ancorar a amarra, o Doug escolheu re-ancorar: na peça **paramétrica** o
+      piso continua 24 u, absoluto; na **traçada** ele passa a ser `folga da arte − meio
+      traço`, medido lado a lado pelo **gate 3 de `avatar:fidelidade`**. Sem ele a
+      traçada não tinha gate nenhum — um traço comendo 40 u de testa que a arte não come
+      passava em silêncio, e é essa a inversão que `--inverter-folga` roda (render de
+      12,0 u para −6,5 e −7,0, contra pisos de −2,0 e −5,0). O número absoluto abaixo de
+      24 vira aviso alto, em u e em px a 56: trocar a arte é direção de arte, item (f).
+      O racional e os números estão no doc 15 §2a.5.
+      O menor período de recorte sai em **0,35 px a 56**, abaixo de 1 px:
       as espículas podem sumir no tamanho do ranking, e aí a resposta é direção de arte
       (feições maiores), nunca simplificação silenciosa.
 - [ ] **T1.2** 🤖 Uniforme Soldado — prova do `garment` sobre o corpo

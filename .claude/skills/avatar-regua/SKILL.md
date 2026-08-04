@@ -58,15 +58,25 @@ Quebrar qualquer uma invalida tudo que vier depois.
    entre o preto e o teal produz pixels que ainda passam no teste de matiz — havia
    "borda do preenchimento" espalhada por dentro do próprio traço.
 
-## 2. Duas fontes, divisão de trabalho fixa
+## 2. Três fontes, divisão de trabalho fixa
 
-**Forma vem do line-art. Cor vem do PNG.** Não misture.
+**Forma vem de vetor. Cor e enquadramento vêm do PNG.** Não misture.
 
-O conversor da Adobe devolve dois SVG do mesmo PNG, e só um serve: o **line-art**
-(traço virado região preenchida, 6 paths, `fill="#000000"`) mede forma; o
-**colorido** não serve para nada — ele veio com 532 tons numa ilustração de oito
-tons chapados, e esses tons são invenção do traçador, assados em `fill=` literais
-que não recolorem.
+O conversor da Adobe devolve dois SVG do mesmo PNG, e **os dois medem forma**:
+
+- o **line-art** (traço virado região preenchida, 6 paths, `fill="#000000"`) é a fonte
+  da base — discordância de 0,4 u contra o PNG na meia-largura da cabeça;
+- o **colorido** (centenas de paths, cada um com o seu `fill`) é a fonte do cabelo
+  desde 2026-08-04, por `scripts/avatar/estilo/fonte-svg.ts`. IoU 92,99% e desvio de
+  borda 4,7 u contra a régua de matiz, medidos por
+  `npm run avatar:fidelidade -- --fonte-conferencia`. **Ele acrescenta rótulo**: cada
+  path já traz o seu tom, então corpo / sombra / traço saem de `particao(v, 3)` em vez
+  de um histograma de vale.
+
+**Nenhum dos dois serve para cor**, e o colorido também **não serve para
+enquadramento** — ele não traça contorno, o fundo e o traço são a mesma região para
+ele. Quem dá `yCorte` e `utilY1` é sempre o PNG. Os números e as três armadilhas estão
+em [references/fontes.md](references/fontes.md), e não são opcionais.
 
 Antes de tocar em qualquer arquivo de referência, e sempre que uma medida vier de
 uma imagem que você não mediu nesta sessão, carregue

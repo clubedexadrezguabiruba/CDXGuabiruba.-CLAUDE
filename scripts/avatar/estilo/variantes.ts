@@ -133,23 +133,31 @@ function amarras(v: Variante, svg: string): { problemas: string[]; avisos: strin
       `dir ${f.dir === Infinity ? "—" : f.dir.toFixed(1)})`;
     if (pior < FOLGA_ROSTO) {
       /**
-       * NA PEÇA TRAÇADA A FOLGA É AVISO, E NÃO REPROVAÇÃO — e a troca tem causa.
+       * NA PEÇA TRAÇADA A AMARRA É OUTRA, E ELA NÃO MORA AQUI.
        *
        * No paramétrico a franja é desenhada, então uma folga curta é escolha de quem
        * desenhou e o piso de 24 é a régua certa. Na peça traçada ela é **um fato da
        * arte**: o gerador não conhece `FOLGA_ROSTO`, e a `curto-espetada` deixa 6,2
-       * unidades de testa.
+       * unidades de testa. O que o traço controla ali não é a folga, é **não piorá-la**
+       * — e isso exige a arte do lado, que este script não tem.
        *
-       * A régua paramétrica resolvia subindo a peça inteira — e foi isso que produziu
-       * a faixa de testa nua que a folha HSHC93 mostrou, porque translação
-       * determinística ainda é a régua decidindo o enquadramento da arte. O traçador
-       * não sobe mais nada (ver `tracar()`), então quem decide é o olho: re-gerar a
-       * arte com a franja mais alta, ou re-ancorar a amarra.
+       * Por isso o piso da traçada é `folga da arte − meio traço`, medido por
+       * `avatar:fidelidade` (gate 3), e não por aqui. O que sobra neste aviso é o
+       * número absoluto: abaixo de 24 u franja e sobrancelha encostam por antialiasing
+       * a 56 px, e trocar a arte é direção de arte — item (f), o olho do Doug.
        *
-       * Reprovar aqui bloquearia a folha que existe justamente para essa decisão ser
-       * tomada. Calar seria pior. Então avisa, em voz alta, e deixa passar.
+       * A régua paramétrica resolvia subindo a peça inteira, e foi isso que produziu a
+       * faixa de testa nua da folha HSHC93: translação determinística ainda é a régua
+       * decidindo o enquadramento da arte. O traçador não sobe mais nada (ver
+       * `tracar()`).
        */
-      if (v.cabelo.massa) avisos.push(`${folga} — peça TRAÇADA: é a folga DA ARTE, item (f)`);
+      if (v.cabelo.massa) {
+        avisos.push(
+          `${folga} — peça TRAÇADA: é a folga DA ARTE. O piso dela é a própria arte ` +
+            `menos meio traço, e quem gateia é \`avatar:fidelidade\` (gate 3). ` +
+            `Abaixo de ${FOLGA_ROSTO} é legibilidade a 56 px — item (f)`,
+        );
+      }
       else problemas.push(folga);
     }
 

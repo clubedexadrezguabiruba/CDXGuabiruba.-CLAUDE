@@ -238,7 +238,8 @@ export const ORCAMENTO_COMPOSTO = { formas: 26, bytes: 10240 } as const;
 // ---------------------------------------------------------------------------
 
 /**
- * Quanto de testa tem de sobrar entre o traço da franja e o topo da sobrancelha.
+ * Quanto de testa tem de sobrar entre o traço da franja e o topo da sobrancelha,
+ * **na peça DESENHADA**.
  *
  * **24 unidades, e o número sai da escala de leitura, não do gosto.** A 56 px — o
  * tamanho do ranking, o que manda pela regra 8 da §7 — o `viewBox` de 700 unidades
@@ -246,6 +247,18 @@ export const ORCAMENTO_COMPOSTO = { formas: 26, bytes: 10240 } as const;
  * pretas. Menos de um pixel e as duas encostam por antialiasing no tamanho em que
  * o boneco mais aparece; a sobrancelha inteira tem 0,66 px de espessura ali, e uma
  * franja colada nela vira uma mancha só.
+ *
+ * **NA PEÇA TRAÇADA (`massa`) O PISO É OUTRO, e ele não mora neste arquivo.** Ali a
+ * folga é um **fato da arte** — o gerador não conhece este número, e a
+ * `curto-espetada` deixa 6,2 u —, e o que o traço controla é não piorá-la. O piso
+ * dela é `folga da arte − meio traço`, medido lado a lado pelo **gate 3 de
+ * `avatar:fidelidade`**, o único lugar onde arte e render convivem. Reancorado em
+ * 2026-08-04; a régua paramétrica resolvia subindo a peça inteira, e foi isso que
+ * produziu a faixa de testa nua da folha HSHC93.
+ *
+ * O número absoluto continua valendo como **legibilidade** nas duas famílias: abaixo
+ * de 24 u a peça traçada avisa alto (em `avatar:tracar`, `avatar:variantes`,
+ * `avatar:folha-base` e no próprio gate 3), e trocar a arte é direção de arte.
  */
 export const FOLGA_ROSTO = 24;
 
@@ -694,6 +707,13 @@ export function ancoragemDasExtensoes(modelo: CabeloOuModelo): number[] {
  * A amostragem é sobre a poligonal, não sobre a spline emitida: a centrípeta se
  * afasta da corda menos que um traço em todo o percurso (o mesmo argumento de
  * `bordasEm`), e a folga tem margem de sobra para isso.
+ *
+ * **O número que ela devolve é julgado por régua diferente em cada família.**
+ * Desenhada: `≥ FOLGA_ROSTO`, absoluto, e reprova — a franja é desenhada, então folga
+ * curta é escolha de quem desenhou. Traçada: o piso é `folga da arte − meio traço`, e
+ * quem o mede é o **gate 3 de `avatar:fidelidade`**, sobre as duas máscaras
+ * rasterizadas — não sobre o número daqui. Esta função continua servindo a quem tem
+ * peça e não tem PNG, e nas duas famílias ela é a régua da não-vacuidade.
  *
  * **Ela mede a franja (ou a massa) E as extensões da frente**, e a segunda metade
  * não é zelo: o

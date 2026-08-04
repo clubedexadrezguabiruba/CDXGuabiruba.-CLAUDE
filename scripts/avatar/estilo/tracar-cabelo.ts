@@ -87,7 +87,7 @@
  * acabou de ver, ela não tem como medir um que nunca viu.
  */
 
-import { writeFileSync } from "fs";
+import { existsSync, statSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
 import { chromium } from "@playwright/test";
@@ -106,6 +106,11 @@ import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import {
   CABECA,
   CAIXA_CABECA,
+  OLHO,
+  OLHO_CX_DIR,
+  OLHO_CX_ESQ,
+  OLHO_CY_DIR,
+  OLHO_CY_ESQ,
   SANGRIA,
   TRACO,
   VIEWBOX,
@@ -176,6 +181,50 @@ export const CABELO_TEAL = "#19C7C0";
 const MATIZ = [150, 205] as const;
 
 /**
+ * A JANELA DO TEAL, EXPORTADA — uma descrição só, para a fonte SVG usar a MESMA.
+ *
+ * `fonte-svg.ts` classifica por `fill=` e este arquivo classifica por pixel, e as
+ * duas têm de concordar sobre o que é cabelo. Reescrever a janela lá faria a
+ * conferência de fonte medir a diferença entre duas definições de teal em vez da
+ * diferença entre duas fontes — que é exatamente o defeito que a invariante
+ * *uma régua, duas imagens* existe para impedir.
+ *
+ * A saturação corta o cinza pelo mesmo motivo de `tomDoCabelo`: matiz de pixel
+ * quase neutro é instável, e um `fill` quase neutro do conversor também.
+ */
+export const eMatizDeCabelo = (h: number, s: number) => h >= MATIZ[0] && h <= MATIZ[1] && s > 0.25;
+
+/**
+ * O PISO DE CROMA BRUTA — e sem ele a régua lia PRETO como teal.
+ *
+ * A saturação de `hsl()` é normalizada por `255 − |mx + mn − 255|`, e esse
+ * denominador **colapsa** perto do preto: o pixel `(0, 2, 1)` tem `d = 2` e devolve
+ * `s = 2 / 2 = 1,00`, saturação máxima. O matiz dele sai em exatos 150°, que é a
+ * borda da janela do teal. Um pixel preto entrava na máscara de cabelo com nota
+ * cheia, e a guarda `s > 0,25` não tinha como pegá-lo — ela é relativa, e o defeito
+ * é absoluto.
+ *
+ * **Quem achou foi a conferência de fonte.** As colunas em que o PNG e o SVG mais
+ * discordavam — x 220, 383, 426 — eram todas assim: o PNG via cabelo 150 unidades
+ * abaixo do SVG, e o pixel de lá é `(0, 2, 1)`. Nenhuma amarra de forma pegaria
+ * isso: a massa extra é conexa com a peça e sai como uma mecha plausível.
+ *
+ * O piso é em croma BRUTA (`max − min`), que é a grandeza que não colapsa.
+ * Histograma dos 93 615 pixels que passavam na janela, nesta arte:
+ *
+ *   d = 2 → 1 586 pixels (1,69%)   ← um pico isolado, e é o defeito
+ *   d = 3 →   179
+ *   d = 4 →   703, e daí uma cauda lisa: a rampa de antialiasing teal↔preto
+ *
+ * O corte fica no vão entre o pico e a cauda. O teal escuro de verdade da arte
+ * (`#040D0C`) tem `d = 9` e `#051A18` tem `d = 21`: os dois passam com folga.
+ *
+ * Varredura por `process.env`, nunca reescrevendo o arquivo — a mesma regra de
+ * `PONTOS_FINAIS`.
+ */
+const CROMA_MINIMA = () => Number(process.env.CROMA ?? 4);
+
+/**
  * QUANTOS PONTOS CADA CURVA TEM — e agora o número sai de medição, não de analogia.
  *
  * O valor antigo era 10, escolhido porque *"dez pontos são o dobro do que os cinco
@@ -218,7 +267,7 @@ const PONTOS_FINAIS = () => Number(process.env.PONTOS ?? 20);
 /* Matiz                                                               */
 /* ------------------------------------------------------------------ */
 
-function hsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+export function hsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
   const mx = Math.max(r, g, b);
   const mn = Math.min(r, g, b);
   const d = mx - mn;
@@ -245,16 +294,103 @@ const LIMIAR_CLARO = 0.42;
 /** Matiz e luminância de um pixel, sem decidir nada — quem decide é quem chama. */
 function tomDoCabelo(b: Bitmap, x: number, y: number): { eCabelo: boolean; l: number } {
   const i = (y * b.w + x) * b.canais;
-  const { h, s, l } = hsl(b.data[i], b.data[i + 1], b.data[i + 2]);
-  // A saturação corta o cinza: um pixel quase neutro tem matiz instável e um
-  // antialiasing de contorno preto sobre fundo branco chega a reportar 180°.
-  return { eCabelo: h >= MATIZ[0] && h <= MATIZ[1] && s > 0.25, l };
+  const r = b.data[i];
+  const g = b.data[i + 1];
+  const bl = b.data[i + 2];
+  const { h, s, l } = hsl(r, g, bl);
+  // Duas guardas, e cada uma pega um extremo. A saturação corta o cinza do meio da
+  // escala; a croma bruta corta o quase-preto, onde a saturação normalizada colapsa
+  // e devolve 1,00 para um pixel que não tem cor nenhuma. Ver `CROMA_MINIMA`.
+  const croma = Math.max(r, g, bl) - Math.min(r, g, bl);
+  return { eCabelo: croma >= CROMA_MINIMA() && eMatizDeCabelo(h, s), l };
 }
 
 /** `true` onde o pixel é cabelo. O terceiro valor diz se é o tom CLARO. */
 export function amostrar(b: Bitmap, x: number, y: number) {
   const t = tomDoCabelo(b, x, y);
   return { eCabelo: t.eCabelo, claro: t.l > LIMIAR_CLARO };
+}
+
+/* ------------------------------------------------------------------ */
+/* A bifurcação de fonte — e ela fica ANTES da geometria               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * DE ONDE VEM O BOOLEANO — a única coisa que muda entre medir PNG e medir SVG.
+ *
+ * `perfil`, `lobos`, `medirMassa`, `medirClara` e `tracar` faziam duas perguntas ao
+ * pixel: *é cabelo?* e *é tinta escura?*. As duas nasciam aqui dentro — a primeira de
+ * `tomDoCabelo` (matiz), a segunda de `lum() < ESCURO`. Este tipo as tira de dentro da
+ * geometria e as põe na fronteira do arquivo, e é **só isso** que a fonte SVG troca:
+ * nenhuma linha de geometria muda de lado nenhum.
+ *
+ * ---------------------------------------------------------------------------
+ * `cabelo` E `escuro` PODEM SE SOBREPOR, E A DISJUNÇÃO É PROPRIEDADE DA FONTE
+ * ---------------------------------------------------------------------------
+ *
+ * `medirMassa` perguntava `if (teal) … else if (escuro) …`, e o `else` embutia uma
+ * suposição: *tinta escura e cabelo são coisas exclusivas*. No PNG isso é verdade por
+ * construção da janela de matiz. No SVG **não é**: a família `traco` é o contorno DO
+ * CABELO, ela é cabelo e é escura ao mesmo tempo, e o `else` a apagaria justamente do
+ * lugar onde ela serve — a sondagem pela normal, que procura a corrida de preto para
+ * achar a linha de centro. Sem ela, todo ponto cairia meio traço para dentro e a peça
+ * inteira sairia encolhida, com o sintoma escondido em `semContorno`.
+ *
+ * Então a exclusividade desce para `segmentarPorMatiz`, que a garante no `escuro`
+ * dele. A geometria passa a fazer duas perguntas independentes, o PNG continua
+ * respondendo exatamente o que respondia, e o SVG passa a poder responder a verdade.
+ */
+export interface Segmentacao {
+  bmp: Bitmap;
+  /** Tinta de cabelo de qualquer tom: corpo ∪ sombra ∪ traço. */
+  cabelo: (x: number, y: number) => boolean;
+  /** O corpo — o tom CLARO, aquele de que a fronteira da sombra é a borda. */
+  claro: (x: number, y: number) => boolean;
+  /** Tinta escura de qualquer peça: o traço. Pode coincidir com `cabelo`. */
+  escuro: (x: number, y: number) => boolean;
+  /**
+   * A luminância do pixel de cabelo, quando ela existe.
+   *
+   * Só a fonte de matiz a tem: ali a fronteira claro/escuro é um degradê que precisa
+   * ser posterizado, e `medirClara` varre limiares dentro do vale entre os dois modos.
+   * No SVG a fronteira é **exata** — cada path já traz o seu tom —, e varrer limiar
+   * numa fronteira exata mediria o ruído do raster. Ausente quer dizer *não pergunte*.
+   */
+  tom?: (x: number, y: number) => number;
+  /**
+   * OS MARCOS DE TRONCO, EM PIXEL DESTE `bmp` — e eles nem sempre saem dele.
+   *
+   * `enquadramento()` acha o topo, a base e o pescoço pelo **contorno escuro**, e o
+   * SVG do conversor não tem contorno: o fundo preto e o traço preto são a mesma
+   * região para ele, e a pegada da figura termina na borda INTERNA do traço, não na
+   * externa. Medido nesta arte, isso encolhe o vão tronco→pescoço em 3,3% e a régua
+   * lê a arte inteira 3,3% maior — a conferência de fonte saiu com IoU 81,7% e borda
+   * de 20,0 u por causa disso, com as áreas batendo em 0,08%.
+   *
+   * Então o enquadramento sai de onde o contorno EXISTE, que é o PNG, e é convertido
+   * para o pixel do raster do SVG por uma razão exata (as duas imagens têm o mesmo
+   * `viewBox` e alturas conhecidas). É a mesma divisão de trabalho da base: forma do
+   * line-art, enquadramento de quem tem a silhueta.
+   */
+  ancoras: Ancoras;
+  fonte: "matiz" | "path";
+  /** Modas, cortes, descartes. Impresso, nunca calado. */
+  laudo: string[];
+}
+
+/** A fonte de sempre: matiz no pixel. O `escuro` exclui o cabelo, como antes. */
+export function segmentarPorMatiz(bmp: Bitmap, laudo: string[] = []): Segmentacao {
+  return {
+    bmp,
+    cabelo: (x, y) => tomDoCabelo(bmp, x, y).eCabelo,
+    claro: (x, y) => tomDoCabelo(bmp, x, y).l > LIMIAR_CLARO,
+    // O `else if` de `medirMassa` mora aqui agora. Ver o docstring de `Segmentacao`.
+    escuro: (x, y) => !tomDoCabelo(bmp, x, y).eCabelo && lum(bmp, x, y) < ESCURO,
+    tom: (x, y) => tomDoCabelo(bmp, x, y).l,
+    ancoras: ancoras(bmp),
+    fonte: "matiz",
+    laudo,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -319,7 +455,8 @@ interface Perfil {
  * cinco modelos, e o que houver ali é tronco. Sem esse corte, uma trança que
  * desce pelo ombro puxaria a franja para baixo do queixo.
  */
-function perfil(b: Bitmap, yLimite: number): Perfil {
+function perfil(seg: Segmentacao, yLimite: number): Perfil {
+  const b = seg.bmp;
   const franja: (number | null)[] = new Array(b.w).fill(null);
   const sombra: (number | null)[] = new Array(b.w).fill(null);
   // Quantos pixels seguidos de cabelo uma coluna precisa ter para a corrida contar.
@@ -369,7 +506,7 @@ function perfil(b: Bitmap, yLimite: number): Perfil {
     let fechou = false;
 
     for (let y = 0; y < ate; y++) {
-      const a = amostrar(b, x, y);
+      const a = { eCabelo: seg.cabelo(x, y), claro: seg.claro(x, y) };
       if (a.eCabelo) {
         corrida++;
         if (corrida === MINIMO) {
@@ -713,7 +850,8 @@ interface Lobo {
  * ancora para baixo, têmpora esquerda para a direita, têmpora direita para a
  * esquerda. O lado externo — a silhueta que aparece — sai como foi medido.
  */
-function lobos(b: Bitmap, m: Mapa, yLimite: number): Lobo[] {
+function lobos(seg: Segmentacao, m: Mapa, yLimite: number): Lobo[] {
+  const b = seg.bmp;
   const ate = Math.min(b.h, yLimite);
   const fora = new Uint8Array(b.w * ate);
 
@@ -723,7 +861,7 @@ function lobos(b: Bitmap, m: Mapa, yLimite: number): Lobo[] {
     const { esq, dir } = bordasEm(yU);
     const acimaDaCoroa = yU < CAIXA_CABECA.y0;
     for (let x = 0; x < b.w; x++) {
-      if (!amostrar(b, x, y).eCabelo) continue;
+      if (!seg.cabelo(x, y)) continue;
       const xU = paraX(m, x);
       if (acimaDaCoroa || xU < esq || xU > dir) fora[y * b.w + x] = 1;
     }
@@ -768,12 +906,21 @@ function lobos(b: Bitmap, m: Mapa, yLimite: number): Lobo[] {
 
   for (const g of grupos) {
     if (g.length < minimo) continue;
-    const xs = g.map((p) => p % b.w);
-    const ys = g.map((p) => (p / b.w) | 0);
-    const x0 = Math.min(...xs);
-    const x1 = Math.max(...xs);
-    const y0 = Math.min(...ys);
-    const y1 = Math.max(...ys);
+    // Em laço, e não por `Math.min(...xs)`: o espalhamento passa o array inteiro como
+    // argumentos, e a 2048² um lóbulo tem centenas de milhares de pixels — o SVG
+    // estourou a pilha exatamente aqui. Mesmos valores, sem o teto de aridade.
+    let x0 = Infinity;
+    let x1 = -Infinity;
+    let y0 = Infinity;
+    let y1 = -Infinity;
+    for (const p of g) {
+      const x = p % b.w;
+      const y = (p / b.w) | 0;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
     const deitado = x1 - x0 > y1 - y0;
 
     /**
@@ -1035,9 +1182,10 @@ interface Medida {
   };
 }
 
-export function medirFranja(b: Bitmap, m: Mapa, aImagem: Ancoras): Medida {
-  const p = perfil(b, aImagem.yPescoco);
-  const todos = lobos(b, m, aImagem.yPescoco);
+export function medirFranja(seg: Segmentacao, m: Mapa, aImagem: Ancoras): Medida {
+  const b = seg.bmp;
+  const p = perfil(seg, aImagem.yPescoco);
+  const todos = lobos(seg, m, aImagem.yPescoco);
   const franjaSuave = suavizar(p.franja, Math.round(b.w * 0.02));
   const sombraSuave = suavizar(p.sombra, Math.round(b.w * 0.02));
 
@@ -1397,7 +1545,8 @@ interface Massa {
  * ou uma emenda em que o gerador não fechou o contorno — o ponto cai meio traço para
  * dentro e o caso entra em `conferencia.semContorno`, impresso.
  */
-function medirMassa(b: Bitmap, m: Mapa, yLimite: number): Massa {
+function medirMassa(seg: Segmentacao, m: Mapa, yLimite: number): Massa {
+  const b = seg.bmp;
   const ate = Math.min(b.h, yLimite);
   const n = b.w * ate;
   const teal = new Uint8Array(n);
@@ -1405,8 +1554,11 @@ function medirMassa(b: Bitmap, m: Mapa, yLimite: number): Massa {
   for (let y = 0; y < ate; y++) {
     for (let x = 0; x < b.w; x++) {
       const i = y * b.w + x;
-      if (tomDoCabelo(b, x, y).eCabelo) teal[i] = 1;
-      else if (lum(b, x, y) < ESCURO) escuro[i] = 1;
+      // DUAS perguntas independentes, e o `else` que havia aqui virou propriedade da
+      // fonte de matiz. Ver o docstring de `Segmentacao`: no SVG a família `traco` é
+      // cabelo E é escura, e apagá-la de `escuro` encolheria a peça inteira.
+      if (seg.cabelo(x, y)) teal[i] = 1;
+      if (seg.escuro(x, y)) escuro[i] = 1;
     }
   }
 
@@ -1552,6 +1704,65 @@ function medirMassa(b: Bitmap, m: Mapa, yLimite: number): Massa {
 }
 
 /**
+ * QUANTO O PONTO `i` PODE ANDAR NA DIREÇÃO `n` SEM ATRAVESSAR O PRÓPRIO LAÇO.
+ *
+ * Metade da distância até o lugar onde o raio que sai do ponto reencontra o laço.
+ * Numa borda lisa o raio aponta para fora e não reencontra nada perto: o teto é
+ * infinito e não morde. Ele só aparece onde a peça é uma **língua** — a cortina que
+ * desce ao lado do rosto — e ali é a diferença entre uma mecha e um entalhe.
+ *
+ * Medido na `curto-espetada`: a cortina da esquerda tem ~10 unidades de largura e a
+ * sangria empurrava o flanco de dentro **11,5** — ele pousava do outro lado do flanco
+ * de fora, o laço dobrava, e o `nonzero` do SVG esvaziava tudo entre os dois
+ * cruzamentos. É a peça inteira sumindo de `y` 88 para baixo numa coluna em que a
+ * arte desce até 268.
+ *
+ * **Pela direção, e não por distância em arco.** A primeira versão tomava metade da
+ * distância ao ponto mais próximo fora de uma janela de arco, e ela erra dos dois
+ * lados ao mesmo tempo: numa reta o vizinho logo fora da janela está à distância da
+ * própria janela, e o teto travava toda borda lisa em metade dela; na PONTA de uma
+ * língua estreita os dois flancos distam menos que a janela em arco, o outro lado era
+ * excluído por vizinhança, e ali — justamente onde o defeito mora — o teto sumia.
+ * O raio não tem esse problema: ele sai do laço e só volta a encontrá-lo de verdade.
+ *
+ * Metade, e não a distância inteira, porque o outro flanco também anda: os dois vêm
+ * um na direção do outro no pior caso, e meia distância para cada um os deixa
+ * encostados em vez de trocados.
+ */
+function alcanceNaDirecao(
+  pts: { x: number; y: number }[],
+  i: number,
+  nx: number,
+  ny: number,
+): number {
+  const n = pts.length;
+  const p = pts[i];
+  // O raio nasce EM CIMA do laço: os segmentos que tocam o próprio ponto o cruzam em
+  // t = 0 e não dizem nada sobre para onde ele pode ir.
+  const encosta = (k: number) => {
+    const d = Math.abs(k - i);
+    return Math.min(d, n - d) <= 1;
+  };
+
+  let mais = Infinity;
+  for (let a = 0; a < n; a++) {
+    const b = (a + 1) % n;
+    if (encosta(a) || encosta(b)) continue;
+    const q = pts[a];
+    const ex = pts[b].x - q.x;
+    const ey = pts[b].y - q.y;
+    const den = nx * ey - ny * ex;
+    if (Math.abs(den) < 1e-12) continue; // paralelo: não há encontro
+    const qx = q.x - p.x;
+    const qy = q.y - p.y;
+    const t = (qx * ey - qy * ex) / den;
+    const u = (qx * ny - qy * nx) / den;
+    if (t > 0 && u >= 0 && u <= 1) mais = Math.min(mais, t);
+  }
+  return mais / 2;
+}
+
+/**
  * A SANGRIA DA PEÇA TRAÇADA — o `t` fora de [0, 1] da franja, generalizado.
  *
  * O modelo paramétrico exige que as pontas da franja caiam FORA da silhueta, e o
@@ -1573,14 +1784,24 @@ function medirMassa(b: Bitmap, m: Mapa, yLimite: number): Massa {
  *
  * Onde a arte de fato passa do crânio — que é o caso das artes geradas, medidas sem
  * clip nenhum — o ponto está longe do contorno e sai como foi medido.
+ *
+ * **O empurrão tem teto, e o teto é o próprio laço.** Ver `alcanceNoLaco()`: numa
+ * mecha mais estreita que duas sangrias o flanco de dentro passaria do de fora, e o
+ * laço dobraria sobre si mesmo. Quantos pontos o teto travou sai impresso — é a
+ * medida de "esta arte tem uma língua fina demais para a sangria caber".
  */
-function sangrarNaSilhueta(pts: { x: number; y: number }[]): { pts: { x: number; y: number }[]; quantos: number } {
+export function sangrarNaSilhueta(pts: { x: number; y: number }[]): {
+  pts: { x: number; y: number }[];
+  quantos: number;
+  travados: number;
+} {
   const cx = (CAIXA_CABECA.x0 + CAIXA_CABECA.x1) / 2;
   const cy = (CAIXA_CABECA.y0 + CAIXA_CABECA.y1) / 2;
   const contorno = CABECA.contorno;
   let quantos = 0;
+  let travados = 0;
 
-  const saida = pts.map((p) => {
+  const saida = pts.map((p, k) => {
     let melhor = { x: p.x, y: p.y };
     let dist = Infinity;
     for (let i = 0, j = contorno.length - 1; i < contorno.length; j = i++) {
@@ -1601,10 +1822,25 @@ function sangrarNaSilhueta(pts: { x: number; y: number }[]): { pts: { x: number;
     const rx = melhor.x - cx;
     const ry = melhor.y - cy;
     const comp = Math.hypot(rx, ry) || 1;
-    return { x: melhor.x + (rx / comp) * SANGRIA, y: melhor.y + (ry / comp) * SANGRIA };
+    const nx = rx / comp;
+    const ny = ry / comp;
+    /**
+     * O QUE FALTA para chegar a `SANGRIA` para fora — e não a POSIÇÃO da projeção.
+     *
+     * A versão anterior devolvia `melhor + n·SANGRIA`, isto é, jogava fora a
+     * coordenada tangencial do ponto. Numa língua de cabelo os dois flancos projetam
+     * no MESMO trecho do contorno: os dois saíam na mesma linha, e o laço percorria
+     * ida e volta por cima dela. Medido na `curto-espetada`: 22 auto-interseções no
+     * laço denso, contra 4 quando só a componente normal é corrigida.
+     */
+    const s = (p.x - melhor.x) * nx + (p.y - melhor.y) * ny;
+    if (s >= SANGRIA) return p;
+    const anda = Math.min(SANGRIA - s, alcanceNaDirecao(pts, k, nx, ny));
+    if (anda < SANGRIA - s) travados++;
+    return { x: p.x + nx * anda, y: p.y + ny * anda };
   });
 
-  return { pts: saida, quantos };
+  return { pts: saida, quantos, travados };
 }
 
 interface Clara {
@@ -1647,16 +1883,56 @@ interface Clara {
  * cabelo desenhada sem contorno, que é justamente o que torna o vazamento dela
  * invisível para todas as outras réguas.
  */
-function medirClara(b: Bitmap, m: Mapa, yLimite: number): Clara {
+function medirClara(seg: Segmentacao, m: Mapa, yLimite: number): Clara {
+  const b = seg.bmp;
   const ate = Math.min(b.h, yLimite);
   const n = b.w * ate;
+
+  /**
+   * A FONTE DE PATH NÃO TEM RAMPA, E VARRER LIMIAR NELA MEDIRIA O RASTER.
+   *
+   * Os três limiares existem porque o gerador entrega degradê macio e escolher um
+   * ponto da rampa sem conferir se a medida se mexe é o erro que o especular do Bloco
+   * 1d pagou. No SVG cada path **já traz o seu tom**: a fronteira entre corpo e sombra
+   * é a borda entre dois paths, e é exata por construção. Varrer limiar ali mediria a
+   * largura do antialiasing do raster, que é uma pergunta sobre o rasterizador.
+   *
+   * Então a varredura não roda, e o que sai impresso diz isso — nunca uma
+   * instabilidade de 0,0% que o leitor confundiria com uma medição estável.
+   */
+  if (!seg.tom) {
+    const mask = new Uint8Array(n);
+    let doTeal = 0;
+    let daClara = 0;
+    for (let y = 0; y < ate; y++) {
+      for (let x = 0; x < b.w; x++) {
+        if (!seg.cabelo(x, y)) continue;
+        doTeal++;
+        if (!seg.claro(x, y)) continue;
+        daClara++;
+        mask[y * b.w + x] = 1;
+      }
+    }
+    const area = doTeal ? (100 * daClara) / doTeal : 0;
+    const grupos = conexas(mask, b.w, ate);
+    const vazio = { areas: [area], limiares: [], instabilidade: 0, chapada: true, limiar: -1 };
+    if (!grupos.length) return { denso: [], ...vazio };
+    const soAClara = new Uint8Array(n);
+    for (const i of grupos[0]) soAClara[i] = 1;
+    const borda = bordaOrdenada(soAClara, b.w, ate);
+    const denso: { x: number; y: number }[] = [];
+    for (let i = 0; i < borda.length; i += 2) {
+      denso.push({ x: paraX(m, borda[i].x), y: paraY(m, borda[i].y) });
+    }
+    return { denso: suavizarLaco(denso, Math.max(1, Math.round(denso.length * 0.01))), ...vazio };
+  }
+
   const tons = new Float32Array(n).fill(-1);
   let doTeal = 0;
   for (let y = 0; y < ate; y++) {
     for (let x = 0; x < b.w; x++) {
-      const t = tomDoCabelo(b, x, y);
-      if (!t.eCabelo) continue;
-      tons[y * b.w + x] = t.l;
+      if (!seg.cabelo(x, y)) continue;
+      tons[y * b.w + x] = seg.tom(x, y);
       doTeal++;
     }
   }
@@ -1882,7 +2158,7 @@ const paraTY = (p: { x: number; y: number }): PontoFranja => {
  *
  * Devolve os cruzamentos em coordenada absoluta, para o número virar lugar.
  */
-function autoIntersecoes(pts: readonly { x: number; y: number }[]): { i: number; j: number; onde: string }[] {
+export function autoIntersecoes(pts: readonly { x: number; y: number }[]): { i: number; j: number; onde: string }[] {
   type P = { x: number; y: number };
   const lado = (p: P, q: P, r: P) =>
     Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
@@ -1951,12 +2227,24 @@ interface Tracado {
   projetados: number;
   /** Quantos pontos da massa sangraram para fora da silhueta. */
   sangrados: number;
+  /**
+   * Desses, quantos o teto de `alcanceNoLaco()` impediu de andar a sangria inteira.
+   *
+   * Zero é o caso normal. Diferente de zero é um FATO DA ARTE, e não um defeito da
+   * régua: a peça tem uma língua mais estreita que duas sangrias, e ali a escolha é
+   * entre a fresta e o entalhe. A régua escolhe a fresta — ela é meio pixel de
+   * antialiasing; o entalhe é a cortina inteira sumindo — e diz que escolheu.
+   */
+  travados: number;
   /** A folga que a ARTE tem, sem levante nenhum. */
   folga: { esq: number; dir: number };
   /** % de colunas com uma segunda corrida — a cortina, agora representável. */
   cortina: number;
   lobos: Lobo[];
   descartados: number;
+  /** De onde veio o booleano. Impresso sempre — um par PNG/SVG trocado aparece aqui. */
+  fonte: Segmentacao["fonte"];
+  laudo: string[];
 }
 
 /**
@@ -1974,11 +2262,12 @@ interface Tracado {
  * do Doug — não um levante silencioso. Amarra que briga com a arte se re-ancora na
  * arte; ela não move a arte para caber nela.
  */
-function tracar(b: Bitmap, m: Mapa, aImagem: Ancoras): Tracado {
-  const massa = medirMassa(b, m, aImagem.yPescoco);
-  const clara = medirClara(b, m, aImagem.yPescoco);
-  const perfilDaArte = perfil(b, aImagem.yPescoco);
-  const todos = lobos(b, m, aImagem.yPescoco);
+function tracar(seg: Segmentacao, m: Mapa, aImagem: Ancoras): Tracado {
+  const b = seg.bmp;
+  const massa = medirMassa(seg, m, aImagem.yPescoco);
+  const clara = medirClara(seg, m, aImagem.yPescoco);
+  const perfilDaArte = perfil(seg, aImagem.yPescoco);
+  const todos = lobos(seg, m, aImagem.yPescoco);
   const usados = todos.slice(0, MAX_LOBOS);
 
   const picos = [
@@ -2117,16 +2406,23 @@ function tracar(b: Bitmap, m: Mapa, aImagem: Ancoras): Tracado {
     },
     projetados,
     sangrados: sangria.quantos,
+    travados: sangria.travados,
     folga: folgaDoRosto(peca),
     cortina: (100 * perfilDaArte.colunasComExtensao) / b.w,
     lobos: lobosFinos,
     descartados: Math.max(0, todos.length - MAX_LOBOS),
+    fonte: seg.fonte,
+    laudo: seg.laudo,
   };
 }
 
 function imprimirTracado(id: string, t: Tracado) {
   const p = t.peca;
   console.log(`\n// ${id} — traçado (massa como laço fechado, linha de centro do preto)`);
+  // A fonte NUNCA sai calada: um par PNG/SVG trocado é o risco 4 do plano, e o laudo
+  // com caminho e mtime é a primeira coisa que o pega.
+  console.log(`// fonte: ${t.fonte === "path" ? "SVG (família de path)" : "PNG (matiz)"}`);
+  for (const l of t.laudo) console.log(`//   ${l.replace(/\n/g, "\n//   ")}`);
   console.log(`// folga da arte sobre as sobrancelhas: esq ${t.folga.esq.toFixed(1)} · dir ${t.folga.dir.toFixed(1)}`);
   if (t.teto.k < 1) {
     console.log(
@@ -2189,8 +2485,14 @@ function imprimirTracado(id: string, t: Tracado) {
   if (t.sangrados) {
     console.log(
       `  ${t.sangrados} ponto(s) da massa a menos de meio traço do contorno — ` +
-        `sangrados ${SANGRIA} u para fora, para o clip cortar em vez de encostar`,
+        `empurrados até ${SANGRIA} u para fora, para o clip cortar em vez de encostar`,
     );
+    if (t.travados) {
+      console.log(
+        `  desses, ${t.travados} travado(s) pelo alcance do laço: a mecha ali é mais estreita ` +
+          `que duas sangrias, e andar tudo dobraria o laço em vez de fechar a fresta`,
+      );
+    }
   }
 
   console.log(
@@ -2266,10 +2568,13 @@ function imprimirTracado(id: string, t: Tracado) {
   }
   if (Math.min(t.folga.esq, t.folga.dir) < FOLGA_ROSTO) {
     console.log(
-      `\n⚠ a ARTE deixa ${Math.min(t.folga.esq, t.folga.dir).toFixed(1)} u de testa, abaixo do piso de\n` +
-        `  ${FOLGA_ROSTO}. A régua NÃO sobe a peça: subir foi o que produziu a faixa de testa nua da\n` +
-        `  rodada HSHC93. Isto é item (f) — o olho do Doug decide entre re-gerar a arte com a\n` +
-        `  franja mais alta e re-ancorar a amarra.`,
+      `\n⚠ a ARTE deixa ${Math.min(t.folga.esq, t.folga.dir).toFixed(1)} u de testa = ` +
+        `${(Math.min(t.folga.esq, t.folga.dir) / 12.5).toFixed(2)} px a 56.\n` +
+        `  Na peça TRAÇADA o piso não é ${FOLGA_ROSTO}: é a folga DA ARTE, e quem gateia é\n` +
+        `  \`avatar:fidelidade\` (gate 3), que exige folga do traço ≥ folga da arte − meio traço.\n` +
+        `  A régua NÃO sobe a peça: subir foi o que produziu a faixa de testa nua da rodada\n` +
+        `  HSHC93. O número absoluto abaixo de ${FOLGA_ROSTO} é legibilidade a 56 px — franja e\n` +
+        `  sobrancelha encostando por antialiasing —, e trocar a arte é item (f), o olho do Doug.`,
     );
   }
 
@@ -2427,7 +2732,7 @@ async function idaEVolta() {
   writeFileSync(".scratch/estilo/ida-e-volta.svg", svg);
 
   const aImg = ancoras(bmp);
-  const med = medirFranja(bmp, mapa(aImg, vb), aImg);
+  const med = medirFranja(segmentarPorMatiz(bmp), mapa(aImg, vb), aImg);
 
   const esperado = CABELOS.curto.pontos!;
   console.log("IDA E VOLTA — o `curto` de hoje, renderizado em teal e medido de volta");
@@ -2488,7 +2793,7 @@ async function idaEVoltaMassa(): Promise<number> {
   const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: "curto", ns: "ivm" });
   const bmp = await rasterizar(svg, ALTURA);
   const aImg = ancoras(bmp);
-  const t = tracar(bmp, mapa(aImg, vb), aImg);
+  const t = tracar(segmentarPorMatiz(bmp), mapa(aImg, vb), aImg);
 
   console.log("IDA E VOLTA DA MASSA — o `curto` de hoje, renderizado em teal e traçado de volta");
   console.log(`raster ${bmp.w}x${bmp.h} · pescoço ${aImg.yPescoco}px · base ${aImg.yBase}px`);
@@ -2579,41 +2884,343 @@ export async function medirArquivo(caminho: string) {
   const bmp = await cru(caminho);
   const aImg = ancoras(bmp);
   const m = mapa(aImg, vb);
-  const bruta = medirFranja(bmp, m, aImg);
+  const bruta = medirFranja(segmentarPorMatiz(bmp), m, aImg);
   return { ...montarPeca(bruta), bmp, mapa: m, ancoras: aImg };
 }
 
-/** Traçar um PNG e devolver a peça, sem imprimir. A entrada de biblioteca da régua nova. */
-export async function tracarArquivo(caminho: string) {
+/** A altura de raster da fonte SVG. O dobro do PNG do gerador, que é 1024. */
+export const ALTURA_SVG = 2048;
+
+/**
+ * A SEGMENTAÇÃO DE UM ARQUIVO, escolhendo a fonte — e `auto` imprime qual escolheu.
+ *
+ * `auto` procura o mesmo nome de base com `.svg` ao lado do PNG. A escolha nunca é
+ * silenciosa: um par trocado (o SVG de uma arte ao lado do PNG de outra) é o risco 4
+ * do plano, e quem o pega é o laudo impresso mais a conferência de fonte.
+ */
+export async function segmentarArquivo(
+  caminho: string,
+  fonte: "png" | "svg" | "auto" = "auto",
+): Promise<Segmentacao> {
+  const { mascarasDoSvg } = await import("./fonte-svg");
+  const svgIrmao = caminho.replace(/\.png$/i, ".svg");
+  const querSvg =
+    fonte === "svg" || (fonte === "auto" && /\.svg$/i.test(caminho)) ||
+    (fonte === "auto" && svgIrmao !== caminho && existsSync(svgIrmao));
+
+  if (!querSvg) {
+    if (/\.svg$/i.test(caminho)) {
+      throw new Error(`--fonte png com um arquivo .svg (${caminho}): a régua de matiz lê pixel de PNG.`);
+    }
+    const bmp = await cru(caminho);
+    return segmentarPorMatiz(bmp, [`fonte de MATIZ · ${caminho} · ${statSync(caminho).mtime.toISOString()}`]);
+  }
+
+  const alvo = /\.svg$/i.test(caminho) ? caminho : svgIrmao;
+  const pngIrmao = alvo.replace(/\.svg$/i, ".png");
+  if (!existsSync(pngIrmao)) {
+    throw new Error(
+      `${alvo}: a fonte de path precisa do PNG irmão (${pngIrmao}) para o enquadramento.\n` +
+        `O conversor não traça contorno — ver o campo \`ancoras\` de \`Segmentacao\`.`,
+    );
+  }
+  const m = await mascarasDoSvg(alvo, ALTURA_SVG);
+  const bmpPng = await cru(pngIrmao);
+  const aPng = ancoras(bmpPng);
+  // Exata: as duas imagens são o mesmo `viewBox` e as duas alturas são conhecidas.
+  const escala = m.h / bmpPng.h;
+  const em = (mask: Uint8Array) => (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < m.w && y < m.h && mask[y * m.w + x] === 1;
+  return {
+    bmp: m.bmp,
+    cabelo: em(m.cabelo),
+    claro: em(m.claro),
+    escuro: em(m.escuro),
+    ancoras: {
+      yPescoco: aPng.yPescoco * escala,
+      yBase: aPng.yBase * escala,
+      eixo: aPng.eixo * escala,
+    },
+    fonte: "path",
+    laudo: [
+      ...m.laudo.linhas,
+      `enquadramento do PNG irmão · ${pngIrmao} · ${statSync(pngIrmao).mtime.toISOString()} ` +
+        `· escala ${escala.toFixed(4)}`,
+    ],
+  };
+}
+
+/** Traçar um arquivo e devolver a peça, sem imprimir. A entrada de biblioteca da régua nova. */
+export async function tracarArquivo(caminho: string, fonte: "png" | "svg" | "auto" = "png") {
   const { vb } = await ancorasDoViewBox();
-  const bmp = await cru(caminho);
-  const aImg = ancoras(bmp);
+  const seg = await segmentarArquivo(caminho, fonte);
+  const aImg = seg.ancoras;
   const m = mapa(aImg, vb);
-  return { tracado: tracar(bmp, m, aImg), bmp, mapa: m, ancoras: aImg };
+  return { tracado: tracar(seg, m, aImg), bmp: seg.bmp, seg, mapa: m, ancoras: aImg };
+}
+
+/* ------------------------------------------------------------------ */
+/* `--ancoras` — as três ancoragens candidatas, medidas lado a lado    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * O ÂNCORA É UMA ESCOLHA, E ATÉ AGORA ELA NÃO TINHA NÚMERO.
+ *
+ * O topo deste arquivo argumenta que o tronco é o âncora certo — os dois marcos dele
+ * são cegos ao cabelo, e `enquadramento()` não é. O argumento continua bom e nunca
+ * foi **medido**: ninguém sabia de quanto era o resíduo dele contra o canônico, nem
+ * se outra ancoragem faria melhor.
+ *
+ * Este relatório põe as três lado a lado sobre os mesmos marcos. O resultado provável
+ * é *"o âncora fica onde está, e agora há número"* — e isso é um resultado: no dia em
+ * que uma arte abrir o resíduo acima de meio traço, a troca passa a ter causa.
+ *
+ * **Ancoragem por olhos é a candidata mais frágil, e o número mostra por quê**: dois
+ * pontos quase horizontais condicionam mal a escala vertical. Se ela um dia vencer,
+ * tem de ser olho + queixo.
+ */
+async function ancorasDeArquivo(caminho: string) {
+  const { lerSvg, acharOlhos, mascaraDoSubpath } = await import("./fonte-svg");
+  if (!/\.svg$/i.test(caminho)) {
+    throw new Error(`--ancoras precisa do SVG: os marcos saem de path nomeado, não de pixel.`);
+  }
+  const { vb } = await ancorasDoViewBox();
+  const svg = lerSvg(caminho);
+  const seg = await segmentarArquivo(caminho, "svg");
+
+  // Do espaço do `viewBox` do conversor para o pixel do raster. Exato: a altura do
+  // raster é conhecida e o `viewBox` também.
+  const px = (v: number) => (v * ALTURA_SVG) / svg.vb.h;
+
+  const olhos = acharOlhos(svg, OLHO.w / OLHO.h);
+  if (olhos.length < 2) throw new Error(`--ancoras: achei ${olhos.length} olho(s), preciso de 2`);
+  const centro = olhos.map((o) => ({
+    x: px((o.caixa.x0 + o.caixa.x1) / 2),
+    y: px((o.caixa.y0 + o.caixa.y1) / 2),
+  }));
+
+  // A silhueta EXTERNA da cabeça: o maior subpath do path que tem a moldura. Ele é
+  // nomeado por área e não por índice, pelo mesmo motivo que a moldura é.
+  const comMoldura = svg.paths.find((p) => p.subpaths.some((s) => s.eMoldura));
+  if (!comMoldura) throw new Error(`--ancoras: nenhum path com moldura, não sei achar a cabeça`);
+  const uteis = comMoldura.subpaths
+    .map((s, k) => ({ s, k }))
+    .filter((v) => !v.s.eMoldura)
+    .sort((a, b) => Math.abs(b.s.area) - Math.abs(a.s.area));
+  const cabecaMask = await mascaraDoSubpath(svg, comMoldura.i, uteis[0].k, ALTURA_SVG);
+
+  /** Os extremos de tinta de uma linha da máscara da cabeça, em pixel. */
+  const linha = (py: number): { esq: number; dir: number } | null => {
+    let a = Infinity;
+    let z = -Infinity;
+    const y = Math.round(py);
+    if (y < 0 || y >= cabecaMask.h) return null;
+    for (let x = 0; x < cabecaMask.w; x++) {
+      if (!cabecaMask.mask[y * cabecaMask.w + x]) continue;
+      if (x < a) a = x;
+      if (x > z) z = x;
+    }
+    return z < a ? null : { esq: a, dir: z };
+  };
+  const cx = px((uteis[0].s.caixa.x0 + uteis[0].s.caixa.x1) / 2);
+  const cabeca = {
+    y0: px(uteis[0].s.caixa.y0),
+    y1: px(uteis[0].s.caixa.y1),
+    x0: px(uteis[0].s.caixa.x0),
+    x1: px(uteis[0].s.caixa.x1),
+    cx,
+  };
+
+  const aTronco = seg.ancoras;
+  const mTronco = mapa(aTronco, vb);
+
+  /** A ancoragem pelos olhos: escala pela separação, origem no meio do par. */
+  const sepPx = Math.hypot(centro[1].x - centro[0].x, centro[1].y - centro[0].y);
+  const kOlhos = OLHO.separacao / sepPx;
+  const mOlhos: Mapa = {
+    kx: kOlhos,
+    ky: kOlhos,
+    ex0: (centro[0].x + centro[1].x) / 2,
+    eu0: (OLHO_CX_ESQ + OLHO_CX_DIR) / 2,
+    ty0: (centro[0].y + centro[1].y) / 2,
+    tu0: (OLHO_CY_ESQ + OLHO_CY_DIR) / 2,
+  };
+
+  /** A ancoragem pela cabeça: escala pela altura da caixa dela, origem no centro. */
+  const kCabeca = CAIXA_CABECA.alt / (cabeca.y1 - cabeca.y0);
+  const mCabeca: Mapa = {
+    kx: kCabeca,
+    ky: kCabeca,
+    ex0: cabeca.cx,
+    eu0: (CAIXA_CABECA.x0 + CAIXA_CABECA.x1) / 2,
+    ty0: (cabeca.y0 + cabeca.y1) / 2,
+    tu0: (CAIXA_CABECA.y0 + CAIXA_CABECA.y1) / 2,
+  };
+
+  const FRACOES = [0.25, 0.45, 0.65, 0.85];
+  const marcos = (m: Mapa) => {
+    const olho = (i: number, cxU: number, cyU: number) => ({
+      nome: i === 0 ? "olho esquerdo" : "olho direito",
+      erro: Math.hypot(paraX(m, centro[i].x) - cxU, paraY(m, centro[i].y) - cyU),
+      detalhe:
+        `dx ${(paraX(m, centro[i].x) - cxU).toFixed(1)} · dy ${(paraY(m, centro[i].y) - cyU).toFixed(1)}`,
+    });
+    const sepMedida = Math.abs(paraX(m, centro[1].x) - paraX(m, centro[0].x));
+    const linhas = [
+      olho(0, OLHO_CX_ESQ, OLHO_CY_ESQ),
+      olho(1, OLHO_CX_DIR, OLHO_CY_DIR),
+      {
+        nome: "separação dos olhos",
+        erro: Math.abs(sepMedida - OLHO.separacao),
+        detalhe: `${sepMedida.toFixed(1)} contra ${OLHO.separacao} (${((100 * (sepMedida - OLHO.separacao)) / OLHO.separacao).toFixed(1)}%)`,
+      },
+      {
+        nome: "base da cabeça",
+        erro: Math.abs(paraY(m, cabeca.y1) - CAIXA_CABECA.y1),
+        detalhe: `${paraY(m, cabeca.y1).toFixed(1)} contra ${CAIXA_CABECA.y1.toFixed(1)}`,
+      },
+    ];
+    // A bochecha: a largura do crânio em quatro alturas, contra `bordasEm`. É o marco
+    // que pega escala errada — os olhos sozinhos não pegam, porque são um ponto só.
+    const bochechas: number[] = [];
+    for (const f of FRACOES) {
+      const py = cabeca.y0 + f * (cabeca.y1 - cabeca.y0);
+      const l = linha(py);
+      if (!l) continue;
+      const yU = paraY(m, py);
+      const { esq, dir } = bordasEm(yU);
+      bochechas.push(Math.abs(paraX(m, l.esq) - esq), Math.abs(paraX(m, l.dir) - dir));
+    }
+    return {
+      /**
+       * OS MARCOS QUE RESPONDEM AO ÂNCORA — e a bochecha não é um deles.
+       *
+       * Medida, ela dá ~35 a 39 u nas TRÊS ancoragens, inclusive na que acerta os
+       * olhos em 0,5 u. Um resíduo que não se mexe quando o âncora muda não está
+       * medindo o âncora: está medindo o **crânio da arte contra o crânio
+       * canônico**, que são formas diferentes — o boneco do gerador nunca foi o do
+       * `geometria.ts`, e este arquivo diz isso desde o topo.
+       *
+       * Deixá-la dentro do veredito faria a inversão mentir: escalar a arte 5%
+       * aproxima o crânio largo do canônico e o pior resíduo CAI, o que leria como
+       * "o âncora não acusa escala" quando o que aconteceu foi outra coisa. Ela
+       * continua impressa, porque é o número que diz o quanto a arte diverge do
+       * boneco — só não vota.
+       */
+      doAncora: linhas,
+      bochecha: {
+        nome: `bochecha, ${FRACOES.length} alturas`,
+        erro: bochechas.length ? Math.max(...bochechas) : Infinity,
+        detalhe: bochechas.length ? bochechas.map((v) => v.toFixed(1)).join(" · ") : "sem tinta",
+      },
+    };
+  };
+
+  console.log(`ÂNCORAS — ${caminho}`);
+  for (const l of seg.laudo) console.log(`  ${l.replace(/\n/g, "\n  ")}`);
+  console.log(
+    `\nolhos achados por razão de aspecto (alvo ${(OLHO.w / OLHO.h).toFixed(3)}): ` +
+      olhos.map((o) => `#${o.path} r=${o.razao.toFixed(3)}`).join(" · "),
+  );
+
+  const candidatas: [string, Mapa][] = [
+    ["tronco (o de hoje)", mTronco],
+    ["olhos", mOlhos],
+    ["cabeça", mCabeca],
+  ];
+  for (const [nome, m] of candidatas) {
+    const r = marcos(m);
+    console.log(`\n${nome} — k = ${m.kx.toFixed(5)}`);
+    for (const l of r.doAncora) {
+      console.log(
+        `  ${l.nome.padEnd(22)} ${l.erro.toFixed(1).padStart(6)} u   ${l.detalhe}` +
+          (l.erro > TRACO / 2 ? "   ✗ acima de meio traço" : ""),
+      );
+    }
+    console.log(
+      `  ${r.bochecha.nome.padEnd(22)} ${r.bochecha.erro.toFixed(1).padStart(6)} u   ` +
+        `${r.bochecha.detalhe}   (informativo: é a arte contra o crânio canônico)`,
+    );
+  }
+
+  /**
+   * A INVERSÃO: a mesma arte, 5% maior. Um âncora que MEÇA escala tem de acusar.
+   *
+   * Escalar 5% em torno da origem do mapa é multiplicar `k` por 1/1,05: a arte cresce,
+   * a régua a lê encolhida na mesma proporção. Sobre um crânio de 364 u, 5% são ~18
+   * unidades — três vezes meio traço. Um âncora que continue verde aqui não está
+   * medindo escala, está medindo posição.
+   */
+  /**
+   * O VEREDITO DA INVERSÃO É CRUZAR MEIO TRAÇO, e não crescer um tanto.
+   *
+   * "Crescer mais que meio traço" foi o primeiro critério e ele é mal-posto: os
+   * marcos ficam ~130 u acima da origem do mapa (o pescoço), então 5% de escala os
+   * move ~6,5 u — o crescimento medido é 5,3, e exigir +6 reprovaria um âncora que
+   * fez exatamente o que devia. O número que interessa não é o salto, é o lado da
+   * linha: um âncora que MEÇA escala tem de sair de aprovado e chegar reprovado.
+   */
+  console.log(
+    `\nINVERSÃO — a mesma arte 5% maior (k ÷ 1,05). O pior resíduo DE ÂNCORA tem de\n` +
+      `cruzar meio traço (${TRACO / 2} u); a bochecha fica de fora, e o docstring de\n` +
+      `\`marcos\` diz por quê:`,
+  );
+  for (const [nome, m] of candidatas) {
+    const pior = (mm: Mapa) => Math.max(...marcos(mm).doAncora.map((l) => l.erro));
+    const antes = pior(m);
+    const depois = pior({ ...m, kx: m.kx / 1.05, ky: m.ky / 1.05 });
+    console.log(
+      `  ${nome.padEnd(22)} ${antes.toFixed(1)} → ${depois.toFixed(1)} u` +
+        (antes > TRACO / 2
+          ? "   — já reprovava sem a inversão; nada a provar aqui"
+          : depois > TRACO / 2
+            ? "   ✓ cruzou"
+            : "   ✗ NÃO acusou a escala"),
+    );
+  }
+  console.log(
+    `\nO resultado esperado era "o âncora fica onde está, e agora há número", e é ele.\n` +
+      `A troca passa a ter causa no dia em que uma arte abrir o resíduo de tronco\n` +
+      `acima de meio traço — e aí a candidata é olho + queixo, nunca olho sozinho:\n` +
+      `dois pontos quase horizontais condicionam mal a escala vertical.`,
+  );
 }
 
 async function main() {
-  const arg = process.argv[2];
-  if (arg === "--diag") return diagnosticar(process.argv[3]);
+  const args = process.argv.slice(2);
+  const arg = args[0];
+  if (arg === "--diag") return diagnosticar(args[1]);
   if (arg === "--ida-e-volta") return idaEVolta();
-  if (!arg || arg === "--ida-e-volta-massa") {
+
+  const iFonte = args.indexOf("--fonte");
+  const fonte = (iFonte >= 0 ? args[iFonte + 1] : "png") as "png" | "svg" | "auto";
+  if (!["png", "svg", "auto"].includes(fonte)) {
+    throw new Error(`--fonte aceita png, svg ou auto — não "${fonte}"`);
+  }
+  // O valor de `--fonte` não é caminho. `iFonte < 0` tem de virar um índice que não
+  // existe, senão a comparação come o argumento 0 — que é justamente o caminho.
+  const valorDaFonte = iFonte >= 0 ? iFonte + 1 : -1;
+  const livres = args.filter((a, i) => !a.startsWith("--") && i !== valorDaFonte);
+
+  if (args.includes("--ancoras")) return ancorasDeArquivo(livres[0]);
+  if (!livres.length) {
     process.exitCode = await idaEVoltaMassa();
     return;
   }
 
   // A régua paramétrica continua alcançável enquanto houver modelo paramétrico no
   // catálogo — ela é o outro lado da comparação em `fidelidade.ts`.
-  if (arg === "--parametrico") {
-    const caminho = process.argv[3];
+  if (args.includes("--parametrico")) {
+    const caminho = livres[0];
     const { vb } = await ancorasDoViewBox();
     const bmp = await cru(caminho);
     const aImg = ancoras(bmp);
-    imprimir(caminho, medirFranja(bmp, mapa(aImg, vb), aImg));
+    imprimir(caminho, medirFranja(segmentarPorMatiz(bmp), mapa(aImg, vb), aImg));
     return;
   }
 
-  const { tracado } = await tracarArquivo(arg);
-  imprimirTracado(arg, tracado);
+  const { tracado } = await tracarArquivo(livres[0], fonte);
+  imprimirTracado(livres[0], tracado);
 }
 
 /**

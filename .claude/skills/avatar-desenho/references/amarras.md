@@ -66,7 +66,8 @@ engrossar a trança, não baixar o piso.
 
 | amarra | número | onde | quem mede |
 |---|---|---|---|
-| folga sobre **cada** sobrancelha | **≥ 24 unidades** | `FOLGA_ROSTO`, `folgaDoRosto()` | `avatar:folha-base`, `avatar:variantes` |
+| folga sobre **cada** sobrancelha (peça **paramétrica**) | **≥ 24 unidades** | `FOLGA_ROSTO`, `folgaDoRosto()` | `avatar:folha-base`, `avatar:variantes`, `cabelo.test.ts` |
+| folga sobre **cada** sobrancelha (peça **traçada**) | **≥ folga da arte − 6 u** | `folgaNaGrade()`, gate 3 | `avatar:fidelidade` |
 | ancoragem de cada extensão dentro da cabeça | **≥ 10** (`SANGRIA`) | `ancoragemDasExtensoes()` | `avatar:variantes` |
 | pontas da franja fora da silhueta (peça **paramétrica**) | `t` fora de [0, 1] | `bordasEm()` | `avatar:variantes`, `cabelo.test.ts` |
 | cobertura da coroa (peça **traçada**) | **= 100%** | `coberturaDaCoroa()` | `avatar:variantes`, `cabelo.test.ts` |
@@ -87,12 +88,34 @@ por um motivo que não tem nada a ver com o traço, e afrouxá-lo até passar es
 justamente o que ele deveria pegar. Por isso o piso é medido em toda rodada e o gate é
 relativo a ele.
 
-**A folga do rosto é re-ancorada por família.** Paramétrica: piso 24, e reprova — a
-franja é desenhada, então folga curta é escolha de quem desenhou. Traçada: o número é
-**da arte**, o piso vira aviso, e a decisão é do olho (item (f)). O traçador **não sobe
-mais a peça**: `liberarORosto()` subia a franja inteira até o rosto respirar, e o que
-apareceu na folha HSHC93 foi uma faixa de testa nua que não existe no PNG. Amarra que
-briga com a arte se re-ancora na arte.
+**A folga do rosto é re-ancorada por família, e re-ancorar não é afrouxar** (2026-08-04).
+Paramétrica: piso 24, absoluto, e reprova — a franja é desenhada, então folga curta é
+escolha de quem desenhou. Traçada: a folga é um **fato da arte** (a `curto-espetada`
+deixa 6,2 u), e o que o traço controla é **não piorá-la** — piso `folga da arte − meio
+traço`, medido lado a lado, nunca no `Math.min`, porque os dois lados diferem pelo
+`GIRO` e um mínimo esconde qual perdeu.
+
+A subtração é honesta pelo mesmo argumento do `limiar()`: a sobrancelha **canônica**
+entra dos dois lados, então o desvio do boneco do gerador cancela. Não se mede
+sobrancelha dentro do PNG.
+
+O que **não** é gate na traçada é o número absoluto: abaixo de 24 u a peça avisa alto
+(em u e em px a 56) e segue verde, porque trocar a arte é direção de arte — item (f).
+Antes disso a traçada não tinha gate nenhum: um traço que comesse 40 u de testa que a
+arte não come passava em silêncio, e é exatamente essa inversão que
+`avatar:fidelidade --inverter-folga` roda. Medido: a folga do render vai de 12,0 u a
+−6,5 (esq) e −7,0 (dir), contra pisos de −2,0 e −5,0.
+
+**A régua do gate 3 é o fim do CORPO da coluna, e as duas mais simples falharam.** A
+célula mais baixa da coluna leva junto a **cortina**, que cruza a faixa da sobrancelha
+na arte e não no render — veneno de um lado só não cancela. A primeira corrida a partir
+do topo quebra nas **espículas**, e dava o mesmo número com e sem a inversão. O corpo é
+a corrida contígua mais longa: espícula é corrida curta acima, cortina é corrida curta
+abaixo, e o fim do corpo é a franja.
+
+O traçador **não sobe mais a peça**: `liberarORosto()` subia a franja inteira até o
+rosto respirar, e o que apareceu na folha HSHC93 foi uma faixa de testa nua que não
+existe no PNG. Amarra que briga com a arte se re-ancora na arte.
 
 **A amarra 6 (`y ≥ 8`, o teto do `viewBox`) é cumprida por compressão, não por corte.**
 O traçador calcula um `k` só para a peça inteira — massa e lóbulos —, aplica só em `y`,
