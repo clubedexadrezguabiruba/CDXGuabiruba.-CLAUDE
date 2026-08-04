@@ -399,14 +399,23 @@ async function main() {
     if (ruimSvg.length) estourou.push(`${m}: ${ruimSvg.length} problema(s) de contrato`);
     // A folga do rosto é a amarra 1 de `cabelo.ts`: franja que encosta na
     // sobrancelha apaga a expressão no tamanho do ranking.
+    //
+    // **Na peça TRAÇADA ela é aviso, e não reprovação.** No paramétrico a franja é
+    // desenhada, então folga curta é escolha de quem desenhou. Na traçada ela é um
+    // fato da arte: o gerador não conhece `FOLGA_ROSTO`. A régua antiga resolvia
+    // subindo a peça inteira, e foi isso que produziu a faixa de testa nua da folha
+    // HSHC93 — o traçador não sobe mais nada, e quem decide entre re-gerar a arte e
+    // re-ancorar a amarra é o olho. Ver `tracar()` em `tracar-cabelo.ts`.
     const pior = Math.min(folga.esq, folga.dir);
-    if (pior < FOLGA_ROSTO) estourou.push(`${m}: folga do rosto ${pior.toFixed(1)}`);
+    const curta = pior < FOLGA_ROSTO;
+    const tracada = Boolean(CABELOS[m].massa);
+    if (curta && !tracada) estourou.push(`${m}: folga do rosto ${pior.toFixed(1)}`);
     const fmt = (v: number) => (v === Infinity ? "  —  " : v.toFixed(1).padStart(5));
     console.log(
       `  ${CABELOS[m].nome.padEnd(12)} ${String(f).padStart(2)} formas (+${f - formas})   ` +
         `${String(b).padStart(5)} bytes (+${String(b - bytes).padStart(4)})   ` +
         `folga do rosto esq ${fmt(folga.esq)} dir ${fmt(folga.dir)}` +
-        `${pior < FOLGA_ROSTO ? "   ✗" : ""}`,
+        `${curta ? (tracada ? "   ⚠ é a folga DA ARTE, item (f)" : "   ✗") : ""}`,
     );
   }
 

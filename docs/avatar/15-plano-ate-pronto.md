@@ -585,6 +585,61 @@ que era o único ponto em que a B travava aquele bloco.
   com a causa técnica conhecida e por fechar, seria a justificativa circular que o
   gate (a) já recusou uma vez.
 
+- **2a.5 — O CABELO DEIXA DE SER DESENHADO E PASSA A SER TRAÇADO — 2026-08-03.**
+
+  O Doug reprovou a folha **HSHC93** com uma frase: *"vc não está reproduzindo a
+  arte fielmente, como foi feito com o avatar"*. Os números concordaram, e eles
+  são a linha de base deste item:
+
+  | | valor |
+  |---|---|
+  | IoU da massa de cabelo | **61,7%** |
+  | desvio médio de borda | **36,1 u** (≈ 3 px a 56) |
+  | cortina, sozinha | **~220 u** de desvio |
+
+  **A causa não era o critério de decimação, era o modelo de dados**, e os quatro
+  diagnósticos da folha dizem o mesmo de quatro jeitos:
+
+  1. **cortina** — massa descendo ao lado do rosto até a bochecha, DENTRO da
+     silhueta. Não é franja (é a 2ª corrida da coluna) e não é extensão (não passa
+     do crânio). Não havia campo;
+  2. **~12 espículas** do topo viravam calota de 5 bossas;
+  3. **6–8 bicos em V** da franja viravam curva única — e `liberarORosto()` ainda
+     subia a peça **43,5 u**, produzindo a "faixa de testa nua" que não existe no
+     PNG;
+  4. **sombra** chapada paralela onde a arte tem volume seguindo as mechas.
+
+  `Cabelo` ganhou `massa` e `clara`, **laços FECHADOS** em `{t, y}` — o fechamento é
+  o que deixa a borda descer, virar e voltar a subir, e uma franja aberta é uma
+  função de `x`. O traçador (`avatar:tracar`) e o gate (`avatar:fidelidade`)
+  saíram do `.scratch/` e viraram scripts do repositório, typechecados.
+
+  **O piloto `curto-espetada` melhorou em tudo que é medível:**
+
+  | | paramétrico | traçado |
+  |---|---|---|
+  | IoU | 36,62% | **68,77%** |
+  | borda de baixo (médio) | 42,5 u | **27,3 u** |
+  | borda de cima (médio) | 51,8 u | **10,2 u** |
+  | massa só na arte (gate 2) | 21,4% | **1,8%** |
+
+  **O gate 1 é ancorado no piso MEDIDO da arte, e não num número registrado aqui —
+  e a medição é que decidiu isso.** O plano previa registrar "piso + margem" neste
+  parágrafo. Rodada com a decimação DESLIGADA (1 193 pontos contra 64), a
+  fidelidade dá 27,6 u contra os 27,3 da peça entregue: **a decimação custa 0,3
+  unidade**, e os 27 restantes são o boneco do gerador não ser o do `geometria.ts`
+  mais o clip do crânio. Um piso constante valeria para uma arte só; medido na
+  própria rodada, o gate pergunta o que devia — *o traço custou mais que meio traço
+  acima do que ele não controla?*
+
+  **A folha nova (XHHXP9) foi REPROVADA**, e os quatro defeitos estão nomeados com
+  causa medida no doc 14, T1.6. O `curto` do catálogo **continua paramétrico**.
+
+  **Estado-alvo, quando o último paramétrico morrer:** somem `pontos`, `sombra`,
+  `touca()`, `FORA`, `DEGRAU`, `sombraSobreAFranja()` e `liberarORosto()`. Enquanto
+  houver modelo paramétrico no catálogo eles ficam, e a exclusividade
+  `pontos` × `massa` é gate.
+
 ---
 
 ### 2b — Uniforme de Soldado

@@ -1866,6 +1866,51 @@ const paraTY = (p: { x: number; y: number }): PontoFranja => {
   return { t: (p.x - esq) / (dir - esq), y: p.y };
 };
 
+/**
+ * O LAÇO SE CRUZA? — o risco que a topologia nova trouxe, e que só ela tem.
+ *
+ * Uma curva ABERTA não pode se auto-intersectar de forma que mude o preenchimento:
+ * ela não preenche nada sozinha. Um laço fechado preenche, e o SVG usa `nonzero` por
+ * padrão — dois trechos que se cruzam invertem o sentido de giro entre o cruzamento
+ * e a ponta, e aquele pedaço sai **vazado**. É um entalhe que ninguém desenhou.
+ *
+ * O lugar onde isso acontece é previsível e foi medido: a **ponta de uma cortina**.
+ * Ali a massa afina até os dois lados quase se encostarem, e a decimação, que remove
+ * o ponto de menor custo de corda, come a largura antes de comer o comprimento —
+ * sobra um espeto de ida e volta cujos lados se cruzam. Medido na `curto-espetada`:
+ * 2 cruzamentos, um em cada cortina, nas duas pontas.
+ *
+ * Devolve os cruzamentos em coordenada absoluta, para o número virar lugar.
+ */
+function autoIntersecoes(pts: readonly { x: number; y: number }[]): { i: number; j: number; onde: string }[] {
+  type P = { x: number; y: number };
+  const lado = (p: P, q: P, r: P) =>
+    Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  const cruza = (a: P, b: P, c: P, d: P) =>
+    lado(a, b, c) !== lado(a, b, d) && lado(c, d, a) !== lado(c, d, b);
+
+  const out: { i: number; j: number; onde: string }[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    for (let j = i + 2; j < pts.length; j++) {
+      if (i === 0 && j === pts.length - 1) continue; // vizinhos pelo fechamento
+      const a = pts[i];
+      const b = pts[(i + 1) % pts.length];
+      const c = pts[j];
+      const d = pts[(j + 1) % pts.length];
+      if (cruza(a, b, c, d)) {
+        out.push({ i, j, onde: `(${a.x.toFixed(0)}, ${a.y.toFixed(0)})` });
+      }
+    }
+  }
+  return out;
+}
+
+/** Um laço `{t, y}` de volta a coordenada absoluta, pela mesma `bordasEm`. */
+const paraXY = (q: PontoFranja): { x: number; y: number } => {
+  const { esq, dir } = bordasEm(q.y);
+  return { x: esq + q.t * (dir - esq), y: q.y };
+};
+
 interface Tracado {
   peca: Cabelo;
   massa: Massa;
@@ -1900,6 +1945,8 @@ interface Tracado {
    * resposta é mais pontos ou outra arte.
    */
   denso: { massa: PontoFranja[]; clara: PontoFranja[] };
+  /** Cruzamentos do laço entregue, por curva. Zero é a exigência. */
+  cruzamentos: { massa: ReturnType<typeof autoIntersecoes>; clara: ReturnType<typeof autoIntersecoes> };
   /** Quantos pontos da clara precisaram ser projetados para dentro da massa. */
   projetados: number;
   /** Quantos pontos da massa sangraram para fora da silhueta. */
@@ -2062,6 +2109,12 @@ function tracar(b: Bitmap, m: Mapa, aImagem: Ancoras): Tracado {
     n: { massa: nMassa, clara: nClara, lobos: nLobos },
     desvio,
     denso: { massa: massaC.map(paraTY), clara: claraC.map(paraTY) },
+    // Medido no laço ENTREGUE e em coordenada absoluta: é ali que o `nonzero` do
+    // SVG resolve o preenchimento, e é ali que o entalhe aparece.
+    cruzamentos: {
+      massa: autoIntersecoes((peca.massa ?? []).map(paraXY)),
+      clara: autoIntersecoes((peca.clara ?? []).map(paraXY)),
+    },
     projetados,
     sangrados: sangria.quantos,
     folga: folgaDoRosto(peca),
@@ -2157,6 +2210,18 @@ function imprimirTracado(id: string, t: Tracado) {
   }
   console.log(`  contenção da clara: ${contencaoDaClara(t.peca).toFixed(2)} u (piso 0)`);
   console.log(`  cobertura da coroa: ${((coberturaDaCoroa(t.peca) ?? 0) * 100).toFixed(1)}% (exigido 100)`);
+
+  for (const [nome, xs] of [
+    ["massa", t.cruzamentos.massa],
+    ["clara", t.cruzamentos.clara],
+  ] as const) {
+    if (!xs.length) continue;
+    console.log(
+      `  ✗ ${nome}: ${xs.length} auto-interseção(ões) — o \`nonzero\` do SVG VAZA o trecho\n` +
+        `    entre o cruzamento e a ponta, e sai um entalhe que ninguém desenhou:`,
+    );
+    for (const x of xs) console.log(`      segmentos ${x.i} e ${x.j}, perto de ${x.onde}`);
+  }
 
   const caixa = t.massa.denso.reduce(
     (a, p) => ({ x0: Math.min(a.x0, p.x), x1: Math.max(a.x1, p.x), y0: Math.min(a.y0, p.y), y1: Math.max(a.y1, p.y) }),
@@ -2436,12 +2501,15 @@ async function idaEVoltaMassa(): Promise<number> {
   if (t.lobos.length) falhas.push(`${t.lobos.length} lóbulo(s) inventado(s) — o curto é todo dentro do crânio`);
   if (t.cortina > 0) falhas.push(`${t.cortina.toFixed(1)}% de colunas com cortina — o curto não tem`);
   if (contencao < 0) falhas.push(`contenção da clara ${contencao.toFixed(2)} u`);
+  const cruzou = t.cruzamentos.massa.length + t.cruzamentos.clara.length;
+  if (cruzou) falhas.push(`${cruzou} auto-interseção(ões) no laço entregue`);
 
-  console.log("\n— os quatro números da regressão —");
+  console.log("\n— os cinco números da regressão —");
   console.log(`  pior desvio por curva ... ${piorDesvio.toFixed(1)} u   (piso meio traço = ${MEIO_TRACO})`);
   console.log(`  lóbulos ................. ${t.lobos.length}   (exigido 0)`);
   console.log(`  colunas de cortina ...... ${t.cortina.toFixed(1)}%   (exigido 0)`);
   console.log(`  contenção da clara ...... ${contencao.toFixed(2)} u   (piso 0)`);
+  console.log(`  auto-interseções ........ ${cruzou}   (exigido 0)`);
   if (falhas.length) {
     console.log(`\n✗ ${falhas.length} reprovação(ões):`);
     for (const f of falhas) console.log(`  · ${f}`);

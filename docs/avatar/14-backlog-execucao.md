@@ -252,13 +252,63 @@ Bloqueia todo o resto da arte.
         barra reta;
       - o **coque** perde **34 unidades** do mesmo jeito.
       → A régua de cabelo já resolveu isto do lado dela: `TETO_Y = 8` em
-      `.scratch/estilo/franja.ts` **comprime** o excesso em torno da linha da coroa em vez
-      de guilhotinar, e a distinção das três variantes subiu de 5,04–5,98% para 6,70–7,41%
-      só com essa troca. O catálogo não passou pela régua e continua com os números de
-      2026-08-01. **Duas saídas, e a escolha é medida, não de gosto:** ou as duas peças
-      re-traçam pela régua (barato, cabe no Bloco 2a), ou o `viewBox` ganha altura no topo
-      (caro — mexe em `VIEWBOX`, na `folha-base` congelada em 19 formas / 7 418 bytes e em
-      todo asset já assado).
+      `scripts/avatar/estilo/tracar-cabelo.ts` **comprime** o excesso em torno da linha da
+      coroa em vez de guilhotinar, e a distinção das três variantes subiu de 5,04–5,98%
+      para 6,70–7,41% só com essa troca. O catálogo não passou pela régua e continua com
+      os números de 2026-08-01. **Duas saídas, e a escolha é medida, não de gosto:** ou as
+      duas peças re-traçam pela régua (barato, cabe no Bloco 2a), ou o `viewBox` ganha
+      altura no topo (caro — mexe em `VIEWBOX`, na `folha-base` congelada em 19 formas /
+      7 418 bytes e em todo asset já assado).
+      → **A esteira agora existe** (T1.6): as duas re-traçam por `avatar:tracar` +
+      `avatar:fidelidade` depois do piloto aprovado. Continua sem correção aplicada.
+- [ ] **T1.6** 🤖 **O cabelo deixa de ser desenhado e passa a ser traçado da arte**
+      → pipeline pronto em 2026-08-03, **piloto aguardando o olho** (item (f)).
+      `Cabelo` ganhou `massa` e `clara` — laços FECHADOS em `{t, y}` —, e é o fechamento
+      que deixa a peça ter **cortina**: massa descendo ao lado do rosto, por dentro da
+      silhueta, que uma franja aberta não descreve porque franja aberta é função de `x`.
+      - `npm run avatar:tracar -- <png>` — a arte vira literal para colar. Máscara
+        (teal ∪ o preto dele) → borda ordenada por Moore → centro da corrida de preto na
+        normal local → suavizar → decimar por erro de corda. É o pipeline dos 42 pontos
+        do crânio, aplicado ao cabelo;
+      - `npm run avatar:fidelidade` — dois gates com `exitCode`, mais `--inverter` (R10),
+        `--piso` e `--folha`;
+      - `--ida-e-volta-massa` é a regressão sem gerador, e ela recupera o próprio traço:
+        espessura medida **11,5 u** contra `TRACO = 12`.
+      **Registro das folhas** — selo, data, veredito:
+      | selo | data | o que era | veredito |
+      |---|---|---|---|
+      | 93ETYY | 2026-08-03 | 3 variantes traçadas pela régua paramétrica | reprovada — laje no topo (guilhotina do `viewBox`), quina de aba na ponta lateral |
+      | HSHC93 | 2026-08-03 | arte × melhor traço paramétrico | **reprovada** — *"vc não está reproduzindo a arte fielmente, como foi feito com o avatar"*. IoU 61,7%, desvio médio de borda 36,1 u, cortina segurando ~220 u sozinha |
+      | XHHXP9 | 2026-08-03 | arte × traço fiel (laço fechado) | **reprovada** — lê como capacete com aba; 4 defeitos nomeados abaixo |
+      **A XHHXP9 foi lida e reprovada, e os quatro defeitos têm causa medida:**
+      1. **"linha preta de têmpora a têmpora, capacete liso embaixo"** — 36,1% do
+         perímetro do laço (566 de 1 570 u) tem o traço VISÍVEL dentro do crânio,
+         concentrado em y 126–189. É a franja em ziguezague: ela está no lugar certo, e
+         o que lê errado é ela ser a única aresta forte de uma massa quase lisa;
+      2. **2 auto-interseções**, uma em cada ponta de cortina — (463, 175) e (70, 247).
+         A cortina afina até os dois lados se encostarem, e a decimação come a largura
+         antes do comprimento: sobra um espeto de ida e volta cujos lados se cruzam, e
+         o `nonzero` do SVG vaza o trecho entre o cruzamento e a ponta. Já é gate
+         (`--ida-e-volta-massa`, quinto número), e reprova este traço;
+      3. **cortina só de um lado** — a esquerda desce a y 273 e a direita para em 231.
+         A arte tem as duas;
+      4. **6 entalhes rasos no lugar de ~12 pontas afiladas.** Bate com o número que o
+         traçador já imprimia: menor período de recorte **0,35 px a 56**, abaixo de
+         1 px. As pontas não cabem no tamanho do ranking, e a resposta é direção de
+         arte (feições maiores), nunca simplificação silenciosa.
+      → **Nada foi colado no catálogo.** O `curto` continua paramétrico.
+      Os números do piloto `curto-espetada`, todos medidos: IoU **68,77%** (contra 36,62%
+      do paramétrico na mesma régua), borda de cima **10,2 u** (contra 51,8), massa só na
+      arte **1,8%** (contra 21,4% — é a cortina existindo). O gate 1 é ancorado no piso
+      medido da própria arte, e o piso é **27,6 u**: rodado com a decimação DESLIGADA
+      (1 193 pontos) o desvio é o mesmo da peça de 64 pontos, ou seja **a decimação custa
+      0,3 unidade** e o resto é o boneco do gerador não ser o do `geometria.ts`.
+      **Em aberto e declarado:** a arte deixa **6,2 u** de testa contra o piso de 24, e o
+      traçador **não sobe mais a peça** — subir foi o que produziu a faixa de testa nua da
+      HSHC93. A escolha entre re-gerar a arte com a franja mais alta e re-ancorar a amarra
+      é do usuário. O menor período de recorte sai em **0,35 px a 56**, abaixo de 1 px:
+      as espículas podem sumir no tamanho do ranking, e aí a resposta é direção de arte
+      (feições maiores), nunca simplificação silenciosa.
 - [ ] **T1.2** 🤖 Uniforme Soldado — prova do `garment` sobre o corpo
 - [x] **T1.3** 👤 **Criticar e refinar** — principalmente o rosto, que é onde mora o carisma
       → quatro rodadas de arte e oito defeitos do traçador corrigidos, cada um com a
@@ -454,18 +504,22 @@ Soldado no backfill, e o ranking já mostra.
 | fase | tarefas | fechadas | depende de você? |
 |---|---|---|---|
 | F0 | 23 | **19** | T0.12 e T0.14 delegadas e decididas |
-| F1 | 5 | **2** | T1.3 (crítica da arte) |
+| F1 | 6 | **2** | T1.3 (crítica da arte), T1.6 (decisão (f) do traço) |
 | F2 | 16 | **0** | não |
 | F3 | 5 | **3** | não |
 | F4 | 11 | **1** | T4.5, T4.7, T4.8 (refino) |
 | F5 | 6 | **0** | T5.5 (medir no celular) |
-| **total** | **66** | **25 (38%)** | **7 pontos** |
+| **total** | **67** | **25 (37%)** | **8 pontos** |
 
 > **A F1 subiu de 4 para 5 tarefas em 2026-08-03**, e o total de 65 para 66: a
 > **T1.5** (moicano e coque guilhotinados pelo `viewBox`) é achado da rodada de
 > fidelidade do cabelo, medido e **sem correção**. Tarefa nova entra na conta como
 > pendente — foi o `verify:estado` que cobrou a atualização desta tabela na mesma
 > rodada em que ela nasceu.
+>
+> **E subiu de 5 para 6 no mesmo dia**, com o total indo a 67: a **T1.6** (o cabelo
+> traçado da arte) tem o pipeline pronto e a primeira folha reprovada, então ela é
+> pendente pelo mesmo critério. O `verify:estado` cobrou de novo, na mesma rodada.
 >
 > **A F4 caiu de 12 para 11 tarefas em 2026-08-03**, e o total de 66 para 65: a
 > **T4.4** (6 relíquias) foi **cortada** pela D-E, não concluída. Tarefa cortada

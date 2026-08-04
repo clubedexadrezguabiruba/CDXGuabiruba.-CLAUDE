@@ -54,6 +54,8 @@ import {
   FOLGA_ROSTO,
   ORCAMENTO_COMPOSTO,
   ancoragemDasExtensoes,
+  coberturaDaCoroa,
+  contencaoDaClara,
   folgaDoRosto,
   type Cabelo,
 } from "../../../src/lib/avatar/estilo/cabelo";
@@ -111,8 +113,9 @@ interface Reprovacao {
  * ficar verde por vacuidade: `Traje.extensoes` ainda guarda `d: string`, então a
  * sobreposição ≥ SANGRIA que o `tipos.ts:65` promete não é medível daqui.
  */
-function amarras(v: Variante, svg: string): string[] {
+function amarras(v: Variante, svg: string): { problemas: string[]; avisos: string[] } {
   const problemas: string[] = [];
+  const avisos: string[] = [];
 
   for (const p of conferirSvg(svg)) problemas.push(`contrato: ${p.detalhe}`);
 
@@ -124,12 +127,30 @@ function amarras(v: Variante, svg: string): string[] {
   if (v.cabelo) {
     const f = folgaDoRosto(v.cabelo);
     const pior = Math.min(f.esq, f.dir);
+    const folga =
+      `folga do rosto ${pior.toFixed(1)} contra o piso de ${FOLGA_ROSTO} ` +
+      `(esq ${f.esq === Infinity ? "—" : f.esq.toFixed(1)}, ` +
+      `dir ${f.dir === Infinity ? "—" : f.dir.toFixed(1)})`;
     if (pior < FOLGA_ROSTO) {
-      problemas.push(
-        `folga do rosto ${pior.toFixed(1)} contra o piso de ${FOLGA_ROSTO} ` +
-          `(esq ${f.esq === Infinity ? "—" : f.esq.toFixed(1)}, ` +
-          `dir ${f.dir === Infinity ? "—" : f.dir.toFixed(1)})`,
-      );
+      /**
+       * NA PEÇA TRAÇADA A FOLGA É AVISO, E NÃO REPROVAÇÃO — e a troca tem causa.
+       *
+       * No paramétrico a franja é desenhada, então uma folga curta é escolha de quem
+       * desenhou e o piso de 24 é a régua certa. Na peça traçada ela é **um fato da
+       * arte**: o gerador não conhece `FOLGA_ROSTO`, e a `curto-espetada` deixa 6,2
+       * unidades de testa.
+       *
+       * A régua paramétrica resolvia subindo a peça inteira — e foi isso que produziu
+       * a faixa de testa nua que a folha HSHC93 mostrou, porque translação
+       * determinística ainda é a régua decidindo o enquadramento da arte. O traçador
+       * não sobe mais nada (ver `tracar()`), então quem decide é o olho: re-gerar a
+       * arte com a franja mais alta, ou re-ancorar a amarra.
+       *
+       * Reprovar aqui bloquearia a folha que existe justamente para essa decisão ser
+       * tomada. Calar seria pior. Então avisa, em voz alta, e deixa passar.
+       */
+      if (v.cabelo.massa) avisos.push(`${folga} — peça TRAÇADA: é a folga DA ARTE, item (f)`);
+      else problemas.push(folga);
     }
 
     for (const [i, fundo] of ancoragemDasExtensoes(v.cabelo).entries()) {
@@ -154,9 +175,29 @@ function amarras(v: Variante, svg: string): string[] {
         }
       }
     }
+
+    // A mesma exigência da linha de cima, perguntada pelo defeito em vez de pela
+    // ponta: num laço fechado "a última ponta" é vizinha da primeira, e o que
+    // continua fazendo sentido é se sobrou couro cabeludo à mostra.
+    if (v.cabelo.massa) {
+      const cobertura = coberturaDaCoroa(v.cabelo);
+      if (cobertura !== null && cobertura < 1) {
+        problemas.push(
+          `a massa cobre ${(100 * cobertura).toFixed(1)}% da coroa — o que falta é ` +
+            `couro cabeludo aparecendo no alto do crânio`,
+        );
+      }
+      const contencao = contencaoDaClara(v.cabelo);
+      if (contencao < 0) {
+        problemas.push(
+          `a região clara vaza ${(-contencao).toFixed(1)} u da massa — a camada clara ` +
+            `não tem contorno, então isso sai como tinta sem borda sobre o fundo`,
+        );
+      }
+    }
   }
 
-  return problemas;
+  return { problemas, avisos };
 }
 
 /** Seis caracteres que só existem dentro do PNG. Ver o docstring do topo. */
@@ -240,7 +281,7 @@ async function main() {
 
   console.log(`${variantes.length} variantes, de ${RASCUNHO}:\n`);
   for (const c of compostos) {
-    const problemas = amarras(c.v, c.svg);
+    const { problemas, avisos } = amarras(c.v, c.svg);
     for (const p of problemas) reprovacoes.push({ variante: c.v.nome, detalhe: p });
     console.log(
       `  ${c.v.nome.padEnd(14)} ${String(c.formas).padStart(2)} formas · ` +
@@ -248,6 +289,7 @@ async function main() {
     );
     console.log(`  ${"".padEnd(14)} eixo: ${c.v.eixo}`);
     for (const p of problemas) console.log(`  ${"".padEnd(14)} ✗ ${p}`);
+    for (const a of avisos) console.log(`  ${"".padEnd(14)} ⚠ ${a}`);
   }
 
   if (compostos.some((c) => c.v.traje)) {

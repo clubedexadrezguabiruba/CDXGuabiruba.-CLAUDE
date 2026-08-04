@@ -46,9 +46,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/estilo-kokeshi` |
-| **Commits à frente de `origin/main`** | 30 |
+| **Commits à frente de `origin/main`** | 34 |
 | **Árvore** | **18 arquivos sujos** |
-| **Último commit** | cac2f55 · 2026-08-03 · feat(avatar): o pedido ao gerador de imagem vira fonte única, com dois provedores |
+| **Último commit** | 73d5b04 · 2026-08-03 · feat(gate): a fidelidade contra a arte deixa de imprimir e passa a reprovar |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -72,14 +72,14 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 | frente | fechadas | detalhe em |
 |---|---|---|
-| Backlog do avatar | **25 de 66** (38%) | `docs/avatar/14-backlog-execucao.md` |
+| Backlog do avatar | **25 de 67** (37%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **0 de 92** (0%) | `docs/avatar/13-checklist-de-verificacao.md` |
 
 Backlog do avatar, fase a fase:
 
 | F0 | F1 | F2 | F3 | F4 | F5 |
 |---|---|---|---|---|---|
-| 19/23 | 2/5 | 0/16 | 3/5 | 1/11 | 0/6 |
+| 19/23 | 2/6 | 0/16 | 3/5 | 1/11 | 0/6 |
 
 _Conta tarefas numeradas (`**T0.1**`), que é a régua do próprio doc 14. Contar todos os checkboxes dá um número maior porque inclui as linhas de gate._
 

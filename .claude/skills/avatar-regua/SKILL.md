@@ -22,7 +22,7 @@ A Anthropic não tem API de geração de imagem, e isso não é lacuna — é o 
 pipeline. O que existe e funciona é medir a arte que o Doug entrega, escrever a forma
 em código, renderizar, **ler o próprio PNG** e criticar.
 
-## 1. As três invariantes
+## 1. As cinco invariantes
 
 Quebrar qualquer uma invalida tudo que vier depois.
 
@@ -37,6 +37,26 @@ Quebrar qualquer uma invalida tudo que vier depois.
 3. **A mesma função mede a referência e o render.** Não escreva uma régua para a
    arte e outra para o SVG: duas réguas concordam por acidente e discordam por
    motivo errado.
+4. **Centerline de peça: a identidade é a LINHA DE CENTRO DO PRETO**, nunca a borda
+   interna do preenchimento. O render desenha o stroke **centrado** no path, então o
+   que o catálogo guarda tem de ser a linha que o desenhista traçou — e a borda do
+   preenchimento fica meio traço para dentro dela. Medir a borda e guardá-la como
+   identidade desloca a peça inteira, de forma sistemática, para um lado só. Na ida e
+   volta paramétrica esse erro apareceu como **6,8 · 6,5 · 6,5 unidades** nos três
+   pontos centrais: erro constante em todo o percurso não é ruído, é uma grandeza
+   diferente. `corridas()` de `medir.ts` devolve o centro; use-o.
+5. **Conferência teal × preto ≈ metade do traço MEDIDO**, e ela roda no mesmo raio.
+   Duas leituras independentes do mesmo lugar — o centro da corrida de preto e o
+   começo do preenchimento depois dela — têm de distar meia espessura. Fora da janela,
+   ou a máscara pega preto que não é da peça (mediana alta) ou pega a borda do
+   preenchimento no lugar do centro (mediana baixa).
+   **Meça a espessura, não a suponha:** o compositor desenha com `TRACO = 12`, e a
+   arte gerada tem a espessura que o gerador quis — 3,7 u de mediana na
+   `curto-espetada`. Comparar com 6 ali reprovaria uma medição perfeita.
+   **E meça no raio, não no plano:** a primeira versão usou transformada de distância
+   sobre a imagem inteira e deu 0,8 u onde o traço tem 3,7, porque o antialiasing
+   entre o preto e o teal produz pixels que ainda passam no teste de matiz — havia
+   "borda do preenchimento" espalhada por dentro do próprio traço.
 
 ## 2. Duas fontes, divisão de trabalho fixa
 
@@ -89,6 +109,8 @@ medida. Sem o 5, o número não sobrevive ao próximo bloco.
 | cabe no orçamento? os cabelos se distinguem? | `npm run avatar:folha-base` | `folha-base.ts` |
 | nasce aberto, pisca, respira, obedece reduced-motion? | `npm run avatar:animacao` | `medir-animacao.ts` |
 | minhas 3 candidatas divergem de verdade? | `npm run avatar:variantes` | `variantes.ts` |
+| esta arte aprovada vira peça de catálogo | `npm run avatar:tracar -- <png>` | `tracar-cabelo.ts` |
+| o traço se parece com a arte? quanto disso é piso? | `npm run avatar:fidelidade` | `fidelidade.ts` |
 
 Quando a pergunta não estiver aqui, ou quando duas técnicas parecerem responder à
 mesma coisa, carregue [references/tecnicas.md](references/tecnicas.md).

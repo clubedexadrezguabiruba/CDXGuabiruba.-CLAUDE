@@ -64,13 +64,41 @@ engrossar a trança, não baixar o piso.
 
 ## Cabelo
 
-| amarra | número | onde |
-|---|---|---|
-| folga sobre **cada** sobrancelha | **≥ 24 unidades** | `FOLGA_ROSTO`, `folgaDoRosto()` |
-| ancoragem de cada extensão dentro da cabeça | **≥ 10** (`SANGRIA`) | `ancoragemDasExtensoes()` |
-| pontas da franja fora da silhueta | `t` fora de [0, 1] | `avatar:variantes` |
-| degrau de sombra sob a franja | 22 unidades (`DEGRAU`) | `pathCabeloClaro()` |
-| desvio do traço contra a arte de origem | **≤ 6 u** (meio traço) | `.scratch/estilo/franja.ts` |
+| amarra | número | onde | quem mede |
+|---|---|---|---|
+| folga sobre **cada** sobrancelha | **≥ 24 unidades** | `FOLGA_ROSTO`, `folgaDoRosto()` | `avatar:folha-base`, `avatar:variantes` |
+| ancoragem de cada extensão dentro da cabeça | **≥ 10** (`SANGRIA`) | `ancoragemDasExtensoes()` | `avatar:variantes` |
+| pontas da franja fora da silhueta (peça **paramétrica**) | `t` fora de [0, 1] | `bordasEm()` | `avatar:variantes`, `cabelo.test.ts` |
+| cobertura da coroa (peça **traçada**) | **= 100%** | `coberturaDaCoroa()` | `avatar:variantes`, `cabelo.test.ts` |
+| contenção da região clara (peça **traçada**) | **≥ 0** (com sinal) | `contencaoDaClara()` | `avatar:variantes`, `cabelo.test.ts` |
+| auto-interseção do laço (peça **traçada**) | **= 0** | `autoIntersecoes()` | `avatar:tracar --ida-e-volta-massa` |
+| degrau de sombra sob a franja | 22 unidades (`DEGRAU`) | `pathCabeloClaro()` | `sombraSobreAFranja()` |
+| desvio da decimação contra a varredura densa | **≤ 6 u** (meio traço) | `desvioDaCorda()` | `avatar:tracar` |
+| desvio do traço contra a arte de origem | **piso da arte + 6 u** | `limiar()` | `avatar:fidelidade` |
+| massa que a arte tem e o traço não | **≤ 2% das colunas** | gate 2 | `avatar:fidelidade` |
+
+**As duas últimas linhas eram uma só, e separá-las custou uma rodada.** "Desvio do
+traço contra a arte" media duas coisas somadas: a decimação, que responde a mais
+pontos, e o **piso** — o boneco do gerador não ser o do `geometria.ts` mais o clip do
+crânio comendo massa que a arte tem. Rodada na `curto-espetada` com a decimação
+DESLIGADA (1 193 pontos), a fidelidade dá 27,6 u contra os 27,3 da peça de 64: **a
+decimação custa 0,3 unidade**. Um limiar de meio traço ponta a ponta seria inatingível
+por um motivo que não tem nada a ver com o traço, e afrouxá-lo até passar esconderia
+justamente o que ele deveria pegar. Por isso o piso é medido em toda rodada e o gate é
+relativo a ele.
+
+**A folga do rosto é re-ancorada por família.** Paramétrica: piso 24, e reprova — a
+franja é desenhada, então folga curta é escolha de quem desenhou. Traçada: o número é
+**da arte**, o piso vira aviso, e a decisão é do olho (item (f)). O traçador **não sobe
+mais a peça**: `liberarORosto()` subia a franja inteira até o rosto respirar, e o que
+apareceu na folha HSHC93 foi uma faixa de testa nua que não existe no PNG. Amarra que
+briga com a arte se re-ancora na arte.
+
+**A amarra 6 (`y ≥ 8`, o teto do `viewBox`) é cumprida por compressão, não por corte.**
+O traçador calcula um `k` só para a peça inteira — massa e lóbulos —, aplica só em `y`,
+só acima de `CAIXA_CABECA.y0`, e **imprime** `k`, o pico original e o comprimido.
+Cortar achataria os picos contra uma reta, que é o defeito que o `viewBox` já produz
+sozinho (folha 93ETYY: barra de 314 a 341 px na primeira linha).
 
 **A amarra de desvio é a que faltava, e a falta dela é o que deixou passar um cabelo
 que o Doug reprovou.** Toda peça traçada de PNG tem um número dizendo quanto ela se

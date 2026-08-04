@@ -52,6 +52,19 @@ folga — não pede variantes. Faça o ajuste, rode `npm run avatar:folha-base` 
 Três variantes de um retoque é desperdício, e desperdício repetido ensina a pular o
 processo quando ele importa.
 
+**E há um fork antes de tudo: já existe arte aprovada para esta peça?**
+
+| a peça | o que fazer |
+|---|---|
+| não existe ainda — só o pedido | **desenhar**: as seis fases abaixo, três variantes |
+| existe como **arte gerada aprovada** (PNG do `avatar:gerar`) | **traçar**: `npm run avatar:tracar -- <png>`, e não desenhar variante nenhuma |
+
+Desenhar variante de uma arte que já foi aprovada é inventar três interpretações de
+uma decisão que já foi tomada — e a que o Doug escolher vai ser aquela que por acaso
+se parece mais com o PNG que ele já tinha aprovado. O fluxo do traçado está em
+[references/traco-fiel.md](references/traco-fiel.md), com os números da rodada que o
+produziu: IoU 68,77% contra 36,62% do desenho paramétrico, na mesma régua.
+
 ## 3. As seis fases
 
 Cada uma tem critério objetivo de conclusão. Não avance sem ele.
