@@ -20,7 +20,9 @@
     "scripts/design/**/*.ts",
     "scripts/verify/design/**/*.ts",
     "scripts/estado.ts",
-    "scripts/verify/estado/**/*.ts"
+    "scripts/verify/estado/**/*.ts",
+    "scripts/chess/**/*.ts",
+    "scripts/verify/chess/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

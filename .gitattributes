@@ -1,0 +1,11 @@
+# O `core.autocrlf` do Windows reescreve fim de linha na árvore de trabalho, e
+# há dois lugares neste repositório onde o BYTE importa: os TSVs vendorizados do
+# livro de aberturas, cujo SHA-256 está fixado no manifesto, e o JSON gerado a
+# partir deles, que o gate compara caractere a caractere com uma regeração.
+#
+# Sem estas linhas, o mesmo commit teria hashes diferentes no Windows e no CI —
+# e o gate reprovaria por sistema operacional, não por xadrez. Os geradores
+# normalizam a leitura de qualquer jeito; isto é a segunda trava.
+scripts/chess/openings/*.tsv -text
+scripts/chess/livro-manifesto.json -text
+public/chess/*.json -text

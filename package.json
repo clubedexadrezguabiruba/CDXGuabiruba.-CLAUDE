@@ -11,7 +11,7 @@
     "avatar:manifest": "tsx scripts/avatar/gen-manifest.ts",
     "avatar:base": "tsx scripts/avatar/gerar-base-recolorivel.ts",
     "avatar:garment": "tsx scripts/avatar/gerar-uniforme.ts",
-    "prebuild": "tsx scripts/avatar/gen-manifest.ts --check",
+    "prebuild": "tsx scripts/avatar/gen-manifest.ts --check && tsx scripts/chess/gerar-livro-aberturas.ts --check",
     "estado": "tsx scripts/estado.ts",
     "build": "next build",
     "start": "next start",
@@ -42,7 +42,7 @@
     "verify:curriculo": "tsx scripts/verify/curriculo/verify-curriculo-somas.ts",
     "verify:estado": "tsx scripts/verify/estado/verify-estado.ts",
     "verify:phase8": "npm run verify:avatar-assets && npm run verify:avatar-db && npm run verify:chest-pool && npm run verify:paleta-patentes",
-    "verify:all": "npm run verify:phase2 && npm run verify:seeds && npm run verify:revanche && npm run verify:rush && npm run verify:phase5 && npm run verify:phase6 && npm run verify:phase8 && npm run verify:turmas && npm run verify:privileges && npm run verify:xp-curve && npm run verify:no-dup-rpc && npm run verify:puzzle-authority && npm run verify:curriculo && npm run verify:pose && npm run verify:design-tokens && npm run verify:estado",
+    "verify:all": "npm run verify:phase2 && npm run verify:seeds && npm run verify:revanche && npm run verify:rush && npm run verify:phase5 && npm run verify:phase6 && npm run verify:phase8 && npm run verify:turmas && npm run verify:privileges && npm run verify:xp-curve && npm run verify:no-dup-rpc && npm run verify:puzzle-authority && npm run verify:curriculo && npm run verify:pose && npm run verify:design-tokens && npm run verify:estado && npm run verify:aberturas",
     "test": "vitest run",
     "test:watch": "vitest",
     "avatar:proveniencia": "tsx scripts/avatar/proveniencia.ts",
@@ -58,7 +58,9 @@
     "avatar:variantes": "tsx scripts/avatar/estilo/variantes.ts",
     "avatar:gerar": "tsx scripts/avatar/estilo/gerar.ts",
     "avatar:tracar": "tsx scripts/avatar/estilo/tracar-cabelo.ts",
-    "avatar:fidelidade": "tsx scripts/avatar/estilo/fidelidade.ts"
+    "avatar:fidelidade": "tsx scripts/avatar/estilo/fidelidade.ts",
+    "aberturas:gerar": "tsx scripts/chess/gerar-livro-aberturas.ts",
+    "verify:aberturas": "tsx scripts/verify/chess/verify-livro-aberturas.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.70",
