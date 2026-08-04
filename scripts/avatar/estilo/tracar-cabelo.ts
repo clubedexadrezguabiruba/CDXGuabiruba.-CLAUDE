@@ -1888,6 +1888,18 @@ interface Tracado {
    * peça bem traçada de arte alta aparecer reprovando por um número que não é dela.
    */
   desvio: { original: number; tratada: number; onde: { x: number; y: number } }[];
+  /**
+   * AS CURVAS DENSAS, já tratadas e em `{t, y}` — a peça que a decimação ainda não
+   * tocou.
+   *
+   * Ela não é entregável: mil e duzentos pontos de controle não cabem em orçamento
+   * nenhum. Ela existe para `avatar:fidelidade --piso` poder separar duas causas que
+   * o número ponta a ponta soma: quanto do desvio é a **decimação** e quanto é o
+   * **piso** — o boneco do gerador não ser o do `geometria.ts` mais o clip do crânio
+   * comer massa que a arte tem. Sem a separação, um limiar reprovando não diz se a
+   * resposta é mais pontos ou outra arte.
+   */
+  denso: { massa: PontoFranja[]; clara: PontoFranja[] };
   /** Quantos pontos da clara precisaram ser projetados para dentro da massa. */
   projetados: number;
   /** Quantos pontos da massa sangraram para fora da silhueta. */
@@ -2049,6 +2061,7 @@ function tracar(b: Bitmap, m: Mapa, aImagem: Ancoras): Tracado {
     teto: { k, antes, depois: antes >= CAIXA_CABECA.y0 ? antes : CAIXA_CABECA.y0 - (CAIXA_CABECA.y0 - antes) * k },
     n: { massa: nMassa, clara: nClara, lobos: nLobos },
     desvio,
+    denso: { massa: massaC.map(paraTY), clara: claraC.map(paraTY) },
     projetados,
     sangrados: sangria.quantos,
     folga: folgaDoRosto(peca),
