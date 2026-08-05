@@ -29,6 +29,24 @@
  * `fidelidade.ts` compara as duas contra a mesma arte.
  *
  * ---------------------------------------------------------------------------
+ * A ROTA DAQUI É DIAGNÓSTICA — ELA NÃO PRODUZ MAIS PEÇA DE CATÁLOGO
+ * ---------------------------------------------------------------------------
+ *
+ * Traçar a partir do pixel **adivinha** o que pertence à peça: filtra o matiz, acha
+ * as componentes conexas e fica com a maior (`gruposTeal[0]`, em `medirMassa`). Uma
+ * cortina solta do penteado é componente separada — a arte desenha um vão entre ela
+ * e o volume — e saía da peça em silêncio, com todos os gates verdes.
+ *
+ * Quem produz peça de catálogo agora é `fonte-peca.ts` + `importar-peca.ts`, onde a
+ * peça é **declarada** path a path num SVG versionado e o que não foi declarado
+ * **reprova**. Este arquivo continua sendo a régua: as funções de conversão de
+ * máscara em `{t,y}` são exatamente as mesmas, e o importador as consome por
+ * `export`, sem cópia. O que morreu foi só a parte que decide **o que é a peça**.
+ *
+ * E enquanto a rota antiga rodar, ela avisa: `ilhas` reprova em `idaEVoltaMassa`,
+ * em vez de virar um ⚠ que ninguém lê.
+ *
+ * ---------------------------------------------------------------------------
  * POR QUE MEDIR E NÃO VETORIZAR
  * ---------------------------------------------------------------------------
  *
@@ -429,6 +447,70 @@ export function mapa(daImagem: Ancoras, doViewBox: Ancoras): Mapa {
     tu0: doViewBox.yPescoco,
   };
 }
+
+/**
+ * REGISTRO PELA CABEÇA — para peças que são da CABEÇA, e não do corpo.
+ *
+ * ---------------------------------------------------------------------------
+ * O ERRO QUE ESTA FUNÇÃO EXISTE PARA NÃO COMETER, MEDIDO
+ * ---------------------------------------------------------------------------
+ *
+ * `mapa()` acima tira a escala do TRONCO — `(yBase − yPescoco)` nas duas pontas —
+ * e aplica em `kx` e `ky`. Para enquadrar a figura inteira isso é o certo: pescoço
+ * e base são os dois marcos que as duas figuras têm em comum.
+ *
+ * Um cabelo não é da figura, é da CABEÇA. E o boneco do gerador não tem a mesma
+ * proporção cabeça/tronco do `geometria.ts` — `fidelidade.ts` já avisava disso e
+ * tratava a diferença como piso *"que o traço NÃO controla"*. Medido, ela não é
+ * piso: é a causa dominante.
+ *
+ * Com o registro pelo tronco, a cabeça da arte `curto-espetada` cai no `viewBox`
+ * do produto com **465,8 u de largura contra 364,0 do crânio — 28% grande** — e
+ * 84 u acima da coroa. O cabelo, que na arte está **100,0% dentro da cabeça dela**
+ * (transbordo 0 px acima, 0 à esquerda, 0 à direita), aparece como se metade dele
+ * transbordasse:
+ *
+ * | onde cai a área do teal | pelo tronco | pela cabeça |
+ * |---|---|---|
+ * | dentro do crânio | **46,5%** | **99,5%** |
+ * | acima da coroa | 20,8% | 0,0% |
+ * | fora pelos lados | 32,7% | 0,5% |
+ *
+ * É esse deslocamento que aparecia em `avatar:fidelidade --onde` como *"o RESTO,
+ * SEM CAUSA APONTADA — 15,7 u = 77%"*, com as 10 piores colunas todas em x 74–80.
+ * Não era a fonte, não era a decimação e não era o clip.
+ *
+ * **A anisotropia é o que prova ser registro, e não forma:** os dois fatores de
+ * escala saem em 0,6651 e 0,6688 — **0,56% de diferença**. A cabeça da arte e o
+ * crânio do produto têm a mesma proporção; só o tamanho e a posição estavam
+ * errados. Fossem formas diferentes, os dois fatores discordariam.
+ *
+ * `mapa()` fica **intocada**: ela é o registro certo para o que é do corpo, e é o
+ * que `verificar-pose`, `folha-base` e a fidelidade de hoje medem. Esta é aditiva.
+ *
+ * Os dois `k` saem separados de propósito. Forçá-los iguais escolheria um dos dois
+ * eixos em silêncio; separados, a discordância entre eles **é** o diagnóstico —
+ * quem quiser gatear a isotropia tem o número na mão.
+ */
+export function mapaPelaCaixa(
+  daArte: { x0: number; y0: number; x1: number; y1: number },
+  doProduto: { x0: number; y0: number; x1: number; y1: number },
+): Mapa {
+  const la = daArte.x1 - daArte.x0;
+  const aa = daArte.y1 - daArte.y0;
+  if (la <= 0 || aa <= 0) throw new Error(`mapaPelaCaixa: caixa da arte degenerada (${la}×${aa})`);
+  return {
+    kx: (doProduto.x1 - doProduto.x0) / la,
+    ky: (doProduto.y1 - doProduto.y0) / aa,
+    ex0: daArte.x0,
+    eu0: doProduto.x0,
+    ty0: daArte.y0,
+    tu0: doProduto.y0,
+  };
+}
+
+/** Quanto os dois eixos de um registro discordam. Acima de poucos por cento, é forma. */
+export const anisotropia = (m: Mapa) => Math.abs(m.kx / m.ky - 1);
 
 export const paraX = (m: Mapa, px: number) => (px - m.ex0) * m.kx + m.eu0;
 export const paraY = (m: Mapa, py: number) => (py - m.ty0) * m.ky + m.tu0;
@@ -1328,7 +1410,7 @@ const CONFERENCIA = [4, 8] as const;
 const PASSO_NORMAL = 0.5;
 
 /** Componentes conexas de 4 vizinhos. A mesma varredura que `lobos()` faz. */
-function conexas(mask: Uint8Array, w: number, h: number): number[][] {
+export function conexas(mask: Uint8Array, w: number, h: number): number[][] {
   const marca = new Int32Array(mask.length).fill(-1);
   const grupos: number[][] = [];
   for (let i = 0; i < mask.length; i++) {
@@ -1374,7 +1456,7 @@ function conexas(mask: Uint8Array, w: number, h: number): number[][] {
  * exata, e as duas perguntas comparam com limiares de 20 e 6 unidades. É folga de
  * sobra, e o exato custaria uma varredura por marco.
  */
-function distanciaDe(marco: Uint8Array, w: number, h: number): Float32Array {
+export function distanciaDe(marco: Uint8Array, w: number, h: number): Float32Array {
   const INF = 1e9;
   const d = new Float32Array(marco.length).fill(INF);
   for (let i = 0; i < marco.length; i++) if (marco[i]) d[i] = 0;
@@ -1423,7 +1505,7 @@ function distanciaDe(marco: Uint8Array, w: number, h: number): Float32Array {
  * O início sai da varredura em ordem de linha, então o vizinho da ESQUERDA dele
  * está fora da máscara por construção: é o retrocesso inicial, de graça.
  */
-function bordaOrdenada(mask: Uint8Array, w: number, h: number): { x: number; y: number }[] {
+export function bordaOrdenada(mask: Uint8Array, w: number, h: number): { x: number; y: number }[] {
   let inicio = -1;
   for (let i = 0; i < mask.length; i++) {
     if (mask[i]) {
@@ -1477,7 +1559,7 @@ function bordaOrdenada(mask: Uint8Array, w: number, h: number): { x: number; y: 
 }
 
 /** Média móvel circular sobre uma poligonal fechada, ANTES de decimar. */
-function suavizarLaco(pts: { x: number; y: number }[], janela: number): { x: number; y: number }[] {
+export function suavizarLaco(pts: { x: number; y: number }[], janela: number): { x: number; y: number }[] {
   const n = pts.length;
   if (n === 0 || janela < 1) return pts;
   return pts.map((_, i) => {
@@ -1493,7 +1575,7 @@ function suavizarLaco(pts: { x: number; y: number }[], janela: number): { x: num
   });
 }
 
-interface Conferencia {
+export interface Conferencia {
   p10: number;
   mediana: number;
   p90: number;
@@ -1514,9 +1596,22 @@ interface Conferencia {
   espessura: { p10: number; mediana: number; p90: number };
 }
 
-interface Massa {
+export interface Massa {
   /** O laço denso, em unidades do `viewBox`, já na linha de centro do preto. */
   denso: { x: number; y: number }[];
+  /**
+   * PONTO A PONTO, NA ORDEM DE `denso`: a normal achou preto da arte ali?
+   *
+   * É o mesmo booleano que `conferencia.semContorno` conta — e contar joga fora a
+   * única coisa que decide onde a peça leva traço. Onde ele é `false`, quem desenha
+   * a borda naquele trecho é o contorno do BONECO (que é `descarte`), não a peça: se
+   * o laço inteiro for traçado, sai uma barra preta atravessando a coroa que a arte
+   * não tem. É daqui que `Cabelo.linhas` é derivada, em `importar-peca.ts`.
+   *
+   * `suavizarLaco` não mexe em ordem nem em quantidade, então o índice continua
+   * casando com `denso` depois da suavização.
+   */
+  comContorno: boolean[];
   conferencia: Conferencia;
   /** Buracos internos descartados, em % da área da massa. Impressos, nunca calados. */
   furos: number[];
@@ -1542,10 +1637,25 @@ interface Massa {
  *     espessura do traço da arte gerada varia.
  *
  * Onde a normal não encontra preto nenhum — a massa encostando na borda do quadro,
- * ou uma emenda em que o gerador não fechou o contorno — o ponto cai meio traço para
+ * ou uma emenda em que o gerador não fechou o contorno — o ponto cai `recuoPx` para
  * dentro e o caso entra em `conferencia.semContorno`, impresso.
+ *
+ * ---------------------------------------------------------------------------
+ * O RECUO PADRÃO É METADE DO TRAÇO DO PRODUTO, E ISSO SÓ VALE QUANDO A ARTE É DELE
+ * ---------------------------------------------------------------------------
+ *
+ * Meio `TRACO` é a resposta certa para a ida e volta — ali a arte é um render do
+ * próprio compositor, e o contorno tem 12 unidades por construção. Numa arte GERADA a
+ * espessura é a que o gerador quis: medida na `curto-espetada`, **3,0 unidades**.
+ * Recuar 6 onde o traço tem 3 encolhe a peça 4,5 unidades em cada ponto sem contorno —
+ * e nesta arte, importada por papel declarado, são **876 dos 3 028** pontos do laço,
+ * porque quem desenha a borda do alto da cabeça é o contorno do BONECO, que é
+ * `descarte` e não faz parte da peça.
+ *
+ * O parâmetro existe para o importador poder medir a espessura numa primeira passada e
+ * devolvê-la como recuo na segunda. Ausente, o comportamento é byte a byte o de antes.
  */
-function medirMassa(seg: Segmentacao, m: Mapa, yLimite: number): Massa {
+export function medirMassa(seg: Segmentacao, m: Mapa, yLimite: number, recuoPx?: number): Massa {
   const b = seg.bmp;
   const ate = Math.min(b.h, yLimite);
   const n = b.w * ate;
@@ -1579,7 +1689,13 @@ function medirMassa(seg: Segmentacao, m: Mapa, yLimite: number): Massa {
   const gruposTeal = conexas(teal, b.w, ate);
   if (!gruposTeal.length) {
     const vazio = { p10: 0, mediana: 0, p90: 0 };
-    return { denso: [], conferencia: { ...vazio, semContorno: 0, espessura: vazio }, furos: [], ilhas: [] };
+    return {
+      denso: [],
+      comContorno: [],
+      conferencia: { ...vazio, semContorno: 0, espessura: vazio },
+      furos: [],
+      ilhas: [],
+    };
   }
   const cabelo = new Uint8Array(n);
   for (const i of gruposTeal[0]) cabelo[i] = 1;
@@ -1624,6 +1740,7 @@ function medirMassa(seg: Segmentacao, m: Mapa, yLimite: number): Massa {
   const denso: { x: number; y: number }[] = [];
   const cruzamento: number[] = [];
   const espessuras: number[] = [];
+  const comContorno: boolean[] = [];
   let semContorno = 0;
 
   for (let i = 0; i < borda.length; i += PASSO) {
@@ -1659,9 +1776,10 @@ function medirMassa(seg: Segmentacao, m: Mapa, yLimite: number): Massa {
       return i >= 0 && escuro[i] === 1;
     })[0];
 
-    const off = corrida ? corrida.centro * PASSO_NORMAL : tracoPx / 2;
+    const off = corrida ? corrida.centro * PASSO_NORMAL : (recuoPx ?? tracoPx / 2);
     if (corrida) espessuras.push(corrida.espessura * PASSO_NORMAL * m.kx);
     else semContorno++;
+    comContorno.push(Boolean(corrida));
     denso.push({ x: paraX(m, p.x + nx * off), y: paraY(m, p.y + ny * off) });
 
     /**
@@ -1697,6 +1815,7 @@ function medirMassa(seg: Segmentacao, m: Mapa, yLimite: number): Massa {
 
   return {
     denso: suavizarLaco(denso, Math.max(1, Math.round(denso.length * 0.01))),
+    comContorno,
     conferencia: { ...cruz, semContorno, espessura: quantis(espessuras) },
     furos,
     ilhas,
@@ -1843,7 +1962,7 @@ export function sangrarNaSilhueta(pts: { x: number; y: number }[]): {
   return { pts: saida, quantos, travados };
 }
 
-interface Clara {
+export interface Clara {
   denso: { x: number; y: number }[];
   /** Área da região clara em cada limiar, em % do teal. */
   areas: number[];
@@ -1883,7 +2002,7 @@ interface Clara {
  * cabelo desenhada sem contorno, que é justamente o que torna o vazamento dela
  * invisível para todas as outras réguas.
  */
-function medirClara(seg: Segmentacao, m: Mapa, yLimite: number): Clara {
+export function medirClara(seg: Segmentacao, m: Mapa, yLimite: number): Clara {
   const b = seg.bmp;
   const ate = Math.min(b.h, yLimite);
   const n = b.w * ate;
@@ -2068,7 +2187,7 @@ export function montarPeca(bruta: Medida) {
 /* A montagem da peça TRAÇADA                                          */
 /* ------------------------------------------------------------------ */
 
-interface EscolhaDeN {
+export interface EscolhaDeN {
   n: number;
   /** O menor desvio que a curva alcança com QUALQUER N da escala. */
   piso: number;
@@ -2094,7 +2213,7 @@ interface EscolhaDeN {
  * e o piso da própria curva quando não alcança. O N escolhido é o **primeiro** que
  * chega lá, e a varredura inteira é impressa para a escolha ser conferível.
  */
-function escolherN(denso: { x: number; y: number }[], fechado: boolean): EscolhaDeN {
+export function escolherN(denso: { x: number; y: number }[], fechado: boolean): EscolhaDeN {
   const ESCALA = [8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 64];
   const varredura = ESCALA.filter((n) => n < denso.length).map((n) => {
     const r = decimarPorCorda(denso, n, { fechado });
@@ -2124,12 +2243,12 @@ function escolherN(denso: { x: number; y: number }[], fechado: boolean): Escolha
  * unidades de margem de cada lado contra 39 em cima: encolher os lados junto seria
  * mexer no que está funcionando.
  */
-function comprimirNoTeto(pico: number): number {
+export function comprimirNoTeto(pico: number): number {
   const y0 = CAIXA_CABECA.y0;
   return pico < TETO_Y ? (y0 - TETO_Y) / (y0 - pico) : 1;
 }
 
-const aplicarK =
+export const aplicarK =
   (k: number) =>
   (p: { x: number; y: number }) => ({
     x: p.x,
@@ -2137,7 +2256,7 @@ const aplicarK =
   });
 
 /** `x` absoluto vira fração da largura da cabeça NAQUELA altura. */
-const paraTY = (p: { x: number; y: number }): PontoFranja => {
+export const paraTY = (p: { x: number; y: number }): PontoFranja => {
   const { esq, dir } = bordasEm(p.y);
   return { t: (p.x - esq) / (dir - esq), y: p.y };
 };
@@ -2181,8 +2300,230 @@ export function autoIntersecoes(pts: readonly { x: number; y: number }[]): { i: 
   return out;
 }
 
+/**
+ * Quantas amostras por corda a contenção olha. **É o mesmo 12 de
+ * `contencaoDaClara`**, e a igualdade é o ponto: corrigir com uma régua mais grossa
+ * que a do gate deixa exatamente o resíduo que o gate depois reprova.
+ */
+const AMOSTRAS_DA_CORDA = 12;
+
+/**
+ * O TETO DE PASSADAS DA CORREÇÃO POR CORDA — um freio, e não um número afinado.
+ *
+ * Transladar uma corda muda qual das suas amostras é a pior, e muda a corda vizinha
+ * junto (os dois compartilham vértice). Então a correção é um ponto fixo, e ela
+ * converge: medido na `curto-espetada`, a contenção sobe
+ * **−3,00 → −2,03 → −0,06 → +0,14**, e de 5 passadas em diante o número não se mexe
+ * mais (verificado até 12).
+ *
+ * Oito é folga sobre a convergência medida, não um valor escolhido para deixar esta
+ * arte verde — e a diferença entre as duas coisas é o `convergiu` devolvido abaixo:
+ * uma arte que ESTOURE o teto não sai daqui aprovada em silêncio, sai reprovada
+ * dizendo que estourou. Teto sem esse aviso é exatamente o gate que se aprende a
+ * ignorar.
+ */
+const PASSADAS_DA_CORDA = 8;
+
+/** Onde um ponto cai em relação ao laço, e para onde ele iria se estivesse fora. */
+function contraOLaco(p: { x: number; y: number }, laco: { x: number; y: number }[]) {
+  let melhor = { x: p.x, y: p.y };
+  let dist = Infinity;
+  let dentro = false;
+  for (let i = 0, j = laco.length - 1; i < laco.length; j = i++) {
+    const a = laco[i];
+    const c = laco[j];
+    if (a.y > p.y !== c.y > p.y) {
+      const x = a.x + ((p.y - a.y) * (c.x - a.x)) / (c.y - a.y);
+      if (p.x < x) dentro = !dentro;
+    }
+    const dx = c.x - a.x;
+    const dy = c.y - a.y;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)));
+    const q = { x: a.x + t * dx, y: a.y + t * dy };
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    if (d < dist) {
+      dist = d;
+      melhor = q;
+    }
+  }
+  const comp = Math.hypot(melhor.x - p.x, melhor.y - p.y) || 1;
+  return {
+    dentro,
+    dentroPor: dentro ? dist : -dist,
+    /** O mesmo ponto trazido para `PROJECAO` unidades dentro da borda mais próxima. */
+    trazido: {
+      x: melhor.x + ((melhor.x - p.x) / comp) * PROJECAO,
+      y: melhor.y + ((melhor.y - p.y) / comp) * PROJECAO,
+    },
+  };
+}
+
+/**
+ * A CONTENÇÃO DA CLARA, CORRIGIDA — e o ajuste é impresso.
+ *
+ * A clara nasce de uma posterização e a massa de uma linha de centro: as duas saíram
+ * da mesma arte por caminhos diferentes, então um ponto da clara pode cair meio pixel
+ * fora da massa por ruído de amostragem, sem que nada esteja errado. Projetar
+ * `PROJECAO` unidades para dentro resolve esse caso.
+ *
+ * O que ele **não** resolve, e por isso a contagem sai impressa: um ponto que precise
+ * andar dezenas de unidades não é ruído — é a região clara medida no lugar errado, e
+ * corrigir isso calado entregaria uma peça plausível e errada. `contencaoDaClara` diz
+ * quanto, e não só se.
+ *
+ * ---------------------------------------------------------------------------
+ * DUAS PASSADAS, PORQUE O GATE MEDE A CORDA E A CORREÇÃO MEDIA O VÉRTICE
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira versão projetava **vértice**, e `contencaoDaClara` mede o **segmento**
+ * entre eles. A diferença não é teórica e ficou em −4,58 u na `curto-espetada`:
+ * medido, os **64 vértices estavam todos dentro** (o pior com folga de 0,46 u) e uma
+ * única corda das 64 — 29 unidades de comprimento — passava por fora no meio, a 4,52
+ * unidades da borda, onde a massa é côncava. Uma corda corta o canto que a borda faz.
+ *
+ * Projetar o vértice mais para dentro não conserta isso: o vazamento não está no
+ * vértice, e encolher a clara inteira para pagar uma corda seria estragar 63
+ * segmentos bons por causa de um.
+ *
+ * **Partir a corda também não, e a tentativa está registrada porque ela quase
+ * convence.** Inserir a amostra que vazou como vértice novo levou o resíduo de −4,58
+ * a −2,29 e produziu **1 auto-interseção na clara** — o ponto inserido nasce a
+ * `PROJECAO` da borda num canto côncavo, e ali dois vértices consecutivos passam a
+ * apontar para lados opostos. Trocar um defeito medido por outro defeito medido não
+ * é conserto, e a auto-interseção é o pior dos dois: o `nonzero` do SVG vaza o trecho
+ * entre o cruzamento e a ponta, e sai um entalhe.
+ *
+ * O que conserta é **transladar a corda**. Se a pior amostra está `d` unidades fora,
+ * os DOIS extremos daquela corda andam `d + PROJECAO` na direção que leva a amostra
+ * de volta para dentro. A corda inteira se move junto e entra; a clara não ganha
+ * ponto, não ganha bico, e o que muda é a posição de dois vértices por corda que
+ * vazou. Na `curto-espetada` é **uma** corda de 64.
+ *
+ * ---------------------------------------------------------------------------
+ * E A TRANSLAÇÃO DOBRA IGUAL — a régua que recusou partir a corda vale para ela
+ * ---------------------------------------------------------------------------
+ *
+ * Partir a corda foi recusado acima por um motivo nomeado: *"produziu 1 auto-interseção
+ * na clara"*. A alternativa que ficou no lugar nunca foi medida contra essa mesma
+ * régua, e ela falha nela.
+ *
+ * Um vértice pertence a DUAS cordas, e a passada guarda só o maior dos dois
+ * deslocamentos (`desloc[k]`, abaixo). Quando cordas vizinhas violam vãos diferentes,
+ * um vértice anda para um lado e o seguinte para o outro — e os dois segmentos trocam
+ * de ordem. É a topologia do **pente**, que é exatamente o que cabelo espetado é:
+ * torres separadas por vãos fundos. `__tests__/conter-a-clara.test.ts` varreu 576
+ * combinações de pente e faixa, e **101 dobram**.
+ *
+ * Medido na `curto-espetada` pelo M4 — o mapeamento que sobe a peça acima da coroa: o
+ * laço da clara sai da decimação com **0** auto-interseções em todos os N da escala (8
+ * a 64) e sai daqui com **11** em N = 40 e N = 48. O `nonzero` do SVG vazava aqueles
+ * trechos, e como ali a clara está por fora da massa, o que aparecia embaixo era
+ * **pele** — um retângulo na têmpora e uma agulha na coroa.
+ *
+ * A guarda é a regra mínima que fecha isso: **nenhuma passada que aumente o número de
+ * auto-interseções é aplicada**. Ao encontrar uma, a correção devolve o último estado
+ * simples e `convergiu: false` — que já reprova em `importarPeca`. Uma clara que só
+ * entra na massa dobrando não é ruído de amostragem; é a clara e a massa discordando
+ * de forma, e o resíduo continua medido por `contencaoDaClara`. O que não se pode é
+ * entregar a dobra calada, porque nenhum outro gate a enxerga.
+ *
+ * Extraída de dentro de `tracar()` no B3 para o importador declarado consumi-la sem
+ * cópia; a passada por corda entrou depois do B4. Quem prova que a peça da rota
+ * antiga não mudou é `--ida-e-volta-massa`: lá nenhuma corda vaza, então a segunda
+ * passada não move nada e os seis números seguem idênticos.
+ */
+export function conterAClara(
+  claraFina: { x: number; y: number }[],
+  massaFina: { x: number; y: number }[],
+): {
+  pts: { x: number; y: number }[];
+  projetados: number;
+  cordas: number;
+  /** Chegou ao ponto fixo dentro do teto? `false` é reprovação em `importarPeca`. */
+  convergiu: boolean;
+} {
+  if (!massaFina.length) {
+    return { pts: claraFina, projetados: 0, cordas: 0, convergiu: true };
+  }
+
+  /**
+   * O PISO DE TOPOLOGIA — quantos cruzamentos o laço já trazia.
+   *
+   * Não é zero por decreto: se a clara chegar aqui já cruzada, o defeito é da
+   * decimação e não desta função, e exigir zero faria a contenção desistir de um
+   * trabalho que ela sabe fazer. O contrato é **não piorar**.
+   */
+  const cruzamentos = (p: readonly { x: number; y: number }[]) => autoIntersecoes(p).length;
+  const piso = cruzamentos(claraFina);
+
+  let projetados = 0;
+  const projetada = claraFina.map((p) => {
+    const r = contraOLaco(p, massaFina);
+    if (r.dentro) return p;
+    projetados++;
+    return r.trazido;
+  });
+  // A projeção de vértice também pode dobrar — ela é a correção antiga, e o docstring
+  // dela nunca teve esta régua. Se dobrar, a clara segue como chegou.
+  const dobrouNaProjecao = cruzamentos(projetada) > piso;
+  const pts = dobrouNaProjecao ? claraFina.map((p) => ({ ...p })) : projetada;
+  if (dobrouNaProjecao) projetados = 0;
+
+  const cordasMovidas = new Set<number>();
+  let convergiu = false;
+  let dobrou = dobrouNaProjecao;
+  for (let passada = 0; !dobrou && passada < PASSADAS_DA_CORDA; passada++) {
+    /** O deslocamento exigido de cada vértice nesta passada, o maior mandando. */
+    const desloc = pts.map(() => ({ x: 0, y: 0 }));
+    let mexeu = false;
+
+    for (let i = 0; i < pts.length; i++) {
+      const j = (i + 1) % pts.length;
+      const a = pts[i];
+      const b = pts[j];
+      // Só as amostras INTERNAS da corda: as pontas são os vértices, e eles já
+      // passaram pela projeção acima.
+      let pior: { r: ReturnType<typeof contraOLaco>; p: { x: number; y: number } } | null = null;
+      for (let k = 1; k < AMOSTRAS_DA_CORDA; k++) {
+        const p = {
+          x: a.x + ((b.x - a.x) * k) / AMOSTRAS_DA_CORDA,
+          y: a.y + ((b.y - a.y) * k) / AMOSTRAS_DA_CORDA,
+        };
+        const r = contraOLaco(p, massaFina);
+        if (r.dentroPor < 0 && (!pior || r.dentroPor < pior.r.dentroPor)) pior = { r, p };
+      }
+      if (!pior) continue;
+
+      mexeu = true;
+      cordasMovidas.add(i);
+      // Da amostra até `PROJECAO` unidades dentro da borda: é exatamente o vetor que
+      // falta, e aplicá-lo aos dois extremos translada a corda inteira junto.
+      const v = { x: pior.r.trazido.x - pior.p.x, y: pior.r.trazido.y - pior.p.y };
+      for (const k of [i, j]) {
+        if (Math.hypot(v.x, v.y) > Math.hypot(desloc[k].x, desloc[k].y)) desloc[k] = v;
+      }
+    }
+
+    if (!mexeu) {
+      convergiu = true;
+      break;
+    }
+    // A passada é CANDIDATA até provar que não dobra o laço. Aplicar e conferir
+    // depois não serviria: `pts` é o estado que sobrevive, e desfazer uma dobra
+    // exigiria guardar de qualquer jeito a cópia que este `andado` já é.
+    const andado = pts.map((p, i) => ({ x: p.x + desloc[i].x, y: p.y + desloc[i].y }));
+    if (cruzamentos(andado) > piso) {
+      dobrou = true;
+      break;
+    }
+    for (let i = 0; i < pts.length; i++) pts[i] = andado[i];
+  }
+
+  return { pts, projetados, cordas: cordasMovidas.size, convergiu: convergiu && !dobrou };
+}
+
 /** Um laço `{t, y}` de volta a coordenada absoluta, pela mesma `bordasEm`. */
-const paraXY = (q: PontoFranja): { x: number; y: number } => {
+export const paraXY = (q: PontoFranja): { x: number; y: number } => {
   const { esq, dir } = bordasEm(q.y);
   return { x: esq + q.t * (dir - esq), y: q.y };
 };
@@ -2291,50 +2632,10 @@ function tracar(seg: Segmentacao, m: Mapa, aImagem: Ancoras): Tracado {
   const massaFina = decimarPorCorda(massaC, nMassa.n, { fechado: true });
   const claraFina = claraC.length ? decimarPorCorda(claraC, nClara.n, { fechado: true }) : [];
 
-  /**
-   * A CONTENÇÃO É CORRIGIDA AQUI, E O AJUSTE É IMPRESSO.
-   *
-   * A clara nasce de uma posterização e a massa de uma linha de centro: as duas
-   * saíram da mesma arte por caminhos diferentes, então um ponto da clara pode cair
-   * meio pixel fora da massa por ruído de amostragem, sem que nada esteja errado.
-   * Projetar `PROJECAO` unidades para dentro resolve esse caso.
-   *
-   * O que ele **não** resolve, e por isso a contagem sai impressa: um ponto que
-   * precise andar dezenas de unidades não é ruído — é a região clara medida no
-   * lugar errado, e corrigir isso calado entregaria uma peça plausível e errada.
-   * `contencaoDaClara` diz quanto, e não só se.
-   */
-  let projetados = 0;
-  const claraContida = claraFina.map((p) => {
-    if (!massaFina.length) return p;
-    let melhor = { x: p.x, y: p.y };
-    let dist = Infinity;
-    let dentro = false;
-    for (let i = 0, j = massaFina.length - 1; i < massaFina.length; j = i++) {
-      const a = massaFina[i];
-      const c = massaFina[j];
-      if (a.y > p.y !== c.y > p.y) {
-        const x = a.x + ((p.y - a.y) * (c.x - a.x)) / (c.y - a.y);
-        if (p.x < x) dentro = !dentro;
-      }
-      const dx = c.x - a.x;
-      const dy = c.y - a.y;
-      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)));
-      const q = { x: a.x + t * dx, y: a.y + t * dy };
-      const d = Math.hypot(p.x - q.x, p.y - q.y);
-      if (d < dist) {
-        dist = d;
-        melhor = q;
-      }
-    }
-    if (dentro) return p;
-    projetados++;
-    const comp = Math.hypot(melhor.x - p.x, melhor.y - p.y) || 1;
-    return {
-      x: melhor.x + ((melhor.x - p.x) / comp) * PROJECAO,
-      y: melhor.y + ((melhor.y - p.y) / comp) * PROJECAO,
-    };
-  });
+  // A contenção da clara é corrigida e a correção é impressa — ver `conterAClara`.
+  const contida = conterAClara(claraFina, massaFina);
+  const claraContida = contida.pts;
+  const projetados = contida.projetados;
 
   // O N escolhido por curva TEM de chegar ao lóbulo. `lobos()` reduz o lado externo
   // com `PONTOS_EXTERNOS()`, que é o número da régua paramétrica: deixá-lo passar
@@ -2808,13 +3109,30 @@ async function idaEVoltaMassa(): Promise<number> {
   if (contencao < 0) falhas.push(`contenção da clara ${contencao.toFixed(2)} u`);
   const cruzou = t.cruzamentos.massa.length + t.cruzamentos.clara.length;
   if (cruzou) falhas.push(`${cruzou} auto-interseção(ões) no laço entregue`);
+  // O DESCARTE SILENCIOSO PASSA A REPROVAR.
+  //
+  // `medirMassa` fica com `gruposTeal[0]` e imprime as outras componentes num ⚠ que
+  // não reprovava nada. Era o buraco exato deste pipeline: uma cortina solta — que
+  // é componente separada, porque a arte desenha um vão entre ela e o volume — saía
+  // da peça com todos os gates verdes. Enquanto a rota antiga existir, ela avisa.
+  //
+  // O limiar não é novo: `ilhas` já vem filtrada em 0,05% da massa principal, em
+  // `medirMassa`. Aqui só se deixa de tolerar o que ela já achava digno de ⚠.
+  if (t.massa.ilhas.length) {
+    falhas.push(
+      `${t.massa.ilhas.length} ilha(s) de teal fora da peça ` +
+        `(${t.massa.ilhas.map((i) => `${i.toFixed(2)}%`).join(", ")} da massa) — ` +
+        `a rota antiga fica com a maior componente e descarta o resto`,
+    );
+  }
 
-  console.log("\n— os cinco números da regressão —");
+  console.log("\n— os seis números da regressão —");
   console.log(`  pior desvio por curva ... ${piorDesvio.toFixed(1)} u   (piso meio traço = ${MEIO_TRACO})`);
   console.log(`  lóbulos ................. ${t.lobos.length}   (exigido 0)`);
   console.log(`  colunas de cortina ...... ${t.cortina.toFixed(1)}%   (exigido 0)`);
   console.log(`  contenção da clara ...... ${contencao.toFixed(2)} u   (piso 0)`);
   console.log(`  auto-interseções ........ ${cruzou}   (exigido 0)`);
+  console.log(`  ilhas descartadas ....... ${t.massa.ilhas.length}   (exigido 0)`);
   if (falhas.length) {
     console.log(`\n✗ ${falhas.length} reprovação(ões):`);
     for (const f of falhas) console.log(`  · ${f}`);
@@ -2901,6 +3219,14 @@ export const ALTURA_SVG = 2048;
 export async function segmentarArquivo(
   caminho: string,
   fonte: "png" | "svg" | "auto" = "auto",
+  /**
+   * O PNG do enquadramento, quando ele não se chama como o SVG.
+   *
+   * A fonte congelada guarda `origem.svg` ao lado de `referencia.png` — nomes
+   * diferentes de propósito, porque os dois têm papéis diferentes (forma bruta e
+   * julgamento visual). A convenção de irmão continua valendo para todo o resto.
+   */
+  pngDoEnquadramento?: string,
 ): Promise<Segmentacao> {
   const { mascarasDoSvg } = await import("./fonte-svg");
   const svgIrmao = caminho.replace(/\.png$/i, ".svg");
@@ -2917,7 +3243,7 @@ export async function segmentarArquivo(
   }
 
   const alvo = /\.svg$/i.test(caminho) ? caminho : svgIrmao;
-  const pngIrmao = alvo.replace(/\.svg$/i, ".png");
+  const pngIrmao = pngDoEnquadramento ?? alvo.replace(/\.svg$/i, ".png");
   if (!existsSync(pngIrmao)) {
     throw new Error(
       `${alvo}: a fonte de path precisa do PNG irmão (${pngIrmao}) para o enquadramento.\n` +
@@ -2951,12 +3277,46 @@ export async function segmentarArquivo(
 }
 
 /** Traçar um arquivo e devolver a peça, sem imprimir. A entrada de biblioteca da régua nova. */
-export async function tracarArquivo(caminho: string, fonte: "png" | "svg" | "auto" = "png") {
+export async function tracarArquivo(
+  caminho: string,
+  fonte: "png" | "svg" | "auto" = "png",
+  /**
+   * `registro` TROCA A RÉGUA DE POSIÇÃO, e não a de forma.
+   *
+   * Ausente, vale o registro pelo tronco de sempre — é o que `verificar-pose`,
+   * `folha-base` e a fidelidade de hoje medem, e trocá-lo por baixo deslocaria
+   * todo número já aprovado do avatar.
+   *
+   * Presente, a mesma segmentação, a mesma sondagem e a mesma decimação rodam
+   * contra outro mapa. `aImagem.yPescoco` continua saindo da imagem, porque ele é
+   * limite de varredura em pixel — não tem nada a ver com o registro.
+   */
+  opcoes: { png?: string; registro?: Mapa } = {},
+) {
   const { vb } = await ancorasDoViewBox();
-  const seg = await segmentarArquivo(caminho, fonte);
+  const seg = await segmentarArquivo(caminho, fonte, opcoes.png);
   const aImg = seg.ancoras;
-  const m = mapa(aImg, vb);
+  const m = opcoes.registro ?? mapa(aImg, vb);
   return { tracado: tracar(seg, m, aImg), bmp: seg.bmp, seg, mapa: m, ancoras: aImg };
+}
+
+/**
+ * O REGISTRO PELA CABEÇA, PRONTO PARA USO — da guia declarada até o `Mapa`.
+ *
+ * A guia vem em unidades do `viewBox` da arte e o `Mapa` come pixel do raster,
+ * então a conversão é uma razão exata: as duas alturas são conhecidas.
+ */
+export function registroPelaCabeca(
+  caixaDaGuia: { x0: number; y0: number; x1: number; y1: number },
+  viewBoxDaArte: { w: number; h: number },
+  alturaDoRaster: number,
+  cranio: { x0: number; y0: number; x1: number; y1: number },
+): Mapa {
+  const k = alturaDoRaster / viewBoxDaArte.h;
+  return mapaPelaCaixa(
+    { x0: caixaDaGuia.x0 * k, y0: caixaDaGuia.y0 * k, x1: caixaDaGuia.x1 * k, y1: caixaDaGuia.y1 * k },
+    cranio,
+  );
 }
 
 /* ------------------------------------------------------------------ */

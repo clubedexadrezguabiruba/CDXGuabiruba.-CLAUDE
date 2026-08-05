@@ -69,10 +69,35 @@ const MOLDURA = 0.95;
  *
  * Ele nunca sai calado: `Laudo.fragmentos` conta e soma a área.
  */
-const PISO_AREA = 0.00002;
+export const PISO_AREA = 0.00002;
+
+/**
+ * SIGNIFICATIVO = não é moldura e está acima do piso de área.
+ *
+ * É a unidade de contabilidade da completude: cada um destes precisa de
+ * exatamente um dono no `semantica.svg`. Nesta arte são 235, de 520 subpaths.
+ */
+export function eSignificativo(s: Subpath, vb: { w: number; h: number }): boolean {
+  return !s.eMoldura && Math.abs(s.area) >= PISO_AREA * vb.w * vb.h;
+}
 
 /** Quantos segmentos por Bézier ao achatar. 8 dá erro bem abaixo de um pixel. */
 const SEGMENTOS = 8;
+
+/**
+ * A FOLGA ABAIXO DA QUAL UM SUBPATH ESTÁ FECHADO, em unidades do `d`.
+ *
+ * **Medido no A0, e o resultado desmontou o critério óbvio.** Esta arte tem 520
+ * `M` para 437 `z`: 83 subpaths não escrevem o próprio fecho. E a distância entre
+ * o último ponto e o primeiro é **0,0000 em todos os 520** — o conversor fecha a
+ * geometria e economiza a letra.
+ *
+ * Então "aberto" não pode ser lido em `z`. Fosse lido, o contrato reprovaria 83
+ * subpaths corretos da arte que ele existe para importar. `0,05` é folga larga
+ * sobre um máximo medido de zero, e estreita contra qualquer vão de verdade: o
+ * traço desta arte tem 3,7 u, setenta vezes isto.
+ */
+const EPS_FECHO = 0.05;
 
 export type Familia = "corpo" | "sombra" | "traco" | "pele" | "tinta" | "descartado";
 
@@ -86,12 +111,47 @@ export interface Caixa {
 export interface Subpath {
   /** O `d` deste subpath sozinho, pronto para virar um `<path>` de um só. */
   d: string;
+  /**
+   * A POLIGONAL ACHATADA — os pontos de que a área e a caixa já saíam.
+   *
+   * Ela sempre foi calculada e sempre foi jogada fora. Quem traça a partir de uma
+   * máscara precisa dela: um contorno de `potrace` chega como `d`, e o alvo é
+   * `Cabelo.massa`, que é **lista de pontos** e não curva. Devolver o que já se
+   * calculou evita um segundo achatador ao lado deste — e dois achatadores com
+   * `SEGMENTOS` diferentes fariam duas medições da mesma forma discordar por um
+   * motivo que não é a forma.
+   */
+  pts: { x: number; y: number }[];
   /** Área com sinal, pela fórmula do sapateiro sobre a poligonal achatada. */
   area: number;
   caixa: Caixa;
   /** Nós de comando (`M` e `C`), não vértices da poligonal. */
   nos: number;
   eMoldura: boolean;
+  /**
+   * FECHADO É GEOMÉTRICO, E NUNCA SINTÁTICO — ver `EPS_FECHO`.
+   *
+   * `true` quando o último ponto volta ao primeiro (ou quando há `z`, que faz a
+   * mesma coisa explicitamente).
+   */
+  fechado: boolean;
+  /** Se o subpath terminou com `z` escrito. Diagnóstico; `fechado` é o que decide. */
+  temZ: boolean;
+}
+
+/**
+ * O RÓTULO DE CURADORIA, CRU — o que estava escrito no `<path>`, sem julgamento.
+ *
+ * `lerSvg` só transcreve. Quem decide se `papel` é um papel conhecido, se
+ * `extensao` trouxe `plano`, se `descarte` trouxe `motivo`, é `fonte-peca.ts`:
+ * o parser continua servindo ao `origem.svg` cru, que não tem rótulo nenhum.
+ */
+export interface RotuloSvg {
+  papel?: string;
+  paint?: string;
+  plano?: string;
+  grupo?: string;
+  motivo?: string;
 }
 
 export interface PathSvg {
@@ -104,6 +164,8 @@ export interface PathSvg {
   area: number;
   caixa: Caixa;
   familia: Familia;
+  /** Os `data-avatar-*` deste `<path>`. Vazio no `origem.svg`. */
+  rotulo: RotuloSvg;
 }
 
 export interface Laudo {
@@ -133,12 +195,13 @@ export interface Laudo {
  * fora dela, e o nó fica dentro — as duas erram, uma para cada lado) e a razão de
  * aspecto que identifica os olhos no Bloco 3.
  */
-function acharSubpaths(d: string, ondeErro: string): Subpath[] {
+export function acharSubpaths(d: string, ondeErro: string): Subpath[] {
   const toks = d.match(/[MmCcZzLlHhVvSsQqTtAa]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g) ?? [];
   const saida: Subpath[] = [];
 
   let i = 0;
-  let atual: { comandos: string[]; pts: { x: number; y: number }[]; nos: number } | null = null;
+  let atual: { comandos: string[]; pts: { x: number; y: number }[]; nos: number; z: boolean } | null =
+    null;
   let cx = 0;
   let cy = 0;
   let ix = 0;
@@ -166,12 +229,17 @@ function acharSubpaths(d: string, ondeErro: string): Subpath[] {
       x1 = Math.max(x1, a.x);
       y1 = Math.max(y1, a.y);
     }
+    const a = pts[0];
+    const b = pts[pts.length - 1];
     saida.push({
       d: atual.comandos.join(" "),
+      pts,
       area: area / 2,
       caixa: { x0, y0, x1, y1 },
       nos: atual.nos,
       eMoldura: false,
+      fechado: atual.z || Math.hypot(b.x - a.x, b.y - a.y) <= EPS_FECHO,
+      temZ: atual.z,
     });
     atual = null;
   };
@@ -192,7 +260,7 @@ function acharSubpaths(d: string, ondeErro: string): Subpath[] {
           cy = cmd === "M" ? y : cy + y;
           ix = cx;
           iy = cy;
-          atual = { comandos: [`M${cx},${cy}`], pts: [{ x: cx, y: cy }], nos: 1 };
+          atual = { comandos: [`M${cx},${cy}`], pts: [{ x: cx, y: cy }], nos: 1, z: false };
           break;
         }
         case "C":
@@ -221,9 +289,36 @@ function acharSubpaths(d: string, ondeErro: string): Subpath[] {
           cy = y;
           break;
         }
+        /**
+         * `L` — IMPLEMENTADO, e não tolerado: é o que a amarra 2 manda fazer.
+         *
+         * O conversor da Adobe nunca o emitiu (esta arte só tem `M C z`), e o
+         * docstring do topo pede *"implemente-o antes de medir, nunca ignore"*.
+         * Quem o trouxe foi o `potrace`, que devolve reta onde a máscara tem reta —
+         * e é a saída **mais** fiel dele, não uma degradação: `Cabelo.massa` é lista
+         * de pontos, e quem faz a curva é o `spline()` de `cabelo.ts`.
+         *
+         * O achatamento de uma reta é a própria reta: um ponto no destino. Não há
+         * `SEGMENTOS` aqui porque não há o que subdividir.
+         */
+        case "L":
+        case "l": {
+          if (!atual) throw new Error(`${ondeErro}: "L" antes de qualquer "M"`);
+          const x = numero() + (cmd === "l" ? cx : 0);
+          const y = numero() + (cmd === "l" ? cy : 0);
+          atual.pts.push({ x, y });
+          atual.comandos.push(`L${x},${y}`);
+          atual.nos++;
+          cx = x;
+          cy = y;
+          break;
+        }
         case "Z":
         case "z": {
-          if (atual) atual.comandos.push("z");
+          if (atual) {
+            atual.comandos.push("z");
+            atual.z = true;
+          }
           cx = ix;
           cy = iy;
           break;
@@ -271,12 +366,32 @@ export function lerSvg(caminho: string) {
         `e nenhuma coordenada daqui seria confiável sem isso.`,
     );
   }
+  // As duas irmãs do `<g>`: `transform` põe matriz sem grupo, `<use>` põe geometria
+  // que não está escrita aqui. As duas fazem toda coordenada mentir do mesmo jeito.
+  if (/\btransform\s*=/.test(src)) {
+    throw new Error(`${caminho}: o arquivo tem \`transform\`. Nenhuma coordenada daqui seria a da arte.`);
+  }
+  if (/<use[\s>]/.test(src)) {
+    throw new Error(`${caminho}: o arquivo tem <use>. A geometria referenciada não está escrita aqui.`);
+  }
 
   const brutos = [...src.matchAll(/<path[\s\S]*?\/>/g)].map((m) => m[0]);
   const paths: PathSvg[] = brutos.map((bruto, i) => {
     const fill = (bruto.match(/fill="([^"]*)"/) ?? [])[1];
     const d = (bruto.match(/\bd="([\s\S]*?)"/) ?? [])[1];
     if (!fill || !d) throw new Error(`${caminho}: path #${i} sem fill ou sem d`);
+
+    // O A0 encontrou `opacity="1.000000"` nos 437 paths, e o parser não lia o
+    // atributo. Hoje é inofensivo; num arquivo com 0,5 a máscara sairia com menos
+    // tinta do que a arte tem, e nenhum número derivado dela acusaria. É a amarra
+    // 2 aplicada a um atributo em vez de a um comando.
+    const op = (bruto.match(/\bopacity="([^"]*)"/) ?? [])[1];
+    if (op !== undefined && Number(op) !== 1) {
+      throw new Error(
+        `${caminho}: path #${i} tem opacity="${op}". A rasterização trata tinta como ` +
+          `presente ou ausente — tinta parcial sairia da máscara sem sintoma.`,
+      );
+    }
     const rgb = fill.match(/^#([0-9a-fA-F]{6})$/);
     if (!rgb) throw new Error(`${caminho}: path #${i} com fill "${fill}", que não é #RRGGBB`);
     const v = parseInt(rgb[1], 16);
@@ -295,7 +410,16 @@ export function lerSvg(caminho: string) {
       }),
       { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity },
     );
-    return { i, fill, d, cor, subpaths, area, caixa, familia: "descartado" as Familia };
+    const atr = (nome: string) => (bruto.match(new RegExp(`\\b${nome}="([^"]*)"`)) ?? [])[1];
+    const rotulo: RotuloSvg = {
+      papel: atr("data-avatar-role"),
+      paint: atr("data-avatar-paint"),
+      plano: atr("data-plano"),
+      grupo: atr("data-avatar-grupo"),
+      motivo: atr("data-motivo"),
+    };
+
+    return { i, fill, d, cor, subpaths, area, caixa, familia: "descartado" as Familia, rotulo };
   });
 
   return { caminho, cabecalho, vb, paths, mtime: statSync(caminho).mtime.toISOString() };
@@ -442,8 +566,14 @@ async function mascaraDaFigura(
   return { ...binarizar(bmp), w: bmp.w, h: bmp.h };
 }
 
-/** Pixel escuro vira 1. O mesmo `ESCURO` de `medir.ts` — uma descrição só de tinta. */
-function binarizar(bmp: Bitmap): { mask: Uint8Array } {
+/**
+ * Pixel escuro vira 1. O mesmo `ESCURO` de `medir.ts` — uma descrição só de tinta.
+ *
+ * Exportada para `importar-peca.ts`, que rasteriza uma CAMADA por vez em vez de uma
+ * família: a pergunta *"onde há tinta?"* é a mesma, e duas cópias dela divergiriam
+ * no dia em que o limiar mudasse de um lado só.
+ */
+export function binarizar(bmp: Bitmap): { mask: Uint8Array } {
   const mask = new Uint8Array(bmp.w * bmp.h);
   for (let i = 0; i < mask.length; i++) {
     const j = i * bmp.canais;

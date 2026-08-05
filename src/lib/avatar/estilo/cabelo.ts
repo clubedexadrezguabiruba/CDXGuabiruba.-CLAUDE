@@ -216,6 +216,47 @@ export interface Cabelo {
    * compositor não emite a forma, em vez de gastar uma do orçamento com `d=""`.
    */
   clara?: readonly PontoFranja[];
+  /**
+   * ONDE O LAÇO DA MASSA CARREGA TRAÇO — em ARCOS DE ÍNDICE, não numa segunda curva.
+   *
+   * ---------------------------------------------------------------------------
+   * O DEFEITO QUE ELA EXISTE PARA MATAR
+   * ---------------------------------------------------------------------------
+   *
+   * `.kk-cabelo-s` tem `fill` **e** `stroke`, e isso é a resposta certa para a
+   * família paramétrica: a touca fecha por um retângulo a `FORA` da caixa da cabeça,
+   * o clip come aquele trecho inteiro, e o que sobra traçado é exatamente a franja.
+   * O perímetro matemático e o traço visível coincidem por construção.
+   *
+   * Num laço FECHADO eles deixam de coincidir. O laço tem borda em todo o percurso,
+   * inclusive por cima, onde quem desenha o contorno na arte é a cabeça do BONECO —
+   * que é `descarte` e não faz parte da peça. Medido na `curto-espetada`: em
+   * **876 dos 3 028** pontos do laço a sonda pela normal não encontra preto nenhum.
+   * Traçar o laço inteiro põe uma barra preta atravessando a coroa, com pele por
+   * cima dela, que ninguém desenhou e a arte não tem.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ÍNDICE, E NÃO UMA LISTA DE PONTOS
+   * ---------------------------------------------------------------------------
+   *
+   * Cada par é `[primeiro, último]` em índices de `massa`, andando para a FRENTE e
+   * dando a volta quando `último ≤ primeiro`. `[3, 9]` são os seis trechos de 3 a 9;
+   * `[38, 2]` dá a volta pelo fim do vetor; `primeiro === último` é o laço inteiro.
+   *
+   * A alternativa óbvia — guardar os pontos da linha — cria **duas descrições da
+   * mesma borda**, e a lição de seis medições do pipeline morto é que duas
+   * descrições da mesma fronteira divergem sempre. Seria preciso então um gate
+   * medindo "a linha corre sobre a massa?", que é justamente o tipo de amarra que
+   * este arquivo troca por mecanismo sempre que dá. Com índice, o traço não *corre
+   * sobre* a massa: ele **é** a massa, no trecho apontado, emitido pelos mesmos
+   * comandos `C` (ver `de`/`ate` de `spline`). Não há o que divergir, e o literal
+   * fica menor.
+   *
+   * Ausente, a peça traçada é **chapada de traço**: massa e clara sem contorno
+   * nenhum. É legítimo e não é o padrão — quem produz os arcos é
+   * `avatar:importar`, a partir da mesma sonda pela normal que mede a massa.
+   */
+  linhas?: readonly (readonly [number, number])[];
   extensoes?: readonly Extensao[];
 }
 
@@ -595,6 +636,100 @@ export function pathCabeloClaro(modelo: CabeloOuModelo): string {
 /** O path de uma extensão. Laço fechado, coordenada absoluta, sem clip. */
 export function pathExtensao(e: Extensao): string {
   return laco(e.forma);
+}
+
+/**
+ * Quantos trechos do laço um arco cobre. `primeiro === último` é o laço INTEIRO.
+ *
+ * Zero trechos seria um arco que não desenha nada, e um `M` solto no `d` — então o
+ * caso degenerado é lido como a volta completa, que é o único sentido que ele pode
+ * ter num laço fechado.
+ */
+const trechosDoArco = (arco: readonly [number, number], N: number) =>
+  (((arco[1] - arco[0]) % N) + N) % N || N;
+
+/**
+ * O TRAÇO DA PEÇA TRAÇADA — um `<path>` com um subpath por arco.
+ *
+ * Cada arco sai por `spline(pts, true, de, ate)`, que emite **os mesmos comandos
+ * `C`** que `pathCabelo` emite naquele trecho. Não é uma curva paralela nem uma
+ * reamostragem: é o mesmo pedaço da mesma curva, e é isso que dispensa um gate de
+ * "a linha está sobre a massa?".
+ *
+ * Devolve `""` quando não há arcos — e aí o compositor não emite a forma, em vez de
+ * gastar uma do orçamento com `d=""`, como já faz com a camada clara.
+ */
+export function pathCabeloLinhas(modelo: CabeloOuModelo): string {
+  const c = resolverCabelo(modelo);
+  if (!c.massa || !c.linhas?.length) return "";
+  const pts = c.massa.map((p) => ponto(p, 0));
+  const N = pts.length;
+  return c.linhas
+    .map((arco) => {
+      const de = arco[0];
+      return (
+        `M ${n(pts[de].x)} ${n(pts[de].y)} ` + spline(pts, true, de, de + trechosDoArco(arco, N))
+      );
+    })
+    .join("");
+}
+
+/**
+ * OS ARCOS SÃO LEGÍVEIS? — e note o que esta régua NÃO precisa medir.
+ *
+ * Ela não pergunta se o traço corre sobre a massa: com arco de índice isso é
+ * verdade por construção, e uma amarra que não pode falhar é a aprovação por
+ * vacuidade que este projeto já pagou duas vezes. O que sobra são as duas coisas
+ * que o produtor dos arcos ainda consegue errar:
+ *
+ *  1. **índice fora da massa** — o emissor leria `undefined` e o `d` sairia com
+ *     `NaN`, que nenhum navegador acusa: o path simplesmente não aparece;
+ *  2. **arcos sobrepostos** — o mesmo trecho traçado duas vezes. Invisível na tela
+ *     (dois traços coincidentes são um traço) e por isso mesmo perigoso: é a
+ *     assinatura de um produtor que não fechou as corridas direito, e paga bytes
+ *     do orçamento para desenhar o que já estava desenhado.
+ *
+ * `fracao` é o número que a crítica lê: a parte do laço que sai traçada. **1,0 é a
+ * barra preta falsa de volta**, escrita de outro jeito — mas ela não reprova aqui,
+ * porque só é defeito quando a arte não tem preto em todo o perímetro, e a arte não
+ * mora neste arquivo. Quem tem as duas do lado é `avatar:importar`.
+ *
+ * `null` quando não há laço nem arcos: peça paramétrica, ou traçada sem traço.
+ */
+export function arcosDeTraco(
+  modelo: CabeloOuModelo,
+): { fracao: number; falhas: string[] } | null {
+  const c = resolverCabelo(modelo);
+  if (!c.massa || !c.linhas?.length) return null;
+
+  const N = c.massa.length;
+  const falhas: string[] = [];
+  const trechos = new Uint8Array(N);
+
+  for (const arco of c.linhas) {
+    const [de, ate] = arco;
+    if (!Number.isInteger(de) || !Number.isInteger(ate) || de < 0 || de >= N || ate < 0 || ate >= N) {
+      falhas.push(
+        `arco [${de}, ${ate}] fora da massa, que tem ${N} pontos. O emissor leria ` +
+          `\`undefined\` e o \`d\` sairia com NaN — e um path com NaN não desenha e não acusa.`,
+      );
+      continue;
+    }
+    const q = trechosDoArco(arco, N);
+    for (let k = 0; k < q; k++) {
+      const i = (de + k) % N;
+      if (trechos[i]) {
+        falhas.push(
+          `o trecho ${i} do laço é traçado por mais de um arco. Dois traços coincidentes ` +
+            `são indistinguíveis na tela, então o defeito só aparece no orçamento — e ele ` +
+            `denuncia um produtor que não fechou as corridas.`,
+        );
+      }
+      trechos[i] = 1;
+    }
+  }
+
+  return { fracao: trechos.reduce((a: number, b) => a + b, 0) / N, falhas };
 }
 
 /**

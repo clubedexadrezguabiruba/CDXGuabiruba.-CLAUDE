@@ -791,15 +791,38 @@ export const n = (v: number) => (Math.round(v * 10) / 10).toString();
  * e ela **contém a anterior**: com espaçamento uniforme os três `d` são iguais e a
  * fórmula abaixo colapsa em `(P[i+1] − P[i−1])/6`, ponto por ponto. Onde o contorno
  * já estava liso, nada muda; onde ele repuxava, a alça encurta na medida do trecho.
+ *
+ * ---------------------------------------------------------------------------
+ * `de`/`ate` — EMITIR UM PEDAÇO DA MESMA CURVA, E NÃO UMA CURVA PARECIDA
+ * ---------------------------------------------------------------------------
+ *
+ * Ausentes, a emissão é a de sempre, comando a comando. Presentes, saem só os
+ * trechos `de … ate−1` — **calculados com os mesmos vizinhos do laço inteiro**,
+ * porque `em()` continua dando a volta.
+ *
+ * Isso existe para o traço da peça traçada (`Cabelo.linhas`), e a exigência é a
+ * regra 1 do doc 15 lida ao pé da letra: o traço corre SOBRE a massa, então ele não
+ * pode ser uma segunda curva pelos mesmos pontos. Emitido por aqui, o arco não
+ * *aproxima* a borda da massa — ele **é** os mesmos comandos `C` que o laço fechado
+ * emite naquele trecho, byte a byte. Não há duas descrições que possam divergir,
+ * que é o mesmo mecanismo do `<use>` no compositor.
+ *
+ * `ate` pode passar de `N` para o arco dar a volta pelo fim do vetor.
  */
-export function spline(pts: readonly { x: number; y: number }[], fechada = false): string {
+export function spline(
+  pts: readonly { x: number; y: number }[],
+  fechada = false,
+  de = 0,
+  ate = fechada ? pts.length : pts.length - 1,
+): string {
   const N = pts.length;
-  const em = (i: number) => (fechada ? pts[(i + N) % N] : pts[Math.min(N - 1, Math.max(0, i))]);
+  const em = (i: number) =>
+    fechada ? pts[((i % N) + N) % N] : pts[Math.min(N - 1, Math.max(0, i))];
   /** `|ΔP|^0,5` — o expoente 0,5 é o que faz a parametrização ser centrípeta. */
   const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
     Math.max(1e-6, Math.sqrt(Math.hypot(b.x - a.x, b.y - a.y)));
   let d = "";
-  for (let i = 0; i < (fechada ? N : N - 1); i++) {
+  for (let i = de; i < ate; i++) {
     const p0 = em(i - 1);
     const p1 = em(i);
     const p2 = em(i + 1);

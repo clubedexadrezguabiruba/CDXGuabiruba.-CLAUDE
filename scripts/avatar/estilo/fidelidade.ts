@@ -58,14 +58,29 @@
  *   npm run avatar:fidelidade -- --inverter      # R10: o paramétrico TEM de reprovar
  *   npm run avatar:fidelidade -- --inverter-folga # a franja sobre as sobrancelhas —
  *                                                 # o gate 3 TEM de reprovar
- *   npm run avatar:fidelidade -- --folha [png]   # a folha de contato para o olho
+ *   npm run avatar:fidelidade -- --folha         # a folha de contato para o olho
+ *   npm run avatar:fidelidade -- --folha cabelo/outro   # de outro alvo de fonte
+ *
+ * `--folha` recebe **alvo de fonte**, não PNG: ela compõe a peça IMPORTADA (o literal
+ * de `peca.ts`), e não o traçado da rota antiga. Ver o docstring de `folha()`.
  */
 
 import { mkdirSync, writeFileSync } from "fs";
 import { chromium } from "@playwright/test";
 import sharp from "sharp";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
-import { CABELOS, FOLGA_ROSTO, type Cabelo } from "../../../src/lib/avatar/estilo/cabelo";
+import {
+  CABELOS,
+  FOLGA_ROSTO,
+  arcosDeTraco,
+  coberturaDaCoroa,
+  contencaoDaClara,
+  folgaDoRosto,
+  pathCabelo,
+  pathCabeloClaro,
+  pathCabeloLinhas,
+  type Cabelo,
+} from "../../../src/lib/avatar/estilo/cabelo";
 import {
   CAIXA_CABECA,
   OLHO_CX_DIR,
@@ -76,6 +91,7 @@ import {
   TRACO,
   VIEWBOX,
   bordasEm,
+  pathCabeca,
 } from "../../../src/lib/avatar/estilo/geometria";
 import { CABELO, PELE } from "../../../src/lib/avatar/palette";
 import type { Bitmap } from "./medir";
@@ -86,12 +102,18 @@ import {
   type Segmentacao,
   ancoras,
   ancorasDoViewBox,
+  anisotropia,
   mapa,
   rasterizar,
+  registroPelaCabeca,
   segmentarArquivo,
   segmentarPorMatiz,
   tracarArquivo,
 } from "./tracar-cabelo";
+import { ALTURA_SVG } from "./tracar-cabelo";
+import { guiaChamada, lerFontePecaOuFalhar } from "./fonte-peca";
+import { conferirLiteral, importarPeca } from "./importar-peca";
+import type { OpcoesRota } from "./rotas/rota";
 
 const DIAG = ".scratch/estilo";
 const FOLHA = `${DIAG}/folha-fidelidade.png`;
@@ -438,10 +460,27 @@ interface Medicao {
  * matiz, sempre, e a invariante *uma régua, duas imagens* continua valendo porque o
  * que muda é a fonte de UM dos lados, declarada e impressa.
  */
+/**
+ * O REGISTRO DA ARTE, quando `--semantica` troca a régua de posição.
+ *
+ * É estado de módulo, e a razão é a que me custou uma medição errada: `comparar()`
+ * é chamada de oito lugares, e o registro é escolha do PROCESSO, não de cada
+ * comparação. Na primeira tentativa eu troquei o registro só da peça; a arte
+ * continuou pelo tronco, e a comparação passou a medir duas coisas em referenciais
+ * diferentes — **36,2 u onde o registro antigo dava 15,6**. O número piorou porque
+ * a medição estava errada, não porque o registro estivesse.
+ *
+ * Uma variável só é o que garante que os dois lados nunca discordem.
+ *
+ * O render NÃO entra aqui: ele é o produto, medido contra o próprio `geometria.ts`,
+ * e o registro dele por tronco é exato por construção.
+ */
+let REGISTRO_DA_ARTE: Mapa | undefined;
+
 async function comparar(arte: Segmentacao, peca: Cabelo, k: number): Promise<Medicao> {
   const { vb } = await ancorasDoViewBox();
   const aArte = arte.ancoras;
-  const mArte = mapa(aArte, vb);
+  const mArte = REGISTRO_DA_ARTE ?? mapa(aArte, vb);
 
   const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns: "fid" });
   const bmpRender = await rasterizar(svg, ALTURA);
@@ -827,15 +866,20 @@ const pecaDensa = (t: Awaited<ReturnType<typeof tracarArquivo>>["tracado"]): Cab
  * `extend`, então o recorte cairia na imagem original — que é justamente a que não
  * contém o retângulo inteiro. O erro que isso dá é `bad extract area`, e ele é
  * enganoso: as coordenadas estão certas, a imagem é que ainda não foi ampliada.
+ *
+ * `fundo` é parâmetro porque a folha compara nos DOIS fundos e a referência tem canal
+ * alfa: achatá-la sempre sobre branco poria um selo branco em volta dela na linha
+ * escura, e a pergunta "o penteado lê no escuro?" seria respondida por um retângulo
+ * que o app não desenha.
  */
-async function recortarNoViewBox(png: string, m: Mapa): Promise<string> {
+async function recortarNoViewBox(png: string, m: Mapa, fundo: string): Promise<string> {
   const PAD = 600;
   const dePx = (ux: number) => Math.round((ux - m.eu0) / m.kx + m.ex0);
   const deY = (uy: number) => Math.round((uy - m.tu0) / m.ky + m.ty0);
 
   const comMargem = await sharp(png)
-    .flatten({ background: "#FFFFFF" })
-    .extend({ top: PAD, bottom: PAD, left: PAD, right: PAD, background: "#FFFFFF" })
+    .flatten({ background: fundo })
+    .extend({ top: PAD, bottom: PAD, left: PAD, right: PAD, background: fundo })
     .png()
     .toBuffer();
 
@@ -851,6 +895,99 @@ async function recortarNoViewBox(png: string, m: Mapa): Promise<string> {
   return `data:image/png;base64,${buf.toString("base64")}`;
 }
 
+/* ------------------------------------------------------------------ */
+/* `--folha` — a PEÇA IMPORTADA diante da arte, para o olho do Doug     */
+/* ------------------------------------------------------------------ */
+
+const FONTE_RAIZ = "scripts/avatar/fonte/estilo-kokeshi";
+const ALVO_PADRAO = "cabelo/curto-espetada";
+
+/**
+ * Os dois fundos da folha, e nenhum dos dois é inventado.
+ *
+ * Claro é `--color-warm-ivory`, escuro é `--color-deep-navy`: os dois tokens de
+ * superfície de `globals.css`. Preto puro está fora de propósito — o preto do cabelo
+ * é `#3A2F2A`, preto **não-preto** por decisão medida da paleta (*"contra o contorno
+ * um preto real apagaria a silhueta do cabelo"*), e num fundo #000 a folha
+ * responderia sobre uma superfície que o app não tem.
+ */
+const FUNDOS = [
+  { nome: "fundo claro", cor: "#FAF8F3", texto: "#1B2432", fraco: "#8A8378", regua: "#E4DFD6" },
+  { nome: "fundo escuro", cor: "#0F1A2E", texto: "#E7ECF4", fraco: "#8FA0BC", regua: "#25334B" },
+] as const;
+
+/** As três cores do mapa de divergência. Só arte, só render, e as duas. */
+const DIV = {
+  arte: [214, 40, 120],
+  render: [0, 150, 190],
+  ambas: [204, 210, 218],
+  vazio: [255, 255, 255],
+} as const;
+
+/** Uma imagem do tamanho exato da grade da régua: 1000×1400, uma célula por pixel. */
+async function pngDaGrade(cor: (i: number) => readonly number[]): Promise<string> {
+  const raw = Buffer.alloc(GX * GY * 3);
+  for (let i = 0; i < GX * GY; i++) {
+    const c = cor(i);
+    raw[i * 3] = c[0];
+    raw[i * 3 + 1] = c[1];
+    raw[i * 3 + 2] = c[2];
+  }
+  const buf = await sharp(raw, { raw: { width: GX, height: GY, channels: 3 } }).png().toBuffer();
+  return `data:image/png;base64,${buf.toString("base64")}`;
+}
+
+/**
+ * UMA MÁSCARA DA ARTE NA GRADE DA RÉGUA — o mesmo mapeamento inverso de `massaEmUnidades`.
+ *
+ * Da grade para o pixel, e nunca o contrário, pelo motivo que aquele docstring mede:
+ * carimbar pixel na célula fura a máscara quando a imagem é menor que a grade, e o
+ * furo devolve um número plausível (o primeiro IoU do projeto saiu 25,2% por isso).
+ *
+ * O que ela **não** faz é `soOCabelo` nem corte de pescoço: a entrada aqui já é um
+ * papel declarado da peça, não o quadro inteiro do gerador. Não há gola para separar.
+ */
+function naGrade(
+  em: (px: number, py: number) => boolean,
+  m: Mapa,
+  descomprimir: (uy: number) => number,
+): Uint8Array {
+  const g = new Uint8Array(GX * GY);
+  const dePx = (ux: number) => Math.round((ux - m.eu0) / m.kx + m.ex0);
+  const deY = (uy: number) => Math.round((uy - m.tu0) / m.ky + m.ty0);
+  for (let gy = 0; gy < GY; gy++) {
+    const py = deY(descomprimir(gy / S));
+    for (let gx = 0; gx < GX; gx++) if (em(dePx(gx / S), py)) g[gy * GX + gx] = 1;
+  }
+  return g;
+}
+
+/**
+ * UM PAPEL DO RENDER SOZINHO, COM O MESMO CLIP E O MESMO TRAÇO DO COMPOSITOR.
+ *
+ * Não é uma segunda montagem do cabelo: o `d` vem de `pathCabelo`, `pathCabeloClaro`
+ * e `pathCabeloLinhas` — as mesmas três funções que `cabeloNoCranio()` chama — e o
+ * clip é o mesmo `pathCabeca()`. Se a máscara daqui divergir do que a folha desenha
+ * ao lado, o defeito é do compositor, não desta função.
+ *
+ * Segmentar o composto por cor seria a alternativa, e ela não separa: a massa sai em
+ * `--av-cabelo-s` e a clara em `--av-cabelo`, que são o mesmo matiz com luminâncias
+ * vizinhas, e o traço tem 12 unidades de espessura contra um fundo escuro.
+ */
+function svgDoPapel(ns: string, d: string, traco: boolean, fundo: string, tinta: string): string {
+  const pintura = traco
+    ? `fill="none" stroke="${tinta}" stroke-width="${TRACO}" stroke-linejoin="round" stroke-linecap="round"`
+    : `fill="${tinta}"`;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}">` +
+    `<defs><clipPath id="${ns}-cc"><path d="${pathCabeca()}"/></clipPath></defs>` +
+    `<rect width="${VIEWBOX.w}" height="${VIEWBOX.h}" fill="${fundo}"/>` +
+    `<g clip-path="url(#${ns}-cc)">` +
+    (d ? `<path d="${d}" ${pintura}/>` : "") +
+    `</g></svg>`
+  );
+}
+
 /** Seis caracteres que só existem dentro do PNG. Mesma função de `variantes.ts`. */
 function gerarSelo(): string {
   const alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -860,108 +997,323 @@ function gerarSelo(): string {
   ).join("");
 }
 
-interface Coluna {
-  nome: string;
-  legenda: string;
-  img?: string;
-  svg?: string;
-  svgReal?: string;
-  rodape: string;
-}
+/** O literal de `peca.ts`, no mínimo que `conferirLiteral` e `Cabelo` precisam. */
+type PecaColada = {
+  massa?: readonly { t: number; y: number }[];
+  clara?: readonly { t: number; y: number }[];
+  linhas?: readonly (readonly [number, number])[];
+};
 
 /**
- * A FOLHA DE ANTES-E-DEPOIS — duas colunas, quatro tamanhos, um selo.
+ * A FOLHA DO CHECKPOINT C — e a primeira coisa que ela conserta é o que desenha.
  *
- * `avatar:variantes` **não serve para esta rodada**, e reprovaria com motivo: ele
- * exige três variantes e mede DIVERGÊNCIA entre elas. Aqui há uma arte só e a
- * pergunta é o contrário — não "estes três desenhos são diferentes?" mas "este traço
- * se parece com a arte?".
+ * ---------------------------------------------------------------------------
+ * ELA COMPÕE A PEÇA IMPORTADA. A ROTA ANTIGA NÃO ENTRA AQUI.
+ * ---------------------------------------------------------------------------
  *
- * As duas em TEAL, que é a cor instrumental que o pedido ao gerador exige: a pergunta
- * é de forma, e cor diferente entre as colunas faria o olho comparar cor. A última
- * linha repete a peça **na paleta de verdade a 56 px**, que é onde o gate mede e onde
- * o Doug julga.
+ * Até o checkpoint B esta função montava a peça com `tracarArquivo(png)` — o
+ * traçador que adivinha a peça a partir de pixel, e que o plano declarou
+ * **diagnóstico**. Ele não lê `peca.ts` e não conhece `linhas`: a folha sairia
+ * mostrando um artefato com o laço inteiro traçado, que é a barra preta falsa, e o
+ * Doug julgaria um desenho que o pipeline não entrega. Aprovar ali seria aprovar a
+ * coisa errada, e reprovar seria reprovar a coisa errada.
+ *
+ * O que ela desenha agora é o literal de `peca.ts` — o mesmo que iria para o catálogo
+ * —, e ela **recusa desenhar** se ele divergir da fonte. `--check` já mede isso no
+ * `verify:all`; aqui a conferência é repetida porque uma folha desenhada de um
+ * literal velho é pior que uma folha que não sai.
+ *
+ * ---------------------------------------------------------------------------
+ * O QUE ESTÁ NA FOLHA, E CONTRA QUE DECISÃO
+ * ---------------------------------------------------------------------------
+ *
+ * Uma folha só, tudo lado a lado. Cada bloco existe para uma pergunta do checkpoint:
+ *
+ *  1. **leitura, fundo claro e escuro, 56/100/200/425** — as ~12 pontas sobrevivem à
+ *     redução? Os 82,5% de traço leem, ou a coroa nua aparece? A 56 px é onde manda;
+ *     os 425 existem para ver o que a 56 esconde, não para julgar;
+ *  2. **máscara por papel** — massa, clara e traço, a arte declarada de um lado e o
+ *     render do outro. A arte entra no registro de CAIXA e a peça está reancorada
+ *     pela largura da linha, então a diferença na cúpula **é** o achado da coroa,
+ *     desenhado em vez de contado;
+ *  3. **mapa de divergência** — magenta é arte sem render, ciano é render sem arte;
+ *  4. **dois closes de coordenada MEDIDA** — a faixa das sobrancelhas (o achado da
+ *     folga) e a banda da coroa (o achado da cobertura). Nenhum recorte é escolhido
+ *     a olho: os dois saem de `SOBRANCELHA`/`OLHO_CY` e do `COROA` de `cabelo.ts`.
  *
  * O selo de seis caracteres não é impresso no terminal: ele prova que a imagem foi
- * aberta, e o relatório da crítica começa citando ele — Fase 4 da skill
- * `avatar-desenho`.
+ * aberta, e o relatório da crítica começa citando ele — Fase 4 da `avatar-desenho`.
  */
-async function folha(png: string) {
+async function folha(alvo: string) {
   mkdirSync(DIAG, { recursive: true });
-  const { tracado, mapa: m } = await tracarArquivo(png);
-  const peca = tracado.peca;
+  const pasta = `${FONTE_RAIZ}/${alvo}`;
+  const semantica = `${pasta}/semantica.svg`;
+  const referencia = `${pasta}/referencia.png`;
 
-  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns: "ft" });
+  // 1. A PEÇA — importada da fonte e conferida contra o literal colado ANTES de
+  //    qualquer pixel. Ver o docstring: desenhar outra coisa põe o Doug julgando o
+  //    artefato errado, e um selo dado ao artefato errado não se desfaz.
+  const imp = await importarPeca(semantica);
+  const { PECA } = (await import(`../fonte/estilo-kokeshi/${alvo}/peca.ts`)) as {
+    PECA: PecaColada;
+  };
+  const difs = conferirLiteral(imp.peca, PECA);
+  if (difs.length) {
+    throw new Error(
+      `a folha recusa desenhar: o literal de ${alvo}/peca.ts não é o que a fonte produz.\n` +
+        difs.map((d) => `  · ${d}`).join("\n"),
+    );
+  }
+  const peca: Cabelo = {
+    id: "curto",
+    nome: alvo,
+    ...(PECA.massa ? { massa: PECA.massa } : {}),
+    ...(PECA.clara ? { clara: PECA.clara } : {}),
+    ...(PECA.linhas ? { linhas: PECA.linhas } : {}),
+  };
+
+  // 2. O REGISTRO — pela CABEÇA, que é do que um cabelo é peça. Pelo tronco a cabeça
+  //    da arte cai 28% grande no viewBox, e a folha compararia dois enquadramentos.
+  const fonte = lerFontePecaOuFalhar(semantica);
+  const guia = guiaChamada(fonte, "cabeca");
+  const meta = await sharp(referencia).metadata();
+  const aspectoPng = meta.width! / meta.height!;
+  const aspectoVb = fonte.viewBox.w / fonte.viewBox.h;
+  if (Math.abs(aspectoPng / aspectoVb - 1) > 0.01) {
+    throw new Error(
+      `referencia.png é ${meta.width}×${meta.height} e o viewBox da fonte é ` +
+        `${fonte.viewBox.w}×${fonte.viewBox.h}: enquadramentos diferentes. A guia \`cabeca\` ` +
+        `está em unidades do viewBox, e sem o mesmo quadro ela não aponta para o mesmo lugar no PNG.`,
+    );
+  }
+  const mArte = registroPelaCabeca(guia.caixa, fonte.viewBox, meta.height!, {
+    x0: CAIXA_CABECA.x0,
+    y0: CAIXA_CABECA.y0,
+    x1: CAIXA_CABECA.x1,
+    y1: CAIXA_CABECA.y1,
+  });
+  REGISTRO_DA_ARTE = mArte;
+
+  // 3. A MEDIÇÃO — a mesma `comparar()` dos gates, sobre a mesma peça que a folha
+  //    desenha. Números da folha e números do terminal não podem ter duas origens.
+  const segArte = await segmentarArquivo(referencia, "png");
+  const med = await comparar(segArte, peca, imp.teto.k);
+
+  const Y0 = CAIXA_CABECA.y0;
+  const kTeto = imp.teto.k;
+  const descomprimir = (uy: number) => (uy >= Y0 || kTeto >= 1 ? uy : Y0 - (Y0 - uy) / kTeto);
+
+  // 4. AS IMAGENS
+  const svgTeal = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns: "ft" });
   const svgReal = compor({ pele: PELE[1], cabelo: CABELO[0], modeloCabelo: peca, ns: "rt" });
-  const formas = (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
+  const formas = (svgReal.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
   const bytes = Buffer.byteLength(svgReal, "utf-8");
-  const piorDesvio = Math.max(...tracado.desvio.map((d) => d.tratada));
 
-  const colunas: Coluna[] = [
-    {
-      nome: "A arte de origem",
-      legenda: "o PNG do gerador, recortado no retângulo do viewBox pelos âncoras de tronco",
-      img: await recortarNoViewBox(png, m),
-      rodape: png.split(/[\\/]/).pop() ?? png,
-    },
-    {
-      nome: "O traço fiel",
-      legenda:
-        `massa como laço fechado, linha de centro do preto · massa ${tracado.n.massa.n} pts · ` +
-        `clara ${tracado.n.clara.n} pts · ${tracado.lobos.length} lóbulo(s)`,
-      svg,
-      svgReal,
-      rodape: `${formas} formas · ${bytes} B · desvio máx ${piorDesvio.toFixed(1)} u`,
-    },
-  ];
+  const mas = imp.mascaras;
+  const emRaster = (mask: Uint8Array) => (px: number, py: number) =>
+    px >= 0 && py >= 0 && px < mas.w && py < mas.h && mask[py * mas.w + px] === 1;
+  const uniaoDoPapel = (papel: string) => {
+    const g = new Uint8Array(mas.w * mas.h);
+    for (const c of mas.camadas) {
+      if (c.camada.papel !== papel) continue;
+      for (let i = 0; i < g.length; i++) if (c.mask[i]) g[i] = 1;
+    }
+    return g;
+  };
 
+  const papeis = [
+    { nome: "massa", arte: uniaoDoPapel("massa"), d: pathCabelo(peca), traco: false },
+    { nome: "clara", arte: mas.clara, d: pathCabeloClaro(peca), traco: false },
+    { nome: "traço", arte: mas.linha, d: pathCabeloLinhas(peca), traco: true },
+  ] as const;
+  const papeisImg = await Promise.all(
+    papeis.map(async (p) => {
+      const g = naGrade(emRaster(p.arte), imp.mapa, descomprimir);
+      let celulas = 0;
+      for (let i = 0; i < g.length; i++) if (g[i]) celulas++;
+      return { ...p, img: await pngDaGrade((i) => (g[i] ? [30, 30, 30] : [255, 255, 255])), celulas };
+    }),
+  );
+
+  const gArte = med.perfis.arte.massa;
+  const gRender = med.perfis.render.massa;
+  const divergencia = await pngDaGrade((i) =>
+    gArte[i] && gRender[i] ? DIV.ambas : gArte[i] ? DIV.arte : gRender[i] ? DIV.render : DIV.vazio,
+  );
+
+  // 5. OS RECORTES, DE COORDENADA MEDIDA — nenhum escolhido a olho.
+  const topoSob = Math.min(topoDaSobrancelha(OLHO_CY_ESQ), topoDaSobrancelha(OLHO_CY_DIR));
+  const corteSobrancelha = {
+    nome: "a faixa das sobrancelhas",
+    porque: `topo do arco em y ${topoSob.toFixed(1)} · FOLGA_ROSTO = ${FOLGA_ROSTO} u acima dele`,
+    x0: OLHO_CX_ESQ - SOBRANCELHA.larg,
+    x1: OLHO_CX_DIR + SOBRANCELHA.larg,
+    y0: topoSob - 120,
+    y1: topoSob + 60,
+    z: 1.9,
+  };
+  // O mesmo quarto de cima da caixa da cabeça que `coberturaDaCoroa` mede.
+  const limiteCoroa = CAIXA_CABECA.y0 + 0.25 * (CAIXA_CABECA.y1 - CAIXA_CABECA.y0);
+  const corteCoroa = {
+    nome: "a banda da coroa",
+    porque: `y ${CAIXA_CABECA.y0.toFixed(0)} → ${limiteCoroa.toFixed(0)} — o quarto de cima da caixa da cabeça, o que \`coberturaDaCoroa\` mede`,
+    x0: CAIXA_CABECA.x0 - 12,
+    x1: CAIXA_CABECA.x1 + 12,
+    y0: CAIXA_CABECA.y0 - 16,
+    y1: limiteCoroa + 16,
+    z: 1.5,
+  };
+
+  // 6. A MONTAGEM
   const selo = gerarSelo();
   const larg = (h: number) => Math.round((h * VIEWBOX.w) / VIEWBOX.h);
   const em = (s: string, h: number) => s.replace("<svg ", `<svg width="${larg(h)}" height="${h}" `);
-  const fig = (rot: string, dentro: string) =>
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+  const fig = (rot: string, dentro: string, cor: string) =>
     `<figure style="margin:0;text-align:center">${dentro}` +
-    `<figcaption style="font:10px system-ui;color:#777;margin-top:4px">${rot}</figcaption></figure>`;
+    `<figcaption style="font:10px system-ui;color:${cor};margin-top:5px">${esc(rot)}</figcaption></figure>`;
+
+  const h2 = (t: string, sub: string) =>
+    `<h2 style="font:600 13px system-ui;margin:0 0 2px;color:#1B2432">${esc(t)}</h2>` +
+    `<p style="font:11px system-ui;color:#8A8378;margin:0 0 12px;max-width:1100px">${esc(sub)}</p>`;
+
+  const secao = (dentro: string) =>
+    `<section style="padding:18px 20px;border-top:1px solid #E4DFD6">${dentro}</section>`;
+
+  /** Uma janela sobre a composição inteira. `z` é pixel por unidade do viewBox. */
+  const janela = (c: { x0: number; y0: number; x1: number; y1: number; z: number }, conteudo: (w: number, h: number) => string) =>
+    `<div style="width:${Math.round((c.x1 - c.x0) * c.z)}px;height:${Math.round((c.y1 - c.y0) * c.z)}px;` +
+    `overflow:hidden;position:relative;outline:1px solid #E4DFD6">` +
+    `<div style="position:absolute;left:${-c.x0 * c.z}px;top:${-c.y0 * c.z}px">` +
+    conteudo(Math.round(VIEWBOX.w * c.z), Math.round(VIEWBOX.h * c.z)) +
+    `</div></div>`;
+
+  // --- bloco 1 e 2: leitura, um por fundo. O recorte claro é reusado nos closes:
+  // é a mesma imagem, e recortá-la duas vezes seria duas chances de divergir.
+  const refs = new Map(
+    await Promise.all(
+      FUNDOS.map(
+        async (f) => [f.nome, await recortarNoViewBox(referencia, mArte, f.cor)] as const,
+      ),
+    ),
+  );
+  const refClaro = refs.get(FUNDOS[0].nome)!;
+  const blocosDeLeitura = FUNDOS.map((f) => {
+    const ref = refs.get(f.nome)!;
+    const linha = (rot: string, cel: (t: number) => string) =>
+      `<div style="display:flex;align-items:flex-end;gap:16px">` +
+      `<div style="width:96px;font:11px system-ui;color:${f.fraco};text-align:right;padding-bottom:16px">${esc(rot)}</div>` +
+      TAMANHOS.map((t) => fig(`${t} px${t === 56 ? " · o ranking" : ""}`, cel(t), f.fraco)).join("") +
+      `</div>`;
+    return (
+      `<div style="background:${f.cor};padding:16px 20px 18px;border-radius:6px">` +
+      `<p style="font:600 12px system-ui;color:${f.texto};margin:0 0 12px">${esc(f.nome)}</p>` +
+      linha("a arte", (t) => `<img src="${ref}" width="${larg(t)}" height="${t}" style="display:block">`) +
+      `<div style="height:10px"></div>` +
+      linha("a peça · teal", (t) => em(svgTeal, t)) +
+      `<div style="height:10px"></div>` +
+      linha("a peça · paleta", (t) => em(svgReal, t)) +
+      `</div>`
+    );
+  });
+
+  // --- bloco 3: máscara por papel
+  const blocoPapeis = papeisImg
+    .map((p, i) => {
+      const parte = (rot: string, dentro: string) =>
+        fig(rot, `<div style="outline:1px solid #E4DFD6">${dentro}</div>`, "#8A8378");
+      return (
+        `<div style="padding:0 16px;${i ? "border-left:1px solid #EEE9E0" : ""}">` +
+        `<p style="font:600 12px system-ui;color:#1B2432;margin:0 0 8px;text-align:center">${esc(p.nome)}</p>` +
+        `<div style="display:flex;gap:10px">` +
+        parte("a arte declarada", `<img src="${p.img}" width="${larg(200)}" height="200" style="display:block">`) +
+        parte("o render", em(svgDoPapel(`p${i}`, p.d, p.traco, "#FFFFFF", "#1E1E1E"), 200)) +
+        `</div></div>`
+      );
+    })
+    .join("");
+
+  // --- bloco 4: divergência
+  const legenda = (cor: readonly number[], rot: string) =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font:11px system-ui;color:#5A5248">` +
+    `<span style="width:11px;height:11px;background:rgb(${cor.join(",")});outline:1px solid #CFC8BC"></span>${esc(rot)}</span>`;
+
+  // --- bloco 5: os dois closes medidos
+  const close = (c: typeof corteSobrancelha) =>
+    `<div style="padding:0 16px">` +
+    `<p style="font:600 12px system-ui;color:#1B2432;margin:0 0 2px">${esc(c.nome)}</p>` +
+    `<p style="font:10px ui-monospace,monospace;color:#8A8378;margin:0 0 8px">` +
+    `x ${c.x0.toFixed(0)}–${c.x1.toFixed(0)} · y ${c.y0.toFixed(0)}–${c.y1.toFixed(0)} · ${esc(c.porque)}</p>` +
+    `<div style="display:flex;gap:10px">` +
+    fig("a arte", janela(c, (w, h) => `<img src="${refClaro}" width="${w}" height="${h}" style="display:block">`), "#8A8378") +
+    fig("a peça · paleta", janela(c, (w, h) => em(svgReal, h)), "#8A8378") +
+    fig("divergência", janela(c, (w, h) => `<img src="${divergencia}" width="${w}" height="${h}" style="display:block">`), "#8A8378") +
+    `</div></div>`;
+
+  const rodape =
+    `IoU ${med.iou.toFixed(1)}% · borda de baixo ${u(med.base.medio)} médio, máx ${u(med.base.max)} · ` +
+    `topo ${u(med.topo.medio)} médio · colunas só na arte ${(100 * med.soNaArte).toFixed(1)}% (teto ${100 * TETO_SO_NA_ARTE}%)  |  ` +
+    `folga sobre a sobrancelha — arte esq ${med.folga.arte.esq.toFixed(1)} dir ${med.folga.arte.dir.toFixed(1)} · ` +
+    `render esq ${med.folga.render.esq.toFixed(1)} dir ${med.folga.render.dir.toFixed(1)} u  |  ` +
+    `cobertura da coroa ${((coberturaDaCoroa(peca) ?? 0) * 100).toFixed(1)}% · ` +
+    `contenção da clara ${contencaoDaClara(peca).toFixed(2)} u · ` +
+    `traço ${(100 * (arcosDeTraco(peca)?.fracao ?? 0)).toFixed(1)}% do laço em ${(peca.linhas ?? []).length} arco(s)  |  ` +
+    `massa ${(peca.massa ?? []).length} pts · clara ${(peca.clara ?? []).length} pts · ${formas} formas · ${bytes} B`;
 
   const nav = await chromium.launch();
   try {
     const pg = await nav.newPage();
-    const html = colunas
-      .map((c) => {
-        const corpo = TAMANHOS.map((t) =>
-          fig(
-            `${t} px${t === 56 ? " · o ranking" : ""}`,
-            c.svg
-              ? em(c.svg, t)
-              : `<img src="${c.img}" width="${larg(t)}" height="${t}" style="display:block">`,
-          ),
-        ).join("");
-        const real = c.svgReal
-          ? `<div style="border-top:1px dashed #ddd;padding-top:10px;margin-top:2px">` +
-            fig("56 px · paleta de verdade", em(c.svgReal, 56)) +
-            `</div>`
-          : "";
-        return (
-          `<section style="flex:0 0 auto;padding:0 18px;border-right:1px solid #eee">` +
-          `<h2 style="font:600 13px system-ui;margin:0 0 2px">${c.nome}</h2>` +
-          `<p style="font:11px system-ui;color:#888;margin:0 0 12px;max-width:260px">${c.legenda}</p>` +
-          `<div style="display:flex;align-items:flex-end;gap:14px">${corpo}</div>` +
-          real +
-          `<p style="font:11px ui-monospace,monospace;color:#555;margin:10px 0 0">${c.rodape}</p>` +
-          `</section>`
-        );
-      })
-      .join("");
-
     await pg.setContent(
-      `<body style="margin:0;background:#FFF;display:inline-block">` +
-        `<div style="display:flex;align-items:flex-start;padding:20px 0">${html}</div>` +
-        `<p style="font:10px ui-monospace,monospace;color:#BBB;margin:0 0 8px 18px">${selo}</p>` +
+      `<body style="margin:0;background:#FFFFFF;display:inline-block;min-width:1180px">` +
+        `<div style="padding:18px 20px 0">` +
+        `<h1 style="font:600 15px system-ui;margin:0 0 2px;color:#1B2432">${esc(alvo)} — a peça IMPORTADA contra a arte</h1>` +
+        `<p style="font:11px ui-monospace,monospace;color:#8A8378;margin:0">` +
+        `composta do literal de peca.ts (conferido contra a fonte) · registro pela CABEÇA · ` +
+        `kx ${mArte.kx.toFixed(4)} ky ${mArte.ky.toFixed(4)} · anisotropia ${(100 * anisotropia(mArte)).toFixed(2)}%</p>` +
+        `</div>` +
+        secao(
+          h2(
+            "1 · leitura, nos dois fundos",
+            "a mesma peça e a mesma arte em 56/100/200/425 px. 56 é o tamanho do ranking e é o que manda; 425 existe para ver o que 56 esconde, não para julgar",
+          ) + `<div style="display:flex;gap:16px;flex-wrap:wrap">${blocosDeLeitura.join("")}</div>`,
+        ) +
+        secao(
+          h2(
+            "2 · máscara por papel",
+            "a arte declarada entra no registro de CAIXA; a peça está reancorada pela largura da linha. A diferença na cúpula é o achado da coroa, desenhado em vez de contado",
+          ) + `<div style="display:flex">${blocoPapeis}</div>`,
+        ) +
+        secao(
+          h2("3 · mapa de divergência", "as duas máscaras da grade da régua, 1000×1400, uma célula por pixel") +
+            `<div style="display:flex;gap:20px;align-items:flex-start">` +
+            `<img src="${divergencia}" width="${larg(420)}" height="420" style="display:block;outline:1px solid #E4DFD6">` +
+            `<div style="padding-top:6px">` +
+            legenda(DIV.arte, "só na arte") +
+            legenda(DIV.render, "só no render") +
+            legenda(DIV.ambas, "nas duas") +
+            `<p style="font:11px system-ui;color:#5A5248;margin:12px 0 0;max-width:420px">` +
+            `colunas com massa só na arte: <b>${(100 * med.soNaArte).toFixed(1)}%</b> · células — arte ${med.perfis.arte.celulas}, render ${med.perfis.render.celulas}</p>` +
+            `</div></div>`,
+        ) +
+        secao(
+          h2("4 · dois closes de coordenada medida", "nenhum recorte escolhido a olho: os dois saem das constantes de geometria.ts e de cabelo.ts") +
+            `<div style="display:flex;gap:8px;flex-wrap:wrap">${close(corteSobrancelha)}${close(corteCoroa)}</div>`,
+        ) +
+        `<p style="font:11px ui-monospace,monospace;color:#5A5248;margin:0;padding:14px 20px;` +
+        `border-top:1px solid #E4DFD6;line-height:1.7;max-width:1140px">${esc(rodape)}</p>` +
+        `<p style="font:10px ui-monospace,monospace;color:#BBB;margin:0;padding:0 20px 12px">${selo}</p>` +
         `</body>`,
     );
-    const caixa = await pg.locator("body").boundingBox();
-    const buf = await pg.screenshot({
-      clip: { x: 0, y: 0, width: Math.ceil(caixa!.width), height: Math.ceil(caixa!.height) },
-    });
+    // A JANELA CRESCE ATÉ A FOLHA, e isto não é zelo: `clip` NÃO estica o viewport.
+    // A folha antiga cabia nos 1280×720 do padrão; esta não, e o recorte saía cortado
+    // no tamanho exato do viewport — um defeito que se lê como "a folha ficou pequena"
+    // e não como "faltou metade dela".
+    const caixa = (await pg.locator("body").boundingBox())!;
+    const w = Math.ceil(caixa.width);
+    const h = Math.ceil(caixa.height);
+    await pg.setViewportSize({ width: w, height: h });
+    const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: w, height: h } });
     writeFileSync(FOLHA, buf);
   } finally {
     await nav.close();
@@ -977,7 +1329,7 @@ async function folha(png: string) {
       {
         selo,
         variantes: [
-          { nome: "O traço fiel", eixo: "fidelidade contra a arte de origem", formas, bytes, svg: svgReal },
+          { nome: "a peça importada", eixo: "fidelidade contra a arte de origem", formas, bytes, svg: svgReal },
         ],
       },
       null,
@@ -985,6 +1337,12 @@ async function folha(png: string) {
     ),
   );
 
+  console.log(`\nFOLHA — ${alvo}, peça IMPORTADA (literal de peca.ts, conferido contra a fonte)`);
+  console.log(`  ${rodape.replace(/ {2}\| {2}/g, "\n  ")}`);
+  if (imp.achados.length) {
+    console.log(`\nos ${imp.achados.length} achado(s) que a folha existe para decidir:`);
+    for (const a of imp.achados) console.log(`  · ${a}`);
+  }
   console.log(`\nselo ${selo}`);
   console.log(FOLHA);
   console.log(`/dev/avatar-variantes  (public/dev/variantes.json)`);
@@ -1114,6 +1472,212 @@ async function conferenciaDeFonte(png: string, semDescartarMoldura: boolean) {
   process.exitCode = 1;
 }
 
+/* ------------------------------------------------------------------ */
+/* `--rota` — a TERCEIRA fonte, e ela é a máscara contra o traçador     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * UMA MÁSCARA CRUA VIRANDO `Segmentacao` — sem tronco, sem tom, sem contorno.
+ *
+ * `massaEmUnidades` pergunta duas coisas a uma segmentação: o `bmp` (para saber o
+ * tamanho) e `cabelo(x,y)`. Os outros campos existem para quem sonda pela normal, e
+ * aqui ninguém sonda: a pergunta do bloco 0 é de REGIÃO, não de linha de centro.
+ *
+ * `ancoras` vem de fora porque a máscara não tem tronco para achá-los — e vem do PNG
+ * da mesma arte, no mesmo pixel. É a mesma divisão de trabalho de `segmentarArquivo`
+ * com a fonte SVG: forma de quem tem a forma, enquadramento de quem tem a silhueta.
+ */
+function segmentacaoDeMascara(
+  mask: Uint8Array,
+  w: number,
+  h: number,
+  a: Segmentacao["ancoras"],
+  laudo: string[],
+): Segmentacao {
+  const bmp: Bitmap = { data: Buffer.alloc(w * h * 3, 255), w, h, canais: 3 };
+  for (let i = 0; i < mask.length; i++) {
+    if (!mask[i]) continue;
+    bmp.data[i * 3] = 0;
+    bmp.data[i * 3 + 1] = 0;
+    bmp.data[i * 3 + 2] = 0;
+  }
+  const em = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && mask[y * w + x] === 1;
+  return {
+    bmp,
+    cabelo: em,
+    claro: () => false,
+    escuro: () => false,
+    ancoras: a,
+    fonte: "path",
+    laudo,
+  };
+}
+
+/**
+ * A MÁSCARA CONGELADA CONTRA O QUE UM TRAÇADOR DEVOLVE — a régua do bloco 0.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ESTA É A MESMA RÉGUA DE `--fonte-conferencia`, E NÃO UMA PARECIDA
+ * ---------------------------------------------------------------------------
+ *
+ * `massaEmUnidades`, `desvio`, `iou` e `decompor` são as mesmas funções, sobre a
+ * mesma grade, com o mesmo piso de meio traço. O que muda é só **quem é o segundo
+ * lado**: ali era o SVG do conversor, aqui é o contorno devolvido pelo traçador,
+ * rasterizado 1:1 de volta. Sem render de peça no meio, pelo mesmo motivo escrito
+ * em `conferenciaDeFonte`: um render carregaria o clip do crânio, a reancoragem e a
+ * decimação para dentro de um número que existe para medir traçado.
+ *
+ * ---------------------------------------------------------------------------
+ * TRÊS COISAS QUE SÓ ESTE RELATÓRIO MEDE
+ * ---------------------------------------------------------------------------
+ *
+ * **O controle.** A máscara congelada é comparada com `segmentarPorMatiz` do mesmo
+ * PNG. Elas têm de ser a MESMA coisa — o congelamento adiciona o filtro de alcance e
+ * mais nada. Um IoU abaixo de 100% aqui quer dizer que congelar mudou a arte, e aí
+ * nenhum outro número da folha vale.
+ *
+ * **As pontas, uma a uma.** São o defeito que o Doug reprovou, e média nenhuma as
+ * resume: 12 bicos num perímetro de ~2 900 px movem o médio global em frações de
+ * unidade. Cada ponta é achada na máscara (máximo local da borda de cima com um
+ * traço de proeminência) e o desvio é medido **naquela coluna**.
+ *
+ * **Componentes desconectados.** O importador de hoje REPROVA componente extra como
+ * ilha (`PISO_ILHA`), e a §3.3 do plano argumenta que as pontas talvez só existam
+ * como componentes separados. Contar aqui é o insumo dessa decisão, e ela é do
+ * bloco 2 — aqui é diagnóstico, não gate.
+ */
+async function conferenciaDeRota(png: string, nomeDaRota: string, opcoes: OpcoesRota) {
+  const { congelarMascara, gravarMascara } = await import("./mascara");
+  const { mascaraDoTracado, ilhasDe, pontasDaMascara } = await import("./rotas/rota");
+  const { rotaPotrace } = await import("./rotas/potrace");
+  const { rotaLineArt } = await import("./rotas/line-art");
+
+  const rotas: Record<string, (typeof rotaPotrace)> = {
+    potrace: rotaPotrace,
+    "line-art": rotaLineArt,
+  };
+  const rota = rotas[nomeDaRota];
+  if (!rota) {
+    throw new Error(`--rota aceita ${Object.keys(rotas).join(" ou ")} — não "${nomeDaRota}"`);
+  }
+
+  const mc = await congelarMascara(png);
+  for (const l of mc.laudo) console.log(l);
+  console.log(`  gravada em ${gravarMascara(mc, "curto-espetada")}`);
+
+  // O CONTROLE: congelar não pode ter mudado a arte.
+  const porMatiz = segmentarPorMatiz(mc.bmp, []);
+  const congelada = segmentacaoDeMascara(mc.mask, mc.w, mc.h, mc.ancoras, []);
+  const a = massaEmUnidades(porMatiz, mc.mapa, mc.ancoras.yPescoco);
+  const c = massaEmUnidades(congelada, mc.mapa, mc.ancoras.yPescoco);
+  const controle = iou(a.massa, c.massa);
+  console.log(
+    `\nCONTROLE — máscara congelada × segmentação por matiz do mesmo PNG: IoU ${controle.toFixed(2)}%` +
+      (controle >= 99.9 ? `   ✓ congelar não mudou a arte` : `   ✗ CONGELAR MUDOU A ARTE`),
+  );
+  if (controle < 99.9) process.exitCode = 1;
+
+  console.log(``);
+  const t = await rota.tracar(mc, opcoes);
+  for (const l of t.laudo) console.log(l);
+
+  const volta = await mascaraDoTracado(t, mc.w, mc.h);
+  const ilhas = ilhasDe(volta.mask, volta.w, volta.h);
+  const b = massaEmUnidades(
+    segmentacaoDeMascara(volta.mask, volta.w, volta.h, mc.ancoras, []),
+    mc.mapa,
+    mc.ancoras.yPescoco,
+  );
+
+  const base = desvio(c.base, b.base);
+  const topo = desvio(c.topo, b.topo);
+  const valor = iou(c.massa, b.massa);
+
+  console.log(`\nROTA ${t.rota} — a máscara congelada ${mc.hash} contra o contorno devolvido`);
+  console.log(
+    `  células: máscara ${c.celulas} · traçado ${b.celulas} ` +
+      `(${((100 * (b.celulas - c.celulas)) / (c.celulas || 1)).toFixed(2)}%)`,
+  );
+  console.log(`  IoU do maior componente ...... ${valor.toFixed(2)}%`);
+  console.log(
+    `  borda de BAIXO   máx ${u(base.max)}   médio ${u(base.medio)}` +
+      (base.medio > MEIO_TRACO ? "   ✗" : "   ✓"),
+  );
+  console.log(
+    `  borda de CIMA    máx ${u(topo.max)}   médio ${u(topo.medio)}` +
+      (topo.medio > MEIO_TRACO ? "   ✗" : "   ✓"),
+  );
+  console.log(
+    `  colunas em UM lado só: só na máscara ${base.soNaArte} · só no traçado ${base.soNoRender} ` +
+      `(de ${base.colunasComuns} comuns)`,
+  );
+  console.log(
+    `  componentes desconectados do traçado: ${ilhas.length}` +
+      (ilhas.length > 1 ? ` — ${ilhas.slice(1, 6).map((p) => `${p.toFixed(2)}%`).join(" · ")}` : ``) +
+      `\n    (diagnóstico do bloco 2, não gate: \`PISO_ILHA\` do importador reprova ilha hoje)`,
+  );
+  console.log(`  pontos depois da conversão: ${t.pontos} em ${t.contornos.length} contorno(s)`);
+  console.log(
+    `  bytes da peça final: só depois da decimação e da composição — bloco 2. ` +
+      `Contar aqui seria inventar.`,
+  );
+
+  imprimirDecomposicao("por banda de x, e as 10 piores colunas:", decompor(c.base, b.base), base.medio);
+
+  /* As pontas, uma a uma. */
+  const proemU = Number(opcoes.proeminencia ?? TRACO);
+  const { pontas } = pontasDaMascara(mc, proemU);
+  // A distribuição existe porque o número de pontas é o insumo do bloco 2, e um
+  // limiar único esconde se 12 viraram 3 por serem rasas ou por não existirem.
+  const escada = [TRACO * 2, TRACO, TRACO / 2, TRACO / 4]
+    .map((v) => `≥${v.toFixed(1)} u: ${pontasDaMascara(mc, v).pontas.length}`)
+    .join(" · ");
+  console.log(`\nAS PONTAS — proeminência ${escada}`);
+  console.log(`${pontas.length} bico(s) acima de ${proemU} u:`);
+  if (!pontas.length) {
+    console.log(`  nenhuma. A borda de cima desta máscara não tem máximo local com 12 u de proeminência.`);
+  }
+  let piorPonta = 0;
+  let perdidas = 0;
+  for (const p of pontas) {
+    // Do pixel da máscara para a coluna da grade — a mesma conversão de `massaEmUnidades`.
+    const ux = (p.x - mc.mapa.ex0) * mc.mapa.kx + mc.mapa.eu0;
+    const gx = Math.round(ux * S);
+    if (gx < 0 || gx >= GX) continue;
+    const na = c.topo[gx];
+    const nb = b.topo[gx];
+    if (na === null) continue;
+    if (nb === null) {
+      perdidas++;
+      console.log(`  x ${ux.toFixed(1).padStart(6)} u   proem ${(p.proeminencia * mc.mapa.kx).toFixed(1).padStart(5)} u   PERDIDA — o traçado não tem massa nesta coluna`);
+      continue;
+    }
+    const d = Math.abs(na - nb) / S;
+    piorPonta = Math.max(piorPonta, d);
+    console.log(
+      `  x ${ux.toFixed(1).padStart(6)} u   proem ${(p.proeminencia * mc.mapa.kx).toFixed(1).padStart(5)} u   ` +
+        `desvio do topo ${d.toFixed(1).padStart(5)} u` + (d > MEIO_TRACO ? "   ✗" : "   ✓"),
+    );
+  }
+
+  const falhas: string[] = [];
+  if (base.medio > MEIO_TRACO) falhas.push(`borda de baixo ${base.medio.toFixed(1)} u > ${MEIO_TRACO}`);
+  if (topo.medio > MEIO_TRACO) falhas.push(`borda de cima ${topo.medio.toFixed(1)} u > ${MEIO_TRACO}`);
+  if (perdidas) falhas.push(`${perdidas} ponta(s) sem massa nenhuma no traçado`);
+  if (piorPonta > MEIO_TRACO) falhas.push(`pior ponta ${piorPonta.toFixed(1)} u > ${MEIO_TRACO}`);
+
+  if (!falhas.length) {
+    console.log(
+      `\n✓ ${t.rota} descreve a máscara congelada dentro de meio traço, e as ${pontas.length} pontas\n` +
+        `  sobrevivem. O que sobra para reprovar a peça não é o traçador.`,
+    );
+    return;
+  }
+  console.error(`\n✗ ${falhas.length} reprovação(ões) da rota ${t.rota}:`);
+  for (const f of falhas) console.error(`  · ${f}`);
+  process.exitCode = 1;
+}
+
 /**
  * A TESTA: quanto acima da sobrancelha ainda é franja, e não volta do laço.
  *
@@ -1172,14 +1736,102 @@ async function main() {
   if (!["png", "svg", "auto"].includes(fonte)) {
     throw new Error(`--fonte aceita png, svg ou auto — não "${fonte}"`);
   }
-  const png =
-    args.find((a, i) => !a.startsWith("--") && i !== (iFonte >= 0 ? iFonte + 1 : -1)) ?? ARTE_PADRAO;
+  // Os índices que são VALOR de um flag, e portanto não são o caminho da arte.
+  // Enumerar os flags com valor num só lugar é o que impede o próximo flag de
+  // roubar o posicional em silêncio — que é o tipo de erro que sai plausível.
+  const comValor = ["--fonte", "--semantica", "--png", "--rota", "--rota-opcoes"];
+  const valores = new Set(comValor.map((f) => args.indexOf(f)).filter((i) => i >= 0).map((i) => i + 1));
+  const posicional = args.find((a, i) => !a.startsWith("--") && !valores.has(i));
+  const png = posicional ?? ARTE_PADRAO;
 
-  if (querFolha) return folha(png);
+  /**
+   * `--folha` PASSOU A RECEBER UM ALVO DE FONTE, e não um PNG — de propósito.
+   *
+   * Ela compõe a peça IMPORTADA, que mora ao lado da fonte versionada. Um PNG solto
+   * não tem `semantica.svg` nem `peca.ts`, então não existe peça para desenhar: a
+   * única coisa que a folha poderia fazer com ele é voltar à rota antiga, que é
+   * justamente o que o checkpoint C proíbe. Recusar em voz alta é melhor que aceitar
+   * e desenhar outra coisa — foi assim que a folha chegou aqui mostrando o artefato
+   * errado.
+   */
+  if (querFolha) {
+    if (posicional && /\.(png|svg)$/i.test(posicional)) {
+      throw new Error(
+        `--folha não recebe mais arquivo de imagem ("${posicional}"). Ela compõe a PEÇA ` +
+          `IMPORTADA — o literal de peca.ts, conferido contra semantica.svg —, então o que ela ` +
+          `recebe é um alvo de fonte, como o \`avatar:importar\`:\n` +
+          `  npm run avatar:fidelidade -- --folha                        # ${ALVO_PADRAO}\n` +
+          `  npm run avatar:fidelidade -- --folha cabelo/outro-penteado`,
+      );
+    }
+    return folha(posicional ?? ALVO_PADRAO);
+  }
+  /**
+   * `--rota <nome>` — a TERCEIRA fonte da conferência, e ela é aditiva.
+   *
+   * Sem ela, `--fonte-conferencia` faz exatamente o que fazia: PNG por matiz contra
+   * o SVG do conversor. Com ela, o segundo lado passa a ser o contorno que um
+   * traçador devolveu sobre a máscara congelada, e o primeiro passa a ser a própria
+   * máscara — com o controle que prova que congelar não mudou a arte.
+   *
+   *   npm run avatar:fidelidade -- --fonte-conferencia --rota potrace
+   *   npm run avatar:fidelidade -- --fonte-conferencia --rota potrace --rota-opcoes alphaMax=0.6,optCurve=1
+   *   npm run avatar:fidelidade -- --fonte-conferencia --rota line-art --rota-opcoes lado=externo
+   */
+  const iRota = args.indexOf("--rota");
+  const nomeDaRota = iRota >= 0 ? args[iRota + 1] : undefined;
+  const iOpc = args.indexOf("--rota-opcoes");
+  const opcoesDaRota: OpcoesRota = {};
+  if (iOpc >= 0) {
+    for (const par of (args[iOpc + 1] ?? "").split(",").filter(Boolean)) {
+      const [k, v] = par.split("=");
+      if (!k || v === undefined) throw new Error(`--rota-opcoes: "${par}" não é \`chave=valor\``);
+      opcoesDaRota[k] = v;
+    }
+  }
+  if (nomeDaRota && !querConferencia) {
+    throw new Error(`--rota só vale junto de --fonte-conferencia: ela é a terceira fonte da conferência.`);
+  }
+  if (querConferencia && nomeDaRota) return conferenciaDeRota(png, nomeDaRota, opcoesDaRota);
   if (querConferencia) return conferenciaDeFonte(png, args.includes("--sem-descartar-moldura"));
 
-  const { tracado } = await tracarArquivo(png, fonte);
-  const segArte = await segmentarArquivo(png, fonte);
+  /**
+   * `--semantica <arquivo>` TROCA O REGISTRO, e é a única coisa que ele troca.
+   *
+   * A mesma arte, a mesma segmentação, a mesma decimação — medidas contra a cabeça
+   * em vez de contra o tronco. Ver `mapaPelaCaixa` em `tracar-cabelo.ts` para os
+   * 28% de escala que o registro pelo tronco custava.
+   *
+   * Ele é um FLAG e não o padrão porque todo número aprovado do avatar foi medido
+   * pelo registro antigo. Trocar o padrão por baixo deslocaria a régua de todo
+   * mundo de uma vez — o inverso do que este arquivo existe para fazer.
+   */
+  const iSem = args.indexOf("--semantica");
+  const semantica = iSem >= 0 ? args[iSem + 1] : undefined;
+  const iPng = args.indexOf("--png");
+  const pngDoEnquadramento = iPng >= 0 ? args[iPng + 1] : undefined;
+
+  let registro: Mapa | undefined;
+  if (semantica) {
+    const peca = lerFontePecaOuFalhar(semantica);
+    const guia = guiaChamada(peca, "cabeca");
+    registro = registroPelaCabeca(guia.caixa, peca.viewBox, ALTURA_SVG, {
+      x0: CAIXA_CABECA.x0,
+      y0: CAIXA_CABECA.y0,
+      x1: CAIXA_CABECA.x1,
+      y1: CAIXA_CABECA.y1,
+    });
+    REGISTRO_DA_ARTE = registro;
+    console.log(
+      `REGISTRO PELA CABEÇA · guia de ${semantica} · caixa ` +
+        `(${guia.caixa.x0.toFixed(0)},${guia.caixa.y0.toFixed(0)})-(${guia.caixa.x1.toFixed(0)},${guia.caixa.y1.toFixed(0)}) · ` +
+        `kx ${registro.kx.toFixed(4)} · ky ${registro.ky.toFixed(4)} · ` +
+        `anisotropia ${(100 * anisotropia(registro)).toFixed(2)}%`,
+    );
+  }
+
+  const { tracado } = await tracarArquivo(png, fonte, { registro, png: pngDoEnquadramento });
+  const segArte = await segmentarArquivo(png, fonte, pngDoEnquadramento);
   console.log(`fonte da ARTE: ${segArte.fonte === "path" ? "SVG (família de path)" : "PNG (matiz)"}`);
   for (const l of segArte.laudo) console.log(`  ${l.replace(/\n/g, "\n  ")}`);
 
@@ -1214,7 +1866,7 @@ async function main() {
     const aArte = segArte.ancoras;
     const Y0 = CAIXA_CABECA.y0;
     const k = tracado.teto.k;
-    const arteMassa = massaEmUnidades(segArte, mapa(aArte, vb), aArte.yPescoco, (uy) =>
+    const arteMassa = massaEmUnidades(segArte, REGISTRO_DA_ARTE ?? mapa(aArte, vb), aArte.yPescoco, (uy) =>
       uy >= Y0 || k >= 1 ? uy : Y0 - (Y0 - uy) / k,
     );
     const bmpNC = await semClip(tracado.peca);

@@ -77,6 +77,7 @@ import { LINHA, TRAJE_BASE, escurecer } from "../palette";
 import {
   pathCabelo,
   pathCabeloClaro,
+  pathCabeloLinhas,
   pathExtensao,
   resolverCabelo,
   type CabeloOuModelo,
@@ -121,7 +122,7 @@ import type { EstadoAvatar, Traje } from "./tipos";
  * screenshot de gate) o olho fica ABERTO. A folhinha ensinou isso pelo caminho
  * caro — pálpebra que nasce fechada entrega um boneco cego na folha de contato.
  */
-function estilo(ns: string, animado: boolean, temCabelo: boolean): string {
+function estilo(ns: string, animado: boolean, modelo: CabeloOuModelo | undefined): string {
   const respiro = animado
     ? `.${ns} .kk-respira{animation:${ns}-respira 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
       `.${ns} .kk-sombra{animation:${ns}-sombra 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
@@ -132,25 +133,39 @@ function estilo(ns: string, animado: boolean, temCabelo: boolean): string {
       `@media(prefers-reduced-motion:reduce){.${ns} .kk-respira,.${ns} .kk-sombra,.${ns} .kk-olho{animation:none}}`
     : "";
 
-  // AS TRÊS REGRAS DO CABELO SÓ SAEM QUANDO HÁ CABELO, como o `respiro`.
+  // AS REGRAS DO CABELO SÓ SAEM QUANDO HÁ CABELO, como o `respiro`.
   //
   // Não é economia de byte por esporte: o teto da base é de REGRESSÃO (7 418, o
   // valor medido no Bloco 1d), e regra emitida à toa faria a base careca crescer
   // para pagar uma camada que ela não tem. O mesmo vale para as duas custom
-  // properties lá embaixo.
+  // properties lá embaixo — e é a mesma razão de `.kk-cabelo-l` só sair quando há
+  // arcos declarados, e de as duas famílias emitirem regras diferentes.
   //
-  // São três e não duas porque o cabelo tem três papéis de tinta: a camada de baixo
-  // é escura E carrega o contorno (é a borda dela que vira a linha da franja), a de
-  // cima é clara e não tem contorno nenhum (um traço ali riscaria o meio do cabelo),
-  // e a extensão é clara COM contorno, porque ela é a borda externa da figura onde
-  // passa do crânio.
-  const cabelo = temCabelo
-    ? `.${ns} .kk-cabelo{fill:var(--av-cabelo)}` +
-      `.${ns} .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);` +
-      `stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}` +
-      `.${ns} .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);` +
-      `stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}`
-    : "";
+  // A camada clara nunca tem contorno (um traço ali riscaria o meio do cabelo) e a
+  // extensão sempre tem, porque ela é a borda externa da figura onde passa do
+  // crânio. O que muda entre as famílias é a camada de baixo:
+  //
+  //  - **paramétrica** (`.kk-cabelo-s`): fill E stroke na mesma regra, e está certo.
+  //    A touca fecha por um retângulo a `FORA` da caixa da cabeça, o clip come aquele
+  //    trecho inteiro, e o que sobra traçado é exatamente a franja. Perímetro
+  //    matemático e traço visível coincidem por construção;
+  //  - **traçada** (`.kk-cabelo-m` + `.kk-cabelo-l`): num laço FECHADO eles deixam de
+  //    coincidir — o laço tem borda também por cima, onde quem desenha o contorno na
+  //    arte é a cabeça do BONECO, que é `descarte`. Fill e stroke passam a ser dois
+  //    elementos porque passam a ter GEOMETRIA diferente: a massa inteira pintada,
+  //    e só os arcos que a arte traça de fato levando linha. Ver `Cabelo.linhas`.
+  const c = modelo ? resolverCabelo(modelo) : undefined;
+  const risco =
+    `stroke:var(--av-linha);stroke-width:var(--av-traco);` +
+    `stroke-linejoin:round;stroke-linecap:round`;
+  const cabelo = !c
+    ? ""
+    : `.${ns} .kk-cabelo{fill:var(--av-cabelo)}` +
+      (c.massa
+        ? `.${ns} .kk-cabelo-m{fill:var(--av-cabelo-s)}` +
+          (c.linhas?.length ? `.${ns} .kk-cabelo-l{fill:none;${risco}}` : "")
+        : `.${ns} .kk-cabelo-s{fill:var(--av-cabelo-s);${risco}}`) +
+      `.${ns} .kk-cabelo-e{fill:var(--av-cabelo);${risco}}`;
 
   return (
     `.${ns} .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);` +
@@ -282,6 +297,15 @@ function extensoes(traje: Traje | undefined, atras: boolean): string {
  *
  * As duas vivem dentro do `clipPath` da cabeça, que é quem resolve a lateral. O
  * cabelo não sabe onde o crânio termina, e é de propósito (ver `cabelo.ts`).
+ *
+ * ---------------------------------------------------------------------------
+ * NA PEÇA TRAÇADA SÃO TRÊS PASSADAS, E O TRAÇO VEM POR ÚLTIMO
+ * ---------------------------------------------------------------------------
+ *
+ * A massa pinta, a clara pinta por cima, e o traço vai por último — nesta ordem, e
+ * não é gosto: a clara é desenhada DEPOIS da massa, então um traço emitido junto com
+ * a massa seria coberto pela clara em todo trecho onde as duas se encostam. O traço
+ * é a borda externa da peça; ele fica acima de tudo o que a peça pinta.
  */
 function cabeloNoCranio(modelo: CabeloOuModelo | undefined): string {
   if (!modelo) return "";
@@ -293,9 +317,15 @@ function cabeloNoCranio(modelo: CabeloOuModelo | undefined): string {
   // paramétrico com a sombra zerada — é uma camada a menos, e cobrar dela uma forma
   // vazia seria o mesmo desperdício que o moicano acabou de não pagar.
   const claro = pathCabeloClaro(modelo);
+  const clara = claro ? `<path class="kk-cabelo" d="${claro}"/>` : "";
+  if (!resolverCabelo(modelo).massa) {
+    return `<path class="kk-cabelo-s" d="${escuro}"/>` + clara;
+  }
+  const linhas = pathCabeloLinhas(modelo);
   return (
-    `<path class="kk-cabelo-s" d="${escuro}"/>` +
-    (claro ? `<path class="kk-cabelo" d="${claro}"/>` : "")
+    `<path class="kk-cabelo-m" d="${escuro}"/>` +
+    clara +
+    (linhas ? `<path class="kk-cabelo-l" d="${linhas}"/>` : "")
   );
 }
 
@@ -404,7 +434,7 @@ export function compor(estado: EstadoAvatar): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}" ` +
     `class="${ns}" style="${vars}">` +
-    `<style>${estilo(ns, animado, Boolean(modeloCabelo))}</style>` +
+    `<style>${estilo(ns, animado, modeloCabelo)}</style>` +
     `<defs>` +
     `<path id="${ns}-p-cabeca" d="${pathCabeca()}"/>` +
     `<path id="${ns}-p-tronco" d="${pathTronco()}"/>` +

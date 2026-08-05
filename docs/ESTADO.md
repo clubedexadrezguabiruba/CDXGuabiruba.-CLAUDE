@@ -46,9 +46,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/estilo-kokeshi` |
-| **Commits à frente de `origin/main`** | 36 |
-| **Árvore** | **26 arquivos sujos** |
-| **Último commit** | f1724aa · 2026-08-04 · feat(cabelo): o laço para de dobrar na cortina, e o resto perde o nome errado |
+| **Commits à frente de `origin/main`** | 37 |
+| **Árvore** | **20 arquivos sujos** |
+| **Último commit** | 7d9033d · 2026-08-04 · feat(revisao): o lance de teoria sai da conta da precisao e ganha nome |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -64,9 +64,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**17 entradas** em `verify:all`, que expandem para **20 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**18 entradas** em `verify:all`, que expandem para **21 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-assets` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-assets` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca`
 
 ## Frentes
 
@@ -101,7 +101,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 71 |
 | **Rotas (`page.tsx`)** | 32 |
-| **Arquivos de teste** | 13 |
+| **Arquivos de teste** | 14 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes
