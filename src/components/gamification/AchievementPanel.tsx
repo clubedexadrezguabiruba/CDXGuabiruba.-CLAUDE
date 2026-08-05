@@ -1,5 +1,7 @@
 "use client";
 
+import Card, { CardTitle } from "@/components/ui/Card";
+
 import { useState } from "react";
 import { useAchievements, type Achievement } from "@/hooks/useAchievements";
 
@@ -24,15 +26,15 @@ function AchievementCard({ ach }: { ach: Achievement }) {
     <div
       className={`flex items-start gap-3 rounded-lg border p-3 transition-all ${
         ach.unlocked
-          ? "border-amber-200 bg-amber-50 shadow-sm"
-          : "border-zinc-200 bg-white opacity-70"
+          ? "border-gold/40 bg-gold/10 shadow-sm"
+          : "border-ink/10 bg-white opacity-70"
       }`}
     >
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg ${
           ach.unlocked
-            ? "bg-amber-200 text-amber-800"
-            : "bg-zinc-100 text-zinc-400"
+            ? "bg-gold/40 text-ink/80"
+            : "bg-ink/6 text-ink/45"
         }`}
       >
         {ach.unlocked ? "\u2B50" : "\uD83D\uDD12"}
@@ -43,21 +45,21 @@ function AchievementCard({ ach }: { ach: Achievement }) {
             {ach.title}
           </span>
           {ach.reward_xp > 0 && (
-            <span className="shrink-0 text-xs font-semibold text-amber-600">
+            <span className="shrink-0 text-xs font-semibold text-gold">
               +{ach.reward_xp} XP
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-xs text-zinc-500">{ach.description}</p>
+        <p className="mt-0.5 text-xs text-ink/55">{ach.description}</p>
         {!ach.unlocked && (
           <div className="mt-1.5 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-200">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
               <div
-                className="h-full rounded-full bg-amber-400 transition-all duration-300"
+                className="h-full rounded-full bg-gold transition-all duration-300"
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="text-[10px] tabular-nums text-zinc-400">
+            <span className="text-[10px] tabular-nums text-ink/45">
               {ach.progress}/{ach.condition_value}
             </span>
           </div>
@@ -73,21 +75,21 @@ export default function AchievementPanel() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Insígnias</h2>
-        <div className="flex items-center justify-center py-6 text-sm text-zinc-400">
+      <Card>
+        <CardTitle>Insígnias</CardTitle>
+        <div className="flex items-center justify-center py-6 text-sm text-ink/45">
           Carregando conquistas...
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Insígnias</h2>
-        <p className="text-sm text-red-600">Erro: {error}</p>
-      </div>
+      <Card>
+        <CardTitle>Insígnias</CardTitle>
+        <p className="text-sm text-erro">Erro: {error}</p>
+      </Card>
     );
   }
 
@@ -125,10 +127,10 @@ export default function AchievementPanel() {
   }
 
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
+    <Card>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Insígnias</h2>
-        <span className="text-sm font-medium text-zinc-500">
+        <CardTitle className="mb-0">Insígnias</CardTitle>
+        <span className="text-sm font-medium text-ink/55">
           {unlockedCount}/{achievements.length}
         </span>
       </div>
@@ -140,7 +142,7 @@ export default function AchievementPanel() {
             const items = groupedUnlocked.get(cat) ?? [];
             return (
               <div key={cat}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink/45">
                   {CATEGORY_LABELS[cat] ?? cat}
                 </h3>
                 <div className="space-y-2">
@@ -153,7 +155,7 @@ export default function AchievementPanel() {
           })}
         </div>
       ) : (
-        <p className="py-4 text-center text-sm text-zinc-400">
+        <p className="py-4 text-center text-sm text-ink/45">
           Nenhuma insígnia desbloqueada ainda.
         </p>
       )}
@@ -163,7 +165,7 @@ export default function AchievementPanel() {
         <div className="mt-4">
           <button
             onClick={() => setShowLocked(!showLocked)}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-300 py-2 text-sm font-medium text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-ink/15 py-2 text-sm font-medium text-ink/55 transition-colors hover:border-ink/25 hover:text-ink/80"
           >
             {showLocked ? "Ocultar" : "Mostrar"} bloqueadas ({lockedCount})
             <span className="text-xs">{showLocked ? "▲" : "▼"}</span>
@@ -175,7 +177,7 @@ export default function AchievementPanel() {
                 const items = groupedLocked.get(cat) ?? [];
                 return (
                   <div key={cat}>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink/45">
                       {CATEGORY_LABELS[cat] ?? cat}
                     </h3>
                     <div className="space-y-2">
@@ -190,6 +192,6 @@ export default function AchievementPanel() {
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

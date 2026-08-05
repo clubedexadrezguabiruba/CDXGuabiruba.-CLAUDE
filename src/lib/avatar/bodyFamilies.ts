@@ -2,8 +2,8 @@
  * Avatar System — Body Family Definitions
  *
  * Define a body family canônica "recruta_v1" com todos os anchors e dimensões.
- * Valores extraídos de AvatarDisplay.tsx linhas 28-30 (head), 94-97 (hand),
- * 156-159 (pet) e dos docs fundacionais (doc 04).
+ * Valores extraídos de AvatarDisplay.tsx linhas 28-30 (head), 156-159 (pet)
+ * e dos docs fundacionais (doc 04).
  *
  * Estes valores são per-body_family+gender, nunca per-item.
  */
@@ -44,13 +44,6 @@ export const RECRUTA_V1: BodyFamilyDefinition = {
         origin: "bottom center",
         scale: 0.92,
       },
-      hand: {
-        top: 0.32,
-        left: 0.17,
-        width: 0.25,
-        height: 0.25,
-        origin: "top center",
-      },
       pet: {
         bottom: 0.09,
         right: -0.01,
@@ -64,13 +57,6 @@ export const RECRUTA_V1: BodyFamilyDefinition = {
         width: 0.92,
         height: 0.230,
         origin: "bottom center",
-      },
-      hand: {
-        top: 0.32,
-        left: 0.17,
-        width: 0.25,
-        height: 0.25,
-        origin: "top center",
       },
       pet: {
         bottom: 0.09,

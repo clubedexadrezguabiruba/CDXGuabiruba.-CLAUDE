@@ -27,7 +27,7 @@
 |---|---|
 | **Ponte dos baús** | `items.renderable` filtra o sorteio. Medido: antes, 60 aberturas davam 36 itens distintos com **25 invisíveis**; agora dão 20 distintos com **0 invisíveis** |
 | **Manifesto de assets** | `public/items/` é uma lista consultável; o resolver pergunta a ela. `prebuild` quebra se o manifesto divergir do disco |
-| **Gates** | `npm run verify:all` roda **14** (eram 11). Três novos: catálogo×assets, banco do avatar, pool dos baús |
+| **Gates** | `npm run verify:all` cresceu com três novos: catálogo×assets, banco do avatar, pool dos baús. Quantos são hoje: `docs/ESTADO.md` |
 | **Testes unitários** | **164**. `src/lib/avatar/` tinha zero |
 | **Página de teste** | `/dev/avatar-base`, trancada em professor/admin (404 para aluno) |
 | **Boneco base** | Arte do usuário, vetorizada e **recolorível**: um arquivo serve aos 8 tons de pele por uma variável. 478 KB no disco, **83 KB em brotli**. O protótipo gerado em código foi apagado — ver a T0.10 do doc 14 |
@@ -41,7 +41,7 @@
 | Itens sem miniatura no inventário | **30 de 77** (todos pets) |
 | Telas onde o avatar aparece | **2**, nenhuma social |
 | Peso de `public/items/` | **7,0 MB**, dos quais 4,0 MB são **um** pet |
-| Usuários com título acima de "Aprendiz" | **0 de 17** — mesmo com 46 aulas concluídas por 7 deles |
+| ~~Usuários com título acima de "Aprendiz"~~ | **resolvido em 2026-07-29.** Era `UPDATE` sem `UPSERT`, não a régua — ver a §3 (D-A), onde o `teacherdoug001` aparece promovido a Soldado. Esta linha dizia "0 de 17" e contradizia a §3 do próprio documento |
 | Uniformes equipados em produção que não renderizam | 1 de 1 (Camiseta do Clube) |
 
 O render de produção continua sendo o **v2**: PNG, variante por gênero,
@@ -224,7 +224,7 @@ aponte o que estiver claramente errado.
 | 3 | Cor vai em **custom property**, não embutida na regra CSS | Medido: com a cor na regra, dois bonecos na mesma página colidem e o último pinta todos. Inviabilizava o D30 inteiro |
 | 4 | Renderizador headless é **Chromium**, não `sharp` | O destino é o navegador; `sharp` usa librsvg, com suporte diferente. E o Playwright já é dependência |
 | 5 | ~~A régua da patente volta a ser questão aberta~~ **Decidida:** trilha de nível de 15 aulas (Passo 1–7), régua em `title_tiers` | Ver D-A |
-| 6 | **Mãos** entram no orçamento do boneco base | Os braços do protótipo terminam em cápsula. O slot `hand` tem 6 relíquias para segurar |
+| 6 | ~~**Mãos** entram no orçamento do boneco base~~ **Revogado em 2026-07-31 pela D-E: o slot `hand` sai por completo** | A linha valia para o protótipo antigo, cujos braços terminavam em cápsula. O kokeshi não tem braços, e o tronco mede **21 × 25 px a 56 px** — não cabe emblema que distinga 6 relíquias. Orçamento de arte cai de 39 para **33** |
 | 7 | A causa da patente morta **não era a régua** — era `UPDATE` sem `UPSERT` | Medido contra produção em 2026-07-29. Ver seção 1 |
 | 8 | O Bloco 7 vira **7a** (concessão, feito) e **7b** (uniforme, espera o render) | 7a não depende de arte e entrega valor hoje; 7b entregaria item invisível |
 | 9 | Orçamento de arte do Bloco 8 cai de 44 para **39 desenhos** | Com marcos de 15 aulas e 30 aulas no banco, 2 uniformes são alcançáveis. Os outros 5 esperam conteúdo |
@@ -234,7 +234,24 @@ aponte o que estiver claramente errado.
 # 5. O plano
 
 Dez blocos. Cada um cabe numa sessão de trabalho e fecha com um gate.
-**Nada começa antes de o gate anterior passar.**
+
+> ⚠️ **EMENDA DE SEQUENCIAMENTO — 2026-08-03.** A regra original desta linha era
+> *"nada começa antes de o gate anterior passar"*, e ela **custou o alcance do
+> avatar**: escrita para proteger codepath, foi aplicada a roadmap, e o resultado
+> medido é que a **F2 — o alcance social, que o próprio D-C chama de "onde o
+> investimento inteiro passa a motivar alguém" — está 0 de 16 tarefas**, presa
+> atrás de arte de cabelo da qual **não depende tecnicamente**: a base foi
+> aprovada no Bloco 1d e o cabelo é dado trocável, o que é precisamente a
+> propriedade que a arquitetura foi construída para ter.
+>
+> **A regra passa a ser:** um gate de arte trava **a arte e o flip de
+> lançamento** daquela peça — nunca a construção do que vem depois. Os blocos
+> **2c, 4, 5 e 6** correm em paralelo ao 2a, com o cabelo de hoje como
+> provisório. O que continua travado por gate anterior é tudo que **consome
+> forma**: os 33 desenhos do Bloco 8 e o reseed do 9.
+>
+> Isto não afrouxa gate nenhum: o Bloco 5 continua não podendo **lançar** com
+> arte reprovada. Ele passa a poder **existir** enquanto ela é refeita.
 
 ---
 
@@ -276,33 +293,584 @@ desmontaria o recolorir.
 Duas decisões minhas que você pode vetar em uma linha: as duas últimas cores de
 cabelo são **roxo e azul**, fantasia deliberada (o D27 existe para 30 alunos não
 saírem iguais); e o preto do cabelo é `#3A2F2A`, não preto de verdade — contra o
-contorno `#241610`, um preto real apagaria a silhueta.
+contorno, um preto real apagaria a silhueta.
+
+> **Atualizado no Bloco 1d:** o contorno era `#241610` (marrom-escuro, herdado do
+> Style Anchor do v3) e passou a ser **`#000000`**. A referência do estilo kokeshi é
+> preta: as cores escuras mais frequentes dela são `#010101`, `#020202` e `#000000`,
+> e o traço mede luminância 3,0. A folga do cabelo preto contra o contorno **sobe**
+> de 42,2 para 85,7 com a troca.
 
 ---
 
-## Bloco 2 — F1 curta: o boneco base
+## Bloco 2 — F1 curta: o boneco base ⚠️ **RE-ESCOPADO em 2026-07-31**
 
 *Aqui mora o carisma. É o único bloco que depende do seu olho.*
 
-O protótipo lê bem, mas é rígido. O que precisa mudar, concretamente:
+A lista original foi escrita contra o **protótipo antigo** — braços em cápsula,
+pernas, macacão, retângulos arredondados. A troca de estilo para kokeshi
+(2026-07-31) e os sub-blocos **1b, 1c e 1d** consumiram metade dela e deixaram um
+item **sem objeto**. O que está abaixo é o saldo, medido contra o código de hoje.
 
-- **2.1 Rosto.** Hoje são dois pontos e uma curva. Precisa de sobrancelhas com
-  forma, insinuação de nariz, e uma boca com caráter. O rosto sai em **paths
-  próprios com classes**, que é o que torna as 4 expressões (D8) gratuitas.
-- **2.2 Mãos.** Os braços terminam em cápsula. Sem mão não há onde ancorar as 6
-  relíquias do slot `hand`.
-- **2.3 Silhueta.** Tudo é retângulo arredondado. Falta peso: um quadril
-  levemente mais largo, ombro com queda, pescoço encaixado.
-- **2.4 Um degrau de sombra.** Chapado com contorno duro ainda comporta uma
-  segunda tonalidade — sob o queixo, dentro da manga, embaixo da franja. É o
-  que separa "clipart vetorial" de "storybook".
-- **2.5 Cabelo.** Hoje é uma tampa. Precisa de silhueta, porque ele também é o
-  primeiro dos 5 modelos do slot `hair`.
-- **2.6 Uniforme de Soldado**, como prova do `garment` sobre o corpo.
-- **2.7 Você critica** — principalmente 2.1. Eu regero.
+| item original | estado | onde ficou |
+|---|---|---|
+| **2.1** Rosto | ✅ **feito e aprovado** | 1c: olhos e facetas. 1d: sobrancelhas arqueadas e boca. `OLHO`, `SOBRANCELHA`, `BOCA` em `geometria.ts` |
+| **2.2** Mãos | ⛔ **sem objeto** | o boneco não tem braços. Vira a **D-E**, abaixo |
+| **2.3** Silhueta | ✅ **feito** | 1c: linha de centro medida no line-art, `CABECA.contorno` e `TRONCO.perfil` ponto a ponto |
+| **2.4** Degrau de sombra | ✅ **feito** | 1c: `FACETAS`, plano lateral, sombra do queixo e `SOMBRA_CHAO` |
+| **2.5** Cabelo | ⬜ **é o trabalho** | vira o **2a** |
+| **2.6** Uniforme de Soldado | ⬜ **é o trabalho, e mudou de natureza** | vira o **2b** |
+| **2.7** Você critica | ✅ **aconteceu três vezes** | reprovou o 1b, o 1c e a primeira volta do 1d |
 
-🔒 **Gate:** lê a 56 px · registra nos 8 tons sem vazar cor · a paleta não funde
-nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
+O que sobra, então, são **duas peças de arte e uma decisão**. E as duas peças
+carregam, cada uma, uma pendência declarada por escrito no código — elas entram
+como o primeiro item de cada uma, não como nota de rodapé, porque as duas
+**precedem** o desenho.
+
+---
+
+### D-E — o slot `hand` ✅ **DECIDIDA em 2026-07-31: REMOVER por completo**
+
+**O fato que abriu a questão:** o slot `hand` existe no banco (`CHECK` em
+`items.slot` e `user_equipped.slot`), tem **8 itens semeados** — não 6; os 6 são o
+alvo do Bloco 9 — e o v4 lhe reserva 6 desenhos no Bloco 8. No boneco kokeshi
+**não há braço, mão nem antebraço**, e nunca houve intenção de haver: a proporção
+1:2 e a ausência de membros são o estilo, não uma etapa faltando.
+
+Havia três saídas. A recomendação inicial foi a **B** (virar `emblema` pintado no
+tronco), e **a medição a derrubou** — o que é o motivo de a condição ter sido
+escrita como medida, e não como gosto.
+
+**A medição.** Do `pathTronco()` canônico, com o canvas de 700 unidades:
+
+| canvas | figura | tronco |
+|---|---|---|
+| **56 px** | 47,1 px | **21,0 × 25,1 px** |
+| 96 px | 80,7 px | 35,9 × 43,1 px |
+| 340 px | 285,9 px | 127,3 × 152,5 px |
+
+Um emblema que **não** compita com o uniforme cabe numa fração de 21 × 25 —
+ordem de 7 × 7 px. E o `TRACO` é 12 unidades, o que a 56 px dá **0,96 px**: o
+contorno do próprio sistema já é uma linha de um pixel ali. Um emblema com
+detalhe interno — peão, livro, cetro, orbe — precisaria de traço **mais fino que
+o traço do sistema**, dentro de 7 px, e ainda assim distinguir 6 relíquias em 2
+famílias × 3 tiers. É exatamente o que a **definição 4 de pronto** exige, e não é
+alcançável: a 7 px os seis viram a mesma mancha escura.
+
+O tronco também não está vazio a 56 px. Ele já carrega a cor do uniforme, a
+sombra do queixo (14,5 unidades ≈ 1,2 px), o plano lateral e a decoração vetorial
+da patente. O emblema seria o **quinto** elemento em 21 × 25 px.
+
+A **C** (objeto flutuante ao lado) caiu antes, por outro motivo: é literalmente a
+mesma âncora do pet (doc 01, §"anchor profiles de hand e pet"), e o pet tem **20**
+itens contra 6. Dois objetos soltos ao lado de uma figura de duas cabeças é
+entulho que estragaria também os 20 desenhos do pet.
+
+**E o mérito não cai para um canal só.** Sobram dois: o **uniforme** e a
+**moldura**. A moldura é `frame_ui` — CSS na camada z=10, **fora do SVG** (§2.3).
+Ela não gasta superfície nenhuma do boneco e lê a 56 px porque é a borda do cartão
+inteiro, não uma marca dentro dele. O doc 10 já roteia conquistas para frames, e a
+lista do pool de baú do 9.3 já a deixa de fora. É o lugar do papel que a relíquia
+ia ocupar, e custa **zero desenho novo**.
+
+**O que a remoção alcança**, medido contra produção em 2026-07-31:
+
+| | |
+|---|---|
+| `items` com `slot='hand'` | **8** (ids 17–24) |
+| conquistas com `reward_item_id` → item de `hand` | **0** — *o único risco apontado não existe* |
+| linhas em `user_inventory` | **12**, em 7 usuários (contas de teste) |
+| equipados agora (`user_equipped`) | **2** |
+| já sorteados em baú (`user_chests.item_id`) | **11** |
+
+As 12 + 11 + 2 linhas são FK para `items(id)`: a migration de remoção tem de
+desfazê-las antes de apagar as 8 linhas de `items`, e é por isso que **isto é um
+bloco próprio** — não entra junto com o cabelo nem com o uniforme.
+
+**Efeito colateral bom:** com a remoção, o `CHECK` de slot do **Bloco 4 volta a
+ser puramente aditivo** (`+= hair, back`, menos `hand` numa migration à parte), o
+que era o único ponto em que a B travava aquele bloco.
+
+---
+
+### 2a — Cabelo: 5 modelos × 8 cores
+
+- **2a.0 — A sobrancelha** ✅ **DECIDIDA em 2026-07-31: fica PRETA.**
+
+  O `palette.ts` afirmava que `--av-cabelo` era lido "também pela sobrancelha, que
+  mora na base", e **justificava o escopo da propriedade com isso**. A arte nunca
+  fez: a sobrancelha sai em `.kk-risco` → `stroke: var(--av-linha)`, a cor do
+  contorno. O defeito não era a prosa — era o docstring descrever uma intenção
+  como se fosse o código, na mesma família do `UPDATE` sem `UPSERT`.
+
+  **E a intenção estava errada.** Distância de cada cor de cabelo contra o pior
+  dos 8 tons de pele, na régua de `MIN_CONTORNO` (40):
+
+  | cabelo | cru | escurecido .82 | escurecido .60 |
+  |---|---|---|---|
+  | preto `#3A2F2A` | 51 | 63 | 79 |
+  | **castanho** | **9** | **18** | 47 |
+  | **castanho claro** | **20** | **19** | **11** |
+  | **loiro** | **33** | **25** | **26** |
+  | **ruivo** | **29** | **21** | **13** |
+  | grisalho | 42 | 66 | 75 |
+  | roxo | 108 | 94 | 71 |
+  | azul | 149 | 125 | 98 |
+  | **`#000000`, o de hoje** | **127** | — | — |
+
+  **Cinco das oito reprovam**, e são as quatro que a maioria das crianças escolhe.
+  É a regra 10 do §7b por outro ângulo: cabelo castanho e pele castanha moram no
+  mesmo matiz. Escurecer não salva — a .60 o castanho claro cai para 11, pior que
+  o cru. E a escala confirma: a sobrancelha mede **3,7 × 0,66 px a 56 px**, menos
+  de um pixel de espessura, onde o que decide não é a cor e sim haver contraste
+  para o pixel existir. Em estilo chibi com contorno preto grosso, a sobrancelha é
+  parte do **traço do rosto**, não pelo — tingir é convenção de estilo realista,
+  que tem volume e sombreamento de pele para sustentar contraste baixo.
+
+  Preso por `estilo/__tests__/rosto-cor.test.ts`, que **reprova 3 de 4 quando a
+  sobrancelha é tingida** (verificado invertendo o compositor). O escopo `avatar`
+  de `--av-cabelo` fica, com o motivo verdadeiro: há um cabelo por avatar, então
+  não existe a colisão entre camadas que o escopo `camada` resolveria.
+
+- **2a.1 / 2a.2 / 2a.3** ⚠️ **CÓDIGO FEITO em 2026-08-01; ARTE REPROVADA em
+  2026-08-03** — o gate (a) passou e o Doug não. Ver **2a.4**, abaixo, que é o
+  saldo aberto. O que segue neste item continua valendo: é a arquitetura, e ela
+  não foi contestada.
+
+  Feitos num bloco só — os três se provam no mesmo artefato, e separá-los teria
+  significado três rodadas de render para julgar o mesmo desenho.
+  `src/lib/avatar/estilo/cabelo.ts` (novo),
+  `EstadoAvatar.modeloCabelo`, três camadas no compositor, `cabelo.test.ts` e o
+  `avatar:folha-base` estendido.
+
+  **O ORÇAMENTO FOI PARTIDO EM DOIS, e a partição corrigiu o que ele media.** Ele
+  era um teto só (20 formas / 7 680 bytes) sobre a saída de `compor()`, com um
+  racional escrito sobre o **ranking** — 30 bonecos juntos a 56 px. Só que ninguém
+  no ranking é careca: todo avatar carrega um cabelo. O teto media a base e o texto
+  falava do composto, e a "folga" de 262 bytes nunca foi orçamento de nada — era o
+  resto da conta do Bloco 1d.
+
+  | | teto | medido |
+  |---|---|---|
+  | **base careca** — regressão, não folga | 19 formas · 7 418 bytes | 19 · 7 418 |
+  | **composto** — base + 1 cabelo | 26 formas · 10 240 bytes | pior: `cacheado`, 22 · 8 995 |
+
+  A base virou teto de **regressão**: ela não pode crescer nem um byte, porque
+  crescer significa alguém ter achado espaço nela para pagar uma camada que não é
+  dela. E o composto é `base + UM` cabelo porque nunca há dois num render — somar
+  os cinco orçaria uma composição que não existe.
+
+  ⚠️ **OS DOIS TETOS NÃO TÊM A MESMA AUTORIDADE — 2026-08-03.** O da **base** é
+  regressão medida e continua absoluto: crescer é sintoma de defeito, não de
+  ambição. O do **composto** (26 formas · 10 240 bytes) é um número **escolhido**,
+  não medido, e ele **não pode vetar arte que o Doug aprovou**. Se um cabelo
+  medido a partir da arte estourar o teto, quem decide é o **benchmark do 10.6**
+  — 30 avatares num celular fraco, tempo até pintar — e não o número. Byte bruto
+  não é custo: SVG comprime, e o que pesa numa lista é nó de DOM, path e tempo de
+  composição. Sacrificar mecha para economizar 2 KB antes de existir a medição é
+  otimizar contra uma suposição, e o projeto já pagou por decisão assim.
+
+  **Como o cabelo não declara a lateral do crânio.** Cada ponto de franja é
+  `{ t, y }`, com `t` **fração da largura da cabeça naquela altura**, lida de
+  `bordasEm(y)`. As pontas têm `t` fora de [0, 1] de propósito: elas terminam fora
+  da silhueta e o `clipPath` da cabeça é quem corta. Não existe segunda descrição
+  do crânio para divergir da primeira, que é a regra do `geometria.ts` um slot
+  acima.
+
+  **Estes números são desenhados, não medidos, e isso está escrito no arquivo.** A
+  referência é um boneco careca — não há régua de onde extrair a forma de cinco
+  cabelos. No lugar da medição entraram quatro amarras que reprovam:
+
+  1. **folga do rosto ≥ 24 unidades** sobre cada sobrancelha (1,9 px a 56). Foi ela
+     que pegou o defeito não óbvio do bloco: **o giro aperta o lado direito**. A
+     sobrancelha direita é 3 unidades mais alta, e a primeira tabela do `curto`
+     dava 25,5 à esquerda e **8,3** à direita — um cabelo simétrico em `t` sai
+     assimétrico em folga. Três dos cinco reprovaram na primeira medição;
+  2. **ancoragem ≥ `SANGRIA`** de toda extensão dentro da cabeça — o análogo, um
+     slot acima, do gate (d) que o `tipos.ts:65` promete aos trajes. Sem ela um
+     coque pode ficar tangente ao crânio e abrir fresta de fundo;
+  3. **pontas da franja fora da silhueta**;
+  4. **a base careca não paga nada** pelo slot: sem modelo, `compor()` não emite
+     camada, nem as três regras de CSS, nem `--av-cabelo`/`--av-cabelo-s`, e o SVG
+     sai byte a byte igual ao aprovado no 1d.
+
+  As três primeiras foram verificadas **invertendo o dado** (franja 40 u mais
+  baixa → folga −13,3; coque subido 40 u → ancoragem 0,0; ponta em `t` 0,1 → dentro
+  da silhueta). Teste que não reprova quando devia é relatório.
+
+  **O `--av-cabelo` estava morto, e ninguém tinha como saber.** O `compor()` nunca
+  lia `estado.cabelo` e nunca emitia as duas propriedades, embora as duas estejam
+  congeladas em `PROPRIEDADES.avatar` desde o Bloco 1. O `conferirSvg` não pegava:
+  ele reprova propriedade **a mais**, não **a menos**. É a mesma família do
+  docstring da sobrancelha que o 2a.0 consertou.
+
+  **Duas correções de desenho que só apareceram renderizando** (regra 9 da §7):
+
+  - o **moicano** saiu como pluma de capacete, e a causa não era de gosto: no
+    espaço `{t, y}`, `t` constante é um **funil que abre para baixo**, porque a
+    largura da cabeça vai de 206 unidades em y 54 a 362 em y 126. Ele deixou de ter
+    touca e virou **só extensão**, em coordenada absoluta — e ficou o mais barato
+    dos cinco (+1 forma, +715 bytes). A topologia `faixa`, que existia só para ele,
+    saiu do arquivo junto com o defeito;
+  - o **coque** era um ovo deitado de 124 × 104 e, com o crânio comendo a metade de
+    baixo, o que sobrava na tela era uma laje de topo reto — boina, não coque. Uma
+    circunferência resolve: calota de círculo é redonda em qualquer altura.
+
+  **O especular passou a ser desenhado DEPOIS do cabelo.** A mancha mora em
+  (139,9 · 93,4), acima da franja dos cinco: com cabelo, ela cai inteira sobre o
+  cabelo, que é o certo e é de graça — ela é `#FFFFFF` com opacidade, não uma cor.
+  Desenhada antes, seria um brilho de pele sob um cabelo opaco, e a cabeça perderia
+  o ponto de luz justamente nos avatares que têm cabelo, que são todos. A base
+  careca não mudou um byte com a troca.
+
+- **2a.4 — A ARTE FOI REPROVADA em 2026-08-03, e o gate não tinha como pegar.**
+
+  Veredito do Doug, olhando a `folha-base`: *"está tudo muito quadrado, sem toque
+  humano"*. **Quatro causas, todas visíveis no código** — não são impressão:
+
+  1. **a franja do `curto` é uma reta.** Quatro pontos, `y` = 134, 124, 123, 130 de
+     `t` 0,2 a 0,88 ([cabelo.ts:225‑234](../../src/lib/avatar/estilo/cabelo.ts#L225-L234)):
+     onze unidades de variação em toda a largura da cabeça, ou **0,9 px a 56**;
+  2. **nenhum dos cinco tem mecha, ponta afinada ou recorte interno.** Um cabelo é
+     *uma* borda mais o retângulo de fechamento fora da silhueta. Não há um único
+     path de detalhe interno no arquivo;
+  3. **os cinco moram na mesma faixa de altura** — `y` entre 100 e 140, espremidos
+     entre a coroa e o `FOLGA_ROSTO`. São cinco variações de uma reta na mesma faixa
+     de 40 unidades, e é a explicação de o par apertado ter dado **5,18% contra piso
+     de 5%**: a margem de 0,18 ponto é sintoma, não sorte;
+  4. **a sombra é a mesma forma subida 22 unidades** (`DEGRAU`): faixa de espessura
+     constante, paralela em todo o percurso. Cabelo desenhado tem sombra que segue a
+     mecha.
+
+  **A raiz está escrita no próprio arquivo, linha 28:** *"estes números são
+  desenhados, não medidos"*. As três amarras que substituem a régua impedem
+  **defeito** — franja no rosto, extensão flutuando, orçamento estourado. Nenhuma
+  exige **forma**, e nenhuma poderia: não há régua de beleza.
+
+  **A ferramenta que existe para isto nunca rodou nesta peça.** O
+  `scripts/avatar/estilo/variantes.ts` abre dizendo, sobre este bloco, que *"os cinco
+  cabelos foram desenhados em **uma** versão cada, e depois consertados — o primeiro
+  resultado plausível, refinado, que não é a mesma coisa que uma escolha"*. Os 5
+  cabelos são de **2026-08-01 07:14** (`63a13ba`); a skill `avatar-desenho` e o
+  `avatar:variantes` que a forçam, de **2026-08-03 08:03** (`d6caed8`). A trava
+  nasceu dois dias depois da peça que a motivou.
+
+  **AS TRÊS DECISÕES FORAM TOMADAS — 2026-08-03** (briefing em
+  `.scratch/estilo/BRIEFING-CABELO.md`):
+
+  1. **Caminho:** arte gerada pelo Doug e convertida por régua. Ele gera à mão no
+     AI Studio (grátis; a API foi tentada e o Gemini responde `limit: 0` no plano
+     livre), e `.scratch/estilo/franja.ts` mede. **Desenho em código está
+     descartado por evidência, não por gosto** — é a causa raiz deste próprio item.
+  2. **Escopo da primeira rodada: DOIS modelos extremos, não um nem os cinco.**
+     `curto` prova franja, sombra variável e leitura a 56 px; `coque` (ou `trança`)
+     prova extensão externa, ancoragem e o plano de trás. Um modelo só não exercita
+     `Extensao`, e os cinco de uma vez repetem exatamente o erro de 2026-08-01 —
+     cinco peças autoradas antes de o caminho estar provado. Os outros três só
+     depois de o piloto fechar.
+  3. **"Toque humano" vira item de gate com o olho do Doug**, não número — é o
+     item **(f)** do gate deste bloco, abaixo.
+
+  **O que está bloqueando é uma coisa só, e é técnica:** a régua produz `pontos`,
+  e `pontos` é clipado pelo `clipPath` do crânio — toda a expansão medida (7,6 a
+  13,3% lateral, 12,2 a 20,1% vertical) vive FORA da silhueta e é descartada. Por
+  isso as três variantes medidas dão **2,41 a 2,99%** contra o piso de 5%: o gate
+  está comparando três franjas dentro da mesma silhueta. A extração da massa
+  externa como `Extensao.forma` já está escrita em `franja.ts` (`lobos()`, por
+  componente conexa); falta fechar o laço.
+
+  **O piso de 5% não se discute antes disso.** Se, com a massa externa entrando,
+  um par que o olho do Doug distingue ainda reprovar, aí sim o piso é recalibrado
+  — contra os pares que ele já julgou, que é dado rotulado. Baixar o piso agora,
+  com a causa técnica conhecida e por fechar, seria a justificativa circular que o
+  gate (a) já recusou uma vez.
+
+- **2a.5 — O CABELO DEIXA DE SER DESENHADO E PASSA A SER TRAÇADO — 2026-08-03.**
+
+  O Doug reprovou a folha **HSHC93** com uma frase: *"vc não está reproduzindo a
+  arte fielmente, como foi feito com o avatar"*. Os números concordaram, e eles
+  são a linha de base deste item:
+
+  | | valor |
+  |---|---|
+  | IoU da massa de cabelo | **61,7%** |
+  | desvio médio de borda | **36,1 u** (≈ 3 px a 56) |
+  | cortina, sozinha | **~220 u** de desvio |
+
+  **A causa não era o critério de decimação, era o modelo de dados**, e os quatro
+  diagnósticos da folha dizem o mesmo de quatro jeitos:
+
+  1. **cortina** — massa descendo ao lado do rosto até a bochecha, DENTRO da
+     silhueta. Não é franja (é a 2ª corrida da coluna) e não é extensão (não passa
+     do crânio). Não havia campo;
+  2. **~12 espículas** do topo viravam calota de 5 bossas;
+  3. **6–8 bicos em V** da franja viravam curva única — e `liberarORosto()` ainda
+     subia a peça **43,5 u**, produzindo a "faixa de testa nua" que não existe no
+     PNG;
+  4. **sombra** chapada paralela onde a arte tem volume seguindo as mechas.
+
+  `Cabelo` ganhou `massa` e `clara`, **laços FECHADOS** em `{t, y}` — o fechamento é
+  o que deixa a borda descer, virar e voltar a subir, e uma franja aberta é uma
+  função de `x`. O traçador (`avatar:tracar`) e o gate (`avatar:fidelidade`)
+  saíram do `.scratch/` e viraram scripts do repositório, typechecados.
+
+  **O piloto `curto-espetada` melhorou em tudo que é medível:**
+
+  | | paramétrico | traçado |
+  |---|---|---|
+  | IoU | 36,62% | **68,77%** |
+  | borda de baixo (médio) | 42,5 u | **27,3 u** |
+  | borda de cima (médio) | 51,8 u | **10,2 u** |
+  | massa só na arte (gate 2) | 21,4% | **1,8%** |
+
+  **O gate 1 é ancorado no piso MEDIDO da arte, e não num número registrado aqui —
+  e a medição é que decidiu isso.** O plano previa registrar "piso + margem" neste
+  parágrafo. Rodada com a decimação DESLIGADA (1 193 pontos contra 64), a
+  fidelidade dá 27,6 u contra os 27,3 da peça entregue: **a decimação custa 0,3
+  unidade**, e os 27 restantes são o boneco do gerador não ser o do `geometria.ts`
+  mais o clip do crânio. Um piso constante valeria para uma arte só; medido na
+  própria rodada, o gate pergunta o que devia — *o traço custou mais que meio traço
+  acima do que ele não controla?*
+
+  **A folha nova (XHHXP9) foi REPROVADA**, e os quatro defeitos estão nomeados com
+  causa medida no doc 14, T1.6. O `curto` do catálogo **continua paramétrico**.
+
+  **A folga do rosto foi RE-ANCORADA — 2026-08-04, escolha do Doug.** A amarra dos 24
+  u de testa (`FOLGA_ROSTO`) foi escrita para peça desenhada, e com o traço fiel passou
+  a brigar com a arte: a `curto-espetada` deixa **6,2 u**. O commit 5bf6bbd tinha
+  parado o sangramento transformando a folga em aviso na peça traçada, e o resultado
+  era pior do que parecia — **na traçada não sobrou gate nenhum**, e um traço que
+  comesse 40 u de testa que a arte não come passava em silêncio.
+
+  | | peça PARAMÉTRICA (`pontos`) | peça TRAÇADA (`massa`) |
+  |---|---|---|
+  | régua | folga ≥ **24 u**, absoluto | folga do traço ≥ **folga da arte − 6 u** |
+  | porquê | franja desenhada: folga curta é escolha de quem desenhou | folga é fato da arte; o que o traço controla é não piorá-la |
+  | quem mede | `variantes`, `folha-base`, `cabelo.test.ts` | **`avatar:fidelidade`, gate 3** |
+  | arte abaixo de 24 u | — | **avisa alto** (u e px a 56) e segue verde: item (f) |
+
+  A subtração é honesta pelo mesmo argumento do `limiar()` do gate 1: a sobrancelha
+  **canônica** do `geometria.ts` entra dos dois lados, então o desvio do boneco do
+  gerador cancela. Não se mede sobrancelha dentro do PNG.
+
+  **Os números medidos**, todos em 2026-08-04 na `curto-espetada`: a arte deixa **4,0 u
+  (esq) e 1,0 (dir)** pela régua da grade — mesma ordem dos 6,2 u que `folgaDoRosto`
+  imprime sobre a peça, e a diferença é espaço de raster contra espaço de polígono. O
+  render deixa **12,0 u dos dois lados**, contra pisos de −2,0 e −5,0: passa. A
+  inversão (`--inverter-folga`, a franja empurrada 40 u sobre as sobrancelhas) leva o
+  render a **−6,5 e −7,0** e reprova nos dois lados. Rodada antes do gate 3 existir,
+  ela saía **verde**: a invasão localizada não move a média do gate 1 (29,0 contra o
+  teto de 33,6) e é invisível para o gate 2, que mede presença e não posição.
+
+  **A régua do gate 3 é o fim do CORPO da coluna**, e as duas mais simples foram
+  medidas e reprovadas: a célula mais baixa leva junto a cortina, que cruza a faixa da
+  sobrancelha na máscara da arte (y≈270 → folga −111 u) e não na do render — veneno que
+  entra de um lado só não cancela na subtração; a primeira corrida a partir do topo
+  quebra nas espículas e dava **o mesmo número com e sem a inversão**, que é a
+  assinatura de uma régua medindo outra coisa.
+
+  **Estado-alvo, quando o último paramétrico morrer:** somem `pontos`, `sombra`,
+  `touca()`, `FORA`, `DEGRAU`, `sombraSobreAFranja()` e `liberarORosto()`. Enquanto
+  houver modelo paramétrico no catálogo eles ficam, e a exclusividade
+  `pontos` × `massa` é gate.
+
+- **2a.6 — A FONTE DA MEDIÇÃO PASSA A SER O SVG, E OS 27 u NÃO ERAM DELA —
+  2026-08-04.**
+
+  O pipeline padrão passou a ser **PNG → conversor Adobe → SVG → a régua extrai traço,
+  curva e tom**, por decisão do Doug. A execução mediu antes de trocar, e a primeira
+  coisa que ela produziu foi a resposta a uma pergunta que estava aberta desde o
+  2a.5: **onde moram os 27,3 u da borda de baixo?** `avatar:fidelidade -- --onde`
+  reparte a soma, e ela fecha:
+
+  | parcela | valor | como foi medida |
+  |---|---|---|
+  | o **clip** do crânio | **5,1 u (19%)** | a mesma peça com o `clip-path` desligado, e nada mais |
+  | a **decimação** | **−0,3 u** | a peça de 64 pontos contra a densa de 1 193 |
+  | o **laço vazado** | **22,2 u (81%)** | 2 auto-interseções, uma na ponta de cada cortina |
+
+  **A causa dos 81% é topológica, não de fonte.** O laço se cruza em `(70, 247)` e
+  `(463, 175)`, e o `nonzero` do SVG esvazia o trecho entre o cruzamento e a ponta —
+  a prova é a coluna do próprio cruzamento, onde a tinta do render **para** enquanto
+  a arte segue 90 u abaixo. O traçador já imprimia o aviso; ninguém tinha ligado os
+  dois números. Fonte melhor entrega a mesma topologia com o mesmo vazamento, e o
+  `--fonte svg` confirmou pelo lado ruim: **de 2 cruzamentos passa a 4** — três na
+  cortina direita e um na esquerda —, porque a borda mais precisa afina mais a ponta
+  da cortina antes de a decimação chegar nela.
+
+  **O que o SVG comprou, medido:**
+
+  | | PNG (hoje) | SVG |
+  |---|---|---|
+  | IoU da massa | 68,85% | **71,16%** |
+  | borda de baixo (médio) | 20,4 u | **18,1 u** |
+  | borda de cima (médio) | 9,2 u | 9,8 u |
+  | massa só na arte (gate 2) | 1,9% ✓ | **2,9% ✗** |
+  | cortina, colunas com 2ª corrida | 15,9% | **31,4%** |
+  | auto-interseções do laço | 2 | **4** |
+  | contenção da clara | +1,45 u ✓ | **−0,98 u ✗** |
+
+  O gate 2 reprova pela fonte nova, e reprova **com razão**: o SVG vê o dobro de
+  cortina, então o defeito do laço vazado deixa de caber nos 2% e aparece. Régua
+  melhor não conserta peça — ela para de esconder.
+
+  **A conferência de fonte é o gate 4** (`--fonte-conferencia`): a mesma arte
+  segmentada pelos dois caminhos, sem render no meio. IoU **92,99%**, desvio de borda
+  **4,7 u médio** contra o piso de meio traço, área a −1,3%. A inversão — a moldura do
+  canvas dentro da máscara — derruba o IoU a **35,0%**.
+
+  **Dois defeitos foram achados pela conferência, e os dois eram antigos:**
+
+  1. **A régua de matiz lia PRETO como teal.** Em `(0, 2, 1)` a saturação normalizada
+     de `hsl()` colapsa e devolve 1,00, com matiz em exatos 150° — a borda da janela.
+     O conserto é um piso de croma bruta, e a borda de baixo do gate caiu de **27,3
+     para 20,4 u** só com ele, sem trocar fonte nenhuma. A medida é estável de croma
+     3 a 12 e só se move em 0.
+  2. **O colorido não traça contorno.** Fundo preto e traço preto são a mesma região
+     para o conversor (72,7% + 27,0% = 99,7% do quadro, sem banda), então o
+     **enquadramento continua saindo do PNG irmão**. Tirá-lo da pegada do SVG encolhe
+     o vão tronco→pescoço em 3,3% e a régua lê a arte inteira 3,3% maior — o IoU da
+     conferência caiu a 81,7% antes de a causa aparecer.
+
+  **O âncora ficou onde estava, e agora tem número** (`avatar:tracar -- --ancoras`).
+  Resíduos do tronco contra o canônico: olhos **2,3 · 2,7 u**, separação **1,6 u
+  (1,0%)**, base da cabeça **0,4 u** — tudo dentro de meio traço. A inversão (a arte
+  5% maior) leva o pior resíduo de 2,7 a 8,0 e cruza o limiar. A **bochecha dá 35–39 u
+  nas três ancoragens candidatas**, inclusive na que acerta os olhos em 0,5 u: isso
+  não é resíduo de âncora, é o crânio da arte contra o crânio canônico, e por isso
+  não vota. Se um dia a troca tiver causa, a candidata é **olho + queixo** — dois
+  pontos quase horizontais condicionam mal a escala vertical.
+
+  **O literal NÃO foi colado em `cabelo.ts`.** A peça sai com dois cruzamentos e as
+  duas cortinas vazadas; entregá-la seria assar o defeito de 22 u no catálogo. O
+  próximo bloco é fechar a cortina sem cruzar — e ele vale 3× mais que a troca de
+  fonte que este item executou.
+
+---
+
+### 2b — Uniforme de Soldado
+
+- **2b.0 — O arremate do tronco, ANTES de assar qualquer traje.** O fundo do
+  tronco fecha hoje com raio de canto **80** onde a referência mede **40 a 60**,
+  e a causa está declarada em
+  [geometria.ts:879‑905](../../src/lib/avatar/estilo/geometria.ts#L879-L905): o
+  modelo é uma elipse de 103 × 18,7, que tem raio de curvatura **3,4** na ponta
+  lateral — um quarto de traço. A amostra única em `t = 0,7` só escolheu o menos
+  ruim entre os que não invertem a curvatura; o modelo continua errado desde o 1b.
+
+  O próprio docstring diz que fechar isso "é trabalho de um bloco que tenha o
+  tronco no escopo, não deste". **Este é esse bloco** — e a ordem importa: os 14
+  trajes clipam em `pathTronco()`, então assar o Soldado contra uma base errada
+  significa reassar os 14 depois. O conserto é remedir `TRONCO.ryArremate` contra
+  a base extraída por coluna, não mexer na tabela do perfil, que é geometria
+  aprovada.
+
+- **2b.1 — O `avatar:garment` de hoje NÃO serve para este boneco, e isso não é
+  ajuste.** O `mascara-base.ts` deriva as três máscaras do **macacão da base
+  antiga** (`public/items/base/avatar-base-neutro.svg`, seu padrão na linha 322),
+  e os marcos que ele mede são `topoTraje`, `tornozelo`, `yGola` e `yBota` — ombro,
+  tornozelo, gola e bota. O kokeshi não tem tornozelo, bota, mão, orelha nem
+  macacão; a `peleFrente` recorta "cabeça, orelhas, pescoço e mãos", e três dessas
+  quatro não existem. Rodá-lo mediria contra o nada e ficaria **verde por
+  vacuidade**, que é o defeito que este projeto já pagou duas vezes.
+
+  A substituição **já está escrita e já tem trava**: a `interface Traje`
+  ([tipos.ts:31](../../src/lib/avatar/estilo/tipos.ts#L31)) declara só `tinta`,
+  `decoracao` e `extensoes`, e o `tintaTronco()` do compositor já pinta os três
+  casos dentro do `clipPath` do tronco. Não há máscara, não há `registro()`, não
+  há dilatação. **Nenhum traje existe ainda** — o Soldado é o primeiro, e é o que
+  prova o caminho.
+
+  O que fica **em aberto** e este bloco decide medindo: se as **5 variantes por
+  DPR** e os **gates de alfa** do doc 16 ainda se aplicam a um PNG clipado por
+  `pathTronco()`, ou se com o clip do sistema a arte vira `decoracao` vetorial e
+  o PNG deixa de ser necessário para uma peça chapada.
+
+- **2b.2** O Soldado como **cor + decoração vetorial** primeiro (é o estado que o
+  `Traje.tinta.cor` existe para servir), e só então a pergunta de se ele precisa
+  de PNG. A cor sai da tabela travada por `verify:paleta-patentes`, não de escolha
+  nova.
+
+- **2b.3** Marcar no **doc 16** que ele descreve o pipeline da base antiga. Ele é
+  o runbook que o §"Referências" do `CLAUDE.md` manda ler antes de gerar arte de
+  uniforme, e hoje manda para o caminho errado. As §2.1 (tabela de matiz), §2.2
+  (as cinco armadilhas) e §7.0 continuam valendo — são sobre a **arte de origem** e
+  sobre o **conversor**, não sobre as máscaras.
+
+---
+
+🔒 **Gate do Bloco 2:**
+
+- **(a)** ✅ **A MEDIÇÃO passou em 2026-08-01** — e só ela; o desenho reprovou em
+  2026-08-03, ver **2a.4**. Os 5 se distinguem **a 56 px**, e agora isso é
+  um número e não uma impressão: o `avatar:folha-base` renderiza cada modelo a
+  40 × 56, conta os pixels que diferem em mais de 24 níveis em algum canal, e
+  reprova abaixo de **5%** (112 px de 2 240 — um bloco de ~10 × 11 na miniatura).
+
+  **São dois pisos, porque são duas perguntas.** Contra a **careca** o piso é 2%, e
+  ele não mede distinção de catálogo: careca não é escolha de aluno (D5), então
+  exigir 5% entre "moicano" e "careca" cobraria distinção entre duas opções que
+  nunca disputam a mesma escolha. O que aquela coluna testa é **o cabelo aparece?**
+  — o gate contra a camada que existe no código, passa em todo teste de unidade e
+  some na tela.
+
+  Medido: o par de catálogo mais parecido é `Corte curto × Trança`, **5,18%**. A
+  primeira rodada deu **3,66%**, e a resposta certa foi engrossar a trança até ela
+  ser outra silhueta, não baixar o piso até ela passar — calibrar o gate pelo
+  desenho que ele deveria julgar é justificativa circular.
+- **(b)** ✅ **feito no 2a.0** — a sobrancelha faz o que o `palette.ts` diz que
+  ela faz, e é um teste que confere, não um docstring;
+- **(c)** o arremate do tronco mede **40 a 60** de raio de canto, sem inversão de
+  curvatura em ponto nenhum da base — a mesma régua de `getPointAtLength` que
+  achou o bico de 10,7;
+- **(d)** o Soldado compõe sobre a base, e a `extensao` (se houver) sobrepõe o
+  tronco em **≥ `SANGRIA`** — o gate que o `tipos.ts:65` já promete a este bloco;
+- **(e)** `avatar:pose`, `avatar:animacao`, `avatar:folha-base`, `verify:all`,
+  `build` e a suíte continuam verdes.
+- **(f)** ✅ **ACRESCENTADO em 2026-08-03 — A APROVAÇÃO ARTÍSTICA DO DOUG.**
+
+  Os itens (a)–(e) medem distinção, cor, geometria e verde de suíte, e **os cinco
+  passaram num cabelo que o Doug reprovou de olho**. A §"F1 curta" e a D-D sempre
+  exigiram essa aprovação; o gate nunca a listou, e é assim que uma peça reprovada
+  atravessa um bloco "verde". **Trabalho verde e trabalho completo não são a mesma
+  coisa** — o (f) é onde a diferença passa a estar escrita.
+
+  **O que ele exige, e é registro e não sentimento:** uma linha no doc 14, com o
+  **selo da folha** que o Doug abriu (os 6 caracteres que `avatar:variantes`
+  desenha no canto e não imprime no terminal), a **data**, e o **veredito em uma
+  frase**. Sem os três, o bloco não fecha — mesmo com (a)–(e) verdes.
+
+  **O que ele deliberadamente NÃO é:** uma métrica. Não há régua de beleza, e
+  tentar escrever uma foi o que produziu cinco cabelos matematicamente válidos e
+  artisticamente quadrados. **O gate julga número; o Doug julga arte** — a regra 10
+  da skill `avatar-desenho`, agora com efeito no plano.
+
+**Fora do gate, e agora sem sucessor:** a régua antiga (*"o `hand` ancora na
+mão"*) some junto com o slot, pela **D-E**.
+
+---
+
+### Bloco 2c — a remoção do slot `hand`
+
+*Bloco próprio, e não pedaço do 2a nem do 2b: ele mexe em banco de produção com
+FK a desfazer, e misturar isso com arte é como se perde a chance de rodar o gate
+certo.*
+
+- **2c.1 Migration.** Desfazer as FK antes de apagar as linhas — `user_equipped`
+  (2), `user_inventory` (12) e `user_chests.item_id` (11) —, depois as 8 linhas de
+  `items`, depois o `CHECK` de `items.slot` e de `user_equipped.slot`, e a lista
+  dentro do `unequip_slot`/`equip` (que é a segunda cópia do `CHECK`, e o gate já
+  confere que as duas batem).
+- **2c.2 Código.** `ItemSlot`, `ALL_SLOTS`, `Z_INDEX`, `renderModes`,
+  `slotDefinitions`, `templateGuides`, `templateMasks`, `bodyFamilies`,
+  `renderability`, `resolvedAvatar`, `AvatarDisplay`, `assetManifest` e os rótulos
+  de `constants/items.ts`. É deleção, então **`grep` prova o fim** — ao contrário
+  da adição que a B exigiria.
+- **2c.3 Assets.** Os 8 PNG de `public/items/hand/`, e regerar o manifesto.
+
+🔒 **Gate:** `grep -r "hand" src/ supabase/` não devolve nenhum slot ·
+`verify:phase8` verde (incl. `avatar-db`, que compara `CHECK` com a lista da RPC)
+· `verify:all` · `build` · a suíte.
 
 ---
 
@@ -349,7 +917,9 @@ nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
 
 ## Bloco 4 — F2 banco: a migration
 
-- **4.1** Migration `avatar_v4`, **aditiva**:
+- **4.1** Migration `avatar_v4`, **aditiva** — e ela só volta a ser puramente
+  aditiva porque a **D-E** removeu o `hand` numa migration à parte (**2c**), que
+  roda antes:
   - `items.slot` e `user_equipped.slot` CHECK **+= `hair`, `back`**
   - `user_inventory.source` CHECK **+= `title`**
   - `users.avatar_skin` (8 tons, default `medio`)
@@ -361,6 +931,16 @@ nenhuma classe · passa na folha de contato · o `hand` ancora na mão.
   - `users.avatar_base` **deprecada, não dropada**
 - **4.2** Migração suave: os 17 usuários existentes recebem tom default,
   mantêm `avatar_chosen = true`, sem re-onboarding forçado.
+
+  ✅ **A D5 FECHA AQUI — 2026-08-03.** A T1.1 do doc 14 deixou em aberto: *"ou a
+  base ganha cabelo assado, ou a D5 muda e careca passa a ser estado de falha
+  aceito"*. **É a terceira saída, e ela não custa arte nenhuma:**
+  `users.avatar_hair` nasce com **default `'curto'`** e `NOT NULL`. Careca deixa
+  de ser alcançável por aluno — que é exatamente o que a D5 pede ("ninguém aparece
+  careca por um 404") — sem assar cabelo na base, o que quebraria o teto de
+  regressão do Bloco 1d. **A base careca continua existindo**, e continua sendo o
+  artefato que aquele teto mede; ela só deixa de ser um estado que a criança
+  alcança.
 - **4.3** `unequip_slot` passa a aceitar `hair` e `back` — a lista dentro da
   função é uma segunda cópia do CHECK, e o gate já confere que as duas batem.
 
@@ -394,9 +974,17 @@ banco vivo, nunca de migration antiga.** E ele **não emite o `;`** depois de
   D27. A cor do cabelo move também a **sobrancelha**, que é camada própria na base.
 - **5.11** `viewBox` de cabeça, para o avatar servir de foto de perfil.
 
-🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` 14/14 · gate de assets
-100% · avatar antigo degrada sem erro · **nenhum código per-gender restante**
-(grep por `male`/`female` em `src/lib/avatar/` volta vazio).
+🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` inteiro · **sem
+regressão contra o `asset-baseline.json`** · avatar antigo degrada sem erro ·
+**nenhum código per-gender restante** (grep por `male`/`female` em
+`src/lib/avatar/` volta vazio).
+
+> ⚠️ **O "gate de assets 100%" saiu daqui em 2026-08-03, e foi para o Bloco 9,
+> que é onde ele pertence.** Exigir catálogo 100% renderável para **construir** o
+> render novo é circular: os itens só passam a renderizar depois de o render novo
+> existir. O que este bloco tem de provar é que **nada regrediu** — o ratchet do
+> `asset-baseline.json` já é exatamente essa medida. Zerar o baseline continua
+> sendo obrigação, e continua sendo o gate do Bloco 8/9.
 
 ---
 
@@ -472,13 +1060,37 @@ agora entregaria item invisível.*
 | 1 | Uniformes: **Aspirante feito**. Restam **Capitão, Comandante, General e Mestre** — 4, não 5, porque o tier 7 (Lenda) saiu da escada. O **design das 4 já está pronto e travado por gate**: cor, bota, detalhe e o pedido colável em [17](17-patentes-uniformes-design.md) e [18](18-uniformes-blocos.md). Falta só gerar a imagem, e quem gera é o Doug | ~~6~~ **4** | Doug gera, eu asso |
 | 2 | Cabelos | 5 | eu |
 | 3 | Chapéus | 6 | eu |
-| 4 | Relíquias (2 famílias × 3 tiers) | 6 | eu |
+| ~~4~~ | ~~Relíquias (2 famílias × 3 tiers)~~ **cortadas pela D-E** — o slot `hand` não existe neste boneco | ~~6~~ **0** | — |
 | 5 | Backgrounds | 8 | eu |
 | 6 | **Pets** | 20 | **você refina bastante** |
+
+**Total: ~~39~~ → 33 desenhos**, pela D-E.
 
 **Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
 seguinte começar. Trinta e nove desenhos revisados só no fim é como se descobre,
 tarde, que a régua de estilo derivou.
+
+### ⚠️ ANTES DOS 6 CHAPÉUS: a regra de chapéu × cabelo — 2026-08-03
+
+**Um chapéu e um cabelo disputam a mesma cabeça, e hoje nada no sistema diz quem
+cede.** Cada chapéu precisa de uma destas quatro respostas: mostra o cabelo
+inteiro · esconde só a franja · esconde o cabelo todo · pede uma **variante
+achatada** (o *hat hair* dos jogos). Uma boina deixa a franja aparecer; um elmo
+fechado não pode ter mecha atravessando o metal.
+
+**A resposta vive no item, nunca no compositor.** Um campo declarado no chapéu
+(`escondeCabelo?: "nada" | "franja" | "tudo"`) e o `compor()` obedecendo — o
+mesmo idioma do `atras` que as extensões já usam. A alternativa é um `if` por
+chapéu dentro do compositor, e seis chapéus × cinco cabelos são **30 combinações**
+para consertar caso a caso.
+
+**Decidir isto depois de os 6 chapéus estarem desenhados custa redesenho**, porque
+a resposta muda a forma da peça: um chapéu que esconde a franja pode ser mais
+raso, um que a mostra precisa de aba que não brigue com ela. É a mesma lição do
+2b.0 — arremate do tronco antes dos 14 trajes, não depois.
+
+*(Achado do parecer externo de 2026-08-03; é a única lacuna estrutural que as três
+análises daquele dia apontaram e que o plano ainda não cobria.)*
 
 🔒 **Gate:** manifesto 100% coberto · folha de contato revisada · nenhum item
 invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo dos
@@ -488,20 +1100,25 @@ invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo do
 
 ## Bloco 9 — F4 dados: o catálogo novo
 
-- **9.1** Reseed: **77 → 60 itens** (7 uniforme + 6 head + 5 hair + 6 hand +
-  20 pet + 8 background + 8 frame).
+- **9.1** Reseed: **77 → ~~60~~ 54 itens** (7 uniforme + 6 head + 5 hair +
+  20 pet + 8 background + 8 frame). O `hand` saiu pela **D-E**, e as suas 8 linhas
+  já terão sido removidas no **2c** — aqui não sobra nada dele para reseed.
 - **9.2** Pirâmide de raridade **40/30/20/10** (hoje 19/20/20/18 — um quarto do
   catálogo é lendário, então lendário não quer dizer nada).
 - **9.3** **D16** — pool de baú só com estético (`head`, `hair`, `background`,
-  `pet`, `back`). **Nunca** uniforme nem relíquia: esses são mérito, e sorteá-los
-  faz o boneco parar de contar a história do aluno.
+  `pet`, `back`). **Nunca** uniforme nem `frame`: esses são mérito, e sorteá-los
+  faz o boneco parar de contar a história do aluno. *A relíquia saiu da frase pela
+  **D-E**; a moldura entrou no lugar dela, e é o segundo canal de mérito que
+  sobra.* ⚠️ Hoje o `claim_chest` **não filtra slot nenhum** — as três consultas
+  dele (`FROM items WHERE rarity = …`) sorteiam qualquer item, e 11 relíquias já
+  saíram de baú em produção. O D16 é código a escrever, não descrição do que há.
 - **9.4** **D27** — escolha de cor de cabelo e fundo, validada no servidor
   contra a paleta.
 - **9.5** Limpeza: remover os PNG órfãos de `public/items/` (hoje 7,0 MB, dos
   quais 4,0 MB são um único pet), regerar manifesto, zerar baseline.
 
 🔒 **Gate:** `verify:phase8` verde com o catálogo novo · a distribuição bate a
-pirâmide · abrir 60 baús não devolve uniforme nem relíquia · `public/items/`
+pirâmide · abrir 60 baús não devolve uniforme nem moldura · `public/items/`
 abaixo de 1 MB.
 
 ---
@@ -512,6 +1129,28 @@ abaixo de 1 MB.
   derrota. Zero asset novo, porque o rosto já sai em paths próprios. *Nasce
   coberto pelo **3.4**: expressão é animação que esconde, e sem estado base a
   cara certa some onde a animação não roda.*
+
+  ⚠️ **A D8 estava dada como morta pela regra 13 do §7b, e voltou.** A regra dizia
+  que a promessa de "4 expressões de graça" não sobreviveu à arte traçada, porque
+  um rosto traçado não tem a boca alegre no arquivo — a expressão passaria a
+  custar 3 desenhos. **A arte kokeshi não é traçada: ela é código.** A sobrancelha
+  é uma cápsula construída de cinco números (`SOBRANCELHA`), a boca de outros
+  quatro (`BOCA`), e a piscada já prova o mecanismo — ela não troca o olho, ela o
+  **achata** (`scaleY(.08)`).
+
+  As quatro expressões cabem só em `transform`, sem forma nova, e a mais bonita é
+  a derrota: o sorriso tem sagita 3,6 para baixo, e **espelhado na vertical vira
+  uma boca triste** — um comando de CSS. Concentração é a boca achatada;
+  vitória e concentração movem a sobrancelha por deslocamento e rotação. Mudar o
+  `d` de um path é o que **não** dá — não anima de forma confiável entre
+  navegadores —, e a tabela acima foi montada para não precisar.
+
+  **O que custa, medido:** a folha reprova acima de 20 formas e **7 680 bytes**;
+  a base tem 19 e **7 418**, ou seja **262 bytes de folga**, e as regras das quatro
+  expressões custam ~400. Não cabe no orçamento de hoje — e não precisa caber:
+  expressão entra pela mesma chave que o `animado` já usa para desligar o piscar
+  no ranking. **Zero byte a 56 px numa lista de 30**, ~400 na tela de jogo e no
+  perfil, que é onde uma careta significa alguma coisa.
 - **10.2** **D29** — baú de escolha em marcos: a criança escolhe 1 entre 3. As
   3 opções vêm do servidor; escolher uma não permite pegar as outras.
 - **10.3** Capas `back` — as primeiras 3 ou 4.
@@ -615,6 +1254,13 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     próprios. Rosto traçado não tem a forma da boca alegre no arquivo: a
     expressão passou a custar **3 desenhos**. Antes de contar com uma decisão que
     depende de *como* a arte foi feita, conferir se ela ainda foi feita assim.
+
+    ⚠️ *Atualizado em 2026-07-31.* **A regra vale, e a conclusão dela caducou** —
+    o que é a própria regra funcionando. A arte kokeshi não é traçada: o rosto é
+    construído por função a partir de números medidos, então a D8 voltou a ser de
+    graça. A lição a guardar não é "a D8 morreu", é **conferir de novo a cada
+    troca de pipeline de arte**. Ver o **10.1** para o custo real, que não é zero:
+    é ~400 bytes contra 262 de folga, resolvido por chave em vez de orçamento.
 14. **A cor que você escolher para roupa e acessório é definitiva.** Pela emenda à
     D27, só pele e cabelo recolorem. Então a cor do uniforme na arte de origem
     **é a cor final** — e ela é o sinal da patente. Duas peças da mesma patente
@@ -626,6 +1272,76 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     calça e bota alguns por cento maiores é o pedido certo — e é o que fez a arte
     do Recruta servir sem rodada nova, depois de duas tentativas de encaixe justo
     que falharam.
+
+15b. **A pose é "quase frontal, com giro mínimo para a direita da imagem" — e o
+    pedido tem de dizer isso com essas palavras.** ⚠️ *Escrito em 2026-07-31, e as
+    duas formulações anteriores estavam erradas em direções opostas.*
+
+    Este plano já disse **"levemente em 3/4"** e o Bloco 1 respondeu com **"frontal
+    simétrica"**. Nenhum dos dois descreve a `referencia-base.png`. A medição
+    (`scripts/avatar/estilo/medir.ts`, em unidades do `viewBox` com a altura útil
+    normalizada em 600) diz:
+
+    | sinal                                      | medido |
+    |--------------------------------------------|--------|
+    | o par de olhos, contra o eixo da cabeça     | +33,9  |
+    | desnível entre os dois olhos                | 3,6    |
+    | desnível entre as duas sobrancelhas         | 3,5    |
+    | eixo da cabeça, contra o eixo do tronco     | +7,0   |
+    | razão entre as facetas laterais, no alto    | 2:1    |
+
+    ⚠️ *Atualizado no Bloco 1d.* A tabela citava as saliências das duas orelhas
+    (24,1 e 14,7) como os dois primeiros sinais; **a arte definitiva não tem
+    orelhas** — elas saíram porque orelha na base obriga cada um dos 92 itens de
+    chapéu e cabelo a decidir se cobre ou não. Entraram no lugar o desnível das
+    sobrancelhas e a razão das facetas. Os sinais que restam são todos medidos e
+    todos estão no gate.
+
+    **Por que isso é regra de PEDIDO e não só de código.** A referência vai anexada
+    idêntica em todo pedido ao gerador, e é dela que o gerador copia a leitura
+    espacial. Se o pedido não exigir a assimetria, ele devolve simetria — e aí a
+    base (que é assimétrica, por medição) recebe tinta simétrica e briga consigo
+    mesma em toda peça. O inverso também vale: uma base simétrica com tinta
+    assimétrica é o mesmo defeito pelo outro lado.
+
+15c. **Peça o "efeito cubo" com essas palavras: o rosto tem QUATRO facetas, não um
+    degradê.** ⚠️ *Escrito no Bloco 1c, corrigido no 1d.*
+
+    O Bloco 1b entregou um rosto chapado e o Doug reprovou assim: *"não há
+    sombreamento lateral do rosto do lado esquerdo — **efeito cubo**, e é um dos
+    principais fatores para entender que o rosto está levemente de lado"*. Não era
+    gosto: a referência tem uma **aresta dura** em cada lateral, e é a razão entre
+    as larguras das duas que carrega o giro.
+
+    | faceta | largura no topo | largura na base | tom no topo | tom na base |
+    |---|---|---|---|---|
+    | esquerda (vira para o observador) | 32,7 | 25,8 | −4,6 | −29,9 |
+    | direita (foge) | 16,0 | 22,5 | −29,9 | −33,2 |
+    | queixo (faixa acima do contorno) | — | largura toda | — | −33,1 |
+    | sombra da cabeça no tronco | — | 14,5 de altura | — | −45,3 |
+
+    Os tons são níveis de luminância contra o platô do rosto (221). **A esquerda é
+    o dobro da direita no alto** — essa razão *é* o giro, e é informação que a
+    silhueta não carrega: dois desenhos com o mesmo contorno podem ter um o rosto
+    virado e o outro chapado.
+
+    **Duas armadilhas de medição, as duas pagas com uma rodada cada.** A primeira:
+    perguntar *"quantos pixels seguidos, a partir da borda, são mais escuros que o
+    platô?"* tem o sinal embutido e mede ZERO onde a faceta cruza o tom frontal. A
+    pergunta certa não tem sinal — *onde está a descontinuidade?* A segunda: as
+    janelas de amostragem precisam **evitar a tinta do rosto**. Na arte definitiva,
+    sobrancelha em `fracCab` 0,398–0,438 e boca em 0,822–0,844; uma janela que
+    encoste nelas mede sobrancelha achando que mede faceta, e fica **verde**.
+
+    **No pedido, escrever literalmente:** *"pose quase frontal, com um giro mínimo
+    para a direita da imagem: a orelha esquerda aparece inteira e a direita fica
+    parcialmente escondida; há um plano lateral mais escuro só na borda direita da
+    cabeça e do tronco; os olhos ficam ligeiramente à direita do centro da cabeça,
+    com o direito um pouco mais alto."*
+
+    A assimetria mora em `GIRO`, em `geometria.ts`, ao lado de `LUZ`, e
+    `npm run avatar:pose` reprova quem a perder. Ela revoga a **D3 do doc 12**, com
+    o imposto (92 itens de catálogo autorados para o giro) registrado lá.
 
 ## 7c. Restrições de composição — aprendidas no `avatar:garment`
 
@@ -681,6 +1397,21 @@ para os 39 desenhos do Bloco 8, não só para a base.*
     Assim o contorno escuro legítimo passa, porque os vizinhos também são escuros.
 
 **Comandos:**
+
+**Os do estilo kokeshi** (as duas skills `avatar-regua` e `avatar-desenho` roteiam
+para eles; a tabela de gatilhos do `CLAUDE.md` invoca as skills):
+
+```
+npm run avatar:linha-de-centro  extrai contorno e perfil de uma referência nova
+npm run avatar:curvatura        onde a curva EMITIDA repuxa — reporta, não reprova
+npm run avatar:variantes        N candidatas com as amarras medidas + o selo
+npm run avatar:pose             perfil, 26 marcos, unicidade de id, 4 fixtures
+npm run avatar:folha-base       orçamento, distinção a 56 px, folha para o Doug
+npm run avatar:animacao         nasce aberto, pisca, respira, obedece reduced-motion
+npm run dev                     e abrir /dev/avatar-kokeshi ou /dev/avatar-variantes
+```
+
+**Os da base antiga**, que o banner do doc 16 declara mortos para este boneco:
 
 ```
 npm run avatar:base         regera o boneco base e a folha de conferência
@@ -746,11 +1477,12 @@ Marque só com evidência medida, não com impressão.
 - [ ] Avatar em navbar, ranking geral, ranking de turma, mural e Companhia
 - [ ] 12 alunos diferentes numa lista saem **visualmente diferentes**
 - [ ] Uniforme concedido e vestido ao atingir a patente, visível no ranking
-- [ ] Baú não sorteia uniforme nem relíquia
+- [ ] Baú não sorteia uniforme nem moldura
 - [ ] Distribuição de raridade em 40/30/20/10
 - [ ] Os 8 tons de pele registram com todos os 7 uniformes
 - [ ] Cada slot: os itens irmãos se distinguem a 56 px na folha de contato
 - [ ] Ranking com 30 alunos medido em celular fraco
 - [ ] `alt`, contraste, teclado, `prefers-reduced-motion`, raridade não só por cor
 - [ ] e2e completo verde, com os 5 testes novos
-- [ ] `docs/avatar/14-backlog-execucao.md` com as 63 tarefas marcadas
+- [ ] `docs/avatar/14-backlog-execucao.md` com todas as tarefas marcadas —
+      `docs/ESTADO.md` mostra quantas faltam

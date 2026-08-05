@@ -57,9 +57,16 @@ Antes de alterar qualquer bug/fluxo:
 ### Migrations
 - NUNCA modificar uma migration já aplicada — sempre criar nova
 - Formato: supabase/migrations/YYYYMMDDHHMMSS_descricao.sql
-- Aplicar no banco remoto: `npx tsx scripts/apply-migration.ts <arquivo.sql>`
+- Aplicar no banco remoto:
+  `npx tsx scripts/apply-migration.ts supabase/migrations/<arquivo.sql>`
+  - **O caminho é a partir da raiz do projeto** — só o nome do arquivo dá `ENOENT`
   - Conecta direto via connection string do .env.local (não requer Supabase CLI)
   - Supabase CLI NÃO está instalado nesta máquina
+  - **Nunca escrever `BEGIN;`/`COMMIT;` na migration.** O postgres.js recusa
+    transação explícita (`UNSAFE_TRANSACTION`) — e recusa DEPOIS de o servidor ter
+    executado, então o terminal imprime erro sobre uma migration que aplicou. Um
+    lote de comandos já roda em transação implícita; as 69 migrations anteriores
+    não têm `BEGIN` e são atômicas do mesmo jeito
 
 ## Workflow
 - Antes de iniciar fase/tarefa grande: `npm run build`
@@ -68,12 +75,40 @@ Antes de alterar qualquer bug/fluxo:
 - Se precisar de informação ou ação do usuário para avançar ou para realizar um tarefa de forma mais rápida e/ou efetiva, perguntar imediatamente — não assumir
 - Se o prompt do usuário for ambíguo, incompleto ou puder ser melhorado, apontar antes de executar
 
+## Skills — invocar, não torcer para lembrar
+
+Este projeto tem skills escritas para si mesmo e elas quase nunca dispararam: em
+45 sessões, o tool `Skill` foi chamado **4 vezes**, e nem `design-recruta64` nem
+`/gate` estavam entre elas — inclusive nos commits de design em que a primeira
+era obrigatória. Skill que depende de eu lembrar é skill que não roda. **Invoque
+pelo gatilho abaixo, antes de começar, sem esperar o usuário pedir.**
+
+| Gatilho | Invocar |
+|---|---|
+| Qualquer tela, componente, cor, tipografia, animação, texto de UI — e sempre ao trazer tela do v0.app/Gemini | `design-recruta64` (regras vinculantes) |
+| Construir componente novo, migrar tela para os primitivos de `src/components/ui/`, ou mexer em espaçamento/hierarquia/estado vazio | `impeccable` |
+| Bug, comportamento errado, "isso não devia acontecer" | `/gate` |
+| Desenhar peça do elenco do avatar — cabelo, chapéu, traje, pet, fundo — ou refazer uma que lê errado | `avatar-desenho` (3 variantes, crítica renderizada) |
+| **Já existe arte gerada e aprovada** para a peça — não desenhe variante: **trace** | `avatar-desenho`, e vá direto a `references/traco-fiel.md` (`avatar:tracar` → `avatar:fidelidade`) |
+| Referência de arte nova, ou qualquer número de `geometria.ts` que precise sair de medição | `avatar-regua` |
+| Detalhe de movimento, transição, o que faz a interface "sentir" bem | `emil-design-eng` |
+| Antes de mexer em auth, RLS, RPC de recompensa, ou qualquer coisa que o repositório público exponha | `security-review` |
+
+O usuário digita `/prototype` e `/review-animations` quando quiser — as duas têm
+`disable-model-invocation` e **nunca** disparam sozinhas. Se o caso pedir uma
+delas, sugira em uma linha em vez de tentar invocar.
+
+**As três de avatar quase sempre olham PNG — a imagem vai por subagente.** Quem
+lê o arquivo é o subagente; o thread principal recebe a descrição medida em
+texto. As de `.scratch/` chegam a 500 KB e ficam sendo relidas até o fim da
+sessão. Regra completa na seção **Imagens** do `~/.claude/CLAUDE.md`.
+
 ## Verificação (rodar antes de concluir)
 - `npm run typecheck` (tsc --noEmit)
 - `npm run lint`
 - `npm test` (vitest)
 - `npm run build`
-- `npm run verify:all` (os 11 gates de banco/segurança — substitui rodar um a um)
+- `npm run verify:all` (a cadeia inteira de gates — substitui rodar um a um)
 - `npm run test:e2e` (quando mexer em UI/auth) — **ATENÇÃO: bate no Supabase de
   PRODUÇÃO**, cria e remove usuários reais. Rodar com intenção, nunca em CI.
 
@@ -90,6 +125,12 @@ quando não há `.env.local` — é assim que funcionam em CI.
 - scripts/verify/ → gates de validação por fase
 
 ## Referências (ler antes de mudanças grandes)
+- **Onde estamos: `docs/ESTADO.md` — comece por aqui.** É **gerado**, não escrito:
+  `npm run estado` reconta tudo do repositório, e `verify:estado` reprova se
+  envelhecer. Existe porque o estado deste projeto vivia em 13 documentos que
+  discordavam — a contagem de gates do `verify:all` aparecia à mão em seis lugares,
+  com quatro valores diferentes. **Não escreva número de progresso em doc nenhum:
+  ou o painel já mede, ou é caso de ensinar `scripts/estado.ts` a medir**
 - Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md — **a §5 (aulas) está
   superada** pelo currículo abaixo
 - Currículo das aulas: `docs/curriculo/01-curriculo-definitivo-v1.md` — **aprovado em
@@ -122,6 +163,9 @@ quando não há `.env.local` — é assim que funcionam em CI.
   - `docs/avatar/12-avatar-v4-plano-completo.md` — as 30 decisões e o porquê,
     mais a **emenda à D27**: só pele e cabelo recolorem
   - `docs/avatar/13-checklist-de-verificacao.md` — os ~90 itens de auditoria
-  - `docs/avatar/14-backlog-execucao.md` — as 63 tarefas, **é onde o progresso
-    fica marcado**
-  - O v4 supersede o `10-avatar-v3-definitive.md` e os docs 00–09 daquela pasta
+  - `docs/avatar/14-backlog-execucao.md` — **é onde o progresso fica marcado**,
+    tarefa a tarefa. Quantas são e quantas fecharam: `docs/ESTADO.md`
+  - As gerações v2 e v3 (os antigos docs 00–11) foram arquivadas em
+    `docs/avatar/_superado/` — **não valem como instrução**, e o README de lá diz
+    o que substituiu cada uma. O mesmo para `docs/_superado/` (Art Guide e
+    Relatório da v2). Não leia nenhum dos dois sem motivo histórico

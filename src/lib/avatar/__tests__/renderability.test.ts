@@ -29,8 +29,8 @@ describe("assetsExigidos", () => {
     ]);
   });
 
-  it("background, hand e pet exigem só o próprio arquivo", () => {
-    for (const slot of ["background", "hand", "pet"] as ItemSlot[]) {
+  it("background e pet exigem só o próprio arquivo", () => {
+    for (const slot of ["background", "pet"] as ItemSlot[]) {
       expect(assetsExigidos({ slot, image_url: "/items/x/a.png" })).toEqual(["/items/x/a.png"]);
     }
   });
@@ -51,7 +51,6 @@ describe("assetsExigidos casa com resolveAssetUrl", () => {
     { slot: "head", url: "/items/head/elmo.png" },
     { slot: "outfit", url: "/items/outfit/tunica.png" },
     { slot: "background", url: "/items/bg/castelo.png" },
-    { slot: "hand", url: "/items/hand/cetro.png" },
     { slot: "pet", url: "/items/pet/coruja.png" },
   ];
 

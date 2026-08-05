@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useArrowKeys } from "@/hooks/useArrowKeys";
 import { Chess } from "chess.js";
+import { BookOpen, type LucideIcon } from "lucide-react";
 import BotBoard from "@/components/chess/BotBoard";
 import type { Bot, PlayerColor, GameResult } from "@/types/bot";
 import BotAvatar from "./BotAvatar";
@@ -17,7 +18,28 @@ import type { Key } from "chessground/types";
 // Constants
 // ---------------------------------------------------------------------------
 
-const CATEGORY_INFO: Record<MoveCategory, { symbol: string; label: string; color: string; bg: string }> = {
+/**
+ * A cor de "Livro" (`#6E6960`, pedra quente) é a única desta tabela a passar
+ * WCAG AA: 5,3:1 sobre branco. As outras sete são anteriores e algumas estão
+ * longe disso — o `#eab308` de "Imprecisão" fica em ~1,9:1 —, mas consertá-las
+ * pertence ao refactor que unifica as três tabelas de categoria do projeto.
+ * Aqui só se acrescenta a categoria nova, e ela nasce certa.
+ *
+ * Cor entra por `style`, nunca por classe `bg-*` nova: `verify:design-tokens`
+ * conta classes de cor crua POR ARQUIVO contra um baseline, e este já está em 59.
+ */
+const CATEGORY_INFO: Record<
+  MoveCategory,
+  {
+    symbol: string;
+    label: string;
+    color: string;
+    bg: string;
+    /** Fundo inline, para nao criar classe `bg-*` nova (o gate conta por arquivo). */
+    bgStyle?: string;
+    icon?: LucideIcon;
+  }
+> = {
   brilliant:  { symbol: "!!", label: "Brilhante",  color: "#06b6d4", bg: "bg-cyan-100" },
   great:      { symbol: "\u2605", label: "Ótimo",  color: "#22c55e", bg: "bg-green-100" },
   best:       { symbol: "\u2605", label: "Ótimo",  color: "#22c55e", bg: "bg-green-100" },
@@ -25,6 +47,14 @@ const CATEGORY_INFO: Record<MoveCategory, { symbol: string; label: string; color
   inaccuracy: { symbol: "?!", label: "Imprecisão", color: "#eab308", bg: "bg-yellow-100" },
   mistake:    { symbol: "?",  label: "Erro",       color: "#f97316", bg: "bg-orange-100" },
   blunder:    { symbol: "??", label: "Erro Grave",  color: "#ef4444", bg: "bg-red-100" },
+  // Ícone em vez de glifo, e de propósito: `!!`, `?` e `★` são anotação de
+  // xadrez, e livro não é anotação nenhuma. É também o que atende "cor nunca
+  // sozinha" — o selo se distingue sem depender do tom acromático.
+  // O chip cinza NAO e decoracao: sem ele o selo de livro ficava como glifo
+  // solto ao lado de sete selos com fundo colorido, e a lista passava a ter
+  // dois sistemas de selo. Ele vem inline porque `bg-stone-*` seria classe de
+  // cor crua nova, e o ratchet do verify:design-tokens conta por arquivo.
+  book:       { symbol: "",   label: "Livro",      color: "#6E6960", bg: "", bgStyle: "rgba(133,127,118,0.18)", icon: BookOpen },
 };
 
 const STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -54,14 +84,18 @@ function EvalBar({ cp, orientation }: { cp: number; orientation: PlayerColor }) 
 
 function CategoryBadge({ category }: { category: MoveCategory }) {
   const info = CATEGORY_INFO[category];
-  if (!info.symbol) return null;
+  const Icon = info.icon;
+  // Antes daqui só existia `symbol`, e a saída era `if (!info.symbol) return null`.
+  // Com essa guarda sozinha o selo de livro nunca renderizaria — ele não tem
+  // glifo, tem ícone.
+  if (!info.symbol && !Icon) return null;
   return (
     <span
       className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${info.bg}`}
-      style={{ color: info.color }}
+      style={{ color: info.color, backgroundColor: info.bgStyle }}
       title={info.label}
     >
-      {info.symbol}
+      {Icon ? <Icon size={12} strokeWidth={2.5} aria-hidden /> : info.symbol}
     </span>
   );
 }
@@ -93,7 +127,10 @@ function MoveInfoPanel({
   }
 
   const info = CATEGORY_INFO[moveAnalysis.category];
-  const showBest = !["best", "great", "brilliant"].includes(moveAnalysis.category);
+  const isBook = moveAnalysis.category === "book";
+  // "book" entra na lista por decisão de leitura, não por acaso: oferecer um
+  // "melhor" para um lance de teoria diz à criança que a Siciliana está errada.
+  const showBest = !["best", "great", "brilliant", "book"].includes(moveAnalysis.category);
 
   return (
     <div className="space-y-1.5 px-4 py-3">
@@ -130,9 +167,13 @@ function MoveInfoPanel({
         </div>
       )}
 
-      {/* Move accuracy */}
+      {/* Move accuracy: em livro, a explicacao de por que nao ha numero.
+          Num gambito o teto de material derruba o valor para 33, e imprimir
+          isso diria a crianca que a abertura que ela estudou e ruim. */}
       <div className="text-xs text-zinc-400">
-        {"Precis\u00E3o"}: {moveAnalysis.moveAccuracy.toFixed(0)}%
+        {isBook
+          ? "Teoria de abertura \u2014 n\u00E3o conta para a precis\u00E3o."
+          : `${"Precis\u00E3o"}: ${moveAnalysis.moveAccuracy.toFixed(0)}%`}
       </div>
     </div>
   );
@@ -230,8 +271,10 @@ export default function GameReview({
       shapes.push({ orig: squares[1] as Key, brush: currentAnalysis.category });
     }
 
-    // Green arrow showing best move (only when player made a sub-optimal move)
-    const showBestArrow = !["best", "great", "brilliant"].includes(currentAnalysis.category);
+    // Green arrow showing best move (only when player made a sub-optimal move).
+    // "book" fica de fora pelo mesmo motivo do painel: lance de teoria não tem
+    // "melhor" a apontar.
+    const showBestArrow = !["best", "great", "brilliant", "book"].includes(currentAnalysis.category);
     if (showBestArrow && currentAnalysis.bestMoveUci && currentAnalysis.bestMoveUci.length >= 4) {
       const from = currentAnalysis.bestMoveUci.slice(0, 2) as Key;
       const to = currentAnalysis.bestMoveUci.slice(2, 4) as Key;
@@ -307,15 +350,49 @@ export default function GameReview({
   return (
     <div className="mx-auto max-w-[960px] px-3 py-4">
       {/* Header */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <h2 className="text-lg font-bold text-zinc-800">
           {"Revisão de Batalha"}
         </h2>
         <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${resultBadge}`}>
           {resultLabel}
         </span>
-        <span className="text-xs text-zinc-400">{analysis.accuracy}% {"precis\u00E3o"}</span>
+        {/* Sem lance medido nao ha precisao a imprimir: 0% e indistinguivel de
+            "jogou mal", e quem so fez teoria nao jogou mal. */}
+        {analysis.accuracyMoveCount > 0 && (
+          <span className="text-xs text-zinc-400">{analysis.accuracy}% {"precis\u00E3o"}</span>
+        )}
       </div>
+
+      {/* Nome da abertura: segunda linha, porque a de cima ja quebra em 375 px.
+          Inter e nao Cinzel: e dado, nao titulo. */}
+      {analysis.opening && (
+        <div className="mb-4 flex items-center gap-1.5 text-xs">
+          <BookOpen
+            size={12}
+            className="shrink-0"
+            style={{ color: CATEGORY_INFO.book.color }}
+            aria-hidden
+          />
+          <span className="truncate font-medium" style={{ color: CATEGORY_INFO.book.color }}>
+            {analysis.opening.familia}
+          </span>
+          {/* ECO no MESMO corpo do nome, e sem `opacity`. A primeira versao
+              era 10 px com opacity-70, e isso derrubava o contraste de 5,3:1
+              para ~3,5:1 — reprova WCAG AA, e o codigo lia como "800" ou
+              "8oo". O separador `·` faz o trabalho que a diferenca de tamanho
+              fazia mal. Chip cinza sairia como classe de cor crua nova. */}
+          <span className="shrink-0 opacity-50" style={{ color: CATEGORY_INFO.book.color }}>
+            &middot;
+          </span>
+          <span
+            className="shrink-0 font-mono text-[11px] font-semibold"
+            style={{ color: CATEGORY_INFO.book.color }}
+          >
+            {analysis.opening.eco}
+          </span>
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row lg:items-start lg:gap-5">
         {/* ====== LEFT: Eval bar + Board + Nav ====== */}

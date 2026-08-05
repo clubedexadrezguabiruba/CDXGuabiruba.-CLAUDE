@@ -15,6 +15,7 @@ import {
 } from "@/lib/chess/botGameLogic";
 import { parseUci } from "@/lib/chess/puzzleLogic";
 import { analyzeGame } from "@/lib/chess/botAnalysis";
+import { loadOpeningBook } from "@/lib/chess/openingBook";
 import ActivityToasts from "@/components/gamification/ActivityToasts";
 import type { GameAnalysis } from "@/lib/chess/botAnalysis";
 import type {
@@ -299,11 +300,15 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
             await analysisEngine.setSkill(20);
 
             const pColor = playerColorRef.current;
+            // Pre-carregado na montagem; aqui so se colhe a promessa. `null` se
+            // a rede falhou, e a analise segue como antes do livro existir.
+            const book = await loadOpeningBook();
             const result = await analyzeGame(
               history,
               pColor,
               analysisEngine,
-              (current, total) => setAnalysisProgress({ current, total })
+              (current, total) => setAnalysisProgress({ current, total }),
+              book
             );
             setAnalysis(result);
             analysisEngine.destroy();
@@ -325,8 +330,12 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
                 p_inaccuracy: result.counts.inaccuracy,
                 p_mistake: result.counts.mistake,
                 p_blunder: result.counts.blunder,
-                p_schema_version: 1,
-                p_engine_info: "stockfish-18.0.5-lite",
+                p_book: result.counts.book,
+                p_schema_version: 3,
+                // `livro-none` quando o livro nao carregou: assim fica auditavel
+                // qual precisao foi calculada sem o ajuste de abertura, em vez
+                // de a degradacao sumir dentro de um numero.
+                p_engine_info: `stockfish-18.0.5-lite acc-v3.0-book d14 ${book ? `livro-${book.revision}` : "livro-none"}`,
               };
 
               let saved = false;
@@ -560,6 +569,13 @@ export default function BotGameClient({ bot, nextBot }: BotGameClientProps) {
     setShowResignConfirm(false);
     setFullHistory([]);
     setViewHalfMove(null);
+  }, []);
+
+  // Pre-carga do livro de aberturas. Sao ~100 ms de fetch mais ~10 ms de parse,
+  // e disparar na montagem faz com que, quando a partida acabar, ele ja esteja
+  // quente. `loadOpeningBook` nunca lanca; o `void` diz que ninguem espera aqui.
+  useEffect(() => {
+    void loadOpeningBook();
   }, []);
 
   useEffect(() => {

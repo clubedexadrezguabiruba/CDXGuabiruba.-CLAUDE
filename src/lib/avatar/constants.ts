@@ -39,7 +39,6 @@ export const SIZE_CONFIG: Record<AvatarSize, SizeConfig> = {
 export const Z_INDEX = {
   background: 0,
   body: 1,        // base skin ou dressed_base
-  hand: 3,
   head: 4,
   pet: 5,
   frame: 10,

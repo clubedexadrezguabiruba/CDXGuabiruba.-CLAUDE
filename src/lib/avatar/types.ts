@@ -22,7 +22,6 @@ export type RenderMode =
   | "underlay"       // background — preenche canvas inteiro
   | "dressed_base"   // outfit — substitui base skin (mesmo corpo + roupa)
   | "head_swap"      // head — cabeça redesenhada com acessório
-  | "overlay"        // hand — item sobreposto ao corpo
   | "companion"      // pet — posicionado fora do character-root
   | "frame_ui";      // frame — CSS border-image, fora do render stack
 
@@ -30,7 +29,7 @@ export type RenderMode =
 
 export type AnimationMode =
   | "global"   // character-root: breathing + sway, herdado por filhos
-  | "local"    // head/hand: micro-motion aditivo ao global
+  | "local"    // head: micro-motion aditivo ao global
   | "baked"    // pet: APNG nativo, sem Framer Motion
   | "none";    // background, outfit (herda global), frame
 
@@ -92,7 +91,6 @@ export interface SlotDefinition {
 
 export interface BodyFamilyAnchors {
   head: AnchorProfile;
-  hand: AnchorProfile;
   pet: PetAnchor;
 }
 

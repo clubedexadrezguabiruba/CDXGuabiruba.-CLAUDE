@@ -1,5 +1,33 @@
 # Uniformes — o processo, de ponta a ponta
 
+> ⚠️ **PARE — este runbook descreve o pipeline da BASE ANTIGA.** *Marcado em
+> 2026-07-31, no re-escopo do Bloco 2.*
+>
+> As máscaras de `scripts/avatar/mascara-base.ts` são derivadas do **macacão** da
+> base vetorizada, e os marcos que elas medem são `topoTraje`, `tornozelo`,
+> `yGola` e `yBota`. O boneco **kokeshi** não tem braços, mãos, pernas, bota,
+> orelhas nem macacão: rodar o `avatar:garment` contra ele mede contra o nada e
+> fica **verde por vacuidade**.
+>
+> **O que ainda vale aqui, e vale inteiro:** a **§2** (o que pedir ao gerador), a
+> **§2.1** (tabela de matiz) e a **§2.2** (as cinco armadilhas — em especial a
+> quinta, que diz qual saída do conversor da Adobe é fonte de medida). São regras
+> sobre a **arte de origem** e sobre o **conversor**, não sobre o recorte.
+>
+> **O que está suspenso:** §3 (da arte ao arquivo, a partir do `avatar:garment`),
+> §4, §5, §6, **§7** e §8. O substituto é a `interface Traje`
+> (`src/lib/avatar/estilo/tipos.ts`) clipada em `pathTronco()`, e o **2b** do doc
+> 15 é quem decide o que sobrevive destas seções.
+>
+> ⚠️ **Divergência resolvida em 2026-08-03: a §7 está suspensa INTEIRA, §7.0
+> incluída.** O item 2b.3 do doc 15 abria uma exceção para a §7.0 ("continua
+> valendo"); este banner suspendia a §7 sem ressalva, e as duas leituras estavam
+> no repositório ao mesmo tempo. **Vence o banner**, porque os 9 gates da §7 medem
+> contra as máscaras de `mascara-base.ts` — derivadas do macacão da base antiga —
+> e um gate que mede contra o que não existe fica **verde por vacuidade**, que é o
+> defeito que este projeto já pagou duas vezes. O que sobrevive da §7 é decidido
+> pelo **2b.1**, medindo, e não por herança.
+
 > **Leia isto antes de gerar arte de uniforme.** Cada regra e cada número aqui
 > saiu de uma rodada que falhou. Seguir o documento custa minutos; redescobrir
 > custou um dia.
@@ -110,7 +138,7 @@ creme-pêssego, o tronco saiu salpicado de manchas cor de pele.
 recolorem. A cor do uniforme **é o sinal da patente**, e duas peças da mesma
 patente precisam sair na mesma cor entre pedidos, porque nada as harmoniza depois.
 
-## 2.2 Quatro armadilhas do caminho da arte
+## 2.2 Cinco armadilhas do caminho da arte
 
 1. **O "SVG" que o Canva exporta não é vetor.** É um PNG em base64 dentro de um
    `<svg>`, com a transparência num SEGUNDO PNG cuja luminância vira o alfa.
@@ -125,6 +153,35 @@ patente precisam sair na mesma cor entre pedidos, porque nada as harmoniza depoi
    corrige com prompt melhor. Regere.
 4. **Sem textura de tecido.** Uma trama quase invisível no PNG o traçador
    transforma em regiões esfarrapadas do tamanho do tronco.
+5. **O conversor da Adobe devolve DOIS SVG, e só um deles é fonte de medida.**
+   ⚠️ *Escrito no Bloco 1c, confirmado no 1d.*
+
+   Do mesmo PNG saem um **line-art** e um **colorido**, e a diferença não é de
+   qualidade, é de natureza:
+
+   | saída | o que é | serve para |
+   |---|---|---|
+   | **line-art** | o traço virado região preenchida, poucos paths, `fill="#000000"` | **medir forma** — sim |
+   | **colorido** | auto-trace de tudo, centenas de paths e de cores | **nada** — nem forma, nem cor |
+
+   Números das duas rodadas do estilo kokeshi: o line-art veio com **3 paths** na
+   arte anterior e **6** na definitiva (contorno, dois olhos, duas sobrancelhas,
+   boca). O colorido veio com **640 paths e 558 tons** na primeira e **563 paths e
+   532 tons** na segunda — numa ilustração de oito tons chapados.
+
+   **Por que o colorido não serve nem para cor.** Um trace é um redesenho: ele
+   ajusta curvas aos pixels **e quantiza a cor**. Os 532 tons são invenção do
+   traçador, assados em `fill=` literais que não recolorem — e o `conferirSvg`
+   aprova mesmo assim, porque ele confere as custom properties declaradas, não a
+   ausência de cor assada. A cor sai do **PNG**, medida em pixel.
+
+   **Por que o line-art serve para forma, apesar de ser redesenho.** Porque isso é
+   verificável, e é verificado: `npm run avatar:linha-de-centro` mede a mesma coisa
+   nas duas fontes por réguas independentes e imprime a discordância. Na arte
+   definitiva ela dá **0,4** na meia-largura da cabeça e **0,1** na do tronco. Duas
+   medições independentes que concordam em décimo de unidade não estão as duas
+   erradas do mesmo jeito. Se a conferência abrir, o trace não serve — e é melhor
+   saber disso antes de a tabela dele virar a silhueta de 14 trajes.
 
 ---
 

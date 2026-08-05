@@ -28,12 +28,19 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Vitrine de design: aberta só FORA de produção, para o Playwright MCP poder
+  // fotografar sem login. Guarda dupla — src/app/design-lab/page.tsx devolve
+  // notFound() na mesma condição.
+  const isDesignLab =
+    process.env.NODE_ENV !== "production" && pathname.startsWith("/design-lab");
+
   // Rotas públicas: /, /login, /registro, /auth/*
   const isPublicRoute =
     pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/registro") ||
-    pathname.startsWith("/auth");
+    pathname.startsWith("/auth") ||
+    isDesignLab;
 
   // Não autenticado tentando acessar rota protegida → redirect /login
   if (!user && !isPublicRoute) {

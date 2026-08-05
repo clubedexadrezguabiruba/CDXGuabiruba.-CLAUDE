@@ -35,6 +35,7 @@ Thumbs.db
 # O settings.local.json guarda caminho absoluto e permissões pessoais.
 .claude/*
 !.claude/commands/
+!.claude/skills/
 !.claude/settings.json
 
 # Supabase CLI (local state)
@@ -66,3 +67,6 @@ scripts/avatar/uniformes/
 # NÃO é public/items/: `verify:avatar-assets` reprova arquivo órfão lá dentro, e
 # a linha do uniforme em `items` só nasce no Bloco 7b.
 public/dev/
+
+# Playwright MCP (screenshots e snapshots de sessao)
+.playwright-mcp/

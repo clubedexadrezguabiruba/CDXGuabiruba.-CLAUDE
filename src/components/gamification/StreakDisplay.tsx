@@ -1,5 +1,7 @@
 "use client";
 
+import Card, { CardTitle } from "@/components/ui/Card";
+
 import type { StreakData } from "@/hooks/useMissions";
 
 const MILESTONES = [
@@ -54,10 +56,10 @@ interface StreakDisplayProps {
 export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
   if (loading) {
     return (
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold">Sequência de Campanha</h2>
-        <div className="mt-2 text-sm text-zinc-400">Carregando...</div>
-      </div>
+      <Card>
+        <CardTitle className="mb-0">Sequência de Campanha</CardTitle>
+        <div className="mt-2 text-sm text-ink/45">Carregando...</div>
+      </Card>
     );
   }
 
@@ -68,9 +70,9 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
     : 100;
 
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
+    <Card>
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Sequência de Campanha</h2>
+        <CardTitle className="mb-0">Sequência de Campanha</CardTitle>
         <div className="flex items-center gap-1.5">
           <span className="text-2xl" aria-hidden="true">
             {effective > 0 ? "\uD83D\uDD25" : "\u2744\uFE0F"}
@@ -78,7 +80,7 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
           <span className="text-3xl font-bold tabular-nums">
             {effective}
           </span>
-          <span className="text-sm text-zinc-500">
+          <span className="text-sm text-ink/55">
             {effective === 1 ? "dia" : "dias"}
           </span>
         </div>
@@ -86,15 +88,15 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
 
       {effective > 0 && nextMilestone && (
         <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
+          <div className="flex items-center justify-between text-xs text-ink/55">
             <span>Próximo marco: {nextMilestone} dias</span>
             <span>
               {effective}/{nextMilestone}
             </span>
           </div>
-          <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-zinc-200">
+          <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-ink/10">
             <div
-              className="h-full rounded-full bg-orange-500 transition-all duration-300"
+              className="h-full rounded-full bg-gold transition-all duration-300"
               style={{ width: `${progressToNext}%` }}
             />
           </div>
@@ -102,23 +104,23 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
       )}
 
       {!nextMilestone && effective >= 2000 && (
-        <div className="mt-2 text-sm font-medium text-amber-600">
+        <div className="mt-2 text-sm font-medium text-gold">
           Todos os marcos alcançados!
         </div>
       )}
 
       {effective === 0 && streak.longest > 0 && (
-        <div className="mt-2 text-xs text-zinc-400">
+        <div className="mt-2 text-xs text-ink/45">
           Complete uma missão para iniciar sua sequência!
           {streak.longest > 1 && ` (Recorde: ${streak.longest} dias)`}
         </div>
       )}
 
       {effective > 0 && streak.longest > effective && (
-        <div className="mt-2 text-xs text-zinc-400">
+        <div className="mt-2 text-xs text-ink/45">
           Recorde: {streak.longest} dias
         </div>
       )}
-    </div>
+    </Card>
   );
 }

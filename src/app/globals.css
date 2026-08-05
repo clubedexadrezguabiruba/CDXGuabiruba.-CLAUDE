@@ -1,24 +1,115 @@
 @import "tailwindcss";
-@config "../../tailwind.config.ts";
 @import "chessground/assets/chessground.base.css";
 @import "chessground/assets/chessground.brown.css";
 @import "chessground/assets/chessground.cburnett.css";
 
+/* ---------------------------------------------------------------------------
+ * Os tokens do sistema. FONTE ÚNICA.
+ *
+ * Até 2026-08 eles viviam em dois lugares — `tailwind.config.ts` e um `:root`
+ * aqui embaixo com ZERO usos. Os hexes batiam por sorte, e nada media. No v4 o
+ * `@theme` gera a CSS var E a utility de uma vez, então a duplicação some por
+ * construção. `verify:design-tokens` mede que continua assim.
+ *
+ * A régua espelhada em TS é `scripts/design/tokens.ts`. Mexeu aqui, mexa lá.
+ * ------------------------------------------------------------------------- */
+@theme {
+  /* Marca */
+  --color-brand-cyan: #00D4AA;
+  --color-brand-teal: #0A8F7F;
+  --color-deep-navy: #0F1A2E;
+  --color-dark-base: #060F18;
+
+  /* Prestígio */
+  --color-gold: #C9A84C;
+  --color-gold-light: #E8D48B;
+  --color-warm-stone: #F5F0E8;
+  --color-warm-ivory: #FAF8F3;
+
+  /* Direção A: a cor de texto do app. Antes era valor arbitrário repetido. */
+  --color-ink: #1B2432;
+
+  /* Semânticos. Matiz provisório = o dominante do código de hoje
+   * (green-600 / red-600). Refinamento é decisão de design registrada. */
+  --color-ok: #16A34A;
+  --color-erro: #DC2626;
+
+  /* Tipografia — as vars vêm do next/font em src/app/layout.tsx */
+  --font-heading: var(--font-cinzel), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  /* A sombra-assinatura do mérito, e sua irmã da marca. Ver DESIGN.md:
+   * "The One Glow Rule" — glow-gold marca conquista, e conquista é rara. */
+  --shadow-glow-cyan: 0 0 20px rgba(0, 212, 170, 0.15);
+  --shadow-glow-gold: 0 0 20px rgba(201, 168, 76, 0.15);
+
+  /* Animações de gamificação. Os keyframes de tabuleiro/modal/confetti NÃO
+   * vivem aqui: são CSS puro consumido por classe própria, mais abaixo. */
+  --animate-scale-in: scale-in 0.4s ease-out forwards;
+  --animate-item-shake: item-shake 0.35s ease-in-out;
+  --animate-item-shatter: item-shatter 0.55s ease-in forwards;
+  --animate-fragment-fly: fragment-fly 0.7s ease-out forwards;
+  --animate-xp-reveal: xp-reveal 0.5s ease-out forwards;
+  --animate-egg-tremble: egg-tremble 0.6s ease-in-out infinite;
+  --animate-egg-hatch-tremble: egg-hatch-tremble 0.5s ease-in-out infinite;
+  --animate-egg-glow: egg-glow 1.5s ease-in-out infinite;
+
+  @keyframes scale-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes item-shake {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    15% { transform: translateX(-6px) rotate(-2deg); }
+    30% { transform: translateX(6px) rotate(2deg); }
+    45% { transform: translateX(-5px) rotate(-1.5deg); }
+    60% { transform: translateX(5px) rotate(1.5deg); }
+    75% { transform: translateX(-3px) rotate(-1deg); }
+    90% { transform: translateX(3px) rotate(1deg); }
+  }
+  @keyframes item-shatter {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+  /* --fx/--fy/--fr são setadas inline pelo componente do estilhaço. */
+  @keyframes fragment-fly {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--fx), var(--fy)) rotate(var(--fr)); opacity: 0; }
+  }
+  @keyframes xp-reveal {
+    0% { transform: scale(0) translateY(20px); opacity: 0; }
+    50% { transform: scale(1.12) translateY(-4px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes egg-tremble {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-3deg); }
+    40% { transform: rotate(3deg); }
+    60% { transform: rotate(-2deg); }
+    80% { transform: rotate(2deg); }
+  }
+  @keyframes egg-hatch-tremble {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    10% { transform: rotate(-5deg) scale(1.02); }
+    20% { transform: rotate(5deg) scale(1.02); }
+    30% { transform: rotate(-4deg) scale(1.01); }
+    40% { transform: rotate(4deg) scale(1.01); }
+    50% { transform: rotate(-3deg) scale(1); }
+    60% { transform: rotate(3deg) scale(1); }
+    70% { transform: rotate(-2deg) scale(1); }
+    80% { transform: rotate(2deg) scale(1); }
+    90% { transform: rotate(-1deg) scale(1); }
+  }
+  @keyframes egg-glow {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.3)); }
+    50% { filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.7)); }
+  }
+}
+
 :root {
   color-scheme: light;
-
-  /* Brand colors */
-  --brand-cyan: #00D4AA;
-  --brand-teal: #0A8F7F;
-  --deep-navy: #0F1A2E;
-  --dark-base: #060F18;
-
-  /* Prestige colors */
-  --gold: #C9A84C;
-  --gold-light: #E8D48B;
-  --warm-stone: #F5F0E8;
-  --warm-ivory: #FAF8F3;
-
 }
 
 html, body { height: 100%; }

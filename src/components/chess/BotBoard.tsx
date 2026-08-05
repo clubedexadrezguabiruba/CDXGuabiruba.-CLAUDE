@@ -233,6 +233,11 @@ export default function BotBoard({
           inaccuracy: { key: "inaccuracy", color: "#eab308", opacity: 1,   lineWidth: 10 },
           mistake:    { key: "mistake",    color: "#f97316", opacity: 1,   lineWidth: 10 },
           blunder:    { key: "blunder",    color: "#ef4444", opacity: 1,   lineWidth: 10 },
+          // Pedra quente, quase acromática: livro não é elogio nem culpa, então
+          // não leva cor de veredicto. Esta chave NÃO é opcional — `DrawBrushes`
+          // tem index signature, o TypeScript não cobra, e navegar até um lance
+          // de livro sem ela derruba o tabuleiro com TypeError.
+          book:       { key: "book",       color: "#857F76", opacity: 0.9, lineWidth: 10 },
           bestMove:   { key: "bestMove",   color: "#22c55e", opacity: 0.6, lineWidth: 12 },
         },
       },

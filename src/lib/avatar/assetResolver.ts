@@ -65,7 +65,6 @@ export function resolveAssetUrl(
       // Pet estático — usado em sm/md
       return baseUrl;
 
-    case "overlay":
     case "underlay":
     case "frame_ui":
       // Sem transformação de URL

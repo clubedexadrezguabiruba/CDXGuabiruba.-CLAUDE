@@ -23,6 +23,35 @@ interface GameOverModalProps {
   onNextBot?: () => void;
 }
 
+/**
+ * Um contador do resumo rapido: numero colorido em cima, rotulo cinza embaixo.
+ *
+ * As quatro categorias antigas continuam passando `className` com a cor
+ * Tailwind que ja tinham — trocar `text-green-600` por hex inline baixaria a
+ * contagem do verify:design-tokens sem melhorar nada. Livro, que nao tem
+ * classe equivalente na paleta, passa `color`.
+ */
+function QuickStat({
+  value,
+  label,
+  className,
+  color,
+}: {
+  value: number;
+  label: string;
+  className?: string;
+  color?: string;
+}) {
+  return (
+    <div className="text-center">
+      <div className={`text-lg font-bold ${className ?? ""}`} style={color ? { color } : undefined}>
+        {value}
+      </div>
+      <div className="text-xs text-zinc-400">{label}</div>
+    </div>
+  );
+}
+
 export default function GameOverModal({
   bot,
   result,
@@ -96,54 +125,54 @@ export default function GameOverModal({
           </div>
         )}
 
-        {/* Accuracy — player vs bot */}
-        {analysis && (
+        {/* Accuracy — player vs bot. Sem lance medido nao ha percentual: 0% e
+            indistinguivel de "jogou pessimo", e quem so fez teoria nao jogou
+            pessimo. Os dois lados sao checados em separado. */}
+        {analysis && (analysis.accuracyMoveCount > 0 || analysis.botAccuracyMoveCount > 0) && (
           <div className="mt-2 flex items-center justify-center gap-3">
             <span
               className="text-lg font-bold"
               style={{ color: accuracyColor(analysis.accuracy) }}
             >
-              {Math.round(analysis.accuracy)}%
+              {analysis.accuracyMoveCount > 0 ? `${Math.round(analysis.accuracy)}%` : "—"}
             </span>
             <span className="text-xs text-zinc-400">vs</span>
             <span
               className="text-lg font-bold"
               style={{ color: accuracyColor(analysis.botAccuracy) }}
             >
-              {Math.round(analysis.botAccuracy)}%
+              {analysis.botAccuracyMoveCount > 0 ? `${Math.round(analysis.botAccuracy)}%` : "—"}
             </span>
           </div>
         )}
 
-        {/* Quick stats */}
+        {/* Quick stats. Sao literais soltos e o compilador NAO cobra a
+            categoria nova: livro entrou a mao, como todos os outros. O rotulo
+            virou um componente so para nao repetir a classe de cor cinco vezes
+            — o ratchet do verify:design-tokens conta cada ocorrencia. */}
         {analysis && (
           <div className="mt-4 flex justify-center gap-6">
             {analysis.counts.brilliant > 0 && (
-              <div className="text-center">
-                <div className="text-lg font-bold text-cyan-500">
-                  {analysis.counts.brilliant}
-                </div>
-                <div className="text-xs text-zinc-400">Brilhante</div>
-              </div>
+              <QuickStat
+                value={analysis.counts.brilliant}
+                label="Brilhante"
+                className="text-cyan-500"
+              />
             )}
-            <div className="text-center">
-              <div className="text-lg font-bold text-green-600">
-                {analysis.counts.best + analysis.counts.great}
-              </div>
-              <div className="text-xs text-zinc-400">Ótimos</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-lime-600">
-                {analysis.counts.good}
-              </div>
-              <div className="text-xs text-zinc-400">Bom</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-red-600">
-                {analysis.counts.mistake + analysis.counts.blunder}
-              </div>
-              <div className="text-xs text-zinc-400">Erros</div>
-            </div>
+            {analysis.counts.book > 0 && (
+              <QuickStat value={analysis.counts.book} label="Livro" color="#6E6960" />
+            )}
+            <QuickStat
+              value={analysis.counts.best + analysis.counts.great}
+              label="Ótimos"
+              className="text-green-600"
+            />
+            <QuickStat value={analysis.counts.good} label="Bom" className="text-lime-600" />
+            <QuickStat
+              value={analysis.counts.mistake + analysis.counts.blunder}
+              label="Erros"
+              className="text-red-600"
+            />
           </div>
         )}
 

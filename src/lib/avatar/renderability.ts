@@ -62,11 +62,10 @@ export function assetsExigidos(item: ItemParaRender): string[] {
     case "outfit":
       return GENEROS.map((g) => base.replace(/\.png$/, `-${g}.png`));
 
-    // underlay / overlay / companion: o próprio arquivo, sem variante.
+    // underlay / companion: o próprio arquivo, sem variante.
     // O APNG do pet (-animated) é opcional — sem ele o pet ainda aparece
     // estático, então não entra como exigência.
     case "background":
-    case "hand":
     case "pet":
       return [base];
 

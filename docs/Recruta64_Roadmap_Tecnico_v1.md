@@ -18,10 +18,10 @@ está.
 | 2. Banco de Dados | ✅ feita |
 | 3. Autenticação | ✅ feita |
 | 4. Puzzles | ✅ feita — **50.001 puzzles** importados do Lichess |
-| 5. Aulas | ✅ feita — 30 aulas (15 recruta + 15 soldado) |
+| 5. Aulas | ✅ feita — 30 aulas (15 recruta + 15 soldado); **superadas** pelo currículo de 126 aulas, ver `docs/curriculo/01-curriculo-definitivo-v1.md` |
 | 6. Bots | ✅ feita — 10 bots, Stockfish WASM no browser |
 | 7. Gamificação | ✅ feita — missões, streak, 17 conquistas, baús, títulos |
-| 8. Avatar/Inventário | ✅ feita (v2) — **v3 é o plano vigente**, ver `docs/avatar/10-avatar-v3-definitive.md` |
+| 8. Avatar/Inventário | ✅ feita (v2) — **o v4 é o plano vigente**, ver `docs/avatar/15-plano-ate-pronto.md` (a v3 caiu; está em `docs/avatar/_superado/`) |
 | 9. Painel do Professor | ✅ feita |
 | 10. Rankings | ✅ feita |
 | **11. Sound Design + PWA + Polish** | ❌ **não iniciada** — não existe manifest nem service worker |
@@ -36,8 +36,8 @@ está.
   connection string.
 - Testes: **Vitest** (unit) + **Playwright** (e2e). O e2e bate no Supabase de
   **produção** e por isso fica fora do CI.
-- CI real: `.github/workflows/ci.yml` — typecheck, lint, test, build e os 11 gates
-  de `npm run verify:all`.
+- CI real: `.github/workflows/ci.yml` — typecheck, lint, test, build e a cadeia de
+  gates de `npm run verify:all`. Quantos são hoje: `docs/ESTADO.md`.
 
 **Só existem contas de teste no banco** — nenhum aluno real ainda. Decisões de
 balanceamento e migração de dados são baratas agora e caras depois do lançamento.
@@ -207,7 +207,7 @@ O fluxo ideal para cada tarefa é:
 
 3. Claude aplica no banco e valida:
    → npx tsx scripts/apply-migration.ts <arquivo>.sql  (aplica a migration)
-   → npm run verify:all                               (11 gates contra o banco)
+   → npm run verify:all                               (a cadeia de gates, contra o banco)
    → npm run test:e2e                                 (Playwright — bate em produção)
 
 4. Claude escreve o código e aplica no projeto

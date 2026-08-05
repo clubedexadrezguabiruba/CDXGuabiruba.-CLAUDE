@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Card from "@/components/ui/Card";
+import FaixaDeComando from "@/components/layout/FaixaDeComando";
 import { useRanking } from "@/hooks/useRanking";
 import type { RankingData, RankingType } from "@/types/ranking";
 
@@ -30,19 +32,24 @@ export default function RankingClient({ initialData, userId }: Props) {
     useRanking("rating", initialData);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="mb-4 text-xl font-bold text-zinc-900">Quadro de Honra</h1>
+    <div className="min-h-full bg-warm-ivory pb-10 text-ink">
+      <FaixaDeComando
+        supertitulo="Reino das 64 Casas"
+        titulo="Quadro de Honra"
+        saudacao="Mérito da companhia, atualizado a cada campanha."
+      />
 
+      <div className="mx-auto max-w-2xl px-4 pt-5">
       {/* Tabs */}
-      <div className="mb-4 flex gap-1 rounded-lg bg-zinc-100 p-1">
+      <div className="mb-4 flex gap-1 rounded-lg bg-ink/6 p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => switchTab(tab.key)}
             className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700"
+                ? "bg-white text-ink shadow-sm"
+                : "text-ink/55 hover:text-ink"
             }`}
           >
             {tab.label}
@@ -52,11 +59,11 @@ export default function RankingClient({ initialData, userId }: Props) {
 
       {/* Banner: oculto do ranking */}
       {isHidden && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="mb-4 rounded-lg border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-ink/80">
           Você está oculto do ranking global.{" "}
           <Link
             href="/configuracoes"
-            className="font-medium underline hover:text-amber-900"
+            className="rounded font-medium underline hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
           >
             Alterar em Configurações
           </Link>
@@ -69,19 +76,19 @@ export default function RankingClient({ initialData, userId }: Props) {
           {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
-              className="h-12 animate-pulse rounded-lg bg-zinc-100"
+              className="h-12 animate-pulse rounded-lg bg-ink/6"
             />
           ))}
         </div>
       ) : entries.length === 0 ? (
-        <p className="py-8 text-center text-sm text-zinc-500">
+        <p className="py-8 text-center text-sm text-ink/55">
           Nenhum jogador no ranking ainda.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+        <Card className="overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b bg-zinc-50 text-zinc-500">
+              <tr className="border-b border-ink/10 bg-warm-ivory text-ink/55">
                 <th className="w-12 px-3 py-2.5 text-center">#</th>
                 <th className="px-3 py-2.5">Jogador</th>
                 <th className="px-3 py-2.5 text-right">
@@ -103,8 +110,8 @@ export default function RankingClient({ initialData, userId }: Props) {
                 return (
                   <tr
                     key={entry.user_id}
-                    className={`border-b transition-colors last:border-0 hover:bg-zinc-50 ${
-                      isMe ? "bg-blue-50 font-medium" : ""
+                    className={`border-b border-ink/10 transition-colors last:border-0 hover:bg-ink/3 ${
+                      isMe ? "bg-gold/12 font-medium" : ""
                     }`}
                   >
                     <td className="px-3 py-2.5 text-center font-medium">
@@ -115,23 +122,23 @@ export default function RankingClient({ initialData, userId }: Props) {
                     <td className="px-3 py-2.5">
                       <Link
                         href={`/perfil/${entry.user_id}`}
-                        className="flex items-center gap-2 hover:underline"
+                        className="flex items-center gap-2 rounded underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                       >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-white">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-deep-navy text-xs font-bold text-white">
                           {initials}
                         </span>
-                        <span className="truncate">
+                        <span className="block max-w-40 truncate sm:max-w-none">
                           {entry.public_name}
                         </span>
                         {isMe && (
-                          <span className="text-xs text-blue-600">(você)</span>
+                          <span className="text-xs font-semibold text-gold">(você)</span>
                         )}
                       </Link>
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">
                       {entry.metric_value}
                     </td>
-                    <td className="hidden px-3 py-2.5 text-zinc-500 sm:table-cell">
+                    <td className="hidden px-3 py-2.5 text-ink/70 sm:table-cell">
                       {entry.title}
                     </td>
                   </tr>
@@ -139,16 +146,17 @@ export default function RankingClient({ initialData, userId }: Props) {
               })}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
       {/* Banner: posição do usuário se fora do top */}
       {myRank && myRank.position > entries.length && !loading && (
-        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        <div className="mt-4 rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm text-ink/80">
           Sua posição: <strong>#{myRank.position}</strong> com{" "}
           {myRank.metric_value} {metricLabel(activeTab).toLowerCase()}
         </div>
       )}
+      </div>
     </div>
   );
 }

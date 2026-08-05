@@ -1,5 +1,6 @@
 "use client";
 
+import { BookOpen, type LucideIcon } from "lucide-react";
 import type { Bot, GameResult } from "@/types/bot";
 import BotAvatar from "./BotAvatar";
 import { accuracyColor } from "@/lib/chess/analysisHelpers";
@@ -9,6 +10,17 @@ import type { GameAnalysis, MoveAnalysis, MoveCategory } from "@/lib/chess/botAn
 // Category config with chess.com-style symbols
 // ---------------------------------------------------------------------------
 
+/**
+ * ESTA TABELA E UM ARRAY, e o compilador NAO cobra uma linha faltando: uma
+ * categoria nova entra em `MoveCategory` e some daqui sem erro nenhum. Quem
+ * acrescentar categoria acrescenta linha aqui a mao.
+ *
+ * A cor de "Livro" e diferente da que a GameReview usa para a mesma categoria,
+ * de proposito: nenhuma cor unica passa 4,5:1 sobre branco E sobre #262522 ao
+ * mesmo tempo (exigiria luminancia <=0,18 e >=0,26 simultaneamente). Aqui, no
+ * card escuro, o tom claro da 5,8:1; la, o escuro da 5,3:1 sobre branco.
+ * Cada superficie ja tinha sua propria tabela, entao os dois tons saem de graca.
+ */
 const CATEGORY_ROWS: {
   key: MoveCategory;
   mergeKey?: MoveCategory;
@@ -16,9 +28,13 @@ const CATEGORY_ROWS: {
   label: string;
   color: string;
   bg: string;
+  /** Fundo inline, para nao criar classe `bg-*` nova (o gate conta por arquivo). */
+  bgStyle?: string;
+  icon?: LucideIcon;
 }[] = [
   { key: "brilliant", symbol: "!!", label: "Brilhante", color: "#06b6d4", bg: "bg-cyan-500/20" },
   { key: "best", mergeKey: "great", symbol: "★", label: "Ótimo", color: "#22c55e", bg: "bg-green-500/20" },
+  { key: "book", symbol: "", label: "Livro", color: "#A69F94", bg: "", bgStyle: "rgba(133,127,118,0.20)", icon: BookOpen },
   { key: "good", symbol: "✓", label: "Bom", color: "#84cc16", bg: "bg-lime-500/20" },
   { key: "inaccuracy", symbol: "?!", label: "Imprecisão", color: "#eab308", bg: "bg-yellow-500/20" },
   { key: "mistake", symbol: "?", label: "Erro", color: "#f97316", bg: "bg-orange-500/20" },
@@ -33,13 +49,25 @@ function getCount(counts: Record<MoveCategory, number>, key: MoveCategory, merge
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function CategoryIcon({ symbol, color, bg }: { symbol: string; color: string; bg: string }) {
+function CategoryIcon({
+  symbol,
+  color,
+  bg,
+  bgStyle,
+  icon: Icon,
+}: {
+  symbol: string;
+  color: string;
+  bg: string;
+  bgStyle?: string;
+  icon?: LucideIcon;
+}) {
   return (
     <span
       className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${bg}`}
-      style={{ color }}
+      style={{ color, backgroundColor: bgStyle }}
     >
-      {symbol}
+      {Icon ? <Icon size={13} strokeWidth={2.5} aria-hidden /> : symbol}
     </span>
   );
 }
@@ -53,7 +81,7 @@ function DualCategoryTable({
 }) {
   return (
     <div className="w-full divide-y divide-zinc-700/50">
-      {CATEGORY_ROWS.map(({ key, mergeKey, symbol, label, color, bg }) => {
+      {CATEGORY_ROWS.map(({ key, mergeKey, symbol, label, color, bg, bgStyle, icon }) => {
         const pCount = getCount(playerCounts, key, mergeKey);
         const bCount = getCount(botCounts, key, mergeKey);
 
@@ -74,7 +102,7 @@ function DualCategoryTable({
 
             {/* Icon + label */}
             <div className="flex items-center gap-2">
-              <CategoryIcon symbol={symbol} color={color} bg={bg} />
+              <CategoryIcon symbol={symbol} color={color} bg={bg} bgStyle={bgStyle} icon={icon} />
               <span className="text-sm font-medium text-zinc-300">{label}</span>
             </div>
 
@@ -90,6 +118,30 @@ function DualCategoryTable({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * Precisao de um lado — ou o motivo de nao haver numero.
+ *
+ * `computeGameAccuracy` devolve 0 quando nenhum lance entrou na media, e 0 e
+ * indistinguivel de "jogou pessimo". Quem abriu com quatro lances de teoria e
+ * desistiu leria "Precisao: 0". `moveCount` e o que separa os dois casos.
+ */
+function AccuracyStat({ value, moveCount }: { value: number; moveCount: number }) {
+  const semMedida = moveCount === 0;
+  return (
+    <div className="text-center">
+      <div
+        className={`text-3xl font-black tabular-nums ${semMedida ? "text-zinc-500" : ""}`}
+        style={semMedida ? undefined : { color: accuracyColor(value) }}
+      >
+        {semMedida ? "—" : value}
+      </div>
+      <div className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+        {semMedida ? "Só teoria" : "Precisão"}
+      </div>
     </div>
   );
 }
@@ -166,11 +218,6 @@ export default function BotPostGame({
         ? "text-red-400"
         : "text-zinc-400";
 
-  const playerAccuracy = analysis?.accuracy ?? 0;
-  const botAccuracy = analysis?.botAccuracy ?? 0;
-  const playerAccColor = accuracyColor(playerAccuracy);
-  const botAccColor = accuracyColor(botAccuracy);
-
   return (
     <div className="mx-auto max-w-md px-4 py-6 lg:max-w-lg">
       {/* Dark review card */}
@@ -195,24 +242,10 @@ export default function BotPostGame({
               </div>
 
               {/* Accuracy: Player */}
-              <div className="text-center">
-                <div className="text-3xl font-black tabular-nums" style={{ color: playerAccColor }}>
-                  {playerAccuracy}
-                </div>
-                <div className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                  Precisão
-                </div>
-              </div>
+              <AccuracyStat value={analysis.accuracy} moveCount={analysis.accuracyMoveCount} />
 
               {/* Accuracy: Bot */}
-              <div className="text-center">
-                <div className="text-3xl font-black tabular-nums" style={{ color: botAccColor }}>
-                  {botAccuracy}
-                </div>
-                <div className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                  Precisão
-                </div>
-              </div>
+              <AccuracyStat value={analysis.botAccuracy} moveCount={analysis.botAccuracyMoveCount} />
 
               {/* Bot side */}
               <div className="flex flex-col items-center gap-2">

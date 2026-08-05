@@ -97,6 +97,11 @@ O sistema usa eventos idempotentes para evitar duplicação de recompensas:
 
 ## 5. Core Feature: Aulas Globais
 
+> ⚠️ **Esta seção inteira está superada.** A fonte de verdade do conteúdo
+> pedagógico é `docs/curriculo/01-curriculo-definitivo-v1.md` (rev. 4,
+> 2026-07-31): **126 aulas em 7 trilhas**, não as 100/30 descritas abaixo. Leia a
+> §5 só como registro da intenção original.
+
 ### 5.1 Estrutura
 
 - **100 aulas progressivas** (v1 lança com **30 aulas**, restante adicionado progressivamente)
@@ -573,20 +578,69 @@ Após cada partida contra um bot, o aluno tem acesso a uma **análise leve** foc
 ### 13.2 Funcionamento Técnico
 
 - Análise feita por **Stockfish WASM** no navegador do aluno (mesma engine dos bots)
-- Após a partida, **apenas os lances do aluno** são analisados com depth ~12 (leve e rápido, suficiente para amadores)
+- Após a partida, **os lances dos dois lados** são analisados com depth 14 — uma busca por *posição*, não por lance (a avaliação depois do lance i é a de antes do lance i+1). Só o candidato a Brilhante custa uma busca extra, em depth 16
 - O aluno pode ver os 3 piores lances no tabuleiro, com seta mostrando o lance ideal
 - A análise é gerada **automaticamente** ao fim da partida (com opção de pular)
 
 ### 13.3 Classificação dos Lances
 
-| Tipo | Critério (diferença de eval) | Ícone |
-|---|---|---|
-| Brilhante | Único lance bom em posição complexa | 💎 |
-| Ótimo | Melhor lance ou dentro de 0.1 do melhor | 🟢 |
-| Bom | Dentro de 0.3 do melhor lance | 🟢 |
-| Imprecisão | Perda de 0.3 a 0.8 | 🟡 |
-| Erro | Perda de 0.8 a 2.0 | 🔴 |
-| Blunder | Perda de 2.0+ | ❌ |
+O modelo é próprio do Recruta 64, montado de três partes com procedência distinta.
+**Não prometemos equivalência com o CAPS do chess.com** — o CAPS é proprietário e
+depende do rating do jogador. Prometemos o mesmo espírito: Brilhante raro e
+precisão que pune blunder.
+
+**Precisão** — porte do algoritmo aberto do Lichess (`AccuracyPercent.scala` do lila
+e `eval.scala` do scalachess). A avaliação em centipeões vira probabilidade de
+vitória por uma sigmoide com teto em ±1000cp (mate lê 97,5%, nunca 100%); cada
+lance recebe uma nota pela curva exponencial deles; a nota da partida é a **média
+entre uma média ponderada pela volatilidade da posição e uma média harmônica** —
+é a harmônica que faz um único blunder derrubar o número, coisa que a média
+aritmética antiga não fazia.
+
+**Categorias** — as faixas públicas de *expected points* do chess.com, medidas em
+perda de probabilidade de vitória (não em peões):
+
+| Tipo | Critério | Equivale a, de posição igual | Ícone |
+|---|---|---|---|
+| Brilhante | Sacrifício real + melhor lance confirmado + posição disputada | — | 💎 |
+| Ótimo/Bom | Melhor lance, ou perda até 5pp | até ~55cp | 🟢 |
+| **Livro** | **Ainda dentro da teoria de abertura** | **—** | 📖 |
+| Imprecisão | Perda de 5 a 10pp | ~55 a 110cp | 🟡 |
+| Erro | Perda de 10 a 20pp | ~110 a 230cp | 🔴 |
+| Blunder | Perda acima de 20pp | acima de ~230cp | ❌ |
+
+**Livro** — procedência, não qualidade, e por isso a única categoria que **sai da
+conta da precisão**: o aluno não pensou aquele lance, ele o repetiu. O nome da
+abertura aparece no cabeçalho da revisão (família em português + código ECO).
+
+A base é a do `lichess-org/chess-openings` (CC0, ~3.800 linhas nomeadas),
+indexada por **aresta** — "a partir desta posição, este lance é teoria?" —, não
+por posição resultante. Duas travas impedem que ela vire desculpa, porque é uma
+base de *nomenclatura* e nomeia até o Mate do Louco: **Livro nunca vence Erro
+Grave**, e o motor continua avaliando toda posição; e uma lista de linhas-piada
+vetadas cobre o que fica em nível de Erro e escaparia da primeira trava. Gambito
+de verdade não é atingido — o Gambito do Rei custa ~8pp e o Evans ~7pp, longe
+dos 20pp de Erro Grave.
+
+Saiu da teoria, o selo **não volta**, mesmo que o jogo retorne a uma posição
+conhecida. O **nome** da abertura é independente disso: ele atualiza sempre que
+a posição exata bater numa nomeada, inclusive por transposição depois do desvio.
+
+**Canal de material** — a sigmoide satura além de ±1000cp: com a posição já
+decidida, pendurar mais uma peça perde ~0pp e leria "Bom". Por isso todo lance
+também é julgado pela perda bruta em centipeões, em três regimes: quem segue
+ganhando folgado (≥ 90%) tem folga de conversão (só perda ≥ 900cp vira
+Imprecisão — é onde cai o mate perdido); quem já estava perdido (≤ 10%) leva
+**Erro** por peça pendurada (≥ 250cp), nunca Erro Grave — o mesmo "?" que o
+chess.com dá nesses lances; no meio, 150/300/900cp valem
+Imprecisão/Erro/Erro Grave. A categoria e a precisão do lance ficam com o pior
+dos dois canais. Lance forçado (1 legal) é isento.
+
+**Brilhante** — regra conservadora nossa, com todos estes gates ao mesmo tempo:
+sacrifício de material de fato (troca calculada na casa de destino, saldo ≥ 2
+peões — peça defendida em casa atacada **não** conta), lance exatamente igual ao
+do motor **e reconfirmado em profundidade 16**, fora da abertura, posição
+disputada antes (25%–75%) e ainda saudável depois.
 
 ### 13.4 Tela de Resumo Pós-Partida
 

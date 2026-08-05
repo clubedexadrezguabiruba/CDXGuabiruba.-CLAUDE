@@ -57,7 +57,7 @@ npm run typecheck    # tsc --noEmit
 npm run lint         # eslint src/
 npm test             # vitest run
 npm run build        # next build
-npm run verify:all   # 11 gates contra o banco remoto
+npm run verify:all   # a cadeia inteira de gates, contra o banco remoto
 npm run test:e2e     # Playwright — ver aviso abaixo
 ```
 
@@ -122,9 +122,11 @@ Rotas públicas: `/`, `/login`, `/registro`, `/auth/*`; todo o resto exige sess�
 Fases 1 a 10 implementadas (fundação, banco, puzzles, aulas, bots, gamificação,
 avatar, turmas, ranking). **Pendentes: fase 11 (PWA) e fase 12 (lançamento).**
 
-O subsistema de avatar tem um plano vigente de reestruturação —
-[docs/avatar/10-avatar-v3-definitive.md](docs/avatar/10-avatar-v3-definitive.md) —
-que supersede os docs 00–09 daquela pasta onde houver conflito.
+O subsistema de avatar tem um plano vigente de reestruturação (v4) —
+[docs/avatar/15-plano-ate-pronto.md](docs/avatar/15-plano-ate-pronto.md) — que
+vence onde divergir de qualquer outro doc da pasta. As gerações anteriores (v2 e
+v3) estão em [docs/avatar/_superado/](docs/avatar/_superado/) e não valem como
+instrução.
 
 ## Referências
 

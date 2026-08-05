@@ -141,7 +141,7 @@ progressão de ornamento do §5.
 | pior par de panos | ≥ 40 | **70,3** | +30,3 |
 | pior par **vizinho** | ≥ 60 | **72,5** *(Aspirante × Capitão)* | +12,5 |
 | menor distância pano ↔ bota | ≥ 40 | **52** | +12 |
-| menor distância pano ↔ contorno `#241610` | ≥ 40 | **102** | +62 |
+| menor distância pano ↔ contorno `#000000` | ≥ 40 | **102** | +62 |
 
 **De onde vêm os dois pisos de distância.** O **40** é o mesmo `MIN_CONTORNO` que
 a paleta já usa para "contorno e preenchimento não se fundem" — abaixo disso duas

@@ -26,20 +26,20 @@ describe("resolveAssetUrl — regras de nomenclatura", () => {
     expect(resolveAssetUrl("/items/pet/x.png", "male", "companion", true)).toBe("/items/pet/x-animated.png");
   });
 
-  it("overlay, underlay e frame_ui não transformam o caminho", () => {
-    for (const modo of ["overlay", "underlay", "frame_ui"] as const) {
+  it("underlay e frame_ui não transformam o caminho", () => {
+    for (const modo of ["underlay", "frame_ui"] as const) {
       expect(resolveAssetUrl("/items/x/a.png", "male", modo)).toBe("/items/x/a.png");
     }
   });
 
   it("baseUrl nulo devolve null", () => {
-    expect(resolveAssetUrl(null, "male", "overlay")).toBeNull();
+    expect(resolveAssetUrl(null, "male", "underlay")).toBeNull();
   });
 });
 
 describe("resolveAsset — confronto com o manifesto", () => {
   it("sem item equipado: nada ausente", () => {
-    expect(resolveAsset(null, "male", "overlay")).toEqual({ candidato: null, src: null, ausente: false });
+    expect(resolveAsset(null, "male", "underlay")).toEqual({ candidato: null, src: null, ausente: false });
   });
 
   it("arquivo presente no manifesto: src preenchido, ausente false", () => {

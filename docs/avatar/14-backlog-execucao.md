@@ -30,10 +30,10 @@
 
 Nada aqui depende de arte. Pode começar hoje.
 
-> **Estado em 2026-07-29:** 13 das 22 tarefas fechadas. Falta o pipeline de
-> vetorização (T0.6–T0.9) e os testes unitários de ordem de camadas e offset
-> (T0.20, T0.22). As duas decisões do usuário (T0.12, T0.14) foram delegadas e
-> estão tomadas, com a evidência renderizada.
+> **Estado em 2026-08-03:** **19 das 23 tarefas da F0 fechadas.** Abertas:
+> T0.9 (folha de contato), T0.20 e T0.22 (testes unitários de ordem de camadas
+> e de offset) e T0.23. As duas decisões do usuário (T0.12, T0.14) foram
+> delegadas e estão tomadas, com a evidência renderizada.
 >
 > Para **ver o boneco**: `/dev/avatar-base` no app (professor/admin), ou
 > `npm run avatar:base`, que regera o SVG e a folha de conferência em `.scratch/`.
@@ -116,7 +116,26 @@ mas a evidência já existe em `.scratch/pagina-avatar-v4-completo.png`.
 - [x] **T0.11** 🤖 Gerar o boneco em **1:2, 1:3 e 1:4** e renderizar a 56 px
       → `npm run avatar:prototipo`; uma função gera as três, `cabecas` é o único
       parâmetro que muda, para a comparação ser entre proporções e não entre desenhos
-- [x] **T0.12** 👤→🤖 **Proporção escolhida: 1:3** *(usuário delegou a escolha)*
+- [x] **T0.12** 👤→🤖 ~~**Proporção escolhida: 1:3**~~ *(usuário delegou a escolha)*
+      → **REVOGADA em 2026-07-31 pela troca de estilo (doc 15, Bloco 1).** A cabeça
+      passa a ser **0,52 da figura** (≈1:2), medida na `referencia-base.png`. O
+      boneco kokeshi não tem pernas, então a figura de três cabeças que a T0.11
+      comparou não existe mais. A régua é `src/lib/avatar/estilo/geometria.ts`
+      *(o 0,508 escrito aqui antes saiu de uma medição que lia a silhueta como
+      "pixel diferente do fundo" e engolia a sombra do chão junto; o valor certo é
+      0,52 — ver o cabeçalho de `scripts/avatar/estilo/medir.ts`)*
+- [x] **T0.15** 🤖 **Bloco 1b — a base refeita com a assimetria medida**
+      *(2026-07-31)*. O Bloco 1 entregou a arquitetura e o Doug a aprovou; a base
+      visual foi **reprovada** e é isto que a refaz. A pose deixou de ser tratada
+      como simétrica: entra a constante `GIRO` em `geometria.ts` com os cinco
+      deslocamentos medidos, o topo da cabeça vira cúpula (o chato do ápice cai de
+      48% para 10% da largura), os olhos ficam assimétricos e 32% mais largos, a
+      mancha diagonal no rosto vira **plano lateral** na borda, a sombra do chão
+      volta a ser centrada e do tamanho medido, e o tronco passa a ter o ponto
+      mais largo a 57% da altura. Nasce junto `npm run avatar:pose` — o 15º gate
+      do `verify:all` —, que mede perfil externo, marcos da pose e unicidade de
+      `id`, com **três fixtures** que reprovam uma em cada. `ns` deixou de ter
+      valor padrão: o `typecheck` agora cobra a unicidade de quem compõe
 - [x] **T0.13** 🤖 Converter 1 pet para SVG animado por CSS e comparar com o APNG
 - [x] **T0.14** 👤→🤖 **Pets viram SVG** *(usuário delegou; confirmar se discordar)*
 
@@ -181,7 +200,7 @@ fundiu (`#4a3526` com `#3d2b1f`). Folha: `.scratch/proporcao/paleta/`.
       (todo mundo tem linha; ninguém abaixo do que a contagem lhe dá) e o alcance
       (uniforme só em patente que o conteúdo alcança)
 - [x] **T0.18** 🤖 Adicionar `verify:phase8` ao `verify:all` e ao CI
-      → `verify:all` foi de 11 para 14 gates. O CI já roda `verify:all`, então não precisou de passo novo
+      → `verify:all` ganhou os gates novos. O CI já roda `verify:all`, então não precisou de passo novo
 
 ## Testes unitários — não existe nenhum hoje
 
@@ -223,6 +242,81 @@ Bloqueia todo o resto da arte.
       - **cabelo curto baked: não.** O boneco é careca, e a **D5** existe para que ninguém
         apareça careca por um 404. Ou a base ganha cabelo assado, ou a D5 muda e careca
         passa a ser estado de falha aceito. **Decisão do usuário, em aberto**
+- [ ] **T1.5** 🤖 **O `moicano` e o `coque` do catálogo estão guilhotinados pelo `viewBox`**
+      → achado em 2026-08-03, medido por `.scratch/estilo/topo-corte.ts`, **sem correção**.
+      A figura base ocupa de `y = 39` a `y = 655` num canvas de 700: sobram **39 unidades
+      acima da cabeça**, 3,1 px no tamanho do ranking. Tudo que uma peça desenhe acima de
+      `y = 0` o viewport corta, **sem erro e sem aviso**.
+      - o **moicano** sai com **147 px de largura constante nas seis primeiras linhas** —
+        a crista dele (`y` −34, −76, −60) é cortada desde o 2a.1, e o que resta lê como
+        barra reta;
+      - o **coque** perde **34 unidades** do mesmo jeito.
+      → A régua de cabelo já resolveu isto do lado dela: `TETO_Y = 8` em
+      `scripts/avatar/estilo/tracar-cabelo.ts` **comprime** o excesso em torno da linha da
+      coroa em vez de guilhotinar, e a distinção das três variantes subiu de 5,04–5,98%
+      para 6,70–7,41% só com essa troca. O catálogo não passou pela régua e continua com
+      os números de 2026-08-01. **Duas saídas, e a escolha é medida, não de gosto:** ou as
+      duas peças re-traçam pela régua (barato, cabe no Bloco 2a), ou o `viewBox` ganha
+      altura no topo (caro — mexe em `VIEWBOX`, na `folha-base` congelada em 19 formas /
+      7 418 bytes e em todo asset já assado).
+      → **A esteira agora existe** (T1.6): as duas re-traçam por `avatar:tracar` +
+      `avatar:fidelidade` depois do piloto aprovado. Continua sem correção aplicada.
+- [ ] **T1.6** 🤖 **O cabelo deixa de ser desenhado e passa a ser traçado da arte**
+      → pipeline pronto em 2026-08-03, **piloto aguardando o olho** (item (f)).
+      `Cabelo` ganhou `massa` e `clara` — laços FECHADOS em `{t, y}` —, e é o fechamento
+      que deixa a peça ter **cortina**: massa descendo ao lado do rosto, por dentro da
+      silhueta, que uma franja aberta não descreve porque franja aberta é função de `x`.
+      - `npm run avatar:tracar -- <png>` — a arte vira literal para colar. Máscara
+        (teal ∪ o preto dele) → borda ordenada por Moore → centro da corrida de preto na
+        normal local → suavizar → decimar por erro de corda. É o pipeline dos 42 pontos
+        do crânio, aplicado ao cabelo;
+      - `npm run avatar:fidelidade` — dois gates com `exitCode`, mais `--inverter` (R10),
+        `--piso` e `--folha`;
+      - `--ida-e-volta-massa` é a regressão sem gerador, e ela recupera o próprio traço:
+        espessura medida **11,5 u** contra `TRACO = 12`.
+      **Registro das folhas** — selo, data, veredito:
+      | selo | data | o que era | veredito |
+      |---|---|---|---|
+      | 93ETYY | 2026-08-03 | 3 variantes traçadas pela régua paramétrica | reprovada — laje no topo (guilhotina do `viewBox`), quina de aba na ponta lateral |
+      | HSHC93 | 2026-08-03 | arte × melhor traço paramétrico | **reprovada** — *"vc não está reproduzindo a arte fielmente, como foi feito com o avatar"*. IoU 61,7%, desvio médio de borda 36,1 u, cortina segurando ~220 u sozinha |
+      | XHHXP9 | 2026-08-03 | arte × traço fiel (laço fechado) | **reprovada** — lê como capacete com aba; 4 defeitos nomeados abaixo |
+      **A XHHXP9 foi lida e reprovada, e os quatro defeitos têm causa medida:**
+      1. **"linha preta de têmpora a têmpora, capacete liso embaixo"** — 36,1% do
+         perímetro do laço (566 de 1 570 u) tem o traço VISÍVEL dentro do crânio,
+         concentrado em y 126–189. É a franja em ziguezague: ela está no lugar certo, e
+         o que lê errado é ela ser a única aresta forte de uma massa quase lisa;
+      2. **2 auto-interseções**, uma em cada ponta de cortina — (463, 175) e (70, 247).
+         A cortina afina até os dois lados se encostarem, e a decimação come a largura
+         antes do comprimento: sobra um espeto de ida e volta cujos lados se cruzam, e
+         o `nonzero` do SVG vaza o trecho entre o cruzamento e a ponta. Já é gate
+         (`--ida-e-volta-massa`, quinto número), e reprova este traço;
+      3. **cortina só de um lado** — a esquerda desce a y 273 e a direita para em 231.
+         A arte tem as duas;
+      4. **6 entalhes rasos no lugar de ~12 pontas afiladas.** Bate com o número que o
+         traçador já imprimia: menor período de recorte **0,35 px a 56**, abaixo de
+         1 px. As pontas não cabem no tamanho do ranking, e a resposta é direção de
+         arte (feições maiores), nunca simplificação silenciosa.
+      → **Nada foi colado no catálogo.** O `curto` continua paramétrico.
+      Os números do piloto `curto-espetada`, todos medidos: IoU **68,77%** (contra 36,62%
+      do paramétrico na mesma régua), borda de cima **10,2 u** (contra 51,8), massa só na
+      arte **1,8%** (contra 21,4% — é a cortina existindo). O gate 1 é ancorado no piso
+      medido da própria arte, e o piso é **27,6 u**: rodado com a decimação DESLIGADA
+      (1 193 pontos) o desvio é o mesmo da peça de 64 pontos, ou seja **a decimação custa
+      0,3 unidade** e o resto é o boneco do gerador não ser o do `geometria.ts`.
+      **A folga do rosto foi RE-ANCORADA (2026-08-04), e a escolha em aberto fechou.** A
+      arte deixa **6,2 u** de testa contra o piso de 24, e o traçador **não sobe mais a
+      peça** — subir foi o que produziu a faixa de testa nua da HSHC93. Entre re-gerar a
+      arte e re-ancorar a amarra, o Doug escolheu re-ancorar: na peça **paramétrica** o
+      piso continua 24 u, absoluto; na **traçada** ele passa a ser `folga da arte − meio
+      traço`, medido lado a lado pelo **gate 3 de `avatar:fidelidade`**. Sem ele a
+      traçada não tinha gate nenhum — um traço comendo 40 u de testa que a arte não come
+      passava em silêncio, e é essa a inversão que `--inverter-folga` roda (render de
+      12,0 u para −6,5 e −7,0, contra pisos de −2,0 e −5,0). O número absoluto abaixo de
+      24 vira aviso alto, em u e em px a 56: trocar a arte é direção de arte, item (f).
+      O racional e os números estão no doc 15 §2a.5.
+      O menor período de recorte sai em **0,35 px a 56**, abaixo de 1 px:
+      as espículas podem sumir no tamanho do ranking, e aí a resposta é direção de arte
+      (feições maiores), nunca simplificação silenciosa.
 - [ ] **T1.2** 🤖 Uniforme Soldado — prova do `garment` sobre o corpo
 - [x] **T1.3** 👤 **Criticar e refinar** — principalmente o rosto, que é onde mora o carisma
       → quatro rodadas de arte e oito defeitos do traçador corrigidos, cada um com a
@@ -277,7 +371,7 @@ Bloqueia todo o resto da arte.
 - [ ] **T2.14** 🤖 **D30** — avatar no **ranking de turma**
 - [ ] **T2.15** 🤖 **D30** — avatar no **mural**
 - [ ] **T2.16** 🤖 **D30** — avatar na **Companhia** (lista de membros)
-- [ ] 🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` 12/12 · gate de assets 100% · avatar antigo degrada sem erro · nenhum código per-gender restante
+- [ ] 🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` inteiro · gate de assets 100% · avatar antigo degrada sem erro · nenhum código per-gender restante
 
 ---
 
@@ -348,7 +442,11 @@ Soldado no backfill, e o ranking já mostra.
       ver a §7.0 do doc 16
 - [ ] **T4.2** 🤖 5 cabelos
 - [ ] **T4.3** 🤖 6 chapéus
-- [ ] **T4.4** 🤖 6 relíquias (2 famílias × 3 tiers)
+- [x] ~~**T4.4** 🤖 6 relíquias (2 famílias × 3 tiers)~~ — **CORTADA pela D-E**
+      (doc 15, 2026-07-31): o slot `hand` não existe neste boneco, e as 8 linhas
+      dele já saíram do banco em `20260731100000_remover_slot_hand.sql`. O
+      orçamento de arte caiu de 39 para 33 desenhos. *Marcada aqui em 2026-08-03 —
+      continuava aberta neste doc contra o plano vigente.*
 - [ ] **T4.5** 👤 Verificar se os 8 backgrounds antigos combinam com o estilo novo
 - [ ] **T4.6** 🤖 Redesenhar backgrounds, **se** destoarem (+8)
 - [ ] **T4.7** 🤖/👤 20 pets — eu sou fraco em orgânico, então aqui você provavelmente refina bastante
@@ -403,15 +501,39 @@ Soldado no backfill, e o ranking já mostra.
 
 # Resumo
 
-| fase | tarefas | depende de você? |
-|---|---|---|
-| F0 | 23 — **13 fechadas** | T0.12 e T0.14 delegadas e decididas |
-| F1 | 4 | T1.3 (crítica da arte) |
-| F2 | 16 | não |
-| F3 | 6 — **5 fechadas** (F3a) | não |
-| F4 | 12 | T4.5, T4.7, T4.8 (refino) |
-| F5 | 6 | T5.5 (medir no celular) |
-| **total** | **64** | **7 pontos** |
+> **Contado em 2026-08-03**, checkbox a checkbox. A versão anterior desta tabela
+> dizia "F0 — 13 fechadas" e "total 64" e estava desatualizada em ambos: número
+> escrito à mão envelhece calado. Para recontar:
+>
+> ```bash
+> grep -oE '^- \[x\] \*\*T[0-9]+\.[0-9]+[a-z]?\*\*' docs/avatar/14-backlog-execucao.md | sort -u | wc -l
+> ```
+
+| fase | tarefas | fechadas | depende de você? |
+|---|---|---|---|
+| F0 | 23 | **19** | T0.12 e T0.14 delegadas e decididas |
+| F1 | 6 | **2** | T1.3 (crítica da arte), T1.6 (decisão (f) do traço) |
+| F2 | 16 | **0** | não |
+| F3 | 5 | **3** | não |
+| F4 | 11 | **1** | T4.5, T4.7, T4.8 (refino) |
+| F5 | 6 | **0** | T5.5 (medir no celular) |
+| **total** | **67** | **25 (37%)** | **8 pontos** |
+
+> **A F1 subiu de 4 para 5 tarefas em 2026-08-03**, e o total de 65 para 66: a
+> **T1.5** (moicano e coque guilhotinados pelo `viewBox`) é achado da rodada de
+> fidelidade do cabelo, medido e **sem correção**. Tarefa nova entra na conta como
+> pendente — foi o `verify:estado` que cobrou a atualização desta tabela na mesma
+> rodada em que ela nasceu.
+>
+> **E subiu de 5 para 6 no mesmo dia**, com o total indo a 67: a **T1.6** (o cabelo
+> traçado da arte) tem o pipeline pronto e a primeira folha reprovada, então ela é
+> pendente pelo mesmo critério. O `verify:estado` cobrou de novo, na mesma rodada.
+>
+> **A F4 caiu de 12 para 11 tarefas em 2026-08-03**, e o total de 66 para 65: a
+> **T4.4** (6 relíquias) foi **cortada** pela D-E, não concluída. Tarefa cortada
+> não é pendente nem fechada — ela sai da conta, e a linha riscada acima fica só
+> como registro. *O `verify:estado` pegou a primeira tentativa, em que ela tinha
+> sido marcada `[x]`: teria contado como trabalho feito.*
 
 ---
 

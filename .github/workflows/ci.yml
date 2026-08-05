@@ -2,7 +2,7 @@ name: CI
 
 # Por que este workflow existe:
 #
-# O projeto tem 14 gates de verificação (npm run verify:all) que só rodavam se
+# O projeto tem uma cadeia de gates de verificação (npm run verify:all) que só rodavam se
 # alguém lembrasse de rodá-los. Foi exatamente assim que a curva de XP ficou
 # revertida por 4 meses em produção sem ninguém notar. O CI tira o "lembrar" da
 # equação.
@@ -54,6 +54,13 @@ jobs:
       - name: Conferir variáveis de ambiente
         run: npx tsx scripts/verify/env-shape.ts
 
+      # Só o Chromium, e só porque o verify:pose precisa dele: aquele gate
+      # rasteriza o SVG do avatar e mede a silhueta em pixel contra a
+      # referência. É o único gate que abre navegador. Sem este passo o
+      # verify:all quebra no fim de um run que já gastou dois minutos.
+      - name: Instalar o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -66,8 +73,14 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Os 14 gates. Tocam o banco remoto (leitura + fixtures próprias) e são a
-      # razão de existir deste workflow.
+      # A cadeia inteira do verify:all, e é a razão de existir deste workflow.
+      # A maioria toca o banco remoto (leitura + fixtures próprias). Os que NÃO
+      # tocam banco: verify:no-dup-rpc (lê as migrations), verify:paleta-patentes
+      # (lê os SVGs), verify:curriculo (lê o markdown), verify:design-tokens (lê
+      # globals.css e src/) e verify:pose — este abre o Chromium, rasteriza o
+      # SVG do avatar e mede a silhueta em pixel contra a referência.
+      #
+      # Sem contagem aqui de propósito: o número já apodreceu duas vezes.
       #
       # verify:phase8 (avatar) abre 60 baús de verdade para provar que todo
       # item sorteado aparece no boneco. Roda dentro de uma transação com

@@ -33,7 +33,8 @@ import postgres from "postgres";
 import { getDbUrl } from "../db-url";
 
 /** Slots que o subsistema reconhece hoje. A F2 acrescenta `hair` e `back`. */
-const SLOTS_ESPERADOS = ["background", "frame", "hand", "head", "outfit", "pet"];
+// `hand` saiu em 2026-07-31 pela D-E do doc 15 — o boneco kokeshi não tem mãos.
+const SLOTS_ESPERADOS = ["background", "frame", "head", "outfit", "pet"];
 
 const RARIDADES_ESPERADAS = ["common", "epic", "legendary", "rare"];
 

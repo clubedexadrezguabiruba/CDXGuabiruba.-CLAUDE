@@ -28,7 +28,6 @@ export interface TemplateRegions {
   body: PixelRect;
   groundLineY: number;
   head: PixelRect;
-  hand: PixelRect;
   pet: PixelRect;
 }
 
@@ -60,13 +59,6 @@ function computeRegions(gender: GenderVariant): TemplateRegions {
       y: CH * anchors.head.top,
       width: CW * anchors.head.width,
       height: CH * anchors.head.height,
-    },
-
-    hand: {
-      x: CW * anchors.hand.left,
-      y: CH * anchors.hand.top,
-      width: CW * anchors.hand.width,
-      height: CH * anchors.hand.height,
     },
 
     // Pet: bottom/right → convert to x/y/width/height
