@@ -1882,6 +1882,31 @@ function alcanceNaDirecao(
 }
 
 /**
+ * A JANELA DA MÉDIA DO EMPURRÃO, EM UNIDADES DE ARCO DO LAÇO — e ela é derivada.
+ *
+ * O degrau a espalhar tem altura conhecida: um ponto na beira de dentro da faixa está
+ * a `MEIO_TRACO` do contorno e é levado a `SANGRIA` para fora, ou seja anda
+ * `SANGRIA + MEIO_TRACO` = 16 unidades, contra zero do vizinho logo fora. Espalhar 16
+ * unidades de subida por 16 de arco para cada lado deixa a inclinação do campo abaixo
+ * de 1: **o laço não sobe mais rápido do que anda**, que é a condição para uma borda
+ * ler como rampa em vez de nick.
+ *
+ * **A varredura concorda, e é ela que autoriza o número.** Na `curto-espetada`, com a
+ * decisão de N já enxergando a coroa (ver `decidirN`):
+ *
+ * | janela | 0 | 2 | 4 | **6 a 64** |
+ * |---|---|---|---|---|
+ * | maior salto entre vizinhos | 17,0 | 16,1 | 12,5 | 12,3 → 9,8 |
+ * | coroa da peça entregue | 0,742 | 0,865 | 0,873 | **0,908 a 0,948** |
+ * | existe N que mantém a coroa? | não | não | não | **sim** |
+ *
+ * A partir de 6 o critério passa a ter solução e o número para de responder: é um
+ * platô de mais de uma ordem de grandeza, e o 16 derivado cai no meio dele. Abaixo de
+ * 6 nenhum N da escala mantém a coroa do laço denso — o dente ainda come o orçamento.
+ */
+const JANELA_SANGRIA = SANGRIA + MEIO_TRACO;
+
+/**
  * A SANGRIA DA PEÇA TRAÇADA — o `t` fora de [0, 1] da franja, generalizado.
  *
  * O modelo paramétrico exige que as pontas da franja caiam FORA da silhueta, e o
@@ -1908,6 +1933,41 @@ function alcanceNaDirecao(
  * mecha mais estreita que duas sangrias o flanco de dentro passaria do de fora, e o
  * laço dobraria sobre si mesmo. Quantos pontos o teto travou sai impresso — é a
  * medida de "esta arte tem uma língua fina demais para a sangria caber".
+ *
+ * ---------------------------------------------------------------------------
+ * O EMPURRÃO É UM CAMPO SOBRE O LAÇO, E NÃO UMA DECISÃO POR PONTO
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira versão decidia ponto a ponto, com o limiar duro acima. Onde o laço corre
+ * **paralelo** ao contorno a ~meio traço de distância — que é o alto da cabeça em toda
+ * arte cujo cabelo desenha a silhueta —, a serrilha de sub-unidade do traçado denso
+ * atravessa o limiar para os dois lados de um ponto para o outro. Vizinhos a 0,4 u um
+ * do outro saíam a 16 u um do outro, porque essa é exatamente a altura do degrau:
+ * `SANGRIA + MEIO_TRACO`, o empurrão que um ponto na beira da faixa recebe contra o
+ * zero que o vizinho logo fora recebe.
+ *
+ * Medido na `curto-espetada`, passo mediano de 0,43 u:
+ *
+ * | | maior salto entre pontos densos vizinhos |
+ * |---|---|
+ * | antes da sangria | 8,4 u |
+ * | **por ponto** (a versão de ontem) | **17,0 u** |
+ * | por campo suavizado | **10,9 u** |
+ *
+ * E o estrago não parava no laço denso. `decimarPorCorda` remove o ponto que custa
+ * menos, então um dente de 16 u é a coisa mais **cara** de remover do laço inteiro e
+ * sobrevive até o fim: no N escolhido, **8 dos 48 vértices** iam para um zigue-zague
+ * de 1,8 u de largura em x ≈ 405–417, e a cúpula direita inteira — 140 u de arco —
+ * ficava sem vértice nenhum. A corda que a atravessava afundava 9,9 u abaixo do laço
+ * denso, que ali tem 9,3 u de folga sobre o crânio: `coberturaDaCoroa` caía de **0,865
+ * no denso para 0,742 na peça**, e na folha isso lê como calota lisa com três nicks
+ * encostados no contorno.
+ *
+ * A correção não é afinar o limiar — é parar de responder em degrau. O empurrão de
+ * cada ponto é calculado como antes e depois **suavizado ao longo do laço**, então um
+ * ponto na beira da faixa e o vizinho logo fora dela saem quase juntos. É a mesma
+ * lição, e o mesmo remédio, de `JANELA_BORDA` em `bordasDaArte`: sub-pixel que entra
+ * num limiar sai em unidades, e a decimação por erro de corda não tem o que aproximar.
  */
 export function sangrarNaSilhueta(pts: { x: number; y: number }[]): {
   pts: { x: number; y: number }[];
@@ -1917,10 +1977,12 @@ export function sangrarNaSilhueta(pts: { x: number; y: number }[]): {
   const cx = (CAIXA_CABECA.x0 + CAIXA_CABECA.x1) / 2;
   const cy = (CAIXA_CABECA.y0 + CAIXA_CABECA.y1) / 2;
   const contorno = CABECA.contorno;
+  const n = pts.length;
   let quantos = 0;
   let travados = 0;
 
-  const saida = pts.map((p, k) => {
+  /** O empurrão PEDIDO por cada ponto, em vetor. Zero fora da faixa do contorno. */
+  const bruto = pts.map((p) => {
     let melhor = { x: p.x, y: p.y };
     let dist = Infinity;
     for (let i = 0, j = contorno.length - 1; i < contorno.length; j = i++) {
@@ -1936,7 +1998,7 @@ export function sangrarNaSilhueta(pts: { x: number; y: number }[]): {
         melhor = q;
       }
     }
-    if (dist > MEIO_TRACO) return p;
+    if (dist > MEIO_TRACO) return { dx: 0, dy: 0 };
     quantos++;
     const rx = melhor.x - cx;
     const ry = melhor.y - cy;
@@ -1953,9 +2015,41 @@ export function sangrarNaSilhueta(pts: { x: number; y: number }[]): {
      * laço denso, contra 4 quando só a componente normal é corrigida.
      */
     const s = (p.x - melhor.x) * nx + (p.y - melhor.y) * ny;
-    if (s >= SANGRIA) return p;
-    const anda = Math.min(SANGRIA - s, alcanceNaDirecao(pts, k, nx, ny));
-    if (anda < SANGRIA - s) travados++;
+    if (s >= SANGRIA) return { dx: 0, dy: 0 };
+    return { dx: nx * (SANGRIA - s), dy: ny * (SANGRIA - s) };
+  });
+
+  // Média móvel do campo, em comprimento de ARCO e não em contagem de pontos: o laço
+  // denso não tem passo constante, e uma janela em índice mediria trechos de tamanhos
+  // diferentes em lugares diferentes do mesmo laço.
+  const passo = pts.map((p, i) => Math.hypot(p.x - pts[(i + 1) % n].x, p.y - pts[(i + 1) % n].y));
+  const suave = bruto.map((_, i) => {
+    let sx = bruto[i].dx;
+    let sy = bruto[i].dy;
+    let q = 1;
+    for (const sinal of [1, -1] as const) {
+      let andou = 0;
+      for (let d = 1; d < n; d++) {
+        const k = (i + sinal * d + 2 * n) % n;
+        andou += passo[sinal > 0 ? (i + d - 1) % n : k];
+        if (andou > JANELA_SANGRIA) break;
+        sx += bruto[k].dx;
+        sy += bruto[k].dy;
+        q++;
+      }
+    }
+    return { dx: sx / q, dy: sy / q };
+  });
+
+  const saida = pts.map((p, k) => {
+    const pedido = Math.hypot(suave[k].dx, suave[k].dy);
+    if (pedido < 1e-9) return p;
+    const nx = suave[k].dx / pedido;
+    const ny = suave[k].dy / pedido;
+    // O teto do laço continua depois da suavização, e não antes: capar cada ponto e
+    // depois somar médias devolveria à língua fina o empurrão que o teto tinha tirado.
+    const anda = Math.min(pedido, alcanceNaDirecao(pts, k, nx, ny));
+    if (anda < pedido) travados++;
     return { x: p.x + nx * anda, y: p.y + ny * anda };
   });
 

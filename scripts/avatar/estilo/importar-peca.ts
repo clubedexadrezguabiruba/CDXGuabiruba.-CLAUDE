@@ -712,21 +712,58 @@ export const PISO_ILHA = 0.5;
  * varredura passa a perguntar da forma que o navegador vai receber. Para a massa não
  * há `depois`, e ali o parâmetro é ausente em vez de identidade — ausente diz *nada
  * acontece depois*, identidade diria *acontece alguma coisa que não muda nada*.
+ *
+ * ---------------------------------------------------------------------------
+ * E UMA TERCEIRA: A DECIMAÇÃO NÃO PODE COBRAR A COROA
+ * ---------------------------------------------------------------------------
+ *
+ * O erro de corda é uma distância **sem sinal**: uma corda que atravessa a cúpula 16
+ * unidades por DENTRO e uma que passa 16 por FORA valem a mesma nota. As duas não
+ * valem a mesma coisa — a de fora é um cabelo mais gordo, a de dentro é couro
+ * cabeludo à mostra, que é o gate `coberturaDaCoroa`. O cruzamento tampouco enxerga
+ * isso: um entalhe cavado por uma corda não é um laço que se cruza.
+ *
+ * Medido na `curto-espetada`, com o laço denso em 0,865 de coroa, o N escolhido pelos
+ * dois critérios de cima entregava **0,742** — 0,122 de coroa perdidos numa etapa que
+ * não tinha como saber que os estava perdendo, e a série de coroa contra N nem é
+ * monótona (0,72 · 0,52 · 0,61 · 0,28 · 0,76 · 0,74 · 0,88).
+ *
+ * `aprova` é a exigência que quem chama acrescenta sobre o laço **entregue**. Para a
+ * massa ela é *"a coroa da peça decimada não pode ser menor que a do laço denso"* — e
+ * repare que a régua é o laço denso **desta peça**, não um piso escolhido. Um teto
+ * afinado aqui seria calibrar na arte que se quer aprovar; um *não regride* compara a
+ * decimação com aquilo que ela existe para aproximar, e vale igual em qualquer arte.
+ *
+ * Para a clara o parâmetro é ausente: `coberturaDaCoroa` pergunta da camada da touca,
+ * e a clara não é uma touca — exigir dela a mesma coisa mediria outra peça.
+ *
+ * **Quando nenhum N cumpre as três, `aprovados` sai vazio e a escolha cai de volta nos
+ * limpos** — um laço que se cruza vaza um buraco, e isso é pior que uma coroa curta.
+ * Quem chama imprime a queda: silêncio aqui seria a peça saindo com a coroa comida e
+ * o laudo dizendo que estava tudo bem, que é o defeito que esta rodada fechou.
  */
 export function decidirN(
   denso: { x: number; y: number }[],
   fechado = true,
   depois?: (laco: { x: number; y: number }[]) => { x: number; y: number }[],
+  aprova?: (laco: { x: number; y: number }[]) => boolean,
 ) {
   const e = escolherN(denso, fechado);
-  const limpos = e.varredura.filter((v) => {
-    const red = decimarPorCorda(denso, v.n, { fechado });
-    return autoIntersecoes(depois ? depois(red) : red).length === 0;
-  });
+  const entregue = (n: number) => {
+    const red = decimarPorCorda(denso, n, { fechado });
+    return depois ? depois(red) : red;
+  };
+  const limpos = e.varredura.filter((v) => autoIntersecoes(entregue(v.n)).length === 0);
+  const aprovados = aprova ? limpos.filter((v) => aprova(entregue(v.n))) : limpos;
+  const pool = aprovados.length ? aprovados : limpos;
   const alvo = Math.max(MEIO_TRACO, e.piso * 1.1);
-  const escolhido =
-    limpos.find((v) => v.max <= alvo) ?? [...limpos].sort((a, b) => a.max - b.max)[0];
-  return { ...e, n: escolhido?.n ?? e.n, limpos: limpos.map((v) => v.n) };
+  const escolhido = pool.find((v) => v.max <= alvo) ?? [...pool].sort((a, b) => a.max - b.max)[0];
+  return {
+    ...e,
+    n: escolhido?.n ?? e.n,
+    limpos: limpos.map((v) => v.n),
+    aprovados: aprovados.map((v) => v.n),
+  };
 }
 
 /**
@@ -800,7 +837,7 @@ export interface Importacao {
   /** Componentes conexas da união, em % da maior. A primeira é sempre 100. */
   ilhas: number[];
   teto: { k: number; antes: number };
-  n: { massa: ReturnType<typeof escolherN>; clara: ReturnType<typeof escolherN> };
+  n: { massa: ReturnType<typeof decidirN>; clara: ReturnType<typeof decidirN> };
   desvio: { massa: number; clara: number };
   sangria: { quantos: number; travados: number };
   conferencia: ReturnType<typeof medirMassa>["conferencia"];
@@ -903,13 +940,21 @@ export async function importarPeca(caminhoSemantica: string, id: Cabelo["id"] = 
   const massaC = sangria.pts;
   const claraC = rClara.pts.map(mover);
 
-  const nMassa = decidirN(massaC, true);
+  // A coroa do laço DENSO é a régua da terceira exigência de `decidirN`: a decimação
+  // pode custar desvio, e não pode custar cobertura da coroa. Ver o docstring de lá.
+  const coroaDensa = coberturaDaCoroa({ id, nome: "denso", massa: massaC.map(paraTY) }) ?? 0;
+  const nMassa = decidirN(
+    massaC,
+    true,
+    undefined,
+    (laco) => (coberturaDaCoroa({ id, nome: "n", massa: laco.map(paraTY) }) ?? 0) >= coroaDensa,
+  );
   // A massa DECIMADA é o que a contenção da clara persegue, então ela precisa existir
   // antes do N da clara — e é por isso que a ordem aqui não é simétrica.
   const massaParaConter = massaC.length ? decimarPorCorda(massaC, nMassa.n, { fechado: true }) : [];
   const nClara = claraC.length
     ? decidirN(claraC, true, (laco) => conterAClara(laco.map((q) => ({ ...q })), massaParaConter).pts)
-    : { n: 0, piso: 0, varredura: [], limpos: [] };
+    : { n: 0, piso: 0, varredura: [], limpos: [], aprovados: [] };
   // O laço decimado carrega o ÍNDICE DENSO de cada vértice — `decimarPorCorda` é
   // genérica e devolve os próprios objetos, então o campo atravessa de graça. Sem ele
   // não há como perguntar, depois, qual trecho do denso cada trecho do laço final
@@ -968,9 +1013,18 @@ export async function importarPeca(caminhoSemantica: string, id: Cabelo["id"] = 
   const coroa = coberturaDaCoroa(saida) ?? 0;
   if (coroa < 1) {
     achados.push(
-      `a peça cobre ${(100 * coroa).toFixed(1)}% da coroa (exigido 100). A cabeça da arte é mais ` +
-        `ESTREITA que o crânio do kokeshi na cúpula — até 100 u a menos —, e o que sobra depois da ` +
-        `reancoragem é a decimação sobre as ~12 pontas. Destino das pontas = checkpoint C.`,
+      `a peça cobre ${(100 * coroa).toFixed(1)}% da coroa (exigido 100), contra ` +
+        `${(100 * coroaDensa).toFixed(1)}% do laço denso — o que falta é da ARTE, não da decimação. ` +
+        `A cabeça da arte é mais ESTREITA que o crânio do kokeshi na cúpula — até 100 u a menos —, e ` +
+        `o que sobra são os entalhes entre as ~12 pontas. Destino das pontas = checkpoint C.`,
+    );
+  }
+  if (!nMassa.aprovados.length) {
+    achados.push(
+      `nenhum N da escala manteve a coroa do laço denso (${(100 * coroaDensa).toFixed(1)}%): a escolha ` +
+        `caiu de volta nos ${nMassa.limpos.length} N sem auto-interseção, e a peça saiu com ` +
+        `${(100 * coroa).toFixed(1)}%. Ou a escala de N é curta para esta arte, ou o laço denso tem um ` +
+        `dente que come o orçamento — ver \`sangrarNaSilhueta\`.`,
     );
   }
   if (Math.min(folga.esq, folga.dir) < 0) {
@@ -1296,6 +1350,12 @@ async function principal() {
         (d > MEIO_TRACO && d > e.piso * 1.1 ? "   ✗" : ""),
     );
     console.log(`    varredura: ${e.varredura.map((v) => `${v.n}:${v.max.toFixed(1)}`).join("  ")}`);
+    console.log(
+      `    sem auto-interseção: ${e.limpos.join(" ") || "nenhum"}` +
+        (nome === "massa"
+          ? `   ·   e que mantêm a coroa do denso: ${e.aprovados.join(" ") || "NENHUM"}`
+          : ""),
+    );
   }
 
   console.log(
@@ -1334,10 +1394,17 @@ async function principal() {
   }
 
   const folga = folgaDoRosto(r.peca);
+  // As duas coroas lado a lado, porque a diferença entre elas é a única parte que este
+  // pipeline controla: a da peça é arte, a subtração é decimação.
+  const coroaEntregue = coberturaDaCoroa(r.peca) ?? 0;
+  const coroaDensa =
+    coberturaDaCoroa({ id: "curto", nome: "denso", massa: r.densoMassa.map(paraTY) }) ?? 0;
   console.log(
     `\nfolga da peça sobre as sobrancelhas: esq ${folga.esq.toFixed(1)} · dir ${folga.dir.toFixed(1)} u` +
       `\ncontenção da clara: ${contencaoDaClara(r.peca).toFixed(2)} u (piso 0)` +
-      `\ncobertura da coroa: ${((coberturaDaCoroa(r.peca) ?? 0) * 100).toFixed(1)}% (exigido 100)` +
+      `\ncobertura da coroa: ${(100 * coroaEntregue).toFixed(1)}% (exigido 100) — laço denso ` +
+      `${(100 * coroaDensa).toFixed(1)}%, então a decimação custou ` +
+      `${(100 * (coroaDensa - coroaEntregue)).toFixed(1)} ponto(s)` +
       `\nauto-interseções: massa ${r.cruzamentos.massa} · clara ${r.cruzamentos.clara} (exigido 0)`,
   );
 

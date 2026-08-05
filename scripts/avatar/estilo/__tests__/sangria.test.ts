@@ -126,16 +126,136 @@ describe("sangrarNaSilhueta não pode dobrar o laço sobre si mesmo", () => {
     expect(travados).toBe(0);
     expect(autoIntersecoes(pts)).toHaveLength(0);
     /**
-     * E ela cumpriu o CONTRATO: o ponto acabou além de meio traço para fora, que é o
-     * que faz o clip cortar tinta cheia em vez de encostar na borda do traço.
+     * E ela cumpriu o CONTRATO: quem estava DENTRO da faixa acabou do lado de fora.
      *
-     * Não é `SANGRIA` cravado, e a diferença não é folga inventada: a sangria mede o
-     * avanço na normal lida na projeção de ENTRADA, e este teste remede o ponto de
-     * SAÍDA, que projeta em outro lugar do contorno. Um crânio curvo dá ~1 u de
-     * diferença entre as duas leituras. Exigir 10 aqui seria exigir que o contorno
-     * fosse reto.
+     * A régua é "quem estava na faixa", e não "quem se mexeu", porque o empurrão virou
+     * um CAMPO suavizado ao longo do laço (ver `sangrarNaSilhueta`): um vizinho logo
+     * fora da faixa recebe hoje uma fração do empurrão, de propósito — é essa fração
+     * que substitui o degrau de 16 unidades por uma rampa. Exigir dele o contrato de
+     * quem estava dentro seria exigir que a rampa não existisse.
+     *
+     * Nesta língua **um** ponto cai na faixa, e por isso o contrato de chegar além de
+     * meio traço para fora não se mede aqui: uma faixa de um ponto só é diluída pelos
+     * vizinhos que não pedem nada. Quem mede aquele contrato é a borda RENTE abaixo,
+     * onde a faixa é longa — que é a geometria em que ele importa.
      */
-    const tocados = pts.filter((p, i) => p.x !== larga[i].x || p.y !== larga[i].y);
-    for (const p of tocados) expect(contra(p).fora).toBeGreaterThan(MEIO_TRACO);
+    const naFaixa = larga.map((p, i) => i).filter((i) => contra(larga[i]).dist <= MEIO_TRACO);
+    expect(naFaixa.length).toBeGreaterThan(0);
+    for (const i of naFaixa) expect(contra(pts[i]).fora).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * A BORDA RENTE — a geometria em que a decisão POR PONTO virava um pente de dentes.
+ *
+ * ---------------------------------------------------------------------------
+ * O DEFEITO, MEDIDO
+ * ---------------------------------------------------------------------------
+ *
+ * No alto da cabeça o cabelo da arte **é** a silhueta, então a borda da peça corre
+ * paralela ao contorno do crânio, a poucas unidades dele. O traçado denso tem passo de
+ * ~0,4 u e uma serrilha de sub-unidade herdada do pixel. Contra um limiar duro
+ * (`dist > MEIO_TRACO`), essa serrilha atravessa a faixa para os dois lados de um
+ * ponto para o outro: um pede o empurrão inteiro, o vizinho a 0,4 u não pede nada, e
+ * os dois saem a `SANGRIA + MEIO_TRACO` = 16 unidades um do outro.
+ *
+ * Medido nesta fixture, com o laço de entrada tendo passo máximo de 0,87 u:
+ *
+ * | | maior salto entre vizinhos, depois da sangria |
+ * |---|---|
+ * | decisão por ponto | **16,31 u** |
+ * | campo suavizado | **1,14 u** |
+ *
+ * E o estrago não parava no laço denso: `decimarPorCorda` remove o ponto que custa
+ * menos, então um dente de 16 u é a coisa mais CARA de remover e sobrevive até o fim.
+ * Na `curto-espetada`, 8 dos 48 vértices iam para um zigue-zague de 1,8 u de largura e
+ * a cúpula direita inteira ficava sem vértice — `coberturaDaCoroa` caía de 0,865 no
+ * laço denso para 0,742 na peça.
+ *
+ * A fixture é construída em cima do contorno de verdade e sem arte nenhuma, pelo mesmo
+ * motivo da cortina acima: nada em `.scratch/` entra aqui, senão o gate não roda no CI.
+ */
+describe("a sangria responde em rampa, e não em degrau", () => {
+  /**
+   * O contorno do crânio reamostrado fino e recuado `recuo` para dentro, com serrilha
+   * de `jitter` alternando de ponto para ponto. O laço fecha 60 unidades mais para
+   * dentro, longe do contorno — a volta não pode pedir sangria nenhuma.
+   */
+  function bordaRente(recuo: number, jitter: number): P[] {
+    const c = CABECA.contorno;
+    const limite = CAIXA_CABECA.y0 + 0.45 * CAIXA_CABECA.alt;
+    const paraDentro = (p: P, quanto: number) => {
+      const rx = p.x - cx;
+      const ry = p.y - cy;
+      const comp = Math.hypot(rx, ry) || 1;
+      return { x: p.x - (rx / comp) * quanto, y: p.y - (ry / comp) * quanto };
+    };
+
+    const alto: P[] = [];
+    for (let i = 0; i < c.length; i++) {
+      const a = c[i];
+      const b = c[(i + 1) % c.length];
+      const passos = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.4));
+      for (let k = 0; k < passos; k++) {
+        const p = { x: a.x + ((b.x - a.x) * k) / passos, y: a.y + ((b.y - a.y) * k) / passos };
+        if (p.y > limite) continue;
+        alto.push(paraDentro(p, recuo + (alto.length % 2 === 0 ? jitter : -jitter)));
+      }
+    }
+    // O contorno não começa numa ponta do arco de cima, então o trecho acima do limite
+    // sai em dois pedaços; remontar por ângulo em torno do centro devolve o arco
+    // contíguo, que é o que um laço de peça é.
+    alto.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
+    const volta = [...alto].reverse().map((p) => paraDentro(p, 60));
+    return [...alto, ...volta];
+  }
+
+  /** O maior salto entre vizinhos no ARCO de cima — as duas emendas do laço ficam fora. */
+  const saltoNoArco = (v: P[]) =>
+    Math.max(
+      ...v.slice(0, v.length / 2 - 1).map((p, i) => Math.hypot(p.x - v[i + 1].x, p.y - v[i + 1].y)),
+    );
+
+  const serrilhada = bordaRente(MEIO_TRACO, 0.3);
+
+  it("a fixture de fato serrilha em cima do limiar", () => {
+    // ANTI-VACUIDADE, e ela tem três pernas: o laço entra LISO (senão o salto de saída
+    // não é da sangria), e os dois lados do limiar são exercitados (senão não há
+    // degrau nenhum a espalhar).
+    const arco = serrilhada.slice(0, serrilhada.length / 2);
+    expect(saltoNoArco(serrilhada)).toBeLessThan(1);
+    const dentro = arco.filter((p) => contra(p).dist <= MEIO_TRACO).length;
+    expect(dentro).toBeGreaterThan(100);
+    expect(arco.length - dentro).toBeGreaterThan(100);
+  });
+
+  it("vizinhos rentes ao contorno não saem a um degrau de distância", () => {
+    // ESTE é o gate. Pela decisão por ponto: 16,31 u — e `SANGRIA + MEIO_TRACO` é 16.
+    const { pts } = sangrarNaSilhueta(serrilhada);
+    expect(saltoNoArco(pts)).toBeLessThanOrEqual(MEIO_TRACO);
+  });
+
+  it("e o laço não se cruza por causa disso", () => {
+    const { pts } = sangrarNaSilhueta(serrilhada);
+    expect(autoIntersecoes(pts)).toHaveLength(0);
+  });
+
+  it("numa faixa uniforme a rampa não cobra nada: o empurrão sai inteiro", () => {
+    /**
+     * O CONTROLE do gate acima, e sem ele a suavização poderia ter comprado lisura
+     * jogando fora a sangria.
+     *
+     * Média de um pedido CONSTANTE é o próprio pedido: onde a faixa é uniforme — que é
+     * o caso de uma borda inteira rente ao crânio — o campo suavizado devolve o
+     * empurrão cheio. O que sobra de diferença para `SANGRIA` é o crânio ser curvo: a
+     * normal gira dentro da janela, e o vetor médio encolhe ~1 u. Medido: mínimo 7,29 ·
+     * mediana 9,16 · máximo 9,97, contra `SANGRIA` = 10.
+     */
+    const uniforme = bordaRente(2, 0);
+    const arco = uniforme.slice(0, uniforme.length / 2);
+    const { pts } = sangrarNaSilhueta(uniforme);
+    const naFaixa = arco.map((_, i) => i).filter((i) => contra(arco[i]).dist <= MEIO_TRACO);
+    expect(naFaixa.length).toBe(arco.length);
+    for (const i of naFaixa) expect(contra(pts[i]).fora).toBeGreaterThan(MEIO_TRACO);
   });
 });

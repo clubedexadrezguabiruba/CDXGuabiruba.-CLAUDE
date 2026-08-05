@@ -434,11 +434,20 @@ export async function bancada(caminhoSemantica: string): Promise<{
     // A MESMA ordem de `importarPeca`, e ela não é simétrica de propósito: o N da
     // clara é julgado contra a massa já decimada, porque é dela que a contenção corre
     // atrás. Ver `decidirN`.
-    const nMassa = decidirN(massaC, true);
+    // A terceira exigência de `decidirN` é a mesma da produção: a decimação não pode
+    // custar coroa contra o laço denso DESTE candidato. Sem ela a bancada compararia
+    // mapas com uma decimação livre para perder cobertura em uns e não em outros.
+    const coroaDensa = coberturaDaCoroa({ id: "curto", nome: "denso", massa: massaC.map(paraTY) }) ?? 0;
+    const nMassa = decidirN(
+      massaC,
+      true,
+      undefined,
+      (laco) => (coberturaDaCoroa({ id: "curto", nome: "n", massa: laco.map(paraTY) }) ?? 0) >= coroaDensa,
+    );
     const massaFina = massaC.length ? decimarPorCorda(massaC, nMassa.n, { fechado: true }) : [];
     const nClara = claraC.length
       ? decidirN(claraC, true, (laco) => conterAClara(laco.map((q) => ({ ...q })), massaFina).pts)
-      : { n: 0, piso: 0, varredura: [], limpos: [] };
+      : { n: 0, piso: 0, varredura: [], limpos: [], aprovados: [] };
     const claraFina = claraC.length ? decimarPorCorda(claraC, nClara.n, { fechado: true }) : [];
     const contida = conterAClara(claraFina, massaFina);
 

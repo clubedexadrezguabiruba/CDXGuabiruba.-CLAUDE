@@ -53,6 +53,17 @@ silhueta e precisava de coordenada absoluta. Medido, ela não excede: o teal est
 
 ## Riscos aceitos
 
+**A peça estoura o orçamento de bytes do composto, e estourava antes do B5.** O
+teto é `ORCAMENTO_COMPOSTO` — 26 formas · 10 240 bytes. Medido no composto desta
+peça: **22 formas (passa) · 13 539 bytes (não passa)**, contra 12 610 antes do B5.
+Os 929 bytes a mais são o N da massa indo de 48 para 64, que é o preço da coroa —
+não existe N menor na escala que entregue a cobertura do laço denso.
+
+Nada reprova hoje porque o teto só é gateado sobre o **catálogo**
+(`cabelo.test.ts`, `avatar:variantes`) e esta peça mora ao lado da fonte. No dia em
+que ela entrar no catálogo, ou o orçamento sobe com número medido, ou a peça perde
+pontos e a coroa junto. **É decisão do checkpoint C, e não do importador.**
+
 **A arte deixa 1,0 u de testa** entre a franja e a sobrancelha — 0,08 px a 56.
 Abaixo de 24 u as duas encostam por antialiasing e viram uma mancha só no tamanho
 do ranking. O gate não reprova: a arte é a referência, e trocá-la é direção de
@@ -70,9 +81,38 @@ coincidem (é isso que o registro faz) e as curvaturas não — a anisotropia, q
 compara os dois fatores de escala, é cega para isso e sai em 0,56%.
 
 O importador reancora pela **largura da linha**, que é o que `PontoFranja` sempre
-disse ser (`t` = fração da largura da cabeça *naquela altura*). Isso levou a
-cobertura da coroa de 8,3% para 45,9% sem tocar na arte. O que sobra é decimação
-sobre as ~12 pontas, e o destino delas é decisão de direção de arte — checkpoint C.
+disse ser (`t` = fração da largura da cabeça *naquela altura*), e ancora o `y` nos
+dois marcos que o cabelo não contamina — olhos e queixo. Isso levou a cobertura da
+coroa de 8,3% para 45,9% e daí para 91,7% **no laço denso**, sem tocar na arte.
+
+**O que sobrava era a decimação, e não as pontas.** Entre o laço denso e a peça
+entregue a coroa caía mais 0,122 — 0,865 para 0,742 —, e a causa não estava na
+decimação: estava na **sangria**, que decidia ponto a ponto contra um limiar duro.
+No alto da cabeça a borda da peça corre paralela ao contorno do crânio a ~meio
+traço dele, e a serrilha de sub-unidade do traçado denso atravessava esse limiar de
+um ponto para o outro: vizinhos a 0,4 u saíam a 16 u um do outro — que é exatamente
+`SANGRIA + MEIO_TRACO`. Um dente de 16 u é a coisa mais **cara** de remover do laço,
+então `decimarPorCorda` gastava 8 dos 48 vértices num zigue-zague de 1,8 u de
+largura em x ≈ 405–417 e deixava a cúpula direita inteira — 140 u de arco — sem
+vértice nenhum. Eram os três nicks que a folha mostrava encostados no contorno.
+
+Consertado no B5: o empurrão da sangria virou um **campo suavizado ao longo do
+laço**, e `decidirN` ganhou uma terceira exigência — a decimação não pode entregar
+menos coroa que o laço denso que ela aproxima. Medido, na mesma arte e no mesmo
+mapa:
+
+| | antes | depois |
+|---|---|---|
+| maior salto entre pontos densos vizinhos | 17,0 u | 10,9 u |
+| coroa do laço denso | 0,865 | 0,917 |
+| **coroa da peça entregue** | **0,742** | **0,921** |
+| o que a decimação custou | −0,122 | **+0,004** |
+| N da massa · desvio | 48 · 16,7 u | 64 · 12,4 u |
+| vértices gastos no zigue-zague | 8 | 0 |
+
+O que ainda falta para 100% é da **arte**: três arcos, o pior com 26 u de arco e
+7,3 u de fundo, todos entalhes entre as ~12 pontas. O destino delas continua sendo
+decisão de direção de arte — checkpoint C.
 
 **A peça desce sobre a sobrancelha do produto** (folga −20,7 e −42,1 u) mesmo
 deixando 1,0 u de testa na cabeça da própria arte: a sobrancelha do kokeshi está

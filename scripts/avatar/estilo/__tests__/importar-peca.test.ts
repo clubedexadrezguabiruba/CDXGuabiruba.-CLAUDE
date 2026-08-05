@@ -28,6 +28,7 @@ import {
   FAIXA_COM_LARGURA,
   PISO_DESTINO,
   alturaComLargura,
+  decidirN,
   importarPeca,
   pousarPorMarcos,
   type BordasDaArte,
@@ -264,6 +265,49 @@ describe("o pouso por marcos põe a borda da arte na borda do crânio", () => {
     it("dentro da faixa o piso não mexe em nada — ele não é um encolhimento", () => {
       for (const y of [100, 180, 232, 300]) expect(alturaComLargura(y)).toBe(y);
     });
+  });
+});
+
+/**
+ * A TERCEIRA EXIGÊNCIA DE `decidirN` — e ela é sobre o laço ENTREGUE, não sobre a curva.
+ *
+ * O erro de corda é uma distância sem sinal: uma corda que atravessa a cúpula 16
+ * unidades por dentro tira a mesma nota de uma que passa 16 por fora. A de dentro é
+ * couro cabeludo à mostra e a de fora é um cabelo mais gordo — e nem o desvio nem o
+ * cruzamento sabem a diferença. Medido na `curto-espetada`: laço denso com 0,865 de
+ * coroa entregando 0,742, com os dois critérios de cima verdes.
+ *
+ * O teste é sobre o MECANISMO, com um `aprova` sintético: qual N a função escolhe
+ * quando a exigência tem solução, e o que ela faz — e diz — quando não tem. A régua de
+ * coroa de verdade é medida na peça, em `importar-peca.ts`.
+ */
+describe("decidirN atende a exigência que quem chama acrescenta", () => {
+  /** Um círculo denso: qualquer N reduz sem se cruzar, então só `aprova` decide. */
+  const circulo = Array.from({ length: 400 }, (_, i) => ({
+    x: 200 + 100 * Math.cos((2 * Math.PI * i) / 400),
+    y: 200 + 100 * Math.sin((2 * Math.PI * i) / 400),
+  }));
+
+  it("sem exigência extra, `aprovados` é o próprio conjunto dos limpos", () => {
+    const r = decidirN(circulo, true);
+    expect(r.limpos.length).toBeGreaterThan(0);
+    expect(r.aprovados).toEqual(r.limpos);
+  });
+
+  it("com exigência, escolhe entre os que a cumprem", () => {
+    // Só os laços com 40 vértices ou mais passam — e o N escolhido tem de ser um deles.
+    const r = decidirN(circulo, true, undefined, (laco) => laco.length >= 40);
+    expect(r.aprovados.every((n) => n >= 40)).toBe(true);
+    expect(r.aprovados).toContain(r.n);
+    expect(r.n).toBeGreaterThanOrEqual(40);
+  });
+
+  it("quando NENHUM cumpre, cai nos limpos e diz que caiu", () => {
+    // Silêncio aqui seria a peça saindo com a coroa comida e o laudo dizendo que estava
+    // tudo bem — que é exatamente o defeito que esta exigência fechou.
+    const r = decidirN(circulo, true, undefined, () => false);
+    expect(r.aprovados).toEqual([]);
+    expect(r.limpos).toContain(r.n);
   });
 });
 
