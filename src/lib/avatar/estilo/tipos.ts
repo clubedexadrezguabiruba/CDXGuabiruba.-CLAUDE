@@ -134,4 +134,44 @@ export interface EstadoAvatar {
    * `id` no DOM com as instâncias renderizadas juntas.
    */
   ns: string;
+  /**
+   * A MASSA DO CABELO DESENHADA DEPOIS DO CONTORNO DA CABEÇA, ainda clipada.
+   *
+   * Existe por um defeito medido: o compositor desenha o contorno da cabeça e o
+   * especular DEPOIS da massa do cabelo, e num cabelo com volume isso vira um aro
+   * escuro na coroa — 1 732 px de retângulo preto atravessando a massa e 162 px
+   * de brilho vazando; a 56 px, 97 px escuros na coroa contra 13 com a massa por
+   * cima. No `curto`, que é fino, não incomoda; por isso ninguém tinha visto.
+   *
+   * **Opcional, e o padrão é o comportamento de hoje** — o campo ausente faz
+   * `compor()` emitir a MESMA string byte a byte. Isso não é timidez: os 7 418
+   * bytes da base careca (`folha-base.ts:145`) e os 11 pares bytes+SHA de
+   * `parametrico-congelado.ts` são igualdade estrita, e os cinco cabelos do
+   * catálogo renderizariam diferente. Ligar isto como padrão é decisão própria,
+   * com esses números remedidos e trocados de propósito.
+   *
+   * O clip continua o mesmo — a massa não passa a exceder a silhueta. O que muda
+   * é só quem fica por cima de quem.
+   */
+  massaPorCima?: boolean;
+  /**
+   * ENCOLHE A FIGURA INTEIRA DENTRO DO MESMO `viewBox`, para caber peça alta.
+   *
+   * O `viewBox` deixa só 39 unidades acima da cabeça (doc 14, T1.5), e um cabelo
+   * espetado medido sobe 85 u acima da coroa: o viewport corta sem erro e sem
+   * aviso. Comprimir a peça foi descartado por direção de arte — `k = 0,440`
+   * tirava metade do espeto. Encolher a figura resolve sem tocar na peça.
+   *
+   * **É transformação EXTERNA, e essa é a parte que importa.** O sistema de
+   * coordenadas interno — o `viewBox` de 500×700 e todas as constantes de
+   * `geometria.ts` — fica intacto, então as peças continuam em `{t,y}` sem
+   * reconversão e a arte já gerada sobre a base de edição continua válida. São
+   * dois conceitos que moram no mesmo `compor()`: a **base de edição** (o que vai
+   * ao gerador, escala interna congelada, este campo AUSENTE) e a **base de
+   * render** (o que o produto desenha, com o campo presente).
+   *
+   * **Opcional, e o padrão é 1** — ausente, nenhum `<g transform>` é emitido e a
+   * string sai idêntica. Mesmo motivo do campo acima.
+   */
+  escala?: number;
 }

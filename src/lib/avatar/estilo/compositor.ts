@@ -85,6 +85,7 @@ import {
 import {
   BOCA,
   FACETAS,
+  CAIXA_CABECA,
   OLHO,
   OLHO_CX_DIR,
   OLHO_CX_ESQ,
@@ -96,6 +97,7 @@ import {
   TRACO,
   VIEWBOX,
   fatorDeTom,
+  n,
   pathBoca,
   pathCabeca,
   pathEspecular,
@@ -405,9 +407,58 @@ function gradiente(id: string, y0: number, y1: number, paradas: [number, string]
  * — mecanismo em vez de disciplina. O teste de DOM entra junto mesmo assim,
  * porque o tipo não impede alguém de passar a mesma string duas vezes.
  */
+/**
+ * ONDE A FIGURA COMEÇA E ACABA EM `y` — as duas pontas do que se desenha.
+ *
+ * `geometria.ts` não tem constante de "altura da figura": a extensão vertical é
+ * emergente das tabelas, e é justamente por isso que encolher tem de ser
+ * transformação externa e não ajuste de constante. Estas duas derivam do que já
+ * está lá, sem número novo.
+ *
+ * O topo é a silhueta EXTERNA, não a linha de centro: o contorno tem 12 unidades
+ * e é desenhado centrado, então meio traço mora acima de `CAIXA_CABECA.y0` —
+ * a mesma conta de `CABECA_H_EXTERNA` e de `folha-base.ts:213`.
+ *
+ * O fim é a sombra do chão, não o pé do tronco. Ela é a última tinta do
+ * documento, e ancorar no tronco deixaria a sombra pendurada para fora.
+ */
+const FIGURA_Y0 = CAIXA_CABECA.y0 - TRACO / 2;
+const FIGURA_Y1 = SOMBRA_CHAO.cy + SOMBRA_CHAO.ry;
+
+/**
+ * QUANTO SOBRA EMBAIXO quando a figura encolhe — e por que não é proporcional.
+ *
+ * Encolher existe para ganhar espaço EM CIMA, para peça alta e para chapéu. Uma
+ * redução proporcional devolveria metade do ganho para o rodapé, onde não há o
+ * que caber. Então a figura é reancorada: a base pousa a esta distância do pé do
+ * quadro e todo o resto do ganho vai para o topo.
+ *
+ * A 92% isto dá 119 unidades acima da coroa, contra as 45,5 de hoje.
+ */
+const FOLGA_BASE = 20;
+
 export function compor(estado: EstadoAvatar): string {
   const { ns, traje, animado = false, modeloCabelo } = estado;
   const pele = estado.pele;
+
+  // ---------------------------------------------------------- os dois opcionais
+  // Os dois são construídos para que AUSENTE signifique "a string de sempre". O
+  // `escala === 1` cai no mesmo lugar que o campo ausente de propósito: não há
+  // motivo para emitir um `<g transform>` que não transforma nada.
+  const s = estado.escala ?? 1;
+  const abre =
+    s === 1
+      ? ""
+      : `<g transform="translate(${n((VIEWBOX.w * (1 - s)) / 2)} ` +
+        `${n(VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s)}) scale(${s})">`;
+  const fecha = s === 1 ? "" : `</g>`;
+
+  const cabeloDentro = cabeloNoCranio(modeloCabelo);
+  const massaPorCima = (estado.massaPorCima ?? false) && cabeloDentro !== "";
+  const cabeloNoLugarDeSempre = massaPorCima ? "" : cabeloDentro;
+  const cabeloDepoisDoTraco = massaPorCima
+    ? `<g clip-path="url(#${ns}-c-cabeca)">${cabeloDentro}</g>`
+    : "";
 
   // As duas do cabelo entram SÓ quando há cabelo. `escurecer` sem fator é o 0,82 do
   // item 2.4, e o docstring dele já nomeia "embaixo da franja" como um dos três
@@ -466,6 +517,7 @@ export function compor(estado: EstadoAvatar): string {
       [1, tomPele(pele, FACETAS.dir.deltaBase)],
     ]) +
     `</defs>` +
+    abre +
     sombraChao(ns) +
     `<g class="kk-respira">` +
     extensoes(traje, true) +
@@ -476,7 +528,7 @@ export function compor(estado: EstadoAvatar): string {
     `<g clip-path="url(#${ns}-c-cabeca)">` +
     `<path d="${pathFacetaEsq()}" fill="url(#${ns}-fe)"/>` +
     `<path d="${pathFacetaDir()}" fill="url(#${ns}-fd)"/>` +
-    cabeloNoCranio(modeloCabelo) +
+    cabeloNoLugarDeSempre +
     // O ESPECULAR PASSOU A SER DESENHADO DEPOIS DO CABELO, e a base careca não
     // mudou um byte com isso — a camada some quando não há modelo, e a ordem entre
     // as facetas e a luz continua a mesma.
@@ -490,6 +542,9 @@ export function compor(estado: EstadoAvatar): string {
     `<path class="kk-luz" d="${pathEspecular()}"/>` +
     `</g>` +
     `<use href="#${ns}-p-cabeca" class="kk-traco"/>` +
+    // Com `massaPorCima`, a massa entra AQUI — depois do contorno da cabeça e do
+    // especular, e ainda dentro do mesmo clip. Vazio no caminho de sempre.
+    cabeloDepoisDoTraco +
     extensoesCabelo(modeloCabelo, false) +
     olho(OLHO_CX_ESQ, OLHO_CY_ESQ) +
     olho(OLHO_CX_DIR, OLHO_CY_DIR) +
@@ -504,6 +559,7 @@ export function compor(estado: EstadoAvatar): string {
     `<path class="kk-risco" stroke-width="${BOCA.espessura}" d="${pathBoca()}"/>` +
     extensoes(traje, false) +
     `</g>` +
+    fecha +
     `</svg>`
   );
 }
