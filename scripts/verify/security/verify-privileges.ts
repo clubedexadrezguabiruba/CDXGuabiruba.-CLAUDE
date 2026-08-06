@@ -1,7 +1,7 @@
 /**
  * GATE DE SEGURANÇA DO BANCO
  *
- * Assere duas propriedades que a migration 20260725120000 estabelece:
+ * Assere três propriedades:
  *
  *  1. Toda função SECURITY DEFINER em `public` fixa search_path.
  *     Sem isso, o chamador pode plantar objetos que a função resolve
@@ -9,6 +9,24 @@
  *
  *  2. Helpers internos que mutam estado NÃO são executáveis por anon nem
  *     authenticated. grant_xp chamável do browser é o caso crítico.
+ *
+ *  3. Objetos de dados que só devem ser lidos por RPC não são SELECTáveis
+ *     direto por anon nem authenticated. O caso é `user_public_profiles`:
+ *     é MATERIALIZED VIEW, e matview **não aceita RLS** no Postgres — a
+ *     única defesa possível é o privilégio. Ela carrega `display_name` cru
+ *     e a coluna `ranking_visible`. Ou seja, o opt-out do ranking e a
+ *     máscara de nome são filtros aplicados **nas RPCs**, sobre um dado que
+ *     ali está inteiro: se a matview for legível direto, os dois caem
+ *     juntos. É o `materialized_view_in_api` do linter do Supabase.
+ *
+ * O QUE ESTA RÉGUA NÃO ENXERGA:
+ *  - Grant por COLUNA. `has_table_privilege(...,'SELECT')` é falso quando o
+ *    privilégio foi dado coluna a coluna; ali só `has_column_privilege` veria.
+ *  - Outro objeto que exponha o mesmo dado por outro caminho (view nova
+ *    sobre `users`, função sem máscara). Esta régua olha a lista abaixo, não
+ *    o dado.
+ *  - Estado fora do versionado: ela mede o banco, não as migrations. É de
+ *    propósito — migration é intenção, privilégio efetivo é fato.
  *
  * Uso: npm run verify:privileges
  */
@@ -31,6 +49,16 @@ const HELPERS_INTERNOS = [
   // disparar reconciliação de patente para outro usuário.
   "recompute_user_title",
 ];
+
+/**
+ * Objetos de dados cuja leitura direta pelo browser é proibida — todo acesso
+ * passa por RPC, que aplica máscara de nome e o filtro de `ranking_visible`.
+ *
+ * `service_role` segue lendo (é como `scripts/verify/phase2/validate-phase2.ts`
+ * funciona), e revogar de anon/authenticated não quebra fluxo nenhum: nenhum
+ * arquivo de `src/` lê estes objetos direto — só migrations e verify scripts.
+ */
+const SEM_LEITURA_DIRETA = ["user_public_profiles"];
 
 let passed = 0;
 let failed = 0;
@@ -142,6 +170,47 @@ async function main() {
     for (const r of pub) {
       if (r.auth_exec) ok(`${r.proname}: executável por authenticated (esperado)`);
       else nok(`${r.proname} deveria seguir executável`, "EXECUTE revogado demais");
+    }
+
+    // --- 4. objetos de dados sem leitura direta pelo browser ---
+    console.log("\n4. SELECT direto em objetos que só devem sair por RPC");
+
+    const objetos = await sql<
+      {
+        relname: string;
+        relkind: string;
+        anon_select: boolean;
+        auth_select: boolean;
+      }[]
+    >`
+      select c.relname,
+             c.relkind,
+             has_table_privilege('anon', c.oid, 'SELECT') as anon_select,
+             has_table_privilege('authenticated', c.oid, 'SELECT') as auth_select
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relname = any(${SEM_LEITURA_DIRETA})
+      order by c.relname`;
+
+    const achados = new Set(objetos.map((o) => o.relname));
+    for (const nome of SEM_LEITURA_DIRETA) {
+      if (!achados.has(nome)) nok(`${nome} não existe no banco`, "objeto sumiu ou foi renomeado");
+    }
+
+    for (const o of objetos) {
+      const tipo = o.relkind === "m" ? "matview (não aceita RLS)" : "relação";
+      const expostoA: string[] = [];
+      if (o.anon_select) expostoA.push("anon");
+      if (o.auth_select) expostoA.push("authenticated");
+
+      if (expostoA.length > 0) {
+        nok(
+          `${o.relname} não deve ser legível pelo browser — ${tipo}`,
+          `SELECT exposto a: ${expostoA.join(", ")} — display_name cru e ranking_visible saem sem o filtro das RPCs`
+        );
+      } else {
+        ok(`${o.relname}: SELECT revogado de anon e authenticated (${tipo})`);
+      }
     }
   } finally {
     await sql.end();
