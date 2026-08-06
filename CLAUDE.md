@@ -75,6 +75,21 @@ Antes de alterar qualquer bug/fluxo:
 - Se precisar de informação ou ação do usuário para avançar ou para realizar um tarefa de forma mais rápida e/ou efetiva, perguntar imediatamente — não assumir
 - Se o prompt do usuário for ambíguo, incompleto ou puder ser melhorado, apontar antes de executar
 
+## Coordenação entre agentes
+
+- **Uma tarefa tem um único executor.** O outro agente, se houver, revisa ou audita.
+- **Agentes diferentes trabalham em branches e worktrees separados.** Nunca dois
+  na mesma cópia de trabalho.
+- **Cada tarefa declara seus arquivos de posse antes de começar** — e o escopo
+  fica no briefing da tarefa, não em arquivo de regra, porque escopo envelhece.
+- **Nunca dois mexendo ao mesmo tempo** em arquivo compartilhado, migration ou
+  `package.json`.
+
+Existe um [AGENTS.md](AGENTS.md) na raiz: é a porta de entrada de agentes que não
+sejam o Claude Code (o Codex o lê; `.claude/settings.json` e os hooks **não**
+valem para ele). Ele é **subordinado a este arquivo** e só repete as proibições
+que aqui têm trava técnica e lá não têm. Não deixe virar segunda fonte de verdade.
+
 ## Skills — invocar, não torcer para lembrar
 
 Este projeto tem skills escritas para si mesmo e elas quase nunca dispararam: em
