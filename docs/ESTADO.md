@@ -45,10 +45,10 @@ de alunos menores de idade.
 <!-- VOLATIL:inicio -->
 | | |
 |---|---|
-| **Branch** | `avatar/estilo-kokeshi` |
-| **Commits à frente de `origin/main`** | 37 |
-| **Árvore** | **20 arquivos sujos** |
-| **Último commit** | 7d9033d · 2026-08-04 · feat(revisao): o lance de teoria sai da conta da precisao e ganha nome |
+| **Branch** | `avatar/vtracer` |
+| **Commits à frente de `origin/main`** | 42 |
+| **Árvore** | limpa |
+| **Último commit** | 260e657 · 2026-08-06 · docs(avatar): o doc 13 sai da inercia e as 16 primeiras afirmacoes ganham prova |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -73,7 +73,7 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 | frente | fechadas | detalhe em |
 |---|---|---|
 | Backlog do avatar | **25 de 67** (37%) | `docs/avatar/14-backlog-execucao.md` |
-| Auditoria do avatar | **0 de 92** (0%) | `docs/avatar/13-checklist-de-verificacao.md` |
+| Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
 
 Backlog do avatar, fase a fase:
 
@@ -109,12 +109,12 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-03 |
+| `CLAUDE.md` | 2026-08-06 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-04 |
 | `docs/avatar/15-plano-ate-pronto.md` | 2026-08-04 |
-| `docs/avatar/13-checklist-de-verificacao.md` | 2026-07-31 |
+| `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
 | `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-07-31 |
 
 _Doc parado há semanas e ainda citado como fonte é candidato a `_superado/`._
