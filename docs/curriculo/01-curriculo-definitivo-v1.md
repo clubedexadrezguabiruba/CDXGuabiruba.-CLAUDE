@@ -612,7 +612,7 @@ Outras:
 
 ## 13. O que este documento não cobre
 
-Alguns formatos **não existem no site hoje**: lição interativa, **prática contra o motor**, quiz, mini-jogo, bloco de puzzle dentro da aula, bloco de revisão, duelo com missão, move trainer, **exercício longo** (T7 a3), e o **checklist/relatório de diagnóstico** (T7 a10). O exercício atual aceita um lance só. Também é do plano técnico o **gate do lastro do banco** (`verify:curriculo-banco`, §4). Tudo isso é assunto do **plano técnico**, ainda não escrito.
+Alguns formatos **não existem no site hoje**: lição interativa, **prática contra o motor**, quiz, mini-jogo, bloco de puzzle dentro da aula, bloco de revisão, duelo com missão, move trainer, **exercício longo** (T7 a3), e o **checklist/relatório de diagnóstico** (T7 a10). O exercício atual aceita um lance só. Também é do plano técnico o **gate do lastro do banco** (`verify:curriculo-banco`, §4). Tudo isso é assunto do **plano técnico**, que existe desde 2026-08-04: `docs/curriculo/02-plano-tecnico-trilha1-v1.md`. Ele cobre todos os formatos citados acima **menos o move trainer**, adiado de propósito para o plano da T3 (§9 de lá). Escrito não é construído: os blocos de execução B0–B7 estão propostos e não iniciados.
 
 ---
 

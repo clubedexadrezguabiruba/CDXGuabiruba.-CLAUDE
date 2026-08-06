@@ -450,6 +450,7 @@ export function gerarPainel(agora: string): string {
     "docs/avatar/15-plano-ate-pronto.md",
     "docs/avatar/13-checklist-de-verificacao.md",
     "docs/curriculo/01-curriculo-definitivo-v1.md",
+    "docs/curriculo/02-plano-tecnico-trilha1-v1.md",
   ];
   L.push("## Frescor das fontes");
   L.push("");

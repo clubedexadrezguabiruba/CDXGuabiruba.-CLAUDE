@@ -46,9 +46,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 42 |
-| **Árvore** | limpa |
-| **Último commit** | 260e657 · 2026-08-06 · docs(avatar): o doc 13 sai da inercia e as 16 primeiras afirmacoes ganham prova |
+| **Commits à frente de `origin/main`** | 45 |
+| **Árvore** | **6 arquivos sujos** |
+| **Último commit** | ed393ad · 2026-08-06 · docs(avatar): a linha do opt-out sai do "falta confirmar" e ganha as duas saidas |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -99,7 +99,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 71 |
+| **Migrations** | 72 |
 | **Rotas (`page.tsx`)** | 32 |
 | **Arquivos de teste** | 14 |
 | **Primitivos de UI** | 4 |
@@ -116,6 +116,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 | `docs/avatar/15-plano-ate-pronto.md` | 2026-08-04 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
 | `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-07-31 |
+| `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-05 |
 
 _Doc parado há semanas e ainda citado como fonte é candidato a `_superado/`._
 <!-- VOLATIL:fim -->

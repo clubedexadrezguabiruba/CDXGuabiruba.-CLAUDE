@@ -156,10 +156,17 @@ quando não há `.env.local` — é assim que funcionam em CI.
   motor** em 20 aulas de técnica (modelo lichess Practice) e o professor-guia.
   **Posições vêm dos livros comprados** (cadernos do Steps + de la Villa; posição é
   fato, explicação se redige do zero — regras na §4) e do banco Lichess mediante o
-  gate de lastro. §15 = changelog da rev. 3; §16 = da rev. 4. Só conteúdo: o plano
-  técnico dos formatos novos (lição interativa, prática contra o motor, quiz,
-  mini-jogo, blocos, duelo com missão, move trainer, `verify:curriculo-banco`)
-  ainda não existe
+  gate de lastro. §15 = changelog da rev. 3; §16 = da rev. 4. **É só conteúdo** —
+  o plano técnico dos formatos está no doc abaixo
+- Plano técnico dos formatos: `docs/curriculo/02-plano-tecnico-trilha1-v1.md` —
+  **aprovado, revisões 2 e 3 em 2026-08-04.** Cobre lição interativa (§3.1),
+  prática contra o motor (§3.2), quiz (§3.3), mini-jogo (§3.4 + a §4 inteira: um
+  motor, três famílias, sete jogos), bloco de puzzles na aula (§3.5), bloco de
+  revisão espaçada (§3.6), duelo com missão (§3.7) e `verify:curriculo-banco`
+  (§5.3). Mais a camada de competência (§2), o mapa tema×faixa (§5.2), as
+  decisões D1–D6 (§6) e os blocos de execução B0–B7 (§7, **propostos, não
+  iniciados**). O **move trainer** foi adiado de propósito para o plano da T3 —
+  está na §9, "o que este plano adia com todas as letras"
 - Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md (a seção "Estado real" é a
   única parte confiável — a Parte 1 é um guia de setup pré-projeto)
 - Avatar: **o plano vigente é o v4**, e são cinco documentos com papéis distintos:
