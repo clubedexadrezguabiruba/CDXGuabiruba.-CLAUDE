@@ -46,9 +46,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 46 |
-| **Árvore** | **40 arquivos sujos** |
-| **Último commit** | f6b97f8 · 2026-08-06 · docs(curriculo): o plano tecnico dos formatos para de ser declarado inexistente |
+| **Commits à frente de `origin/main`** | 53 |
+| **Árvore** | **14 arquivos sujos** |
+| **Último commit** | c1d8382 · 2026-08-07 · docs(codex): o modo RASCUNHO passa no primeiro uso, e o briefing ganha a emenda |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -101,7 +101,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 72 |
 | **Rotas (`page.tsx`)** | 32 |
-| **Arquivos de teste** | 14 |
+| **Arquivos de teste** | 15 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes
@@ -109,7 +109,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-06 |
+| `CLAUDE.md` | 2026-08-07 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-04 |

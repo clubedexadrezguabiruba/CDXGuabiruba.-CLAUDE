@@ -132,6 +132,7 @@ import {
   SANGRIA,
   TRACO,
   VIEWBOX,
+  amostrarSpline,
   bordasEm,
 } from "../../../src/lib/avatar/estilo/geometria";
 import { PELE } from "../../../src/lib/avatar/palette";
@@ -2186,6 +2187,119 @@ export function montarPeca(bruta: Medida) {
 /* ------------------------------------------------------------------ */
 /* A montagem da peça TRAÇADA                                          */
 /* ------------------------------------------------------------------ */
+
+/**
+ * QUANTO A CURVA DESENHADA se afasta da varredura densa — o irmão honesto de
+ * `desvioDaCorda`.
+ *
+ * A diferença é uma linha: aqui a poligonal de comparação é a **spline amostrada**,
+ * pela mesma `arcosDaSpline` que o compositor usa para emitir os comandos `C`. Não
+ * há segunda descrição da curva — é a mesma conta, amostrada em vez de escrita.
+ *
+ * Mora aqui e não em `medir.ts` porque `medir.ts` não importa nada, de propósito, e
+ * amostrar a spline exige a `geometria` do produto.
+ *
+ * Cara: cada avaliação amostra 16 pontos por arco e roda o mesmo laço quadrático.
+ * Por isso ela **não substitui** `desvioDaCorda` na varredura de N — ela entra
+ * depois, no refino.
+ */
+export function desvioDaSpline(
+  densa: readonly { x: number; y: number }[],
+  pts: readonly { x: number; y: number }[],
+  fechado: boolean,
+): { max: number; medio: number } {
+  if (pts.length < 3) return { max: 0, medio: 0 };
+  const amostra = amostrarSpline(pts, fechado);
+  return desvioDaCorda(densa, fechado ? [...amostra, amostra[0]] : amostra);
+}
+
+/**
+ * ONDE A SPLINE ERRA, PÕE-SE UM PONTO DA ARTE — e nenhum ponto sai do lugar.
+ *
+ * ---------------------------------------------------------------------------
+ * O DEFEITO QUE ELA EXISTE PARA MATAR
+ * ---------------------------------------------------------------------------
+ *
+ * `escolherN` varre N pelo desvio da **corda**, e o compositor desenha **spline**.
+ * Onde a borda é uma reta longa entre dois cantos, a corda erra zero e a decimação
+ * não gasta ponto — mas a Catmull-Rom, puxada pelas tangentes dos vizinhos, arqueia
+ * para dentro. Medido na base da franja da `chanel`: **246 u de reta com 2 pontos**,
+ * corda **0 px**, spline **23 a 28 px**.
+ *
+ * Enquanto o contorno era um `stroke` de 12 u **centrado** no laço, isso ficava
+ * encoberto — o traço pintava preto dos dois lados da curva errada e a peça parecia
+ * certa. Com o preto **transcrito** (a banda é a diferença entre duas formas cheias)
+ * o arqueamento aparece como banda que some.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE INSERIR PONTO DA BORDA DENSA, E NÃO MOVER OS QUE JÁ EXISTEM
+ * ---------------------------------------------------------------------------
+ *
+ * Mover um ponto para a curva encaixar o tiraria de cima da arte, e o que esta rota
+ * garante é que **todo ponto do literal é um ponto medido**. Inserir mantém a
+ * garantia: cada ponto novo é um pixel da `bordaOrdenada`, escolhido porque é ali
+ * que a curva mais se afasta dela.
+ *
+ * A busca é gulosa e converge por construção — cada passo insere o ponto denso mais
+ * distante da curva, o que parte o pior trecho em dois. `teto` existe para o caso
+ * patológico não gastar o orçamento inteiro, e quando ele morde o valor volta em
+ * `bateuNoTeto`, para a reprovação ser dita e não silenciada.
+ */
+export function refinarPelaSpline<T extends { x: number; y: number; i: number }>(
+  densa: readonly T[],
+  inicial: readonly T[],
+  fechado: boolean,
+  alvo: number,
+  teto: number,
+): { pts: T[]; erro: number; erroAntes: number; inseridos: number; bateuNoTeto: boolean } {
+  const pts = [...inicial];
+  const erroAntes = desvioDaSpline(densa, pts, fechado).max;
+  let erro = erroAntes;
+  let inseridos = 0;
+
+  while (erro > alvo && pts.length < teto) {
+    const amostra = amostrarSpline(pts, fechado);
+    const fim = fechado ? [...amostra, amostra[0]] : amostra;
+    let pior = -1;
+    let piorD = -1;
+    for (let k = 0; k < densa.length; k++) {
+      const p = densa[k];
+      let melhor = Infinity;
+      for (let i = 0; i < fim.length - 1; i++) {
+        const a = fim[i];
+        const b = fim[i + 1];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const l2 = dx * dx + dy * dy;
+        const t =
+          l2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+        melhor = Math.min(melhor, Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy)));
+      }
+      if (melhor > piorD) (piorD = melhor), (pior = k);
+    }
+    if (pior < 0) break;
+
+    // ONDE ELE ENTRA: entre os dois vizinhos do laço cujos índices densos o cercam.
+    // Um ponto certo na posição errada da lista não refina a curva — faz um nó.
+    const alvoI = densa[pior].i;
+    if (pts.some((p) => p.i === alvoI)) break; // já está no laço: não há o que inserir
+    let onde = pts.length;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i].i;
+      const b = pts[(i + 1) % pts.length].i;
+      const volta = b <= a; // o trecho que dá a volta pelo fim do vetor denso
+      if (volta ? alvoI > a || alvoI < b : alvoI > a && alvoI < b) {
+        onde = i + 1;
+        break;
+      }
+    }
+    pts.splice(onde, 0, densa[pior]);
+    inseridos++;
+    erro = desvioDaSpline(densa, pts, fechado).max;
+  }
+
+  return { pts, erro, erroAntes, inseridos, bateuNoTeto: erro > alvo && pts.length >= teto };
+}
 
 export interface EscolhaDeN {
   n: number;

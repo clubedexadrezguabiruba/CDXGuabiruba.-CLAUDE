@@ -65,6 +65,19 @@ function corpoDaPeca(id: string, nome: string, c: Cabelo): string {
       `${i}claras: [\n${c.claras.map((f) => `${i}  ${laco(f, `${i}  `)},`).join("\n")}\n${i}],`,
     );
   }
+  // AS CAMADAS DA PEÇA TRANSCRITA. Quais artes transcrevem é `TRANSCREVEM`, em
+  // `converter.ts` — a lista mora lá porque o controle 6 de `arte:revisao` precisa
+  // da mesma resposta que este gerador.
+  if (c.nucleo?.length) {
+    linhas.push(
+      `${i}nucleo: [\n${c.nucleo.map((f) => `${i}  ${laco(f, `${i}  `)},`).join("\n")}\n${i}],`,
+    );
+  }
+  if (c.pretas?.length) {
+    linhas.push(
+      `${i}pretas: [\n${c.pretas.map((f) => `${i}  ${laco(f, `${i}  `)},`).join("\n")}\n${i}],`,
+    );
+  }
   if (c.linhas?.length) linhas.push(`${i}linhas: ${JSON.stringify(c.linhas)},`);
   if (c.formas?.length) {
     linhas.push(
@@ -145,7 +158,11 @@ async function principal(): Promise<void> {
       `  ${a.arquivo.padEnd(11)} massa ${String(p.massa?.length ?? 0).padStart(3)} pts · ` +
         `clara ${String(p.clara?.length ?? 0).padStart(3)} · ` +
         `claras ${p.claras?.length ?? 0} · formas ${p.formas?.length ?? 0} · ` +
-        `linhas ${JSON.stringify(p.linhas ?? [])} · k ${c.k.toFixed(4)}`,
+        (p.nucleo?.length
+          ? `TRANSCRITA: núcleo ${p.nucleo.length} forma(s)/${p.nucleo.reduce((s, f) => s + f.length, 0)} pts · ` +
+            `pretas ${p.pretas?.length ?? 0}`
+          : `linhas ${JSON.stringify(p.linhas ?? [])}`) +
+        ` · k ${c.k.toFixed(4)}`,
     );
     blocos.push(
       `  /** ${a.nota}. Traçada de \`${a.arquivo}.png\` por \`npm run arte:pecas\`. */\n` +

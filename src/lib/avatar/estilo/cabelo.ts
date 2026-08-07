@@ -248,6 +248,54 @@ export interface Cabelo {
    */
   claras?: readonly (readonly PontoFranja[])[];
   /**
+   * O CIANO DA PEÇA TRANSCRITA — e com ele a `massa` deixa de ser o cabelo e passa
+   * a ser a TINTA.
+   *
+   * ---------------------------------------------------------------------------
+   * O DEFEITO QUE ELE EXISTE PARA MATAR
+   * ---------------------------------------------------------------------------
+   *
+   * Sem ele o contorno preto é **sintetizado**: o compositor traça o laço da massa
+   * com `stroke-width: 12` **centrado**, então o preto ocupa `[borda−6, borda+6]`
+   * enquanto o da arte ocupa `[borda, borda−10]`. Medido na `chanel`: sobreposição
+   * 6, união 16, **IoU 34,4%** e razão de área **1,21×**. A forma era transcrita
+   * bem; a tinta não era transcrita de jeito nenhum.
+   *
+   * Com `nucleo`, a `massa` é preenchida de `--av-linha` e o núcleo por cima com
+   * `--av-cabelo-s`: **a banda preta vira a diferença entre duas formas cheias**, e
+   * a espessura dela passa a ser a que a arte tem. Não há `evenodd`, não há região
+   * com furo, e `bordaOrdenada` não muda.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE UMA LISTA, E NÃO UM LAÇO
+   * ---------------------------------------------------------------------------
+   *
+   * O núcleo é **multi-componente por construção**: um traço interno que atravessa
+   * a peça parte o ciano em dois. Medido na `chanel`: 2 componentes na variante
+   * fiel à arte. Eles saem no mesmo `<path>`, como subpaths `M…Z M…Z`, pelo mesmo
+   * mecanismo de `claras` — multi-componente não custa forma do orçamento.
+   *
+   * **Ausente, o caminho é o de hoje, byte a byte**, e é isso que deixa as peças
+   * do Bloco 9 congeladas convivendo com as transcritas.
+   */
+  nucleo?: readonly (readonly PontoFranja[])[];
+  /**
+   * O PRETO QUE CORRE POR DENTRO DA PEÇA — a camada que `linhas` não sabe expressar.
+   *
+   * `Cabelo.linhas` são arcos **do laço da massa**: um traço que corre por dentro
+   * do cabelo, e não pela borda dele, **não tem onde morar naquele tipo**. Era por
+   * isso que o traço da mecha direita da `chanel`, perto do queixo, sumia — e sumia
+   * por construção, não por limiar mal escolhido.
+   *
+   * Elas vão **depois da camada clara**, e a ordem é o ponto: o traço interno mais
+   * aparece justamente na região iluminada, e emitido antes da clara ele seria
+   * coberto ali.
+   *
+   * Só faz sentido com `nucleo` — sem ele a massa inteira já é cabelo, e uma forma
+   * preta solta por cima seria um borrão sem borda.
+   */
+  pretas?: readonly (readonly PontoFranja[])[];
+  /**
    * ONDE O LAÇO DA MASSA CARREGA TRAÇO — em ARCOS DE ÍNDICE, não numa segunda curva.
    *
    * ---------------------------------------------------------------------------
@@ -683,6 +731,27 @@ export function pathCabeloClaro(modelo: CabeloOuModelo): string {
   return c.sombra ? touca(c.sombra, 0) : touca(c.pontos, -DEGRAU);
 }
 
+/**
+ * O NÚCLEO DE CIANO da peça transcrita. Vazio quando ela não é transcrita.
+ *
+ * É `pathCabeloClaro` com outra lista: mesmo `lacoTY`, mesmos subpaths `M…Z M…Z`,
+ * mesma união por `join(" ")`. Duas funções de três linhas em vez de um genérico
+ * com parâmetro de campo — as camadas são três coisas diferentes e o compositor
+ * pergunta por elas pelo nome.
+ */
+export function pathCabeloNucleo(modelo: CabeloOuModelo): string {
+  const c = resolverCabelo(modelo);
+  if (!c.massa || !c.nucleo?.length) return "";
+  return c.nucleo.map((f) => lacoTY(f, 0)).join(" ");
+}
+
+/** As pretas internas da peça transcrita. Ver `Cabelo.pretas`. */
+export function pathCabeloPretas(modelo: CabeloOuModelo): string {
+  const c = resolverCabelo(modelo);
+  if (!c.massa || !c.pretas?.length) return "";
+  return c.pretas.map((f) => lacoTY(f, 0)).join(" ");
+}
+
 /** O path de uma extensão. Laço fechado, coordenada absoluta, sem clip. */
 export function pathExtensao(e: FormaDaPeca): string {
   return laco(e.forma);
@@ -825,7 +894,7 @@ export function arcosDeTraco(
  * precisar do mesmo contra a massa — copiá-lo criaria duas versões da mesma
  * pergunta, que é o defeito que este arquivo inteiro existe para não ter.
  */
-function dentroDe(poli: readonly Ponto[], p: Ponto): boolean {
+export function dentroDe(poli: readonly Ponto[], p: Ponto): boolean {
   let bate = false;
   for (let i = 0, j = poli.length - 1; i < poli.length; j = i++) {
     const a = poli[i];
@@ -838,8 +907,15 @@ function dentroDe(poli: readonly Ponto[], p: Ponto): boolean {
   return bate;
 }
 
-/** Distância de um ponto a um laço fechado, medida segmento a segmento. */
-function ateAPoligonal(poli: readonly Ponto[], p: Ponto): number {
+/**
+ * Distância de um ponto a um laço fechado, medida segmento a segmento.
+ *
+ * **Exportada junto com `dentroDe`** porque a rota de arte precisa da mesma
+ * distância com sinal ANTES de a peça virar `Cabelo` — o núcleo de ciano do Bloco
+ * 13 é medido contra a massa ainda em unidades do `viewBox`, e uma segunda cópia
+ * ali responderia à mesma pergunta com outra conta.
+ */
+export function ateAPoligonal(poli: readonly Ponto[], p: Ponto): number {
   let melhor = Infinity;
   for (let i = 0, j = poli.length - 1; i < poli.length; j = i++) {
     const a = poli[i];
@@ -1079,23 +1155,85 @@ export function sombraSobreAFranja(modelo: CabeloOuModelo): { min: number; max: 
 export function contencaoDaClara(modelo: CabeloOuModelo): number {
   const c = resolverCabelo(modelo);
   if (!c.massa || !c.clara) return Infinity;
+  // NA PEÇA TRANSCRITA O CONTINENTE É O NÚCLEO, E MEDIR CONTRA A MASSA APROVARIA
+  // POR VACUIDADE.
+  //
+  // Com `nucleo`, a `massa` deixa de ser cabelo e passa a ser TINTA: quem pinta
+  // ciano é o núcleo, e a banda preta é a diferença entre os dois. Uma clara que
+  // saísse do núcleo mas coubesse dentro da massa estaria pintando tom claro **em
+  // cima do contorno preto** — o vazamento sem borda que esta régua existe para
+  // pegar — e a régua antiga diria que está tudo bem.
+  return menorDistanciaAoLaco(continenteDaClara(c), c.clara.map((p) => ponto(p, 0)));
+}
 
-  const massa = c.massa.map((p) => ponto(p, 0));
-  const clara = c.clara.map((p) => ponto(p, 0));
-  const pts = [...clara, clara[0]];
+/** Contra quem a clara é medida: o núcleo quando há, a massa quando não há. */
+function continenteDaClara(c: Cabelo): Ponto[][] {
+  if (c.nucleo?.length) return c.nucleo.map((f) => f.map((p) => ponto(p, 0)));
+  return [c.massa!.map((p) => ponto(p, 0))];
+}
 
+/**
+ * A MENOR DISTÂNCIA COM SINAL de um laço a um continente de uma ou mais partes.
+ *
+ * Amostra 12 pontos por corda porque o defeito mora **na corda, não no vértice**:
+ * `conter-a-clara.test.ts` mediu os 64 vértices da `curto-espetada` todos dentro,
+ * e uma corda de 29 u passando 4,52 u por fora no meio do percurso.
+ *
+ * Com continente multi-parte, o ponto está dentro se estiver dentro de **alguma**
+ * parte, e a distância é a da parte mais próxima — um núcleo partido em dois pelo
+ * traço interno é um continente com dois pedaços, não dois continentes.
+ */
+function menorDistanciaAoLaco(continente: readonly (readonly Ponto[])[], laco: readonly Ponto[]): number {
+  const pts = [...laco, laco[0]];
   let menor = Infinity;
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i];
     const b = pts[i + 1];
     for (let k = 0; k <= 12; k++) {
-      const p = {
-        x: a.x + ((b.x - a.x) * k) / 12,
-        y: a.y + ((b.y - a.y) * k) / 12,
-      };
-      const d = ateAPoligonal(massa, p);
-      menor = Math.min(menor, dentroDe(massa, p) ? d : -d);
+      const p = { x: a.x + ((b.x - a.x) * k) / 12, y: a.y + ((b.y - a.y) * k) / 12 };
+      let melhor = -Infinity;
+      for (const poli of continente) {
+        const d = ateAPoligonal(poli, p);
+        melhor = Math.max(melhor, dentroDe(poli, p) ? d : -d);
+      }
+      menor = Math.min(menor, melhor);
     }
+  }
+  return menor;
+}
+
+/**
+ * O NÚCLEO ESTÁ DENTRO DA MASSA? — o vazamento que o desenho transcrito estreia.
+ *
+ * ---------------------------------------------------------------------------
+ * O DEFEITO QUE ELA EXISTE PARA MATAR, e ele é NOVO
+ * ---------------------------------------------------------------------------
+ *
+ * Enquanto o contorno era sintetizado, o stroke de 12 u **centrado** cobria ±6 u
+ * de folga em volta do laço, e a tolerância de `escolherN` (meio traço, 6 u) era
+ * paga por ele. Sem stroke, a massa e o núcleo são dois laços decimados
+ * independentes: cada um pode desviar até 6 u da sua borda verdadeira, e sobre uma
+ * banda de ~10 u os dois podem **cruzar**. Onde cruzam, o ciano do núcleo aparece
+ * FORA do preto da massa — tinta de cabelo sem contorno, do lado de fora da peça.
+ *
+ * É o mesmo defeito de `contencaoDaClara` uma camada acima, e é invisível para
+ * todas as outras réguas pelo mesmo motivo: não invade rosto, não estoura
+ * orçamento, não muda contagem de formas nem o contrato de custom properties.
+ *
+ * **O gate é ≥ 0**, e zero é legítimo — o núcleo encostando na borda da massa é
+ * uma banda que afina até nada num ponto, o que a decimação produz e o olho não vê.
+ *
+ * `Infinity` pelos casos NOMEADOS: peça paramétrica, ou peça traçada sem núcleo
+ * (a que continua com o contorno sintetizado). Nenhum dos dois é vacuidade — sem
+ * núcleo não há o que vazar.
+ */
+export function contencaoDoNucleo(modelo: CabeloOuModelo): number {
+  const c = resolverCabelo(modelo);
+  if (!c.massa || !c.nucleo?.length) return Infinity;
+  const massa = [c.massa.map((p) => ponto(p, 0))];
+  let menor = Infinity;
+  for (const forma of c.nucleo) {
+    menor = Math.min(menor, menorDistanciaAoLaco(massa, forma.map((p) => ponto(p, 0))));
   }
   return menor;
 }

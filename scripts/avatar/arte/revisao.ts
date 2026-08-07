@@ -105,7 +105,7 @@ import {
   saidaDaArte,
   selo,
 } from "./base";
-import { converter, type Convertido } from "./converter";
+import { converter, type Convertido, type VarianteNucleo } from "./converter";
 import { ehTeal, mascaraDaPeca } from "./extrair";
 import { gateMenosUm } from "./gate-menos-um";
 import { type Img, carregar } from "./pixels";
@@ -441,6 +441,20 @@ function conferirLiteral(fresco: Cabelo, colado: Cabelo | undefined): string[] {
     q.push(`claras: ${fresco.claras?.length ?? 0} × ${colado.claras?.length ?? 0}`);
   if ((fresco.formas?.length ?? 0) !== (colado.formas?.length ?? 0))
     q.push(`formas: ${fresco.formas?.length ?? 0} × ${colado.formas?.length ?? 0}`);
+  // AS CAMADAS DA PEÇA TRANSCRITA — e sem elas aqui o controle 6 aprovaria literal
+  // velho pelos campos que não conhece, que é o buraco exato que ele existe para
+  // não ter. Comparadas laço a laço, não por contagem: mesmo número de formas com
+  // outras coordenadas é literal envelhecido do mesmo jeito.
+  for (const campo of ["nucleo", "pretas"] as const) {
+    const a = fresco[campo];
+    const b = colado[campo];
+    if ((a?.length ?? 0) !== (b?.length ?? 0)) {
+      q.push(`${campo}: ${a?.length ?? 0} forma(s) frescas × ${b?.length ?? 0} coladas`);
+      continue;
+    }
+    const ruim = (a ?? []).findIndex((f, i) => !mesmoLaco(f, b![i]));
+    if (ruim >= 0) q.push(`${campo}[${ruim}]: ${a![ruim].length} pontos frescos × ${b![ruim].length} colados`);
+  }
   return q;
 }
 
@@ -455,7 +469,17 @@ async function principal(): Promise<void> {
   const bruto = process.argv[2] ?? "entrada";
   const arte = bruto.endsWith(".png") ? bruto : `${PASTA}/${bruto}.png`;
   const nome = (arte.split(/[\\/]/).pop() ?? arte).replace(/\.png$/i, "");
-  const destino = `${saidaDaArte(arte)}/revisao`;
+  // A VARIANTE DE NÚCLEO FORÇADA — o que põe as duas folhas do Bloco 13 lado a
+  // lado. Sem a bandeira, quem manda é `TRANSCREVEM` e o que sai é o que o produto
+  // vê; com ela, o **destino muda junto**, senão a segunda folha escreveria por
+  // cima da primeira e a comparação compararia uma imagem com ela mesma — o
+  // defeito 5 que o Bloco 12 achou na seção 5 da outra folha.
+  const variante = process.argv
+    .find((a) => a.startsWith("--variante="))
+    ?.split("=")[1] as VarianteNucleo | undefined;
+  if (variante && variante !== "fiel" && variante !== "lei")
+    throw new Error(`--variante= aceita \`fiel\` ou \`lei\`, recebeu \`${variante}\``);
+  const destino = `${saidaDaArte(arte)}/revisao${variante ? `-${variante}` : ""}`;
   mkdirSync(destino, { recursive: true });
 
   // ------------------------------------------------- a tinta cai na janela?
@@ -485,7 +509,7 @@ async function principal(): Promise<void> {
 
   // ------------------------------------------------------------- as medidas
   const laudo = await gateMenosUm(arte);
-  const c: Convertido = await converter(arte);
+  const c: Convertido = await converter(arte, undefined, variante);
   const colada = (PECAS_DA_ARTE as Record<string, Cabelo | undefined>)[nome];
 
   console.log(
@@ -495,9 +519,18 @@ async function principal(): Promise<void> {
   );
 
   // ----------------------------------------------- CONTROLE 6, antes de tudo
-  const queixas = conferirLiteral(c.peca, colada);
+  //
+  // Com `--variante` forçada, a peça medida NÃO é a que está colada — é a outra
+  // metade da bancada de arte. Comparar as duas acusaria divergência correta e
+  // inútil, então o controle é **dispensado com o motivo dito**, e não silenciado.
+  const queixas = variante ? [] : conferirLiteral(c.peca, colada);
   console.log(`\n  ── controle 6 · o literal colado é o que o conversor produz hoje?`);
-  if (queixas.length) {
+  if (variante) {
+    console.log(
+      `     — dispensado: rodando a variante \`${variante}\` FORÇADA, que não é a colada.` +
+        ` A folha desta rodada é bancada de arte, não conferência de literal.`,
+    );
+  } else if (queixas.length) {
     console.log(`     ✗ DIVERGE — a folha recusa desenhar:`);
     for (const q of queixas) console.log(`       · ${q}`);
     console.log(
@@ -506,8 +539,9 @@ async function principal(): Promise<void> {
     );
     process.exitCode = 1;
     return;
+  } else {
+    console.log(`     · confere — ${c.peca.massa!.length} pontos de massa, ponto a ponto`);
   }
-  console.log(`     · confere — ${c.peca.massa!.length} pontos de massa, ponto a ponto`);
 
   const nav = await abrirNavegador();
   const doms = dominios();
@@ -878,6 +912,17 @@ async function principal(): Promise<void> {
     n: number;
     conv: Convertido;
     iou: number;
+    /**
+     * O IoU DO PRETO — a coluna que a transcrição do Bloco 13 tornou a que decide.
+     *
+     * Com o contorno sintetizado, N mexia só na forma: o stroke de 12 u saía do
+     * mesmo jeito em qualquer decimação. Com o preto TRANSCRITO ele é a diferença
+     * entre dois laços decimados, e a tolerância de `escolherN` (meio traço, 6 u)
+     * come a banda por fora — medido na `chanel`: déficit de 5 459 px de preto
+     * contra 5 131 px que a decimação da massa perde sozinha.
+     */
+    iouPreto: number;
+    razaoPreto: number;
     latP95: number;
     topP95: number;
     bytes: number;
@@ -886,7 +931,10 @@ async function principal(): Promise<void> {
   }
   const candidatos: Candidato[] = [];
   for (const n of pedidos) {
-    const cv = await converter(arte, n);
+    // A VARIANTE VIAJA JUNTO. Sem ela, a tabela de candidatos mediria sempre a
+    // variante do produto enquanto o resto da folha mede a forçada — régua que
+    // sobrevive à mudança do que ela mede e passa a medir outra coisa.
+    const cv = await converter(arte, n, variante);
     const arq = png(`cand-${n}`);
     const im = await renderNoCanvasDaArte(nav, `k${n}`, { ...forma, peca: cv.peca }, arq);
     const m = mascaras(im, rCareca1);
@@ -897,10 +945,13 @@ async function principal(): Promise<void> {
       ns: `k${n}`,
       escala: ESCALA_PADRAO,
     });
+    const tk = comparar(mArte.traco, m.traco, noVb);
     candidatos.push({
       n: cv.n.massa,
       conv: cv,
       iou: comparar(mArte.peca, m.peca, noVb).iou,
+      iouPreto: tk.iou,
+      razaoPreto: tk.nA ? tk.nB / tk.nA : 0,
       latP95: desvioLateral(mArte.peca, m.peca).p95,
       topP95: desvioDeTopo(mArte.peca, m.peca).p95,
       bytes: Buffer.byteLength(svg, "utf-8"),
@@ -910,11 +961,14 @@ async function principal(): Promise<void> {
   }
   if (candidatos.length) {
     console.log(`\n  ── os candidatos de N (experimento; \`escolherN\` não foi tocada)\n`);
-    console.log(`     N     desvio da corda   IoU vs arte   desvio lat. p95   topo p95    bytes   formas`);
+    console.log(
+      `     N     desvio da corda   IoU vs arte   IoU do preto   razão   lat. p95   topo p95    bytes   formas`,
+    );
     for (const k of candidatos) {
       console.log(
         `     ${String(k.n).padStart(3)}   ${u(k.conv.desvios.massa).padStart(13)}   ` +
-          `${pct(k.iou).padStart(11)}   ${u(k.latP95).padStart(15)}   ${u(k.topP95).padStart(8)}   ` +
+          `${pct(k.iou).padStart(11)}   ${pct(k.iouPreto).padStart(12)}   ` +
+          `${k.razaoPreto.toFixed(2).padStart(5)}×   ${u(k.latP95).padStart(8)}   ${u(k.topP95).padStart(8)}   ` +
           `${String(k.bytes).padStart(6)}   ${String(k.formas).padStart(6)}`,
       );
     }

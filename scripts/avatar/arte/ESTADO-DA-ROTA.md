@@ -1222,6 +1222,14 @@ fidelidade; `escolherN` não foi tocada.
 | 4 | **`curto`, `cacheado` e `tranca` saem do catálogo** | ⚠ ver o risco abaixo |
 | 5 | **Espetado APROVADO** (Bloco 9) | primeira peça de arte real aprovada da rota |
 
+> ⚠️ **AS DECISÕES 2 E 4 FORAM REVOGADAS em 2026-08-07**, depois da aprovação do
+> chanel: *"não deletar nenhum, na verdade, do catálogo atual."* Ninguém sai — nem
+> as artes, nem os cinco paramétricos. A `entrada-2` (Assimétrico) **será arrumada**
+> pelo Doug, não apagada: ele edita a arte de novo sobre a base oficial e ela passa
+> pela mesma esteira (Gate −1 → revisão → folha → aprovação visual). Com isso o
+> risco da decisão 4 (o `curto` como controle de régua e valor de banco) deixa de
+> precisar de resposta. As linhas acima ficam como história.
+
 ### ⚠ O RISCO DA DECISÃO 4, e ele precisa de resposta antes de executar
 
 `CABELOS.curto` **não é só um cabelo do catálogo — é o controle aprovado de que a
@@ -1788,20 +1796,421 @@ mechas some. A ponta da direita é sempre a mais frágil.
 
 ---
 
-# O QUE VEM AGORA — o plano do Bloco 13 já está escrito
+## BLOCO 13 — o preto passa a ser TRANSCRITO, e a franja perde o encobrimento (2026-08-07)
 
-> **TRANSCREVER O PRETO DA ARTE, em vez de sintetizá-lo.** O plano de execução mora
-> **fora do repositório**, em:
->
-> ```
-> C:\Users\Lenovo\.claude\plans\gostei-desta-solu-o-isso-tranquil-kahan.md
-> ```
->
-> Ele nasceu do item 15 abaixo, foi criticado por um Plan agent e por revisão externa
-> em duas rodadas, e as duas rodadas acharam defeito real: um critério de camada que
-> se anulava (`componentes` antes do recorte) e **um teto inventado por mim**
-> (`perdido ≤ 1,5 × inventado`) que reprovava a própria evidência. Os dois estão
-> corrigidos e registrados lá, na seção *"O que a revisão externa corrigiu"*.
+**Passos 1 a 6 do plano executados. A PARADA da folha foi alcançada** —
+`docs`/`CABELOS` intocados, nada commitado.
+
+### O que mudou, em uma frase
+
+O contorno preto da peça deixou de ser um `stroke` de 12 u **centrado** no laço da
+massa e passou a ser a **diferença entre duas formas cheias**: a massa preenchida
+com `--av-linha` (camada 1) e o **núcleo** de ciano por cima (camada 2), com a
+clara (3) e as **pretas internas** (4) depois. Sem `evenodd`, sem região com furo,
+sem tocar em `bordaOrdenada`.
+
+Dois campos opcionais em `Cabelo` — `nucleo` e `pretas` — e um ramo em
+`pecaSobreposta`. `.kk-tinta` já saía em todo SVG, inclusive na careca: **zero
+regra nova, zero propriedade nova**, e `.kk-cabelo-l` some sozinha porque `temArco`
+já gateia a regra por `linhas` existir.
+
+### PASSO 1 — a régua da espessura, e ela SALVA a variante fiel
+
+`espessuraDoTraco` (`converter.ts`) é `sondarTraco` devolvendo o comprimento da
+corrida de `papeis === 4` na normal, com o **dobro** do alcance para não saturar.
+Percentis sobre os pontos com traço; `fracaoFina` é a fração deles abaixo de 8 u
+(= 0,64 px a 56, logo abaixo da sobrancelha inteira, 0,66 px).
+
+| arte | p05 | p50 | p95 | < 8 u | saturada | com traço |
+|---|---|---|---|---|---|---|
+| `entrada` | 3,8 u / 0,30 px | 6,3 u / 0,50 px | 12,9 u / 1,03 px | **79,8%** | 12,7% | 100,0% |
+| `entrada-2` | 4,6 u / 0,37 px | 8,3 u / 0,67 px | 10,4 u / 0,83 px | 46,2% | 1,4% | 97,9% |
+| `entrada-3` | 7,1 u / 0,57 px | 9,2 u / 0,73 px | 10,8 u / 0,87 px | 17,0% | 1,0% | 100,0% |
+| **`chanel`** | **8,3 u / 0,67 px** | **9,6 u / 0,77 px** | **12,1 u / 0,97 px** | **2,3%** | 4,4% | 100,0% |
+
+**A `chanel` tem banda legível** — p50 de 0,77 px contra 0,66 px da sobrancelha, e
+só 2,3% do perímetro abaixo do corte. A variante fiel sobrevive ao Passo 1. O
+**espetado não sobreviveria** (79,8% abaixo de 8 u), e ele está congelado por
+decisão do Doug de qualquer forma.
+
+`medirCoroa` nas quatro, a mesma régua no render: faixa no eixo 1,0 / 0,0 / 11,0 /
+**12,0 u**, contra 11,0 u da careca (o piso). A banda do render da `chanel` era
+**12,0 u contra 9,6 u da arte** — a razão de área de 1,21× vista de outro ângulo.
+
+### ⚠️ O PLANO ESCREVEU UMA FÓRMULA QUE CONTRADIZ A PRÓPRIA TABELA DELE
+
+A variante `lei` estava escrita como `distanciaDe(¬mascara) > TRACO/2`. Isso entrega
+banda de **6 u**, e a tabela do mesmo plano declara **12 u, iguais às do crânio** —
+e a previsão de IoU dele (~83%) também só fecha com 12. A geometria decide: o
+contorno do crânio tem 12 u **centradas** na fronteira, metade fora e metade dentro;
+a silhueta da PEÇA é a beira **externa** do preto dela, então o preto tem de descer
+12 u para dentro dali. **Erodido por `TRACO` inteiro.**
+
+O número da fórmula errada, preservado: com 6 u a contenção do núcleo à massa caía a
+**0,25 u** (os dois laços quase cruzavam) e a camada 4 recuperava **7 800 px** — que
+era a banda da própria artista sendo redesenhada por dentro, não traço interno.
+
+### PASSO 2 — o GATE que decidia se o plano seguia, e ele passou
+
+A camada 1 depende de `Cabelo.massa` ser a **borda externa** e não a linha de centro
+do preto (as duas rotas do repositório definem `massa` de formas opostas). O teste
+discriminante não tem nenhum número escolhido: se fosse linha de centro, `perdido`
+seria ≈ metade da área do papel `traco`.
+
+| | previsto | medido |
+|---|---|---|
+| hipótese **linha de centro** | `perdido ≈ 14 231 px` | — |
+| hipótese **borda externa** | escala da decimação | **5 131 px** |
+
+**Margem 2,77×.** `massa` é a borda externa. O plano seguiu.
+
+### PASSOS 2 e 3 — o núcleo e as pretas internas, medidos na `chanel`
+
+| variante | N | comps | contenção | vazando | cruzam. | furos | camada 4 (ordem CERTA × INVERTIDA) |
+|---|---|---|---|---|---|---|---|
+| **fiel** | 32 | 2 | **3,47 u** | **0** | **0** | 16 u² | 4 formas · **866 px** × **0 px** |
+| **lei** | 40 | 1 | **7,13 u** | **0** | **0** | 16 u² | 2 formas · **837 px** × **0 px** |
+
+Tetos de `vazando` e `cruzamentos` são 0, e os dois são 0. O núcleo fiel é
+**multi-componente por construção** (2), como o plano previu.
+
+**A ordem do Passo 3 é o passo inteiro, e o número ao lado prova.** Recortar antes
+de componentizar recupera **866 px** de preto interno; componentizar antes e filtrar
+depois recupera **0 px** — o preto da arte da `chanel` é uma componente conexa só, e
+o critério ingênuo a reprova inteira. O número errado fica impresso ao lado do certo.
+
+### PASSO 4 — o tipo e o compositor, com a INÉRCIA MEDIDA
+
+Ao fim do passo, com os campos existindo e **ninguém emitindo**:
+
+| selo | resultado |
+|---|---|
+| `npm test` | **441 passando**, com os 11 pares bytes+SHA e o `__careca` parados |
+| `npm run avatar:folha-base` | **19 formas / 7 468 bytes**, `conferirSvg` 0 |
+| `pecas-da-arte.ts` | **`git diff` vazio** — byte a byte |
+| `npm run typecheck` | limpo, os dois tsconfig |
+
+### PASSO 5 — as duas réguas novas, e as duas REPROVAM a peça de hoje
+
+- **`contencaoDoNucleo`** (nova): sem stroke não há mais os ±6 u de folga que
+  pagavam a tolerância de `escolherN`.
+- **`contencaoDaClara` passou a medir contra o NÚCLEO.** Contra a massa ela vira
+  aprovação por vacuidade: a massa agora é a silhueta inteira **incluindo a banda
+  preta**, e uma clara pintando por cima do contorno passaria.
+
+`src/lib/avatar/estilo/__tests__/nucleo-cabelo.test.ts`, **14 asserções**, cada
+régua com o controle negativo ao lado (núcleo furando a massa reprova; clara que
+cabe na massa e sai do núcleo reprova, **e a mesma clara sem `nucleo` passa** — é a
+prova de que a régua antiga aprovava). `npm test`: **441 → 455**.
+
+Medido nas peças de verdade:
+
+| peça | `contencaoDoNucleo` | `contencaoDaClara` |
+|---|---|---|
+| `entrada` / `-2` / `-3` (congeladas) | Infinity (caso nomeado) | 5,49 / 1,11 / 6,23 u |
+| **`chanel` fiel** | 3,60 u · | **−3,32 u ✗** |
+| **`chanel` lei** | 7,13 u · | **−12,94 u ✗** |
+
+**A clara vaza para cima da banda preta**, e na variante `lei` ela vaza 12,94 u —
+mais que a banda inteira. É defeito real, achado por régua e não por olho.
+
+### PASSO 6 — a `chanel` transcrita, e só ela
+
+`TRANSCREVEM = { chanel: "fiel" }` mora em `converter.ts` e **não** no gerador,
+porque três programas precisam da mesma resposta: `arte:pecas` gera, o **controle
+6** de `arte:revisao` confere e `arte:folha` desenha. Com a lista no gerador, o
+controle compararia literal transcrito com conversão sintetizada e acusaria
+divergência para sempre. `conferirLiteral` conhece os dois campos novos, laço a
+laço — sem isso ele aprovaria literal velho pelos campos que não conhece.
+
+**Asserção negativa cumprida:** o `git diff` de `pecas-da-arte.ts` é **uma hunk
+só**, dentro do bloco `chanel` — sai `linhas: [[0,0]]`, entram `nucleo` (2 formas /
+32 pts) e `pretas` (4 formas). `entrada`, `entrada-2` e `entrada-3` **byte a byte
+idênticas**, e a `massa` da própria `chanel` também: só a camada de tinta mudou.
+
+### A BANCADA DE ARTE — as duas variantes, medidas
+
+`npm run arte:revisao -- chanel [--variante=lei] [--candidatos=N,...]`. O destino
+muda junto com a variante, senão a segunda folha escreveria por cima da primeira —
+o defeito 5 que o Bloco 12 achou na seção 5 da outra folha.
+
+| N da massa **e** do núcleo | IoU da forma | **IoU do preto** | **razão de área** | bytes |
+|---|---|---|---|---|
+| hoje, sintetizado | 89,4% | **34,4%** | **1,21×** | 10 335 |
+| **fiel**, 28 (o de hoje) | 96,2% | **68,8%** | 0,81× | 11 638 |
+| fiel, 48 | 97,3% | 72,5% | 0,83× | 12 368 |
+| fiel, 64 | 98,3% | **76,5%** | 0,87× | 12 926 |
+| **lei**, 28 | 96,1% | **66,1%** | **0,98×** | 11 267 |
+| lei, 48 | 97,2% | 69,3% | **1,01×** | 11 997 |
+| lei, 64 | 98,1% | 72,9% | 1,05× | 12 555 |
+
+**Os dois alvos do plano: um cumprido, um não.** A razão de área (alvo 1,00 ± 0,05)
+é cumprida pela `lei` em todo N. O IoU do preto (alvo ≥ 80%) **não é alcançado por
+nenhuma das duas** — o melhor é 76,5%.
+
+⚠️ **O alvo de 80% era número escolhido, não medido** — o mesmo defeito que este
+plano corrigiu duas vezes em si mesmo. IoU de um anel fino é dominado por registro
+sub-pixel: para dois anéis de largura `w` deslocados de `d`, `IoU ≈ (w−d)/(w+d)`, e
+80% exige `d ≤ w/9` — **1,4 px numa banda de 12,6 px**. Fica registrado como
+diagnóstico, não como teto.
+
+**Um erro de bancada, achado e consertado no bloco:** a tabela de candidatos de N
+chamava `converter(arte, n)` sem a variante, então media sempre a do produto
+enquanto o resto da folha media a forçada. É a quinta vez que esta rota vê régua
+que sobrevive à mudança do que ela mede. E o `nForcado` passou a valer para os
+**dois** laços: a banda é a diferença entre eles, e afinar um lado só mede a
+discordância, não a banda.
+
+### A FOLHA, lida por subagente — e o defeito que os números não mostravam
+
+**A barra preta da franja não aparece em NENHUMA das duas variantes.** A arte tem
+uma barra de 328 × 13 px em x 401–729, y 267–279 (3 198 px); nos dois renders não há
+um pixel de preto entre x 435 e 700.
+
+**A causa está medida, e ela NÃO é a transcrição.** Perfil de coluna, arte × render:
+
+| coluna | arte (ciano \| preto) | render fiel | render lei |
+|---|---|---|---|
+| x=430 | y200-267 \| **y268-279** | y200-261 \| y262-268 | y200-262 \| y263-268 |
+| x=550 | y200-267 \| **y268-278** | y200-269 \| **(nada)** | y200-269 \| **(nada)** |
+| x=620 | y200-266 \| **y267-278** | y200-272 \| **(nada)** | y200-272 \| **(nada)** |
+
+A peça do render **acaba em y 269–272**; a da arte acaba em **y 279**. É o item 16
+desta lista, medido no Bloco 12 com outras palavras: *"a arte tem base nivelada
+(y=278 constante em 57 colunas), o render tem rampa de 263 a 273"*. Os números
+batem.
+
+**O `stroke` de 12 u centrado ENCOBRIA isso.** Centrado numa borda em y ≈ 269, ele
+pintava preto de y 263 a 275 — bem onde a arte tem a barra. A transcrição não criou
+o defeito da franja: **ela tirou o encobrimento**. O deslocamento de 6 u que o plano
+mediu como defeito era, na franja, o que fazia a peça parecer certa.
+
+Prova de que a forma não se moveu: o literal da `massa` da `chanel` é **byte a byte
+o mesmo** antes e depois — só a camada de tinta mudou.
+
+Forçar N nos dois laços recupera a barra em parte e não fecha: a 64, ela volta com
+11 px em x=430, 10 em x=480, 5 em x=550 e **continua ausente em x=620**.
+
+### O resto da leitura, em números
+
+| | fiel | lei |
+|---|---|---|
+| massa de preto contra a arte (28 461 px) | 23 010 px (**80,8%**) | 27 997 px (**98,4%**) |
+| mediana da espessura (arte 11,7 px) | **10,0 px** | 12,6 px |
+| lateral direita, onde a artista desenhou leve (8–11 px) | 10 px — preserva | **13–16 px — achata** |
+| buracos fechados (arte tem 2) | 1 | **0** — o laço da mecha direita abre em (683,544), vão de 13 px |
+| rim externo a 56 px | meia-tinta em **6 de ~26 linhas** | preto cheio em todas |
+| barra atravessando a coroa | **não** | **não** |
+| ciano fora da silhueta | **0 px** | **0 px** |
+| diferença entre as duas a 56 px | **107 de 2 240 px (4,8%)**, tudo acima da linha 18 | idem |
+
+**A leitura recomenda a `fiel`**, por razão visual: ela preserva a modulação de peso
+da artista (lateral direita mais leve que a esquerda), e a `lei` achata as duas em
+13–16 px, devolvendo justamente a aparência de espessura fixa que a transcrição veio
+matar — além de abrir um buraco novo no cachinho da direita.
+
+### Verificação
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm test` | **455 passando**, 25 arquivos (441 + as 14 do núcleo) |
+| `npm run lint` | 1 warning **anterior** em `GameReview.tsx:285` |
+| `npm run avatar:folha-base` | **19 formas · 7 468 bytes**, `conferirSvg` 0 |
+| `npm run verify:arte` | **21 de 21**, cor proibida PASSA, hash da base CONFERE |
+| `npm run verify:pose` | perfil, marcos e as 4 fixtures reprovando |
+| Gate −1 nas 6 fixtures | **REPROVA·REPROVA·REPROVA·REPROVA·APROVA·REPROVA** |
+| `arte:revisao -- chanel` | **os 6 controles verdes**, controle 3 67,4% < 96,2% |
+| `arte:revisao -- entrada` | controle 6 confere, 64 pontos — a congelada não se moveu |
+
+### ⛔ A PARADA — e o que o Doug decidiu nela (2026-08-07)
+
+Ele olhou `/dev/avatar-kokeshi` e **aprovou a variante `fiel`**, com um pedido: a
+barra preta da franja. As três pendências da parada viraram o BLOCO 14.
+
+---
+
+## BLOCO 14 — a régua media a corda, o desenho era a spline (2026-08-07)
+
+**Pedido do Doug, olhando o site:** *"o resultado ficou muito bom! só faltou mesmo a
+barra preta da franja."* E depois, com a franja consertada: **APROVADO.**
+
+### A CAUSA, e ela é anterior a todo o Bloco 13
+
+`escolherN` (`tracar-cabelo.ts:2216`) varre N pelo `desvioDaCorda`, que mede a
+**poligonal**. O compositor desenha `spline(pts, true)` (`cabelo.ts`, via `lacoTY`),
+uma Catmull-Rom centrípeta. **A régua mede uma curva e o desenho é outra.**
+
+O teste que separa as duas — os **MESMOS 29 pontos** da `chanel`, ligados de dois
+jeitos:
+
+| coluna | arte | corda (`L`) | spline (`C`) | spline − arte |
+|---|---|---|---|---|
+| x=480 | 278 | **278** | 255 | **−23 px** |
+| x=550 | 278 | **278** | 250 | **−28 px** |
+| x=620 | 278 | **278** | 253 | **−25 px** |
+
+**A reta é o pior caso desta régua, e é onde ela é mais confiante.** A base da franja
+é uma **reta de 246 u entre os vértices 12 e 13**; numa reta a corda erra exatamente
+zero, então a decimação não gasta um único ponto ali — e as tangentes dos vizinhos
+(o 11 a 72 u abaixo, o 14 a 123 u abaixo) arqueiam a curva 23 u para cima.
+
+**Por que ninguém viu antes:** o contorno era um `stroke` de 12 u **centrado** no
+laço. Ele pintava preto dos dois lados da curva errada e a peça parecia certa.
+Transcrever o preto não criou o defeito — **tirou o encobrimento**. Prova: o literal
+da `massa` era byte a byte o mesmo antes e depois da transcrição.
+
+### O CONSERTO — `refinarPelaSpline`, e ele não move nenhum ponto
+
+- `geometria.ts`: `spline()` virou a **forma-texto** de `arcosDaSpline()`, que
+  devolve os mesmos controles de Bézier antes de virarem string. `amostrarSpline()`
+  amostra dali. **Zero segunda descrição da curva** — e o `d` emitido é byte a byte
+  o de antes, provado pelos **11 pares bytes+SHA** de `parametrico-congelado.ts`.
+- `tracar-cabelo.ts`: `desvioDaSpline()` (o irmão honesto de `desvioDaCorda`) e
+  `refinarPelaSpline()`, que **insere pontos da borda densa** onde a curva mais se
+  afasta dela, até o desvio cair abaixo de meio traço. Guloso, converge por
+  construção, e `bateuNoTeto` diz alto quando não bastou.
+
+**Inserir, e não mover**, é o ponto: cada ponto novo é um pixel da `bordaOrdenada`.
+A garantia de que todo ponto do literal é um ponto medido continua de pé.
+
+**Escopado a quem transcreve.** `refinar = Boolean(variante)` em `converter()` — a
+mesma chave `TRANSCREVEM` que já decidia a transcrição. As três peças do Bloco 9
+seguem pelo caminho de sempre, e o `git diff` de `pecas-da-arte.ts` prova: `entrada`,
+`entrada-2` e `entrada-3` **idênticas byte a byte**.
+
+### E A CLARA, que a régua nova do Passo 5 tinha reprovado
+
+Em pixel a clara **já estava** dentro do núcleo por construção (`papeis ∈ {1,3}`
+contra `papeis ≠ 4`; a diferença é a faixa de `sombra`, 2–3 px). O que vazava era a
+decimação: dois laços refinados cada um contra a sua borda, com alvo de meio traço,
+cruzando sobre uma folga de 3 px.
+
+Conserto por função que já existia, com teste que já existia: **`conterAClara`**,
+contra a componente do núcleo que mais contém a clara — não a maior, porque numa
+peça com mecha destacada a maior pode não ser a de baixo dela.
+
+### OS NÚMEROS
+
+| | Bloco 13 | **Bloco 14** | alvo |
+|---|---|---|---|
+| desvio da SPLINE da massa | **22,7 u** | **3,3 u** (+3 pontos) | 6 u · |
+| **IoU do preto** | 68,8% | **80,1%** | ≥ 80% · |
+| razão de área do preto | 0,81× | **0,91×** | 1,00 ± 0,05 |
+| IoU da forma | 96,2% | **98,2%** | — |
+| "só na arte" | 4 845 px | **1 940 px** | — |
+| `contencaoDoNucleo` | 3,47 u | 3,47 u | ≥ 0 · |
+| `contencaoDaClara` | **−3,32 u ✗** | **+0,26 u** | ≥ 0 · |
+| bytes do composto | 11 638 | 11 901 | registrado, não veta |
+
+**A banda preta da franja, coluna a coluna** — é o número que o Doug pediu:
+
+| coluna | banda da ARTE | banda do RENDER |
+|---|---|---|
+| x=430 | 12 px | **12 px** |
+| x=480 | 11 px | **11 px** |
+| x=550 | 11 px | **11 px** |
+| x=620 | 12 px | **12 px** |
+| x=700 | 12 px | 14 px |
+
+⚠️ **Uma correção ao que o Bloco 13 escreveu:** eu tinha rebaixado o alvo de IoU
+≥ 80% a diagnóstico, chamando-o de número escolhido. O argumento geométrico continua
+válido (IoU de anel fino é dominado por registro sub-pixel), mas a conclusão prática
+estava errada — **com a curva desenhada medida, o alvo é alcançado: 80,1%.** O que
+faltava não era teto folgado, era régua certa.
+
+### Verificação
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm test` | **463 passando**, 26 arquivos (455 + as 8 do refino) |
+| `npm run lint` | 1 warning **anterior** em `GameReview.tsx:285` |
+| `npm run avatar:folha-base` | **19 formas · 7 468 bytes**, `conferirSvg` 0 |
+| `npm run verify:arte` | **21 de 21**, cor proibida PASSA, hash da base CONFERE |
+| `npm run verify:pose` | perfil, marcos e as 4 fixtures reprovando |
+| Gate −1 nas 6 fixtures | **REPROVA·REPROVA·REPROVA·REPROVA·APROVA·REPROVA** |
+| `arte:revisao -- chanel` | **os 6 controles verdes**, controle 3 67,4% < 98,2% |
+| `arte:revisao -- entrada` | controle 6 confere, 64 pontos — a congelada não se moveu |
+
+### O QUE FICA ABERTO DEPOIS DA APROVAÇÃO
+
+1. **As três peças congeladas ainda usam a régua da corda.** Consertar move os
+   literais delas e invalida a aprovação do espetado no Bloco 9. É decisão do Doug,
+   e o custo é uma re-aprovação visual.
+2. **Os Passos 7 (matar o sintetizado) e 8 (a luz)** continuam não iniciados. O 7
+   segue bloqueado por construção até as quatro transcreverem.
+3. **Os bytes seguem acima do teto** (11 901 contra 10 240), registrados e não
+   vetando pela decisão A.
+
+---
+
+# O QUE VEM AGORA — depois da APROVAÇÃO DUPLA (2026-08-07)
+
+> O plano do Bloco 13 (transcrever o preto) **foi executado** — Blocos 13 e 14
+> acima — e o Doug aprovou o resultado olhando `/dev/avatar-kokeshi`. **Duas peças
+> aprovadas: o espetado (Bloco 9) e o chanel (Bloco 14).** A decisão 1 de
+> 2026-08-06 — *"a rota é o pipeline permanente, vira guia/skill"* — agora tem a
+> segunda prova que faltava e passa a ser executável.
+
+## As respostas às perguntas do Doug em 2026-08-07, antes do `/clear`
+
+**As duas peças aprovadas NÃO saíram do mesmo caminho inteiro.** A rota de medição
+é uma só (base oficial → edição no Gemini → Gate −1 → extração → contorno →
+conversão); a **emissão** é que difere, e a chave é `TRANSCREVEM` em
+`converter.ts`:
+
+| | espetado (`entrada`) | chanel (`chanel`) |
+|---|---|---|
+| contorno | **sintetizado** — stroke de 12 u sobre o laço (`Cabelo.linhas`) | **transcrito** — 4 camadas (`nucleo` + `pretas`) |
+| decimação | régua da **corda** (`escolherN`) | corda + **refino pela spline** |
+| clara | direto da máscara | contida no núcleo (`conterAClara`) |
+| aprovado | Bloco 9, congelado por decisão C | Bloco 14, variante `fiel` |
+
+**A família transcrita é a melhor das duas, por medição:** IoU do preto 34,4% →
+80,1%, traço interno impossível → 866 px, e a sintetizada **esconde** defeito sob
+o stroke — a franja torta atravessou três blocos invisível por causa dele. O
+espetado só não transcreve porque a banda preta da arte dele é fina demais para a
+variante `fiel` (p50 6,3 u; **79,8% do perímetro abaixo de 8 u** — Passo 1 do
+Bloco 13); transcrevê-lo um dia = variante `lei` + nova aprovação visual.
+
+**Os erros já viraram mecanismo** — é o método da rota: cada régua nova entrou com
+controle negativo (`nucleo-cabelo.test.ts`, `refino-spline.test.ts`), e o número
+errado fica impresso ao lado do certo (ordem invertida da camada 4, fórmula
+`TRACO/2`, corda × spline).
+
+**Limpar ou congelar o antigo:** congelar agora, limpar em rodada própria. O
+Passo 7 (a morte do sintetizado) segue **bloqueado por construção** enquanto
+qualquer peça usar `Cabelo.linhas` — e três usam. `tracar-cabelo.ts` é biblioteca
+compartilhada (o refino mora lá): não é "pipeline velho", não apagar.
+
+## A sequência recomendada (o plano nasce em plan mode)
+
+> **Atualizada em 2026-08-07, segunda mensagem do Doug:** as decisões 2 e 4 de
+> 06/08 foram revogadas — **ninguém é apagado**, nem arte, nem paramétrico. A
+> `entrada-2` (Assimétrico) será **arrumada** por ele. E a recomendação dada e
+> registrada: **a emissão transcrita é o pipeline permanente para arte nova**, com
+> a régua da espessura (Passo 1 do Bloco 13) decidindo a variante — banda legível
+> → `fiel`; banda fina → redesenhar a arte com contorno de 12 u (o pedido ao
+> Gemini já exige; o chanel obedeceu e é por isso que a `fiel` funcionou nele) ou
+> entrar pela `lei`. O sintetizado fica como família legada congelada.
+
+1. **Commitar os Blocos 13–14** — nada está commitado, e dois testes novos estão
+   fora do índice.
+2. **Institucionalizar o pipeline** (decisão 1 de 2026-08-06): promover o processo
+   a doc/runbook, e **atualizar a skill `avatar-importar-arte`, que hoje descreve a
+   rota VELHA** (fonte semântica SVG do gerador externo) — do jeito que está, ela
+   ensina o caminho morto.
+3. **Arrumar a `entrada-2`** (Doug edita a arte; a esteira já existe): quando a
+   nova versão aprovar, ela entra em `TRANSCREVEM` como as próximas. Nada é
+   apagado — a `entrada-3` continua como isca do controle 3.
+4. **Colar os aprovados em `CABELOS`** — item 3 da lista aberta; custa os 11
+   selos, as amarras de `cabelo.test.ts` e o orçamento (bytes estouram: decisão A
+   já cobre). É o passo que põe as peças no produto.
+5. **Rodada de unificação** (quando quiser, e agora SEM apagar ninguém): espetado
+   re-emitido pela variante `lei` + nova aprovação visual → só quando todas as
+   peças traçadas transcreverem o Passo 7 (matar o sintetizado) desbloqueia.
+6. **A luz (Passo 8)** — decisão B: entra por último.
 
 ## AS TRÊS DECISÕES DO DOUG — 2026-08-06, e elas mandam no plano
 
@@ -1829,9 +2238,13 @@ mechas some. A ponta da direita é sempre a mais frágil.
 | ~~10~~ | ~~**O chanel novo foi MEDIDO e NÃO aprovado** (Bloco 10)~~ — **a rodada 2 rodou (Bloco 11).** Cinco dos seis defeitos de desenho caíram; o sexto (cabelo sobre a roupa) não se moveu, e o Doug decidiu que **ele fica** — ver item 12. Sobram três defeitos NOVOS de rota (slivers de fundo, rebordo de sombra, traço interno descartado) e a franja alta | parcial |
 | ~~12~~ | ~~**A MECHA SOBRE O TRONCO FICA**~~ — **feito no Bloco 12.** O tronco saiu da extração; descartado 4 776 → **21 px**, borda amputada 7,2% → **0,0%**, perímetro de preto 95,2% → **100,0%**. As pontas voltaram inteiras e o entalhe caiu de 42 px para 7–8 | fechado |
 | ~~14~~ | ~~**O ESPETADO FOI APROVADO CONTRA UMA PEÇA QUE NÃO EXISTE MAIS**~~ — **decidido: CONGELAR** (decisão C acima). O espetado não passa pelo caminho novo e a aprovação do Bloco 9 vale para o literal de hoje (3 806 bytes, com a mecha recuperada). O preço é duas famílias de peça traçada convivendo | fechado |
-| 15 | **A TINTA NÃO É TRANSCRITA — e são três defeitos que viraram um.** A forma vai bem (IoU 89,4%, contorno 100%); a tinta não vai. **Luz:** arte 6,17% em 3 manchas, render **55 px de serrilha**. **Sombra:** a arte tem 3 massas medidas, o render devolve sombreamento **sistêmico** do compositor abraçando o traço — não é a sombra da arte. **Traço interno:** descartado por construção — `Cabelo.linhas` são arcos DO LAÇO DA MASSA, e traço que corre por dentro da peça não tem onde morar no tipo. **PLANO ESCRITO** — ver o bloco no topo desta seção. **Duas correções ao que eu havia dito:** o anel **não** custa o dobro dos pontos (a borda externa já é o laço da massa, e o stroke de hoje já re-emite o laço inteiro — fica ~neutro, equilíbrio em N′ ≈ 30 a ~34 bytes por comando `C`); e o furo **não some, muda de lado** — passa a ser do ciano, e ali é barato | em execução |
-| 16 | **A franja é 96,3% de todo o déficit** (2 301 de 2 390 px), e no render ela está **torta**: a arte tem base nivelada (y=278 constante em 57 colunas), o render tem rampa de 10 px. Testa nua 10 px constantes → 15–25 px | eu |
+| 15 | **A TINTA NÃO É TRANSCRITA — e são três defeitos que viraram um.** A forma vai bem (IoU 89,4%, contorno 100%); a tinta não vai. **Luz:** arte 6,17% em 3 manchas, render **55 px de serrilha**. **Sombra:** a arte tem 3 massas medidas, o render devolve sombreamento **sistêmico** do compositor abraçando o traço — não é a sombra da arte. **Traço interno:** descartado por construção — `Cabelo.linhas` são arcos DO LAÇO DA MASSA, e traço que corre por dentro da peça não tem onde morar no tipo. **PLANO ESCRITO** — ver o bloco no topo desta seção. **Duas correções ao que eu havia dito:** o anel **não** custa o dobro dos pontos (a borda externa já é o laço da massa, e o stroke de hoje já re-emite o laço inteiro — fica ~neutro, equilíbrio em N′ ≈ 30 a ~34 bytes por comando `C`); e o furo **não some, muda de lado** — passa a ser do ciano, e ali é barato. **FEITO no Bloco 13, Passos 1–6:** o traço interno voltou (866 px em 4 formas, contra 0 px da ordem invertida), o preto passou de IoU 34,4% / 1,21× para **68,8% / 0,81×** (fiel) ou **66,1% / 0,98×** (lei). **A luz (Passo 8) NÃO entrou** — fica depois da parada, e o item 9 continua aberto | parcial |
+| 16 | **A franja é 96,3% de todo o déficit** (2 301 de 2 390 px), e no render ela está **torta**: a arte tem base nivelada (y=278 constante em 57 colunas), o render tem rampa de 10 px. Testa nua 10 px constantes → 15–25 px. **O Bloco 13 subiu MUITO o preço disto:** enquanto o contorno era um `stroke` de 12 u centrado, ele pintava preto de y 263 a 275 e **encobria** a franja curta; com o preto transcrito, a barra preta da franja da arte (328 × 13 px) **simplesmente não aparece** em nenhuma das duas variantes. É o item que reprova as duas antes de qualquer escolha entre elas. **FECHADO no Bloco 14:** a causa era `escolherN` medir a corda enquanto o compositor desenha spline — numa reta a corda erra zero e a decimação não põe ponto. `refinarPelaSpline` levou o desvio de 22,7 u a 3,3 u e a banda da franja bate com a da arte coluna a coluna | fechado |
+| ~~19~~ | ~~**A CLARA VAZA PARA CIMA DA BANDA PRETA**~~ — **FECHADO no Bloco 14.** Em pixel ela já estava dentro; vazava por decimação. `conterAClara` contra a componente do núcleo que mais a contém: **−3,32 u → +0,26 u** | fechado |
+| ~~20~~ | ~~**A escolha entre `fiel` e `lei`**~~ — **decidido: `fiel`**, pelo Doug, olhando `/dev/avatar-kokeshi` em 2026-08-07. Ela preserva a modulação de peso da artista; a `lei` achata as duas laterais em 13–16 px e devolve a aparência de espessura fixa que a transcrição veio matar | fechado |
+| ~~21~~ | ~~**O alvo de IoU do preto ≥ 80% era número escolhido**~~ — **eu estava errado na conclusão prática.** O argumento geométrico vale (IoU de anel fino é dominado por registro sub-pixel), mas com a curva desenhada medida o alvo é alcançado: **80,1%**. O que faltava era régua certa, não teto folgado | fechado |
+| 22 | **As três peças congeladas ainda decimam pela régua da CORDA**, que o Bloco 14 provou medir a curva errada. Consertar move os literais delas e invalida a aprovação do espetado no Bloco 9 — o custo é uma re-aprovação visual | Doug |
 | 17 | **A seção 5 da folha compara uma imagem com ela mesma.** `.r-crua-1.png` = `.r-peca.png` = `.r-gemeo.png` (md5 `fcc556da…`) e `.r-crua-92.png` = `.r-peca-92.png`. A escada de escala não prova nada sobre compressão hoje | eu |
 | 18 | **O controle `[curto]` é piso baixo demais**: a 56 px ele tem silhueta **idêntica ao careca** nas 56 linhas — é touca pintada. Como referência de "o que passa", não separa nada | eu |
 | 13 | **O pedido mandava dobrar pela linha do nariz, e ela não é o eixo** (Bloco 11). `GIRO.eixoCabeca + GIRO.desvioOlhos = 40 u`, e o desvio medido é 40,3 px — aparece no controle 2, a careca sem peça. Emenda pronta para a rodada 3: trocar por "o eixo de simetria do próprio cabelo". **Se o giro ler como cabeça torta a 56 px, o item a rever é o `GIRO`** | Doug |
-| 11 | **`pecas-da-arte.ts` tem 4 peças, e a decisão 2 mandou apagar duas.** `entrada-2` e `entrada-3` continuam lá ao lado do `chanel`. Apagar exige conferir antes se alguma sustenta controle — a `entrada-3` é hoje a isca do controle 3 de `arte:revisao` | Doug |
+| ~~11~~ | ~~**`pecas-da-arte.ts` tem 4 peças, e a decisão 2 mandou apagar duas.**~~ — **REVOGADO em 2026-08-07: ninguém é apagado.** A `entrada-2` será arrumada pelo Doug (nova edição da arte, mesma esteira); a `entrada-3` fica, inclusive como isca do controle 3 | fechado |

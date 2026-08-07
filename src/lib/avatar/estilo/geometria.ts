@@ -815,13 +815,48 @@ export function spline(
   de = 0,
   ate = fechada ? pts.length : pts.length - 1,
 ): string {
+  return arcosDaSpline(pts, fechada, de, ate)
+    .map((a) => `C ${n(a.c1.x)} ${n(a.c1.y)} ${n(a.c2.x)} ${n(a.c2.y)} ${n(a.p.x)} ${n(a.p.y)} `)
+    .join("");
+}
+
+/** Um trecho da spline: os dois controles e o ponto de chegada de um comando `C`. */
+export interface ArcoDaSpline {
+  /** O ponto de PARTIDA do trecho. Não sai no `d` — quem o dá é o comando anterior. */
+  p0: { x: number; y: number };
+  c1: { x: number; y: number };
+  c2: { x: number; y: number };
+  p: { x: number; y: number };
+}
+
+/**
+ * OS ARCOS DE BÉZIER DA MESMA SPLINE, antes de virarem string.
+ *
+ * `spline()` passou a ser a forma-texto desta função, e não uma segunda conta: o
+ * `d` que sai é byte a byte o de antes.
+ *
+ * Ela existe porque **medir a curva desenhada exigia poder amostrá-la**, e a
+ * alternativa era reimplementar Catmull-Rom no lado da régua — a segunda descrição
+ * da mesma fronteira que este repositório já pagou seis vezes. O defeito que
+ * obrigou a medição: `escolherN` escolhe o número de pontos pelo **desvio da
+ * corda**, e o compositor desenha **spline**. Numa reta longa entre dois cantos, a
+ * corda erra zero e a decimação não põe ponto nenhum — mas as tangentes dos
+ * vizinhos arqueiam a curva. Medido na `chanel`: 246 u de reta na base da franja
+ * com 2 pontos, corda **0 px** de erro e spline **23 a 28 px**.
+ */
+export function arcosDaSpline(
+  pts: readonly { x: number; y: number }[],
+  fechada = false,
+  de = 0,
+  ate = fechada ? pts.length : pts.length - 1,
+): ArcoDaSpline[] {
   const N = pts.length;
   const em = (i: number) =>
     fechada ? pts[((i % N) + N) % N] : pts[Math.min(N - 1, Math.max(0, i))];
   /** `|ΔP|^0,5` — o expoente 0,5 é o que faz a parametrização ser centrípeta. */
   const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
     Math.max(1e-6, Math.sqrt(Math.hypot(b.x - a.x, b.y - a.y)));
-  let d = "";
+  const arcos: ArcoDaSpline[] = [];
   for (let i = de; i < ate; i++) {
     const p0 = em(i - 1);
     const p1 = em(i);
@@ -834,17 +869,50 @@ export function spline(
     // Com d1 = d2 = d3 os denominadores viram 6·d² e sobra `(p2 − p0)/6`.
     const eixo = (a: number, b: number, c: number, e1: number, e2: number) =>
       (e1 * e1 * c - e2 * e2 * a + (2 * e1 * e1 + 3 * e1 * e2 + e2 * e2) * b) / (3 * e1 * (e1 + e2));
-    const c1 = {
-      x: eixo(p0.x, p1.x, p2.x, d1, d2),
-      y: eixo(p0.y, p1.y, p2.y, d1, d2),
-    };
-    const c2 = {
-      x: eixo(p3.x, p2.x, p1.x, d3, d2),
-      y: eixo(p3.y, p2.y, p1.y, d3, d2),
-    };
-    d += `C ${n(c1.x)} ${n(c1.y)} ${n(c2.x)} ${n(c2.y)} ${n(p2.x)} ${n(p2.y)} `;
+    arcos.push({
+      p0: p1,
+      c1: {
+        x: eixo(p0.x, p1.x, p2.x, d1, d2),
+        y: eixo(p0.y, p1.y, p2.y, d1, d2),
+      },
+      c2: {
+        x: eixo(p3.x, p2.x, p1.x, d3, d2),
+        y: eixo(p3.y, p2.y, p1.y, d3, d2),
+      },
+      p: p2,
+    });
   }
-  return d;
+  return arcos;
+}
+
+/**
+ * A SPLINE AMOSTRADA como poligonal fina — a curva que o navegador de fato pinta.
+ *
+ * `porArco` é quantos passos por comando `C`. 16 põe um ponto a cada ~15 u num
+ * trecho de 240 u, que é um oitavo de traço: menor que a espessura da linha que se
+ * mede com isto.
+ */
+export function amostrarSpline(
+  pts: readonly { x: number; y: number }[],
+  fechada = false,
+  porArco = 16,
+): { x: number; y: number }[] {
+  const fora: { x: number; y: number }[] = [];
+  for (const a of arcosDaSpline(pts, fechada)) {
+    for (let k = 0; k < porArco; k++) {
+      const t = k / porArco;
+      const s = 1 - t;
+      const w0 = s * s * s;
+      const w1 = 3 * s * s * t;
+      const w2 = 3 * s * t * t;
+      const w3 = t * t * t;
+      fora.push({
+        x: w0 * a.p0.x + w1 * a.c1.x + w2 * a.c2.x + w3 * a.p.x,
+        y: w0 * a.p0.y + w1 * a.c1.y + w2 * a.c2.y + w3 * a.p.y,
+      });
+    }
+  }
+  return fora;
 }
 
 /**

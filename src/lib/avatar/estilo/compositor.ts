@@ -78,6 +78,8 @@ import {
   pathCabelo,
   pathCabeloClaro,
   pathCabeloLinhas,
+  pathCabeloNucleo,
+  pathCabeloPretas,
   pathExtensao,
   pathExtensaoLinhas,
   resolverCabelo,
@@ -415,6 +417,31 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
     .join(" ");
   if (!desenhadas) return "";
   const claro = pathCabeloClaro(modelo);
+
+  // ------------------------------------------------------- a peça TRANSCRITA
+  //
+  // Quatro camadas de laços SIMPLES empilhadas, e é a doutrina que este arquivo já
+  // declara lá em cima: **a ordem resolve por oclusão**. A banda preta visível é a
+  // DIFERENÇA entre a camada 1 (a massa, cheia de tinta) e a camada 2 (o núcleo) —
+  // não há `evenodd`, não há região com furo, e `bordaOrdenada` não muda.
+  //
+  // A camada 4 vem DEPOIS da clara de propósito: o traço interno mais aparece na
+  // região iluminada, e emitido antes dela seria coberto justamente ali.
+  //
+  // `.kk-tinta` já é emitida em todo SVG, inclusive na careca — zero regra nova,
+  // zero propriedade nova. E `.kk-cabelo-l` some sozinha, porque `temArco` já
+  // gateia a regra por `linhas` existir e a peça transcrita não declara arcos.
+  const nucleo = pathCabeloNucleo(modelo);
+  if (nucleo) {
+    const pretas = pathCabeloPretas(modelo);
+    return (
+      `<path class="kk-tinta" d="${desenhadas}"/>` +
+      `<path class="kk-cabelo-m" d="${nucleo}"/>` +
+      (claro ? `<path class="kk-cabelo" d="${claro}"/>` : "") +
+      (pretas ? `<path class="kk-tinta" d="${pretas}"/>` : "")
+    );
+  }
+
   // O traço vai por ÚLTIMO, e não junto com a massa: a clara é desenhada depois da
   // massa, então um traço emitido antes dela seria coberto em todo trecho onde as
   // duas se encostam. Ele é a borda externa da peça e fica acima do que a peça

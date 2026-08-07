@@ -1078,6 +1078,16 @@ export function decimarPorCorda<T extends { x: number; y: number }>(
  * fecha essa lacuna é `.scratch/estilo/fidelidade.ts`, que rasteriza o composto e
  * compara com a arte — este aqui é o número barato, que roda sem chromium e por isso
  * pode varrer N de 8 a 48.
+ *
+ * ⚠️ **A LACUNA FOI MEDIDA EM 2026-08-07, e ela não é pequena.** Na `chanel`, os
+ * MESMOS 29 pontos: ligados por corda caem em cima da arte (erro **0 px** nas três
+ * colunas da franja); ligados pela spline que o compositor emite, caem **23 a 28 px**
+ * acima. A causa é estrutural e não é falta de ponto: a base da franja é uma **reta
+ * de 246 u entre dois cantos**, a corda erra zero ali, e por isso a decimação não põe
+ * ponto nenhum — enquanto as tangentes dos dois vizinhos arqueiam a curva.
+ *
+ * Uma reta longa é o pior caso desta régua, e é o caso em que ela é mais confiante.
+ * Quem mede a curva desenhada é `desvioDaSpline`, abaixo.
  */
 export function desvioDaCorda(
   densa: readonly { x: number; y: number }[],
