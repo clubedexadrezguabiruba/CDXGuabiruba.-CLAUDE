@@ -68,8 +68,15 @@ function main() {
     return;
   }
 
+  // AS QUEBRAS DE LINHA SÃO NORMALIZADAS ANTES DE COMPARAR, e isto não é zelo: o
+  // gerador escreve `\n`, o git desta máquina tem `core.autocrlf=true` e devolve
+  // `\r\n` no `checkout`. Comparando bytes crus, o `prebuild` reprovava **todo
+  // arquivo que o git tivesse tocado** — `npm run build` estava vermelho por isso, e
+  // a mensagem "a lista bate, mas o arquivo difere" mandava regerar um arquivo que
+  // já estava em dia. `gerar-livro-aberturas.ts:116` já fazia isto.
+  const semCR = (s: string) => s.replace(/\r\n?/g, "\n");
   const atual = readFileSync(ARQUIVO_SAIDA, "utf-8");
-  if (atual === conteudo) {
+  if (semCR(atual) === semCR(conteudo)) {
     console.log(`Manifesto de assets em dia (${caminhos.length} arquivos).`);
     return;
   }

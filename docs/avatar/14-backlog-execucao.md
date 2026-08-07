@@ -365,6 +365,30 @@ Bloqueia todo o resto da arte.
 - [ ] **T2.10** 🤖 `criar-personagem`: male/female → **tom de pele + modelo de cabelo + cor do cabelo**
       → três escolhas, não quatro: a cor de fundo saiu com a emenda à D27. A cor do
       cabelo move também a sobrancelha, que já é camada própria (`av-sobrancelha`) na base
+
+> ### ⚠️ REGISTRO PARA A F2 — o cabelo, quando esta fase chegar (2026-08-07)
+>
+> Escrito agora porque a F2 está **0 de 16** e quem a executar não vai ter este
+> contexto. Nada aqui foi executado; é o que a fase precisa saber.
+>
+> **1. A tela do aluno lê `MODELOS_CABELO` / `CABELOS`, e não uma lista de cinco.**
+> O catálogo foi de 5 para 7 em 2026-08-07 (`espetado` e `chanel`, pela rota de
+> arte), e vai mudar de novo — cabelo novo agora nasce por arte, não por desenho
+> paramétrico. **Qualquer lista de modelos escrita à mão numa tela nasce errada.**
+> A régua de verdade é `src/lib/avatar/estilo/cabelo.ts`; o default de
+> `users.avatar_hair` continua `'curto'` e não mudou com a promoção.
+>
+> **2. Não existe PNG de cabelo, e não vai existir.** O cabelo **recolore em
+> runtime** (doc 15:168-170), então PNG não serve — é a razão de a peça ser
+> geometria em código. `avatar:gerar` e `avatar:variantes` são **folhas de
+> conferência**, não exportadores: nenhum dos dois produz asset. Hoje o produto
+> monta `<img>` de `public/` (arquitetura v2) e **nada em produção chama
+> `compor()`** — a única chamada fora de teste é `/dev/avatar-kokeshi`. Fechar essa
+> distância é trabalho da F2, e é ele que decide como o cabelo chega à tela.
+>
+> **3. Quando a F2 tocar UI:** a skill `design-recruta64` é **obrigatória**, e o
+> `npm run test:e2e` entra no gate — rodado com intenção, porque ele bate no
+> Supabase de **produção** e cria usuários reais.
 - [ ] **T2.11** 🤖 `viewBox` de cabeça para uso como foto de perfil
 - [ ] **T2.12** 🤖 **D30** — avatar na **navbar** (32 px, cabeça)
 - [ ] **T2.13** 🤖 **D30** — avatar no **ranking geral** + moldura de raridade *(dados já chegam: `get_ranking` devolve `avatar_config`)*
@@ -482,6 +506,39 @@ Soldado no backfill, e o ranking já mostra.
 | Revisão das aulas | prioridade do usuário: depois do avatar |
 | Piloto com turma | decisão do usuário |
 | Motor de animação (Rive/Lottie) | dependência nova; CSS já resolve o respiro |
+| **Rodada de unificação da peça traçada** | tem **pré-condições**, e nenhuma está cumprida — ver abaixo |
+
+## A rodada de unificação — registrada em 2026-08-07, NÃO iniciada
+
+Hoje **duas famílias de peça traçada convivem** no catálogo, e isso é custo
+declarado (decisão C de 2026-08-06), não descuido:
+
+| | **sintetizada** (legada) | **transcrita** (vigente) |
+|---|---|---|
+| o preto | `stroke` de 12 u centrado no laço (`Cabelo.linhas`) | diferença entre formas cheias (`nucleo` + `pretas`) |
+| IoU do preto | 34,4% | **80,1%** |
+| quem usa | `espetado` no catálogo; `entrada-2` e `entrada-3` fora dele | `chanel` |
+
+Unificar é o **Passo 7** (matar o sintetizado), e ele está **bloqueado por
+construção**: enquanto qualquer peça usar `Cabelo.linhas`, o campo não pode sair —
+e três usam. As pré-condições, em ordem:
+
+1. **O espetado re-emitido pela variante `lei`** — a banda preta da arte dele tem
+   p50 de 6,3 u e **79,8% do perímetro abaixo de 8 u**, fina demais para a `fiel`.
+   Custa **nova aprovação visual do Doug**: a peça muda de aparência.
+2. **A `entrada-2` retocada e aprovada**, entrando por `TRANSCREVEM` (é a esteira
+   de reentrada, §8 do runbook 19). A `entrada-3` fica onde está — ela é a isca do
+   controle 3 de `arte:revisao`.
+3. **Só então** o Passo 7 desbloqueia.
+4. **A luz (Passo 8) entra por último** — decisão B. Ela é separável e cortável, e
+   depende de uma régua que **não existe**: a arte tem três tons de ciano e a
+   paleta do render tem **dois**. Uma mancha de brilho de 12,4% da cúpula devolve
+   6 pixels, e nenhuma das 21 asserções toca nisso.
+
+**Item vizinho, e é decisão do Doug:** as três peças congeladas ainda decimam pela
+**régua da corda**, que o Bloco 14 provou medir a curva errada — o compositor
+desenha spline. Consertar move os literais delas e **invalida a aprovação do
+espetado**. Registro completo em `scripts/avatar/arte/ESTADO-DA-ROTA.md`.
 
 ---
 

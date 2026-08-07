@@ -101,6 +101,7 @@ import {
   FUNDO,
   LADO,
   MANIFESTO,
+  PASTA,
   PNG_BASE,
   REGIOES_QUE_REPROVAM,
   type Regiao,
@@ -793,7 +794,11 @@ export function imprimirLaudo(l: Laudo, caminho: string): void {
 }
 
 if (process.argv[1]?.endsWith("gate-menos-um.ts")) {
-  const caminho = process.argv[2] ?? `${".scratch/arte"}/entrada.png`;
+  // `PASTA`, e não `.scratch/arte` escrito à mão: o literal era resíduo da graduação
+  // da rota (Bloco 4), e `.scratch/` **não é versionado**. Sem argumento, ou isto
+  // falhava com ENOENT, ou — pior — conferia uma arte que só existe na máquina de
+  // quem rodou. Os outros oito scripts da rota já usavam `PASTA`.
+  const caminho = process.argv[2] ?? `${PASTA}/entrada.png`;
   gateMenosUm(caminho)
     .then((l) => {
       imprimirLaudo(l, caminho);

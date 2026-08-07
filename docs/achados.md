@@ -187,20 +187,6 @@ A seção 4, criada em 2026-08-06, confere `SELECT` numa lista de objetos. Não
 confere `INSERT`/`UPDATE`/`DELETE` em tabela nenhuma — que é exatamente o que o
 R1 precisa.
 
-### G4 — `arte:gate` sem argumento aponta para uma pasta que o git ignora
-**Prova:** `LIDO` — `scripts/avatar/arte/gate-menos-um.ts:796`
-
-O caminho padrão ficou `.scratch/arte/entrada.png`, escrito literalmente em vez de
-usar `PASTA` — resíduo da graduação da rota (Bloco 4, `.scratch/arte/` →
-`scripts/avatar/arte/`). Os outros oito scripts da rota já usam `${PASTA}`.
-
-Consequência real: `npm run arte:gate` **sem argumento** falha com ENOENT, ou pior,
-lê um arquivo de `.scratch/` se alguém tiver um lá — e `.scratch/` não é versionado,
-então o Gate −1 conferiria uma arte que ninguém mais tem. O runbook 19 sempre passa
-o caminho explícito, então nada em execução depende disto hoje.
-
-**Conserto:** uma linha, trocar por `${PASTA}/entrada.png`. **Quem decide:** Doug.
-
 ### G5 — `folgaDoRosto` não separa franja de cortina numa peça de laço fechado
 **Prova:** `MEDIDO` — `src/lib/avatar/estilo/cabelo.ts`, `folgaDoRosto`
 
@@ -231,26 +217,6 @@ ler entende "a arte enterra o rosto", que é falso.
 mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em vez de
 *"há tinta abaixo dela nesta coluna?"*. Mexe numa régua que três testes usam.
 **Quem decide:** Doug.
-
-### G6 — `npm run build` está vermelho nesta branch, e o `verify:all` não vê
-**Prova:** `MEDIDO` — `git stash` num HEAD limpo, `gen-manifest.ts --check` → exit 1
-
-O `prebuild` roda `gen-manifest --check`, e ele reprova com *"A lista bate, mas o
-arquivo difere (formatação ou cabeçalho)"* — ou seja, os caminhos conferem e o que
-divergiu foi o texto gerado. **`npm run build` não chega a compilar.**
-
-Provado anterior a 2026-08-07: com todas as mudanças do dia guardadas (`git stash
--u`), o check reprova igual. `npx next build` direto compila e passa — o problema é
-só o portão.
-
-**A parte que preocupa mais que o próprio achado:** `verify:all` não roda `build`, e
-o `workflow` do CI roda os dois separadamente — então isto pode estar vermelho há
-tempo sem ninguém tropeçar, porque o caminho de verificação diário não passa por
-aqui.
-
-**Conserto:** `npm run avatar:manifest`, e conferir o `git diff` — se ele mudar só
-cabeçalho, foi drift de formatação; se mudar lista, alguém mexeu em `public/items/`
-sem regerar. **Quem decide:** Doug.
 
 ---
 
@@ -289,6 +255,15 @@ mesmo conjunto de documentos, que fecha numa passada.)*
 | ✅ | `user_public_profiles` era MATERIALIZED VIEW legível por `anon` e `authenticated`, com `display_name` cru e `ranking_visible` dentro — o opt-out era cortesia da camada de RPC | 2026-08-06 | gate estendido (§4 de `verify:privileges`), reprovou, migration `20260806150000` aplicada, gate passou. `81a2723` |
 | ✅ | Doc 13 inerte, 92 itens e zero marcados desde que nasceu | 2026-08-06 | passou a ser usado: 2 comprovados, e a linha do opt-out virou conserto medido. `260e657`, `ed393ad` |
 | ✅ | `CLAUDE.md` e o currículo §13 afirmavam que o plano técnico da T1 não existia | 2026-08-06 | corrigido; `scripts/estado.ts` passou a vigiar o doc 02. `f6b97f8` |
+| ✅ | **G4** — `arte:gate` sem argumento apontava para `.scratch/arte/`, pasta que o git ignora: resíduo da graduação do Bloco 4, com o caminho escrito à mão em vez de `PASTA` | 2026-08-07 | uma linha. Reproduzido (`Input file is missing: .scratch/arte/entrada.png`, exit 1) e conferido depois (`Resultado: APROVADA`, exit 0) |
+| ✅ | **G6** — `npm run build` vermelho no `prebuild`. **A causa registrada estava ERRADA:** não era manifesto defasado. Era `--check` comparando **bytes crus** através da fronteira LF/CRLF — o gerador escreve `\n`, o `git checkout` desta máquina (`core.autocrlf=true`) devolve `\r\n`, e a comparação reprovava **todo arquivo que o git tivesse tocado** | 2026-08-07 | quebras normalizadas antes de comparar, como `gerar-livro-aberturas.ts:116` já fazia. Provado nos dois sentidos: passa com o arquivo em CRLF, e reprova nomeando o defeito quando um caminho falso é injetado |
 
-O precedente que importa: **os três fecharam com gate ou com prova medida, nunca
+O precedente que importa: **os cinco fecharam com gate ou com prova medida, nunca
 com relatório.** É o padrão a repetir.
+
+E o precedente **novo**, do G6: *a causa que se escreve ao achar não é
+necessariamente a causa.* A primeira entrada dele dizia "o manifesto está defasado" e
+mandava rodar `avatar:manifest` — rodar não mudava um byte (`git diff` vazio) e o
+check continuava vermelho. Só medindo as quebras de linha arquivo a arquivo a causa
+apareceu. **Registrar a hipótese como causa é o erro que a Regra de Evidência existe
+para impedir**, e ele aconteceu aqui, dentro do próprio arquivo de achados.

@@ -51,9 +51,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 59 |
-| **Árvore** | **11 arquivos sujos** |
-| **Último commit** | d7edbf5 · 2026-08-07 · feat(avatar): a rota de arte vira instituição, e o CI passa a enxergar a defasagem |
+| **Commits à frente de `origin/main`** | 60 |
+| **Árvore** | **6 arquivos sujos** |
+| **Último commit** | 068303b · 2026-08-07 · feat(avatar): espetado e chanel entram no catálogo, e nenhum selo antigo se move |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -118,7 +118,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-04 |
-| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-04 |
+| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-07 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
 | `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-06 |
 | `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-05 |

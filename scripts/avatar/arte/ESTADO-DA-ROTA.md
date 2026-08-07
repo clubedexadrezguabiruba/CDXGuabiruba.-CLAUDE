@@ -2520,3 +2520,233 @@ E ficou escrito que o reseed deve **ler `MODELOS_CABELO`**, não repetir "7" à 
 | `npx next build` | compila (o `npm run build` cai no G6, anterior) |
 | `arte:revisao` × 2 | 6 controles, controle 6 confere nas duas |
 | `verify:estado` | 0 violações |
+
+---
+---
+
+# BLOCO III — a esteira de reentrada da `entrada-2` (2026-08-07)
+
+> **Escrita agora, roda quando o retoque chegar.** A `entrada-2` **não será
+> refeita**: a arte atual recebe ajuste fino do Doug, e a versão retocada passa
+> pela esteira de sempre.
+
+O procedimento mora no runbook — **[§8 do
+`docs/avatar/19-rota-de-arte-runbook.md`](../../../docs/avatar/19-rota-de-arte-runbook.md)** —
+e não aqui, porque runbook é o que se abre para executar. Aqui fica o que a
+execução precisa saber que é **específico desta arte**.
+
+## A régua da espessura re-mede, e ela pode mudar a resposta
+
+A `entrada-2` está **na fronteira**: p50 **8,3 u**, com **46,2%** do perímetro
+abaixo de 8 u. Para comparação, na mesma régua:
+
+| arte | p50 | `< 8 u` | variante |
+|---|---|---|---|
+| `entrada` (espetado) | 6,3 u | 79,8% | não sobrevive à `fiel` |
+| **`entrada-2`** | **8,3 u** | **46,2%** | **decide no retoque** |
+| `chanel` | 9,6 u | 2,3% | `fiel` |
+
+**Não decida a variante pela medição de hoje.** O retoque muda a banda, e
+`npm run arte:espessura` re-mede as quatro. Se ela subir para a faixa da `chanel`,
+entra por `fiel`; se continuar na fronteira, a saída preferida é **engrossar o
+contorno na arte** (o `PEDIDO-GEMINI.md` já exige 12 u) e não cair na `lei`.
+
+## O que ela já resolveu, e que não se perde no retoque
+
+O Bloco 12 tirou o tronco da extração, e é por isso que ela deixou de ser amputada:
+descartado **4 776 → 21 px**, borda amputada **7,2% → 0,0%**, perímetro de preto
+**95,2% → 100,0%**. E o Gate −1, que a reprovava em rosto e corpo, passou a
+**APROVÁ-LA** depois da inversão do Bloco 2b — a reprovação era *"a peça está
+certa"*, não *"o boneco se mexeu"*.
+
+Um retoque que volte a pôr massa sobre o tronco não reprova: a região saiu da
+extração. Um que mexa no **boneco** reprova, e `arte:causa` diz qual dos dois foi.
+
+## A ASSERÇÃO NEGATIVA, e ela agora tem gate
+
+A cada passo, três coisas **paradas**:
+
+| o quê | como se confere |
+|---|---|
+| `entrada`, `entrada-3` e `chanel` byte a byte | `git diff` de `pecas-da-arte.ts` com **uma hunk só**, dentro do bloco da arte que voltou |
+| os 15 selos | `npm test` — e **4 deles agora são de peça promovida**, então mexer no espetado ou no chanel reprova por nome |
+| a base careca | `npm run avatar:folha-base` — 19 formas / 7 468 bytes |
+
+**O que mudou desde que este procedimento foi pensado:** `espetado` e `chanel`
+estão no **catálogo** (Bloco II). A reentrada da `entrada-2` deixou de ser operação
+sobre arquivo de conferência e passou a poder mover **peça de produto** — se o
+`converter()` mudar para atender ao retoque, ele muda para todas. Aí o número novo
+não é rebase: é **achado**, e a decisão é do Doug.
+
+---
+---
+
+# BLOCO IV — a ponte para o produto, REGISTRADA (2026-08-07)
+
+> **Nada aqui foi executado.** É registro para quem executar a F2, que está
+> **0 de 16** e não vai ter este contexto.
+
+Escrito em dois lugares: aqui, e como emenda ao **T2.10** do
+[`docs/avatar/14-backlog-execucao.md`](../../../docs/avatar/14-backlog-execucao.md).
+
+## A tela do aluno é do Bloco 5 / F2 — não deste plano
+
+E há uma distância real entre o que a rota produz e o que o produto mostra:
+
+| | hoje |
+|---|---|
+| o que o produto monta | `<img>` de `public/` — a arquitetura **v2** |
+| o que consome `compor()` | **nada em produção.** A única chamada fora de teste é `/dev/avatar-kokeshi` |
+| o que o banco guarda | o **slug** (`users.avatar_hair`), não a geometria |
+| F2 | **0 de 16** — não há evidência de integração automática |
+
+**A promoção do Bloco II é o que a F2 deve consumir.** Não há PNG novo, não há
+asset novo, e não há UI tocada por este plano.
+
+## As três coisas que a F2 precisa saber
+
+**1. Ela lê `MODELOS_CABELO` / `CABELOS`, e não uma lista de cinco.** O catálogo foi
+de 5 para 7 hoje e vai mudar de novo — cabelo novo nasce pela rota de arte. Lista
+escrita à mão numa tela **nasce errada**. O default `'curto'` de `avatar_hair` não
+mudou com a promoção.
+
+**2. Não existe PNG de cabelo, e não vai existir.** O cabelo **recolore em runtime**
+(doc 15:168-170), e PNG não recolore — é a razão de a peça ser geometria em código.
+`avatar:gerar` e `avatar:variantes` são folhas de conferência: **nenhum dos dois
+produz asset**, e chamá-los de exportadores é o erro que este registro previne.
+
+**3. Quando a F2 tocar UI:** `design-recruta64` é **obrigatória**, e o
+`npm run test:e2e` entra no gate — rodado com intenção, porque bate no Supabase de
+**produção** e cria usuários reais.
+
+---
+---
+
+# BLOCO V — a rodada de unificação, REGISTRADA (2026-08-07)
+
+> **Nada aqui foi executado**, e nada aqui é executável hoje: as pré-condições
+> incluem duas aprovações visuais que não existem.
+
+O registro completo, com a tabela das duas famílias, foi para o **"Adiado
+conscientemente"** do [backlog 14](../../../docs/avatar/14-backlog-execucao.md) —
+que é onde quem planeja olha. Aqui fica a ordem e o porquê de cada trava.
+
+| # | pré-condição | por que ela trava |
+|---|---|---|
+| 1 | **espetado re-emitido pela `lei`** + nova aprovação visual | a banda dele tem p50 6,3 u e 79,8% abaixo de 8 u: a `fiel` some a 56 px. Re-emitir muda a aparência de uma peça **que já está no catálogo** e tem selo |
+| 2 | **`entrada-2` retocada e aprovada**, entrando por `TRANSCREVEM` | é o Bloco III. A `entrada-3` **fica** — ela é a isca do controle 3 |
+| 3 | **Passo 7** (matar o sintetizado) | **bloqueado por construção**: `Cabelo.linhas` não pode sair enquanto três peças o usarem |
+| 4 | **Passo 8, a luz** | decisão B: por último. E ele depende de uma régua **que não existe** |
+
+**A luz é a que tem menos chão.** A arte tem três tons de ciano; a paleta do render
+tem **dois** — não existe terceiro. Medido na rodada 2 do chanel: a mancha de brilho
+é **7,9% da peça e 12,4% da cúpula**, e o render devolve **6 pixels**. **Nenhuma das
+21 asserções toca nisso.** Antes de desenhar a luz, alguém tem de escrever a régua
+que diz se ela apareceu — senão o Passo 8 fecha por opinião.
+
+**E o item vizinho, que é decisão do Doug e não pré-condição:** as três peças
+congeladas ainda decimam pela **régua da corda**, que o Bloco 14 provou medir a
+curva errada — `escolherN` mede a corda enquanto o compositor desenha spline, e numa
+reta a corda erra zero, então a decimação não põe ponto. Consertar move os literais
+delas e **invalida a aprovação do espetado no Bloco 9**. O custo é uma re-aprovação
+visual, e ela é a mesma da pré-condição 1 — fazer as duas juntas é mais barato que
+fazer cada uma no seu dia.
+
+---
+---
+
+# OS ACHADOS DA EXECUÇÃO — dois consertados, um registrado (2026-08-07)
+
+O Doug mandou decidir entre seguir e consertar. Decisão: **consertar G4 e G6,
+deixar G5 registrado.** O critério foi *o conserto é mecânico e o defeito atrapalha
+a própria rota?* — G5 é decisão de arte sobre o que a régua deve medir, e mexe numa
+régua que três testes usam.
+
+## ⛔ G6 — A CAUSA QUE EU ESCREVI ESTAVA ERRADA, e o erro é o de sempre
+
+Registrei o G6 como *"o manifesto está defasado; conserto: `npm run avatar:manifest`"*.
+**Rodar não mudou um byte** — `git diff` vazio — e o check continuou vermelho.
+
+A causa real: `gen-manifest --check` compara **bytes crus** contra a string que o
+gerador produz. O gerador escreve `\n`; o git desta máquina tem
+`core.autocrlf=true` e devolve `\r\n` no `checkout`. **Todo arquivo que o git
+tivesse tocado reprovava.**
+
+| arquivo | LF | CRLF |
+|---|---|---|
+| `assetManifest.ts` (recém-gerado) | 69 | 0 |
+| `pecas-da-arte.ts` (passou pelo git) | 496 | **496** |
+
+A assinatura é inconfundível e estava impressa: *"primeira divergência na linha 1"*
+com **16 702 contra 16 206 bytes** — diferença de **496**, exatamente o número de
+linhas.
+
+### E o defeito era meu, no gate que o BLOCO I acabou de criar
+
+`arte:pecas --check` entrou em `verify:arte` e em `verify:all` no Bloco I com a
+mesma comparação de bytes crus. Ele passou naquele dia porque o arquivo tinha
+acabado de ser escrito com `\n`; **num checkout limpo, ele reprovaria.** Foi o
+`git stash`/`pop` da investigação do build que trouxe o CRLF e expôs os dois.
+
+**O conserto não é novo — é precedente do próprio repositório.**
+`gerar-livro-aberturas.ts:116` já normalizava com `.replace(/\r\n?/g, "\n")`. A
+lição existia e não tinha chegado aos outros dois `--check`.
+
+### Provado nos dois sentidos, nos dois gates
+
+| gate | arquivo em CRLF | com defeito injetado |
+|---|---|---|
+| `gen-manifest --check` | **exit 0** — *"manifesto em dia (48 arquivos)"* | **exit 1** — *"1 caminho no manifesto que sumiu do disco: `/items/fantasma.png`"* |
+| `arte:pecas --check` | **exit 0** — confere caractere a caractere | **exit 1** — *"primeira divergência na linha 83"* |
+
+O laudo continua nomeando **o quê** e **onde**, que é o que separa um gate de um
+alarme.
+
+## G4 — o resíduo da graduação, uma linha
+
+`gate-menos-um.ts` tinha `.scratch/arte/entrada.png` escrito à mão como caminho
+padrão; os outros oito scripts da rota usam `${PASTA}`.
+
+| | comando | resultado |
+|---|---|---|
+| antes | `npm run arte:gate` | `Input file is missing: .scratch/arte/entrada.png` · **exit 1** |
+| depois | `npm run arte:gate` | `Resultado: APROVADA` · **exit 0** |
+
+Pior que o ENOENT era o caso silencioso: `.scratch/` **não é versionado**, então
+quem tivesse um arquivo lá conferiria uma arte que mais ninguém tem.
+
+## G5 — fica registrado, e o motivo de não consertar é escrito
+
+`folgaDoRosto` devolve o `y` mais baixo de **qualquer trecho** na faixa de `x` da
+sobrancelha. Numa franja paramétrica isso é a franja; num laço fechado vindo de
+arte, é a **cortina lateral passando pela mesma coluna**, muito mais abaixo.
+
+| peça | `folgaDoRosto` | sobrancelha sob a massa (`dentroDe`, 21 amostras) |
+|---|---|---|
+| espetado | +7,0 · +3,7 | **0/21** e **0/21** |
+| chanel | **−233,9 · −238,2** | **0/21** e **0/21** |
+
+**Nenhuma das duas invade o rosto.** Nada quebra — o teste exige só finitude para
+peça traçada, de propósito, porque o piso da traçada é fato da arte. O custo é de
+**leitura**: a linha do `avatar:folha-base` lê como *"a arte enterra o rosto"*.
+
+Consertar é trocar *"há tinta ABAIXO da sobrancelha nesta coluna?"* por *"há tinta
+SOBRE a sobrancelha?"* — `dentroDe` na altura dela. É régua nova numa função que
+`cabelo.test.ts`, `folha-base.ts` e `variantes.ts` usam, e muda o número impresso de
+todos os sete. **É decisão do Doug, e está em `docs/achados.md`.**
+
+---
+
+## Verificação final do plano
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm run lint` | 1 warning **anterior** em `GameReview.tsx:285` |
+| `npm test` | **491 passando**, 26 arquivos |
+| `npm run verify:all` | **exit 0** |
+| `npm run build` | **verde** — pela primeira vez desde que o G6 existia |
+| `npm run avatar:folha-base` | 19 formas / 7 468 bytes |
+| `verify:estado` | 0 violações |
+
+Sem UI e sem auth tocadas → **sem e2e**, pela regra do `CLAUDE.md`.

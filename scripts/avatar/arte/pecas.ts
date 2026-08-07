@@ -195,6 +195,21 @@ async function gerar(): Promise<string> {
   return `${CABECALHO}\n${blocos.join("\n\n")}\n${RODAPE}`;
 }
 
+/**
+ * AS QUEBRAS DE LINHA NORMALIZADAS — e sem isto o gate é vermelho por acidente.
+ *
+ * O gerador escreve `\n`; o git desta máquina tem `core.autocrlf=true` e devolve
+ * `\r\n` no `checkout`. Comparar bytes crus faz o `--check` reprovar **todo arquivo
+ * que o git tocou**, com um laudo que aponta a linha 1 e uma diferença de bytes
+ * exatamente igual ao número de linhas. Medido aqui: 16 702 contra 16 206, para
+ * 496 linhas.
+ *
+ * A pergunta do gate é *"o literal ainda é o que o \`converter()\` produz?"*, e
+ * quebra de linha do working tree não faz parte dela. `gerar-livro-aberturas.ts:116`
+ * já normalizava assim — a lição existia no repositório e não tinha chegado aqui.
+ */
+const semCR = (s: string) => s.replace(/\r\n?/g, "\n");
+
 /** A primeira linha em que as duas strings divergem — para o laudo dizer ONDE. */
 function primeiraDivergencia(a: string, b: string): number {
   const la = a.split("\n");
@@ -218,15 +233,16 @@ async function principal(): Promise<void> {
       console.error(`\n  ✗ ${SAIDA} NÃO EXISTE. Rode \`npm run arte:pecas\`.`);
       process.exit(1);
     }
-    if (emDisco === esperado) {
-      console.log(`\n  · ${SAIDA} confere byte a byte com o \`converter()\` de hoje.`);
+    if (semCR(emDisco) === semCR(esperado)) {
+      console.log(`\n  · ${SAIDA} confere com o \`converter()\` de hoje, caractere a caractere.`);
       return;
     }
-    const linha = primeiraDivergencia(emDisco, esperado);
+    const linha = primeiraDivergencia(semCR(emDisco), semCR(esperado));
     console.error(
       `\n  ✗ ${SAIDA} DEFASOU do \`converter()\`.\n` +
         `    Primeira divergência na linha ${linha}` +
-        ` (disco ${emDisco.length} bytes × gerado ${esperado.length} bytes).\n` +
+        ` (disco ${semCR(emDisco).length} × gerado ${semCR(esperado).length} caracteres,` +
+        ` quebras normalizadas).\n` +
         `    Conserto: \`npm run arte:pecas\` e conferir o \`git diff\` — se ele mudar\n` +
         `    uma arte que ninguém redesenhou, a mudança veio do conversor e é achado.`,
     );
