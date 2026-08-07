@@ -51,9 +51,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 58 |
-| **Árvore** | **12 arquivos sujos** |
-| **Último commit** | 1d9a5da · 2026-08-07 · docs(avatar): a entrada-2 não será refeita — ajuste fino sobre a arte atual |
+| **Commits à frente de `origin/main`** | 59 |
+| **Árvore** | **11 arquivos sujos** |
+| **Último commit** | d7edbf5 · 2026-08-07 · feat(avatar): a rota de arte vira instituição, e o CI passa a enxergar a defasagem |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

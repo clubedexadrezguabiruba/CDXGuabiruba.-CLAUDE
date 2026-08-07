@@ -2349,3 +2349,174 @@ e a tabela de gates passou de 21 para **26 scripts** sozinha, porque ela é medi
 **A asserção negativa:** este bloco não tocou em `converter.ts`, em `CABELOS` nem
 em literal nenhum. `pecas-da-arte.ts` com `git diff` **vazio** — e agora isso é
 conferido por gate, não por disciplina.
+
+---
+---
+
+# BLOCO II — o catálogo vai de 5 a 7 (2026-08-07)
+
+> Regra 6: o número do bloco é a **asserção negativa** — quantos selos antigos se
+> moveram na promoção. A resposta é **zero**.
+
+## O NÚMERO DO BLOCO
+
+```
+11 selos antes, 15 depois.  MOVIDOS: 0.  NOVOS: 4.
+```
+
+Conferido pares `bytes + sha` um a um contra `git show HEAD:…`, não por olhar a
+tabela. Os dez paramétricos e a careca saíram **byte a byte idênticos**:
+
+| caso | bytes | sha (12) |
+|---|---|---|
+| curto · animado | 7 765 · 8 382 | `b8b9659be2b5` · `f892ee5f71c4` |
+| cacheado · animado | 8 387 · 9 004 | `6b704e66542e` · `e7c1004a5903` |
+| tranca · animado | 8 195 · 8 812 | `72e8e5da1274` · `4bdbaabc7d40` |
+| coque · animado | 7 963 · 8 580 | `d32dfbd2a961` · `1df800ab59f4` |
+| moicano · animado | 7 525 · 8 142 | `3e11df56c6fc` · `d177baa6929b` |
+| `__careca` | 6 813 | `e96995516ba3` |
+
+E os quatro que nasceram:
+
+| caso | bytes | sha (12) |
+|---|---|---|
+| **espetado** · animado | **13 319** · 13 936 | `cff8a3afb67d` · `7bf5ddac41cd` |
+| **chanel** · animado | **11 867** · 12 484 | `c6241c9b642f` · `62f101f73336` |
+
+## A PROMOÇÃO — geometria reusada, identidade sobrescrita
+
+`CABELOS.espetado` e `CABELOS.chanel` **espalham** `PECAS_DA_ARTE.entrada` e
+`PECAS_DA_ARTE.chanel` e declaram só `id` e `nome`. A geometria não foi recopiada:
+duas descrições da mesma borda é o defeito que a rota inteira evita.
+
+**O `id` tinha de ser sobrescrito, e o motivo é runtime e não estilo.** O gerador
+grava o `id` a partir do nome do ARQUIVO (`entrada.png` → `"entrada"`), com um
+`as Cabelo["id"]` que **mascara no tipo**. Importar o objeto inteiro poria
+`CABELOS.espetado.id === "entrada"` em produção — o slug que viaja para
+`users.avatar_hair`. Há teste para isso agora.
+
+`pecas-da-arte.ts` foi regerado com o cabeçalho corrigido **no gerador**
+(`arte/pecas.ts`), nunca à mão. Medido no diff: **24 inserções, 13 remoções, e
+0 linhas de DADO** — só comentário.
+
+## OS SELOS PASSARAM A SAIR POR LISTA ESCRITA, E ISSO É O PONTO
+
+`MODELOS_PARAMETRICOS` e `MODELOS_TRACADOS` moram em `cabelo.ts`, escritas nome a
+nome. **Não** é `MODELOS_CABELO` filtrado por `massa`, e a diferença é o defeito:
+
+> com o filtro, um paramétrico que ganhasse `massa` por acidente **sairia da lista**
+> e deixaria de ser conferido — em silêncio, e exatamente no caso em que ele mudou.
+> O teste concordaria com o defeito que ele existe para pegar.
+
+O buraco que a lista escrita abre em troca — um modelo novo nascer fora das duas —
+fechou junto, com a amarra *"toda peça do catálogo está em EXATAMENTE uma das duas
+listas"*. `dump-parametricos.ts` aprendeu as duas e imprime em três grupos.
+
+O bloco de teste novo, *"os traçados promovidos continuam byte a byte"*, pega
+**outra** coisa que o de cima: lá vermelho quer dizer *"uma regra de CSS vazou"*;
+aqui quer dizer *"a saída da rota de arte mudou"* — arte redesenhada ou
+`converter()` diferente. Nos dois casos, uma peça aprovada mudando sem o Doug olhar
+de novo.
+
+## OS EIXOS DE `cabelo.test.ts` NAS DUAS PEÇAS
+
+| eixo | espetado | chanel | veredito |
+|---|---|---|---|
+| `coberturaDaCoroa` | **1** | **1** | · cobre a coroa inteira |
+| `contencaoDaClara` | **5,49 u** | **0,16 u** | · dentro da massa |
+| `contencaoDoNucleo` | Infinity (não transcrita) | **3,60 u** | · |
+| formas do composto (teto 26) | **22** | **23** | · cabe |
+| bytes do composto (teto 10 240) | **13 319** | **11 867** | ▲ **registrado**, não veta |
+| `conferirSvg` | 0 | 0 | · |
+| distinção a 56 px, par mais próximo | 17,6% | 20,2% | · piso 5% |
+
+**A distinção a 56 px cobre os 21 pares dos 7.** O par mais parecido do catálogo
+continua sendo **Corte curto × Trança, 5,18%**, contra o piso de 5,0% — os dois novos
+não apertaram nada: o menor par que envolve um deles é 15,5%.
+
+## O TETO DE BYTES VIROU REGISTRO, e ele é assert de valor EXATO
+
+Decisão A: o teto não veta arte aprovada. O que substitui o veto **não** é um teto
+folgado — é `expect(bytes).toBe(13319)`. Teto folgado deixa a peça engordar até ele
+calada; valor exato faz qualquer movimento aparecer, e a pergunta continua sendo *"por
+que uma peça aprovada mudou?"*. `folha-base.ts` imprime `▲ registrado` em vez de `✗`,
+e só para as traçadas.
+
+## A FÓRMULA DE FORMAS APRENDEU AS TRÊS FAMÍLIAS
+
+`19 + camadas + grupos` só conhecia `pontos`, `massa`, `clara` e `extensoes` — e
+teria reprovado as duas, porque nenhuma delas emite o que ela previa:
+
+| família | camadas | conferido |
+|---|---|---|
+| paramétrica | 2 (escura + clara) | 5/5 |
+| traçada **sintetizada** | massa + clara + traço (só se `linhas`) = **3** | espetado 19+3 = **22** |
+| traçada **transcrita** | massa-tinta + núcleo + clara + pretas = **4** | chanel 19+4 = **23** |
+
+Ela continua derivada do **dado** e não do emissor — lida do compositor, concordaria
+com qualquer coisa que ele fizesse.
+
+## CRITÉRIO DE FRONTEIRA — cumprido, medido por hash
+
+Rodada a esteira das artes **não** promovidas (`arte:extrair` → `arte:contorno` →
+`arte:converter` em `entrada-2` e `entrada-3`), mais `arte:pecas` e
+`avatar:congelar`:
+
+| arquivo | md5 antes | md5 depois |
+|---|---|---|
+| `pecas-da-arte.ts` | `c93801ee839a7704739bee456bb8556e` | **idêntico** |
+| `parametrico-congelado.ts` | `1db6ce5541c3b40702de6fd704cf967d` | **idêntico** |
+
+Zero bytes movidos. E o `arte:revisao` das duas promovidas, com os 6 controles:
+**controle 6 confere ponto a ponto** (64 e 31 pontos de massa), IoU da peça certa
+**89,8%** e **98,2%**, controle 2 em 0,0% e controle 3 abaixo da certa nas duas.
+
+## ⚠ DOIS ACHADOS, registrados e NÃO consertados
+
+**G5 — `folgaDoRosto` não separa franja de cortina num laço fechado.** A régua
+devolve o `y` mais baixo de qualquer trecho na faixa de `x` da sobrancelha; num bob,
+quem ela encontra é a **cortina lateral passando pela mesma coluna**, não a franja.
+
+| peça | `folgaDoRosto` | sobrancelha sob a massa (`dentroDe`, 21 amostras) |
+|---|---|---|
+| espetado | +7,0 · +3,7 | **0/21** e **0/21** |
+| chanel | **−233,9 · −238,2** | **0/21** e **0/21** |
+
+**Nenhuma das duas invade o rosto.** O −233,9 é o segmento 21→22 da massa do chanel,
+a `y 392,9`, dentro da faixa `x 189,5…235,5`. Nada quebra — o teste exige só finitude
+para peça traçada, de propósito —, mas a linha do `avatar:folha-base` lê como *"a arte
+enterra o rosto"*, e isso é falso.
+
+**G6 — `npm run build` já estava vermelho antes deste bloco.** O `prebuild` reprova em
+`gen-manifest --check` (*"a lista bate, mas o arquivo difere"*). Provado com `git stash
+-u` num HEAD limpo: reprova igual. `npx next build` compila e passa. O que preocupa
+mais é o `verify:all` não enxergar isso.
+
+## A INTENÇÃO DO DOC 15, corrigida em vez de só o número
+
+A linha `| 2 | Cabelos | 5 |` do Bloco 8 **perdeu o número** e ganhou emenda: ela foi
+escrita quando cabelo nascia de desenho paramétrico meu, e hoje cabelo novo nasce pela
+rota de arte, com arte do Doug. **O que ela ainda encomenda é decisão dele**, e fica
+como pendência aberta em vez de resolvida em silêncio.
+
+Corrigidos junto, porque descrevem o estado de hoje e não intenção:
+
+| onde | era | é |
+|---|---|---|
+| 9.1, reseed | 54 itens · **5 hair** | **56** itens · **7 hair** |
+| Bloco 8, chapéu × cabelo | 6 × 5 = **30** combinações | 6 × 7 = **42** — o argumento engordou |
+
+E ficou escrito que o reseed deve **ler `MODELOS_CABELO`**, não repetir "7" à mão.
+
+## Verificação do bloco
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm run lint` | 1 warning **anterior** em `GameReview.tsx:285` |
+| `npm test` | **491 passando**, 26 arquivos (era 463) |
+| `npm run verify:all` | **exit 0** |
+| `npm run avatar:folha-base` | base careca **19 formas / 7 468 bytes** — os congelados |
+| `npx next build` | compila (o `npm run build` cai no G6, anterior) |
+| `arte:revisao` × 2 | 6 controles, controle 6 confere nas duas |
+| `verify:estado` | 0 violações |

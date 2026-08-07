@@ -1,5 +1,26 @@
 /**
- * OS CINCO PARAMÉTRICOS COMO ELES SAEM HOJE — o congelamento da regressão.
+ * OS SETE MODELOS COMO ELES SAEM HOJE — o congelamento da regressão.
+ *
+ * ---------------------------------------------------------------------------
+ * QUINZE SELOS, EM TRÊS GRUPOS QUE NÃO SIGNIFICAM A MESMA COISA
+ * ---------------------------------------------------------------------------
+ *
+ * **10 paramétricos** (5 modelos × parado/animado) — congelados desde o B4. Um
+ * movimento aqui é a pergunta *"por que os paramétricos mudaram?"*.
+ *
+ * **4 traçados promovidos** (`espetado` e `chanel`, aprovados pelo Doug em
+ * 2026-08-07) — congelados desde a promoção. Um movimento aqui quer dizer que a
+ * saída da **rota de arte** mudou: ou uma arte foi redesenhada, ou o
+ * `converter()` passou a produzir outra coisa. Nos dois casos há uma peça
+ * aprovada mudando de aparência, e a decisão é do Doug.
+ *
+ * **1 careca** — o teto de regressão absoluto do estilo.
+ *
+ * ⚠️ **O nome `PARAMETRICO_CONGELADO` ficou estreito e não foi trocado**: ele
+ * guarda os quinze, não só os dez paramétricos. Renomear custaria nove arquivos, a
+ * maioria em prosa (`ESTADO-DA-ROTA`, o runbook 19, a skill), por um ganho de
+ * nome — e o que este repositório paga caro é número escrito em muitos lugares,
+ * não nome estreito com o esclarecimento ao lado. Fica escrito aqui.
  *
  * ---------------------------------------------------------------------------
  * POR QUE ELE EXISTE
@@ -35,13 +56,16 @@
  * ficou vermelho: vermelho aqui é a pergunta "por que os paramétricos mudaram?", e
  * regerar sem responder é apagar a pergunta.
  *
- * Regerar é legítimo em **dois** casos, e o segundo entrou em 2026-08-06:
+ * Regerar é legítimo em **três** casos, e o terceiro entrou em 2026-08-07:
  *
- *  1. quando um dos cinco for **re-traçado** e sair da família paramétrica de
- *     propósito. Aí o teste avisa antes, pelo nome certo — a amarra "os cinco
- *     continuam paramétricos" reprova primeiro, dizendo que a peça mudou de família
- *     em vez de deixar um diff de bytes sem explicação;
- *  2. quando uma **decisão declarada** muda o que `compor()` emite para todos.
+ *  1. quando um dos paramétricos for **re-traçado** e sair da família de propósito.
+ *     Aí o teste avisa antes, pelo nome certo — a amarra "os paramétricos continuam
+ *     paramétricos" reprova primeiro, dizendo que a peça mudou de família em vez de
+ *     deixar um diff de bytes sem explicação;
+ *  2. quando uma **decisão declarada** muda o que `compor()` emite para todos;
+ *  3. quando um modelo **entra ou sai do catálogo** — a promoção de uma peça da
+ *     rota de arte, ou a re-emissão de uma promovida por outra variante. Aqui o
+ *     número novo não é acidente: é uma arte que o Doug aprovou de novo.
  *
  * O caso 2 aconteceu uma vez: **os 92% viraram padrão** (`ESCALA_PADRAO` em
  * `compositor.ts`). O `viewBox` deixa 45,5 u acima da coroa e a peça traçada da
@@ -49,6 +73,10 @@
  * A figura passou a ser reancorada e encolhida, o que acrescenta um `<g transform>`
  * de **+50 bytes** a cada um dos onze. Nenhum outro selo do repositório se moveu:
  * `verify:pose` continua passando e os outros 435 testes também.
+ *
+ * O caso 3 aconteceu uma vez: **espetado e chanel entraram no catálogo** em
+ * 2026-08-07, e os onze selos viraram quinze. Os onze antigos **não se moveram um
+ * byte** — foi a asserção negativa da promoção.
  *
  * GERADO por `npm run avatar:congelar` (`scripts/avatar/estilo/dump-parametricos.ts`).
  * Não edite à mão: um arquivo meio regerado mistura duas gerações e ninguém
@@ -104,6 +132,26 @@ export const PARAMETRICO_CONGELADO: Record<string, { bytes: number; sha: string;
     bytes: 8142,
     sha: "d177baa6929b8fd23eea4641bff79608352b345fd845bc663a2f35f1205715fd",
     css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
+  },
+  "espetado": {
+    bytes: 13319,
+    sha: "cff8a3afb67d612c0cd74c159c59c747504d9ad1a40686ad84846a60a7329e3e",
+    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-cabelo-l{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
+  },
+  "espetado (animado)": {
+    bytes: 13936,
+    sha: "7bf5ddac41cd23f68a15c6a9d44c914e6afd9b0ee6c4ebc79298ba2d739ad0c3",
+    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-cabelo-l{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
+  },
+  "chanel": {
+    bytes: 11867,
+    sha: "c6241c9b642f975ac0baac1590a72d3a32bf92022680cebac5384c1be4aa7c7f",
+    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
+  },
+  "chanel (animado)": {
+    bytes: 12484,
+    sha: "62f101f73336a801f4d68caf5f40b085f9d707bcba701bca91b77c959491e645",
+    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
   },
   "__careca": {
     bytes: 6813,

@@ -75,9 +75,29 @@ import {
   n,
   spline,
 } from "./geometria";
+import { PECAS_DA_ARTE } from "./pecas-da-arte";
 
-/** Os 5 do catálogo (D11 do doc 12). O `criar-personagem` escolhe um destes. */
-export type ModeloCabelo = "curto" | "cacheado" | "tranca" | "coque" | "moicano";
+/**
+ * Os 7 do catálogo. O `criar-personagem` escolhe um destes.
+ *
+ * Eram 5 (D11 do doc 12), todos paramétricos. `espetado` e `chanel` entraram em
+ * 2026-08-07, vindos da **rota de arte** (`docs/avatar/19-rota-de-arte-runbook.md`)
+ * depois de aprovação visual do Doug — o espetado no Bloco 9, o chanel no 14.
+ *
+ * **As duas famílias convivem, e a diferença é medível:** as listas
+ * `MODELOS_PARAMETRICOS` e `MODELOS_TRACADOS` dizem quem é quem, e elas são
+ * **explícitas de propósito**. Um filtro automático por `massa` deixaria um
+ * paramétrico que mudasse de família acidentalmente sumir do teste de selo que
+ * existe justamente para pegar isso.
+ */
+export type ModeloCabelo =
+  | "curto"
+  | "cacheado"
+  | "tranca"
+  | "coque"
+  | "moicano"
+  | "espetado"
+  | "chanel";
 
 /** Um ponto da franja: altura absoluta, e fração da largura da cabeça NAQUELA altura. */
 export interface PontoFranja {
@@ -472,10 +492,15 @@ function lacoTY(pts: readonly PontoFranja[], dy: number): string {
 // ---------------------------------------------------------------------------
 
 /**
- * OS CINCO MODELOS.
+ * OS SETE MODELOS — cinco paramétricos e dois vindos da arte.
  *
  * A ordem é a do `criar-personagem`, e `curto` é o primeiro porque é o padrão: um
- * aluno que não escolha nada não pode aparecer careca (D5).
+ * aluno que não escolha nada não pode aparecer careca (D5). O default de
+ * `avatar_hair` **não mudou** com a promoção.
+ *
+ * Os dois últimos entram por espalhamento de `PECAS_DA_ARTE`, com a identidade
+ * sobrescrita. Ver `MODELOS_PARAMETRICOS` / `MODELOS_TRACADOS` logo abaixo do
+ * catálogo para quem é de qual família, e por que a lista é escrita e não filtrada.
  */
 export const CABELOS: Record<ModeloCabelo, Cabelo> = {
   /**
@@ -647,10 +672,74 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
       },
     ],
   },
+
+  /**
+   * ESPETADO — a primeira peça de ARTE do catálogo, aprovada pelo Doug no Bloco 9.
+   *
+   * A geometria vem inteira de `PECAS_DA_ARTE.entrada`, e ela **não é recopiada
+   * aqui**: o literal é gerado por `npm run arte:pecas` a partir do PNG versionado,
+   * e ter duas descrições da mesma borda é o defeito que este arquivo inteiro
+   * evita. O que o catálogo declara é a **identidade** — `id` e `nome` —, porque o
+   * gerador grava o `id` a partir do nome do ARQUIVO (`entrada.png` → `"entrada"`),
+   * e sem esta linha `CABELOS.espetado.id` seria `"entrada"` em runtime, mascarado
+   * pelo cast do arquivo gerado.
+   *
+   * **Família sintetizada (legada), congelada por decisão C de 2026-08-06:** o preto
+   * dela é um `stroke` de 12 u sobre o laço (`linhas`), não a banda transcrita da
+   * arte. Transcrevê-la exige a variante `lei` — a banda preta do PNG tem p50 de
+   * 6,3 u e **79,8% do perímetro abaixo de 8 u**, fina demais para a `fiel` — e uma
+   * re-aprovação visual.
+   */
+  espetado: {
+    ...PECAS_DA_ARTE.entrada,
+    id: "espetado",
+    nome: "Espetado",
+  },
+
+  /**
+   * CHANEL — a primeira peça com o preto **transcrito**, aprovada no Bloco 14.
+   *
+   * `nucleo` + `pretas`: a banda preta é a diferença entre duas formas cheias, com a
+   * espessura que a artista desenhou, em vez de um stroke de largura fixa. IoU do
+   * preto **80,1%** contra 34,4% da família sintetizada, e o traço interno — 866 px
+   * em 4 formas — que na outra família não tem onde morar.
+   *
+   * É o pipeline permanente para arte nova. Mesma regra de identidade do espetado.
+   */
+  chanel: {
+    ...PECAS_DA_ARTE.chanel,
+    id: "chanel",
+    nome: "Chanel",
+  },
 };
 
 /** A lista na ordem do catálogo, para as folhas e para o `criar-personagem`. */
 export const MODELOS_CABELO = Object.keys(CABELOS) as ModeloCabelo[];
+
+/**
+ * QUEM É PARAMÉTRICO E QUEM VEIO DA ARTE — **por lista escrita, nunca por filtro.**
+ *
+ * A tentação é derivar isto de `CABELOS[m].massa === undefined`, e ela custa
+ * exatamente o que o selo existe para pegar: no dia em que um paramétrico ganhar
+ * `massa` por acidente, o filtro o tira da lista dos congelados e o teste passa a
+ * não conferir nada sobre ele — em silêncio, e justamente no caso em que ele mudou.
+ *
+ * Com as listas escritas, esse mesmo acidente reprova em duas amarras: a de família
+ * (*"os paramétricos continuam paramétricos"*) e a de bytes.
+ *
+ * `completudeDasFamilias` cobra que as duas somem `MODELOS_CABELO` — sem isso um
+ * modelo novo nasceria fora das duas e escaparia dos dois blocos de selo.
+ */
+export const MODELOS_PARAMETRICOS = [
+  "curto",
+  "cacheado",
+  "tranca",
+  "coque",
+  "moicano",
+] as const satisfies readonly ModeloCabelo[];
+
+/** Os promovidos pela rota de arte. Ver `docs/avatar/19-rota-de-arte-runbook.md`. */
+export const MODELOS_TRACADOS = ["espetado", "chanel"] as const satisfies readonly ModeloCabelo[];
 
 /**
  * UM CABELO DO CATÁLOGO, **ou um literal** — e o "ou" existe para o desenho.

@@ -41,7 +41,7 @@
 import { writeFileSync } from "fs";
 import { createHash } from "node:crypto";
 
-import { MODELOS_CABELO } from "../../../src/lib/avatar/estilo/cabelo";
+import { MODELOS_PARAMETRICOS, MODELOS_TRACADOS } from "../../../src/lib/avatar/estilo/cabelo";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import { CABELO, PELE } from "../../../src/lib/avatar/palette";
 
@@ -60,7 +60,28 @@ const sha = (s: string) => createHash("sha256").update(s, "utf-8").digest("hex")
 const cssDe = (svg: string) => svg.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
 
 const CABECALHO = `/**
- * OS CINCO PARAMÉTRICOS COMO ELES SAEM HOJE — o congelamento da regressão.
+ * OS SETE MODELOS COMO ELES SAEM HOJE — o congelamento da regressão.
+ *
+ * ---------------------------------------------------------------------------
+ * QUINZE SELOS, EM TRÊS GRUPOS QUE NÃO SIGNIFICAM A MESMA COISA
+ * ---------------------------------------------------------------------------
+ *
+ * **10 paramétricos** (5 modelos × parado/animado) — congelados desde o B4. Um
+ * movimento aqui é a pergunta *"por que os paramétricos mudaram?"*.
+ *
+ * **4 traçados promovidos** (\`espetado\` e \`chanel\`, aprovados pelo Doug em
+ * 2026-08-07) — congelados desde a promoção. Um movimento aqui quer dizer que a
+ * saída da **rota de arte** mudou: ou uma arte foi redesenhada, ou o
+ * \`converter()\` passou a produzir outra coisa. Nos dois casos há uma peça
+ * aprovada mudando de aparência, e a decisão é do Doug.
+ *
+ * **1 careca** — o teto de regressão absoluto do estilo.
+ *
+ * ⚠️ **O nome \`PARAMETRICO_CONGELADO\` ficou estreito e não foi trocado**: ele
+ * guarda os quinze, não só os dez paramétricos. Renomear custaria nove arquivos, a
+ * maioria em prosa (\`ESTADO-DA-ROTA\`, o runbook 19, a skill), por um ganho de
+ * nome — e o que este repositório paga caro é número escrito em muitos lugares,
+ * não nome estreito com o esclarecimento ao lado. Fica escrito aqui.
  *
  * ---------------------------------------------------------------------------
  * POR QUE ELE EXISTE
@@ -96,13 +117,16 @@ const CABECALHO = `/**
  * ficou vermelho: vermelho aqui é a pergunta "por que os paramétricos mudaram?", e
  * regerar sem responder é apagar a pergunta.
  *
- * Regerar é legítimo em **dois** casos, e o segundo entrou em 2026-08-06:
+ * Regerar é legítimo em **três** casos, e o terceiro entrou em 2026-08-07:
  *
- *  1. quando um dos cinco for **re-traçado** e sair da família paramétrica de
- *     propósito. Aí o teste avisa antes, pelo nome certo — a amarra "os cinco
- *     continuam paramétricos" reprova primeiro, dizendo que a peça mudou de família
- *     em vez de deixar um diff de bytes sem explicação;
- *  2. quando uma **decisão declarada** muda o que \`compor()\` emite para todos.
+ *  1. quando um dos paramétricos for **re-traçado** e sair da família de propósito.
+ *     Aí o teste avisa antes, pelo nome certo — a amarra "os paramétricos continuam
+ *     paramétricos" reprova primeiro, dizendo que a peça mudou de família em vez de
+ *     deixar um diff de bytes sem explicação;
+ *  2. quando uma **decisão declarada** muda o que \`compor()\` emite para todos;
+ *  3. quando um modelo **entra ou sai do catálogo** — a promoção de uma peça da
+ *     rota de arte, ou a re-emissão de uma promovida por outra variante. Aqui o
+ *     número novo não é acidente: é uma arte que o Doug aprovou de novo.
  *
  * O caso 2 aconteceu uma vez: **os 92% viraram padrão** (\`ESCALA_PADRAO\` em
  * \`compositor.ts\`). O \`viewBox\` deixa 45,5 u acima da coroa e a peça traçada da
@@ -111,6 +135,10 @@ const CABECALHO = `/**
  * de **+50 bytes** a cada um dos onze. Nenhum outro selo do repositório se moveu:
  * \`verify:pose\` continua passando e os outros 435 testes também.
  *
+ * O caso 3 aconteceu uma vez: **espetado e chanel entraram no catálogo** em
+ * 2026-08-07, e os onze selos viraram quinze. Os onze antigos **não se moveram um
+ * byte** — foi a asserção negativa da promoção.
+ *
  * GERADO por \`npm run avatar:congelar\` (\`scripts/avatar/estilo/dump-parametricos.ts\`).
  * Não edite à mão: um arquivo meio regerado mistura duas gerações e ninguém
  * consegue mais dizer quais linhas descrevem o quê.
@@ -118,14 +146,24 @@ const CABECALHO = `/**
 export const PARAMETRICO_CONGELADO: Record<string, { bytes: number; sha: string; css: string }> = {
 `;
 
+/** Os dois selos de um modelo: parado e animado. */
+const selosDe = (modelo: string): [string, string][] =>
+  [false, true].map((animado): [string, string] => [
+    `${modelo}${animado ? " (animado)" : ""}`,
+    svgDe(modelo as Parameters<typeof svgDe>[0], animado),
+  ]);
+
 function principal(): void {
-  const casos: [string, string][] = [];
-  for (const modelo of MODELOS_CABELO) {
-    for (const animado of [false, true]) {
-      casos.push([`${modelo}${animado ? " (animado)" : ""}`, svgDe(modelo, animado)]);
-    }
-  }
-  casos.push(["__careca", svgDe(undefined, false)]);
+  // AS DUAS FAMÍLIAS SAEM SEPARADAS, e não de `MODELOS_CABELO`, pelo mesmo motivo
+  // que as listas são escritas em `cabelo.ts`: um modelo que nasça fora das duas
+  // não pode escorregar para dentro do congelado sem ninguém decidir.
+  const parametricos = MODELOS_PARAMETRICOS.flatMap(selosDe);
+  const tracados = MODELOS_TRACADOS.flatMap(selosDe);
+  const casos: [string, string][] = [
+    ...parametricos,
+    ...tracados,
+    ["__careca", svgDe(undefined, false)],
+  ];
 
   let corpo = CABECALHO;
   for (const [chave, svg] of casos) {
@@ -139,15 +177,23 @@ function principal(): void {
   corpo += `};\n`;
   writeFileSync(DESTINO, corpo, "utf-8");
 
-  console.log(`OS ONZE SELOS PARAMÉTRICOS, REMEDIDOS — ${DESTINO}\n`);
-  console.log(`  caso                   bytes   sha (12)`);
-  for (const [chave, svg] of casos) {
-    console.log(
-      `  ${chave.padEnd(20)} ${String(Buffer.byteLength(svg, "utf-8")).padStart(7)}   ${sha(svg).slice(0, 12)}`,
-    );
-  }
+  console.log(`OS SELOS DO CATÁLOGO, REMEDIDOS — ${DESTINO}\n`);
+  const grupo = (titulo: string, lista: [string, string][]) => {
+    console.log(`  ── ${titulo}`);
+    console.log(`     caso                   bytes   sha (12)`);
+    for (const [chave, svg] of lista) {
+      console.log(
+        `     ${chave.padEnd(20)} ${String(Buffer.byteLength(svg, "utf-8")).padStart(7)}   ${sha(svg).slice(0, 12)}`,
+      );
+    }
+    console.log("");
+  };
+  grupo(`${parametricos.length} PARAMÉTRICOS (${MODELOS_PARAMETRICOS.join(", ")})`, parametricos);
+  grupo(`${tracados.length} TRAÇADOS PROMOVIDOS (${MODELOS_TRACADOS.join(", ")})`, tracados);
+  grupo(`1 CARECA — o teto de regressão absoluto`, [casos[casos.length - 1]]);
+
   console.log(
-    `\n  ${casos.length} selos escritos. Rode \`npm test\` e confira que a razão do movimento` +
+    `  ${casos.length} selos escritos. Rode \`npm test\` e confira que a razão do movimento` +
       `\n  está no docstring do arquivo gerado — senão o congelamento afrouxou sem motivo.`,
   );
 }

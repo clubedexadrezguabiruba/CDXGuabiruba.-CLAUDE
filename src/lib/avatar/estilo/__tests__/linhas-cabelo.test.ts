@@ -31,6 +31,8 @@ import { describe, expect, it } from "vitest";
 import {
   CABELOS,
   MODELOS_CABELO,
+  MODELOS_PARAMETRICOS,
+  MODELOS_TRACADOS,
   arcosDeTraco,
   pathCabelo,
   pathCabeloLinhas,
@@ -75,26 +77,46 @@ const tracado: Cabelo = {
   ],
 };
 
+/** Os três selos de um caso, na ordem em que eles dão o melhor relatório. */
+const conferirSelo = (chave: string, svg: string) => {
+  const antes = PARAMETRICO_CONGELADO[chave];
+  expect(antes, `${chave}: não há selo — rode \`npm run avatar:congelar\``).toBeDefined();
+  // O CSS primeiro: é o único dos três que dá um diff legível. O SHA logo abaixo é
+  // quem garante o resto do arquivo.
+  expect(cssDe(svg), `${chave}: o bloco <style> mudou`).toBe(antes.css);
+  expect(Buffer.byteLength(svg, "utf-8"), `${chave}: o tamanho mudou`).toBe(antes.bytes);
+  expect(sha(svg), `${chave}: algum byte fora do <style> mudou`).toBe(antes.sha);
+};
+
+describe("as duas famílias do catálogo são declaradas, não inferidas", () => {
+  it("toda peça do catálogo está em EXATAMENTE uma das duas listas", () => {
+    // Sem esta amarra, um modelo novo nasceria fora das duas listas e escaparia dos
+    // dois blocos de selo abaixo — em silêncio, e justamente no primeiro dia dele.
+    // É o modo de falha por vacuidade, escrito na forma que este arquivo permite.
+    const declarados = [...MODELOS_PARAMETRICOS, ...MODELOS_TRACADOS];
+    expect([...declarados].sort()).toEqual([...MODELOS_CABELO].sort());
+    expect(new Set(declarados).size, "um modelo aparece nas duas listas").toBe(declarados.length);
+  });
+});
+
 describe("a regressão: o B4 não vazou para a família paramétrica", () => {
-  it("os cinco do catálogo continuam paramétricos — se um mudou de família, é aqui que se lê", () => {
+  it("os paramétricos continuam paramétricos — se um mudou de família, é aqui que se lê", () => {
     // Esta amarra vem ANTES das de bytes de propósito. No dia em que o `curto` for
     // re-traçado (checkpoint C), o SVG dele muda por um motivo legítimo, e sem esta
     // linha o relatório seria um diff de SHA sem explicação nenhuma.
-    for (const modelo of MODELOS_CABELO) {
+    //
+    // Ela percorre `MODELOS_PARAMETRICOS`, que é lista ESCRITA — não `MODELOS_CABELO`
+    // filtrado por `massa`. Com o filtro, um paramétrico que ganhasse `massa` por
+    // acidente sairia da lista e deixaria de ser conferido: o teste concordaria com
+    // o defeito que ele existe para pegar.
+    for (const modelo of MODELOS_PARAMETRICOS) {
       expect(CABELOS[modelo].massa, `${modelo} deixou de ser paramétrico`).toBeUndefined();
     }
   });
 
-  it.each(MODELOS_CABELO)("%s compõe byte a byte igual ao de antes do B4", (modelo) => {
+  it.each(MODELOS_PARAMETRICOS)("%s compõe byte a byte igual ao de antes do B4", (modelo) => {
     for (const animado of [false, true]) {
-      const chave = `${modelo}${animado ? " (animado)" : ""}`;
-      const svg = svgDe(modelo, animado);
-      const antes = PARAMETRICO_CONGELADO[chave];
-      // O CSS primeiro: é onde a mudança do B4 teria caído, e é o único dos três que
-      // dá um diff legível. O SHA logo abaixo é quem garante o resto do arquivo.
-      expect(cssDe(svg), `${chave}: o bloco <style> mudou`).toBe(antes.css);
-      expect(Buffer.byteLength(svg, "utf-8"), `${chave}: o tamanho mudou`).toBe(antes.bytes);
-      expect(sha(svg), `${chave}: algum byte fora do <style> mudou`).toBe(antes.sha);
+      conferirSelo(`${modelo}${animado ? " (animado)" : ""}`, svgDe(modelo, animado));
     }
   });
 
@@ -104,6 +126,46 @@ describe("a regressão: o B4 não vazou para a família paramétrica", () => {
     expect(sha(careca)).toBe(PARAMETRICO_CONGELADO["__careca"].sha);
     // E ela continua sem pagar nada pelo slot: nem regra nova, nem classe nova.
     expect(careca).not.toContain(".kk-cabelo");
+  });
+});
+
+/**
+ * OS TRAÇADOS PROMOVIDOS CONTINUAM BYTE A BYTE — e o que este bloco pega é OUTRA
+ * coisa que o de cima.
+ *
+ * Lá em cima, vermelho quer dizer *"uma regra de CSS vazou para quem não devia"*.
+ * Aqui quer dizer *"a saída da **rota de arte** mudou"* — ou uma arte foi
+ * redesenhada, ou o `converter()` passou a produzir outra coisa. Nos dois casos há
+ * uma peça que o Doug aprovou olhando mudando de aparência sem ele olhar de novo.
+ *
+ * A geometria destas duas não mora em `cabelo.ts`: ela é espalhada de
+ * `PECAS_DA_ARTE`, que é **gerado** por `npm run arte:pecas`. `arte:pecas --check`
+ * (em `verify:arte`) pega o literal defasando do conversor; estes quatro selos
+ * pegam o passo seguinte, que é o render mudando.
+ */
+describe("os traçados promovidos continuam byte a byte", () => {
+  it("eles são traçados mesmo — `massa` presente, `pontos` ausente", () => {
+    // O par da amarra de família do bloco de cima, na direção contrária. Sem ela,
+    // um traçado que voltasse a ser paramétrico passaria pelos selos calado.
+    for (const modelo of MODELOS_TRACADOS) {
+      expect(CABELOS[modelo].massa, `${modelo} perdeu a massa`).toBeDefined();
+      expect(CABELOS[modelo].pontos, `${modelo} virou paramétrico`).toBeUndefined();
+    }
+  });
+
+  it("o catálogo sobrescreve a identidade que o gerador gravou do NOME DO ARQUIVO", () => {
+    // `PECAS_DA_ARTE.entrada.id` é `"entrada"`, gravado por `arte/pecas.ts` a partir
+    // de `entrada.png`. Importar o objeto inteiro poria `CABELOS.espetado.id ===
+    // "entrada"` em runtime — o cast do arquivo gerado mascara isso no tipo.
+    for (const modelo of MODELOS_TRACADOS) {
+      expect(CABELOS[modelo].id, `${modelo} carrega o id do arquivo de origem`).toBe(modelo);
+    }
+  });
+
+  it.each(MODELOS_TRACADOS)("%s compõe byte a byte igual ao da aprovação", (modelo) => {
+    for (const animado of [false, true]) {
+      conferirSelo(`${modelo}${animado ? " (animado)" : ""}`, svgDe(modelo, animado));
+    }
   });
 });
 

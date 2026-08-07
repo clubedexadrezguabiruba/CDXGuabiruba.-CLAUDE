@@ -112,23 +112,28 @@ function corpoDaPeca(id: string, nome: string, c: Cabelo): string {
 }
 
 const CABECALHO = `/**
- * AS PEÇAS TRAÇADAS DA ARTE, para conferência no runtime — **e só isso**.
+ * AS PEÇAS TRAÇADAS DA ARTE — a saída da rota, e a **fonte** das promovidas.
  *
  * ---------------------------------------------------------------------------
- * ELAS NÃO ESTÃO NO CATÁLOGO, E A DIFERENÇA IMPORTA
+ * DUAS DELAS ESTÃO NO CATÁLOGO. AS OUTRAS DUAS NÃO. A DIFERENÇA IMPORTA
  * ---------------------------------------------------------------------------
  *
- * \`CABELOS\` é o catálogo do produto: cinco modelos paramétricos, com amarras que
- * o teste cobra (folga do rosto, coroa, contenção da clara, orçamento) e com os
- * onze selos byte a byte de \`parametrico-congelado.ts\`. Colar uma peça de arte
- * ali é decisão de catálogo e é do Doug — a rota produz o literal, ela não
- * promove ninguém.
+ * Em 2026-08-07 o Doug aprovou \`entrada\` (espetado) e \`chanel\`, e elas foram
+ * promovidas: \`CABELOS.espetado\` e \`CABELOS.chanel\` **espalham os objetos daqui**
+ * e sobrescrevem só a identidade (\`id\` e \`nome\`). A geometria não é recopiada —
+ * duas descrições da mesma borda é o defeito que a rota inteira evita.
  *
- * Este arquivo existe para uma coisa: a página \`/dev/avatar-kokeshi\` poder
- * mostrar as peças no navegador, no runtime real, do jeito que o
- * \`AvatarDisplay\` vai montá-las. Render em PNG de folha e render no navegador não
- * são a mesma coisa — foi por isso que a primeira folha desta rota saiu com o
- * rosto preto e ninguém viu até alguém olhar.
+ * ⚠️ **Por isso, mexer neste arquivo mexe no catálogo.** Regerá-lo com uma arte
+ * redesenhada move o render de um modelo do produto, e os selos de
+ * \`parametrico-congelado.ts\` reprovam — o que é o comportamento certo: promoção é
+ * decisão do Doug, e mudança silenciosa de peça aprovada é o que o selo pega.
+ *
+ * \`entrada-2\` e \`entrada-3\` **não** estão no catálogo. Elas existem para a página
+ * \`/dev/avatar-kokeshi\` poder mostrá-las no navegador, no runtime real, do jeito
+ * que o \`AvatarDisplay\` vai montá-las — e a \`entrada-3\` é a isca do controle 3 de
+ * \`arte:revisao\`. Render em PNG de folha e render no navegador não são a mesma
+ * coisa: foi por isso que a primeira folha desta rota saiu com o rosto preto e
+ * ninguém viu até alguém olhar.
  *
  * ---------------------------------------------------------------------------
  * GERADO por \`npm run arte:pecas\` — não editar à mão
@@ -154,7 +159,13 @@ export const PECAS_DA_ARTE = {`;
 
 const RODAPE = `} as const satisfies Record<string, Cabelo>;
 
-/** O id de uma peça da arte. Não é \`ModeloCabelo\` — elas não estão no catálogo. */
+/**
+ * O id de uma peça da arte — o nome do ARQUIVO, não o slug do catálogo.
+ *
+ * Não é \`ModeloCabelo\`: \`entrada\` e \`entrada-2\` não existem no catálogo, e as duas
+ * promovidas entraram com outro nome (\`entrada\` → \`espetado\`). É por isso que
+ * \`CABELOS\` sobrescreve o \`id\` ao espalhar — o cast abaixo não corrige runtime.
+ */
 export type IdDaArte = keyof typeof PECAS_DA_ARTE;
 
 export const IDS_DA_ARTE = Object.keys(PECAS_DA_ARTE) as IdDaArte[];

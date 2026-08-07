@@ -1,13 +1,21 @@
 /**
- * OS CINCO CABELOS — as amarras que substituem a régua que não existe.
+ * OS SETE CABELOS — as amarras que substituem a régua que não existe.
  *
  * POR QUE ESTE ARQUIVO EXISTE
  * ---------------------------
- * Todo o resto do estilo kokeshi sai de medição sobre a referência. O cabelo não
- * pode: a `referencia-base.png` é um boneco CARECA, e não há fonte de onde extrair
- * a forma de cinco cabelos. As coordenadas de `cabelo.ts` são **desenhadas**, e
- * chamar isso de medido seria a mesma falha que o `rosto-cor.test.ts` foi criado
- * para consertar — descrever uma intenção como se fosse um fato.
+ * Todo o resto do estilo kokeshi sai de medição sobre a referência. O cabelo
+ * paramétrico não pode: a `referencia-base.png` é um boneco CARECA, e não há fonte
+ * de onde extrair a forma de cinco cabelos. As coordenadas paramétricas de
+ * `cabelo.ts` são **desenhadas**, e chamar isso de medido seria a mesma falha que o
+ * `rosto-cor.test.ts` foi criado para consertar — descrever uma intenção como se
+ * fosse um fato.
+ *
+ * **Os dois promovidos em 2026-08-07 (`espetado`, `chanel`) são a exceção**: eles
+ * saem de arte, pela rota de `scripts/avatar/arte/`, e ali existe régua de verdade
+ * — mas ela mora lá, com o PNG do lado. Aqui eles são medidos pelas mesmas amarras
+ * dos outros, com dois pisos que só valem para peça traçada, declarados abaixo:
+ * a folga do rosto é **fato da arte** (o que o traço controla é não piorá-la), e o
+ * teto de bytes **não veta arte aprovada** (decisão A).
  *
  * O que substitui a régua são as amarras daqui. Cada uma reprova um defeito que
  * este projeto já viu, e nenhuma delas depende de alguém olhar a folha:
@@ -76,6 +84,42 @@ const CURTO_PARAMETRICO: Cabelo = {
   nome: "curto (paramétrico congelado)",
   pontos: PONTOS_PARAMETRICO,
 };
+
+/**
+ * QUANTAS CAMADAS A TOUCA EMITE — derivada do DADO, nunca do emissor.
+ *
+ * Se ela fosse lida do compositor, concordaria com qualquer coisa que ele fizesse.
+ * As três famílias emitem números diferentes, e cada uma pelo próprio motivo:
+ *
+ * - **paramétrica**: sempre 2 — a escura e a clara (a franja subida `DEGRAU`);
+ * - **traçada sintetizada**: a massa (1), a clara se houver, e o traço se houver
+ *   arcos — `.kk-cabelo-l` só sai quando `linhas` existe, senão seria regra emitida
+ *   à toa;
+ * - **traçada transcrita**: a massa cheia de tinta (1) e o núcleo (1) são
+ *   obrigatórios — a banda preta É a diferença entre as duas —, mais a clara e as
+ *   pretas internas se houverem.
+ *
+ * As extensões pagam por GRUPO e entram por fora; as `formas` irmãs não pagam nada,
+ * porque saem como subpaths no mesmo `<path>` da massa.
+ */
+const camadasDaTouca = (c: Cabelo): number => {
+  if (c.pontos) return 2;
+  if (!c.massa) return 0;
+  if (c.nucleo?.length) return 2 + (c.clara ? 1 : 0) + (c.pretas?.length ? 1 : 0);
+  return 1 + (c.clara ? 1 : 0) + (c.linhas?.length ? 1 : 0);
+};
+
+/**
+ * OS BYTES DAS DUAS PEÇAS PROMOVIDAS, medidos na promoção (2026-08-07).
+ *
+ * Eles estouram `ORCAMENTO_COMPOSTO.bytes` (10 240) e **isso não veta** — decisão A
+ * do Doug, e o doc 15:463 já dizia que teto de bytes não veta arte aprovada. O
+ * número fica aqui como registro exato em vez de sumir num teto folgado.
+ *
+ * Quando um destes se mover, a pergunta é a mesma dos selos: *por que uma peça
+ * aprovada mudou?* — e a resposta não é editar este número.
+ */
+const BYTES_TRACADOS = { espetado: 13319, chanel: 11867 } as const;
 
 describe("a base careca não paga nada pelo slot de cabelo", () => {
   const careca = svgDe();
@@ -181,12 +225,38 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     }
   });
 
-  it("passa no contrato de custom properties e cabe no orçamento composto", () => {
+  it("passa no contrato de custom properties e cabe no orçamento de FORMAS", () => {
+    // As formas valem para as duas famílias: o teto de 26 sai da conta do ranking, e
+    // uma peça traçada não paga forma por ponto. Medido na promoção: espetado 22,
+    // chanel 23.
     const svg = svgDe(modelo);
     expect(conferirSvg(svg)).toEqual([]);
     expect(formas(svg)).toBeLessThanOrEqual(ORCAMENTO_COMPOSTO.formas);
-    expect(Buffer.byteLength(svg, "utf-8")).toBeLessThanOrEqual(ORCAMENTO_COMPOSTO.bytes);
   });
+
+  it(
+    cabelo.massa
+      ? "REGISTRA os bytes — o teto não veta arte aprovada (decisão A)"
+      : "cabe no teto de bytes do orçamento composto",
+    () => {
+      const bytes = Buffer.byteLength(svgDe(modelo), "utf-8");
+      if (cabelo.massa) {
+        // DECISÃO A, 2026-08-06: `ORCAMENTO_COMPOSTO.bytes` é autoimposto e o doc
+        // 15:463 declara que ele **não veta arte aprovada**. Uma peça traçada de arte
+        // real tem mais pontos que uma paramétrica, e as duas promovidas estouram.
+        //
+        // O que substitui o teto é um assert de **valor exato**: o número não vira
+        // teto folgado nem some do relatório — ele fica registrado, e cresce só
+        // quando alguém o remede de propósito. É a mesma doutrina dos selos.
+        //
+        // Medido em 2026-08-07, na promoção:
+        expect(bytes).toBe(BYTES_TRACADOS[modelo as keyof typeof BYTES_TRACADOS]);
+        expect(bytes).toBeGreaterThan(ORCAMENTO_COMPOSTO.bytes); // o registro é do ESTOURO
+        return;
+      }
+      expect(bytes).toBeLessThanOrEqual(ORCAMENTO_COMPOSTO.bytes);
+    },
+  );
 
   it("emite uma forma para cada peça declarada, e nenhuma vazia", () => {
     // O moicano não tem touca. Emitir `<path d="">` para ele custaria duas formas
@@ -199,9 +269,8 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     // mesmo lado da cabeça saem num `<path>` só, com subpaths.
     const svg = svgDe(modelo);
     expect(svg).not.toContain(`d=""`);
-    const camadasDeTouca = cabelo.pontos ? 2 : cabelo.massa ? (cabelo.clara ? 2 : 1) : 0;
     const grupos = new Set((cabelo.extensoes ?? []).map((e) => Boolean(e.atras))).size;
-    expect(formas(svg)).toBe(19 + camadasDeTouca + grupos);
+    expect(formas(svg)).toBe(19 + camadasDaTouca(cabelo) + grupos);
   });
 });
 

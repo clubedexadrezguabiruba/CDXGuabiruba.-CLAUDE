@@ -411,8 +411,16 @@ async function main() {
     const b = Buffer.byteLength(comCabelo, "utf-8");
     const folga = folgaDoRosto(m);
     const ruimSvg = conferirSvg(comCabelo);
+    // O teto de FORMAS vale para as duas famílias: ele sai da conta do ranking, e uma
+    // peça traçada não paga forma por ponto. Medido na promoção: 22 e 23 contra 26.
     if (f > TETO_COMPOSTO_FORMAS) estourou.push(`${m}: ${f} formas`);
-    if (b > TETO_COMPOSTO_BYTES) estourou.push(`${m}: ${b} bytes`);
+    // O de BYTES não veta arte aprovada — decisão A do Doug em 2026-08-06, e o doc
+    // 15:463 já dizia. Uma peça traçada de arte real tem mais pontos que uma
+    // paramétrica, e as duas promovidas estouram. O valor vira REGISTRO: ele aparece
+    // na linha abaixo marcado, e o assert de valor exato mora em `cabelo.test.ts`.
+    // Vetar aqui obrigaria a escolher entre a arte que o Doug aprovou e um teto que
+    // ninguém mediu — o benchmark do 10.6 é que decide o número, e ele não existe.
+    if (b > TETO_COMPOSTO_BYTES && !CABELOS[m].massa) estourou.push(`${m}: ${b} bytes`);
     if (ruimSvg.length) estourou.push(`${m}: ${ruimSvg.length} problema(s) de contrato`);
     // A folga do rosto é a amarra 1 de `cabelo.ts`: franja que encosta na
     // sobrancelha apaga a expressão no tamanho do ranking.
@@ -420,22 +428,24 @@ async function main() {
     // **Na peça TRAÇADA o piso é outro, e ele não é verificável aqui.** No paramétrico
     // a franja é desenhada, então folga curta é escolha de quem desenhou e 24 é a
     // régua. Na traçada a folga é um fato da arte — o gerador não conhece
-    // `FOLGA_ROSTO` —, e o que o traço controla é não piorá-la: o piso vira `folga da
-    // arte − meio traço`, medido por `avatar:fidelidade` (gate 3), que é o único lugar
-    // com a arte e o render lado a lado. Aqui sobra o aviso do número absoluto, que é
-    // legibilidade a 56 px. A régua antiga resolvia subindo a peça inteira, e foi isso
-    // que produziu a faixa de testa nua da folha HSHC93 — o traçador não sobe mais
-    // nada. Ver `tracar()` em `tracar-cabelo.ts`.
+    // `FOLGA_ROSTO` —, e o que o traço controla é não piorá-la. Quem mede isso é
+    // `npm run arte:revisao -- <arte>`, que sobrepõe o PNG e o render na mesma régua:
+    // é o único lugar com a arte e o produto lado a lado. Aqui sobra o aviso do
+    // número absoluto, que é legibilidade a 56 px. A régua antiga resolvia subindo a
+    // peça inteira, e foi isso que produziu a faixa de testa nua da folha HSHC93 — o
+    // traçador não sobe mais nada.
     const pior = Math.min(folga.esq, folga.dir);
     const curta = pior < FOLGA_ROSTO;
     const tracada = Boolean(CABELOS[m].massa);
     if (curta && !tracada) estourou.push(`${m}: folga do rosto ${pior.toFixed(1)}`);
     const fmt = (v: number) => (v === Infinity ? "  —  " : v.toFixed(1).padStart(5));
+    const acimaDoTeto = b > TETO_COMPOSTO_BYTES;
     console.log(
       `  ${CABELOS[m].nome.padEnd(12)} ${String(f).padStart(2)} formas (+${f - formas})   ` +
-        `${String(b).padStart(5)} bytes (+${String(b - bytes).padStart(4)})   ` +
+        `${String(b).padStart(5)} bytes (+${String(b - bytes).padStart(4)})` +
+        `${acimaDoTeto ? (tracada ? " ▲ registrado" : " ✗") : "            "}   ` +
         `folga do rosto esq ${fmt(folga.esq)} dir ${fmt(folga.dir)}` +
-        `${curta ? (tracada ? "   ⚠ é a folga DA ARTE — gate 3 de `avatar:fidelidade`" : "   ✗") : ""}`,
+        `${curta ? (tracada ? "   ⚠ é a folga DA ARTE" : "   ✗") : ""}`,
     );
   }
 
@@ -694,7 +704,7 @@ async function main() {
         ) +
         secaoFacetas +
         titulo(
-          "OS CINCO CABELOS a 56 px — o gate (a)",
+          `OS ${MODELOS_CABELO.length} CABELOS a 56 px — o gate (a)`,
           `o par mais parecido é ${piorPar.a} × ${piorPar.b}, com ${(piorPar.d * 100).toFixed(2)}% ` +
             `de pixels diferentes contra o piso de ${(PISO_DISTINCAO * 100).toFixed(1)}%`,
         ) +

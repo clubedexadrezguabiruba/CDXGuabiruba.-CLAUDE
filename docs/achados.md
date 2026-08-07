@@ -201,6 +201,57 @@ o caminho explícito, então nada em execução depende disto hoje.
 
 **Conserto:** uma linha, trocar por `${PASTA}/entrada.png`. **Quem decide:** Doug.
 
+### G5 — `folgaDoRosto` não separa franja de cortina numa peça de laço fechado
+**Prova:** `MEDIDO` — `src/lib/avatar/estilo/cabelo.ts`, `folgaDoRosto`
+
+A régua devolve o `y` **mais baixo de qualquer trecho** da poligonal dentro da faixa
+de `x` da sobrancelha. Numa franja paramétrica isso é exatamente a franja. Num laço
+fechado vindo de arte, a **cortina lateral** atravessa a mesma coluna de `x` bem mais
+abaixo, e é ela que o `Math.max` encontra.
+
+Medido na promoção de 2026-08-07:
+
+| peça | `folgaDoRosto` | sobrancelha sob a massa (`dentroDe`, 21 amostras) |
+|---|---|---|
+| espetado | esq **+7,0** · dir **+3,7** | **0/21** e **0/21** |
+| chanel | esq **−233,9** · dir **−238,2** | **0/21** e **0/21** |
+
+**Nenhuma das duas invade o rosto.** O −233,9 do chanel é o segmento 21→22 da massa
+dele, a `y 392,9` — a borda interna da cortina do bob descendo ao lado da bochecha,
+dentro da faixa `x 189,5…235,5` da sobrancelha esquerda. O docstring da função já
+prevê o laço fechado (*"a cortina desce ao lado do rosto pelo trecho de VOLTA"*), mas
+para o caso oposto: garantir que a régua **não** devolva `Infinity`.
+
+**Nada quebra hoje:** `cabelo.test.ts` só exige finitude para peça traçada, de
+propósito, e o piso da traçada é fato da arte. O custo é de leitura — a linha do
+`avatar:folha-base` imprime `folga do rosto esq -233.9 ⚠ é a folga DA ARTE`, e quem
+ler entende "a arte enterra o rosto", que é falso.
+
+**Conserto possível:** medir por `dentroDe` na altura da sobrancelha em vez do `y`
+mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em vez de
+*"há tinta abaixo dela nesta coluna?"*. Mexe numa régua que três testes usam.
+**Quem decide:** Doug.
+
+### G6 — `npm run build` está vermelho nesta branch, e o `verify:all` não vê
+**Prova:** `MEDIDO` — `git stash` num HEAD limpo, `gen-manifest.ts --check` → exit 1
+
+O `prebuild` roda `gen-manifest --check`, e ele reprova com *"A lista bate, mas o
+arquivo difere (formatação ou cabeçalho)"* — ou seja, os caminhos conferem e o que
+divergiu foi o texto gerado. **`npm run build` não chega a compilar.**
+
+Provado anterior a 2026-08-07: com todas as mudanças do dia guardadas (`git stash
+-u`), o check reprova igual. `npx next build` direto compila e passa — o problema é
+só o portão.
+
+**A parte que preocupa mais que o próprio achado:** `verify:all` não roda `build`, e
+o `workflow` do CI roda os dois separadamente — então isto pode estar vermelho há
+tempo sem ninguém tropeçar, porque o caminho de verificação diário não passa por
+aqui.
+
+**Conserto:** `npm run avatar:manifest`, e conferir o `git diff` — se ele mudar só
+cabeçalho, foi drift de formatação; se mudar lista, alguém mexeu em `public/items/`
+sem regerar. **Quem decide:** Doug.
+
 ---
 
 ## 🔵 Decisão ou divergência

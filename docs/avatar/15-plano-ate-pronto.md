@@ -1058,17 +1058,39 @@ agora entregaria item invisível.*
 | ordem | o quê | quantos | quem refina |
 |---|---|---|---|
 | 1 | Uniformes: **Aspirante feito**. Restam **Capitão, Comandante, General e Mestre** — 4, não 5, porque o tier 7 (Lenda) saiu da escada. O **design das 4 já está pronto e travado por gate**: cor, bota, detalhe e o pedido colável em [17](17-patentes-uniformes-design.md) e [18](18-uniformes-blocos.md). Falta só gerar a imagem, e quem gera é o Doug | ~~6~~ **4** | Doug gera, eu asso |
-| 2 | Cabelos | 5 | eu |
+| 2 | Cabelos — ⚠️ **a intenção desta linha mudou, ver abaixo** | ~~5~~ **?** | Doug decide |
 | 3 | Chapéus | 6 | eu |
 | ~~4~~ | ~~Relíquias (2 famílias × 3 tiers)~~ **cortadas pela D-E** — o slot `hand` não existe neste boneco | ~~6~~ **0** | — |
 | 5 | Backgrounds | 8 | eu |
 | 6 | **Pets** | 20 | **você refina bastante** |
 
-**Total: ~~39~~ → 33 desenhos**, pela D-E.
+**Total: ~~39~~ → 33 desenhos**, pela D-E — **e a linha 2 deixou de ter número.**
 
 **Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
 seguinte começar. Trinta e nove desenhos revisados só no fim é como se descobre,
 tarde, que a régua de estilo derivou.
+
+### ⚠️ A LINHA 2 (Cabelos) MUDOU DE INTENÇÃO — 2026-08-07
+
+Ela foi escrita quando cabelo nascia de **desenho paramétrico** feito por mim, e "5"
+era o catálogo inteiro a produzir. Isso deixou de ser verdade duas vezes:
+
+1. **O catálogo já tem 7**, não 5. `espetado` e `chanel` entraram em 2026-08-07,
+   vindos da **rota de arte** e aprovados visualmente pelo Doug (Blocos 9 e 14 do
+   `ESTADO-DA-ROTA`). Eles não custaram desenho meu — custaram arte dele.
+2. **Cabelo novo não nasce mais por desenho paramétrico.** A rota de arte é o
+   pipeline permanente (`docs/avatar/19-rota-de-arte-runbook.md`): o Doug edita
+   sobre a base oficial, o programa mede, e a peça sai. Os 5 paramétricos ficam
+   como estão; a família nova entra por ali.
+
+**O que a linha ainda encomenda é decisão do Doug, e fica registrado como pendência
+em vez de resolvido em silêncio.** As perguntas são: quantos cabelos o catálogo
+final quer, e quantos deles saem por arte contra quantos ficam paramétricos. O
+número "5" **não** é o que sobrou — ele descreve um mundo que mudou.
+
+⚠️ **O Bloco 9 depende disto.** A conta de itens do 9.1 e as combinações
+chapéu × cabelo abaixo já foram corrigidas para 7, que é o estado de hoje. Se o
+Doug encomendar mais cabelos, as duas voltam a mudar.
 
 ### ⚠️ ANTES DOS 6 CHAPÉUS: a regra de chapéu × cabelo — 2026-08-03
 
@@ -1081,8 +1103,16 @@ fechado não pode ter mecha atravessando o metal.
 **A resposta vive no item, nunca no compositor.** Um campo declarado no chapéu
 (`escondeCabelo?: "nada" | "franja" | "tudo"`) e o `compor()` obedecendo — o
 mesmo idioma do `atras` que as extensões já usam. A alternativa é um `if` por
-chapéu dentro do compositor, e seis chapéus × cinco cabelos são **30 combinações**
-para consertar caso a caso.
+chapéu dentro do compositor, e seis chapéus × ~~cinco~~ **sete** cabelos são
+~~30~~ **42 combinações** para consertar caso a caso — o argumento **engordou** com
+a promoção de 2026-08-07, e engorda de novo a cada cabelo que a rota de arte
+entregar.
+
+⚠️ **E os dois cabelos novos sobem o preço de outra forma:** eles são **peça
+sobreposta**, desenhada por cima sem clip. Um chapéu que precise esconder a franja
+tem de esconder uma peça que não é cortada pela cabeça. O modelo da peça sobreposta
+foi escrito para servir aos 6 chapéus também (Bloco 4 do `ESTADO-DA-ROTA`), então o
+caminho existe — mas quem desenhar o primeiro chapéu decide isto, não descobre.
 
 **Decidir isto depois de os 6 chapéus estarem desenhados custa redesenho**, porque
 a resposta muda a forma da peça: um chapéu que esconde a franja pode ser mais
@@ -1100,9 +1130,13 @@ invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo do
 
 ## Bloco 9 — F4 dados: o catálogo novo
 
-- **9.1** Reseed: **77 → ~~60~~ 54 itens** (7 uniforme + 6 head + 5 hair +
-  20 pet + 8 background + 8 frame). O `hand` saiu pela **D-E**, e as suas 8 linhas
+- **9.1** Reseed: **77 → ~~60~~ ~~54~~ 56 itens** (7 uniforme + 6 head + **7 hair**
+  + 20 pet + 8 background + 8 frame). O `hand` saiu pela **D-E**, e as suas 8 linhas
   já terão sido removidas no **2c** — aqui não sobra nada dele para reseed.
+  ⚠️ **`hair` foi de 5 para 7** com a promoção de `espetado` e `chanel` em
+  2026-08-07. O número volta a mudar se o Doug encomendar mais cabelos — ver a
+  emenda à linha 2 do Bloco 8. A régua de verdade é `MODELOS_CABELO`, e o reseed
+  deve **lê-la**, não repetir "7" à mão.
 - **9.2** Pirâmide de raridade **40/30/20/10** (hoje 19/20/20/18 — um quarto do
   catálogo é lendário, então lendário não quer dizer nada).
 - **9.3** **D16** — pool de baú só com estético (`head`, `hair`, `background`,
