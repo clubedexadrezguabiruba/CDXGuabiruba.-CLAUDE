@@ -68,12 +68,40 @@
  *
  * Ela **não** recorta a peça no crânio. Isso é o defeito que a rodada anterior
  * mediu e não conseguiu consertar mexendo no lugar errado: *"a fonte carrega as
- * pontas; o clip da cabeça é que não as deixa aparecer"*. A permitida vai do topo
- * do canvas até o queixo e de borda a borda, tirando só rosto e tronco — o cabelo
- * pode e deve romper a silhueta.
+ * pontas; o clip da cabeça é que não as deixa aparecer"*. A permitida é o canvas
+ * inteiro **menos o rosto** — o cabelo pode e deve romper a silhueta.
  *
- * O que ela faz é impedir que olho, boca e roupa entrem na peça caso o gerador
- * pinte ciano em cima deles.
+ * O que ela faz é impedir que olho e boca entrem na peça caso o gerador pinte
+ * ciano em cima deles.
+ *
+ * ---------------------------------------------------------------------------
+ * O TRONCO SAIU DAQUI NO BLOCO 12 — e é decisão de arte, não conserto de bug
+ * ---------------------------------------------------------------------------
+ *
+ * Até o Bloco 11 esta linha também tirava a região `corpo`, e a dívida estava
+ * declarada desde a R0: *"a região do corpo virou silhueta justamente para salvar
+ * cabelo que cai AO LADO do tronco, e nada salva cabelo que cai NA FRENTE dele."*
+ *
+ * O Doug olhou a folha da rodada 2 do `chanel` e decidiu que **a mecha que cai
+ * sobre o tronco fica**. O que ela custava, medido: **4 776 px descartados, 7,2%
+ * de borda amputada**, e a ponta esquerda do render **42 px mais alta e 35% mais
+ * fina** que a da arte. O cabelo não morria no gerador — morria aqui.
+ *
+ * A bancada (`Bloco 12`) varreu os pontos de `TRONCO.perfil` como pisos possíveis
+ * e mostrou que **do piso 411,6 para cima a peça sai idêntica byte a byte**, então
+ * o único eixo que restava era manutenção: um piso finito limpa a peça de HOJE e
+ * precisa ser re-derivado para uma mais comprida. Tirar o tronco não precisa.
+ *
+ * **O que se perdeu, dito com todas as letras:** se o gerador pintar a roupa de
+ * ciano, a roupa vira cabelo e nada aqui reclama. É risco aceito — o defeito é
+ * berrante e a folha o mostra na hora.
+ *
+ * **O que NÃO se perdeu:** o Gate −1. Ele chama esta função com `limitar = false`
+ * (`gate-menos-um.ts:624`), e com isso o `&&` abaixo curto-circuita e `permitida`
+ * fica 1 em todo pixel — o gate nunca enxergou esta linha. Quem prova que o
+ * gerador não redesenhou o tronco é a NCC sobre `região ∧ ¬peça`, e `corpo`
+ * continua inteiro em `REGIOES_QUE_REPROVAM`. Os seis vereditos das fixtures são
+ * **estruturalmente** independentes desta mudança, não só empiricamente.
  */
 
 import { mkdirSync, writeFileSync } from "fs";
@@ -315,7 +343,9 @@ export function mascaraDaPeca(
       const j = i * 3;
       const [r, g, b] = [arte.data[j], arte.data[j + 1], arte.data[j + 2]];
       const reg = regiaoDoPixel(x, y);
-      permitida[i] = limitar && (reg === "rosto" || reg === "corpo") ? 0 : 1;
+      // SÓ O ROSTO RECORTA A PEÇA — o tronco não, desde o Bloco 12. Ver o bloco
+      // de comentário logo acima de `mascaraDaPeca`.
+      permitida[i] = limitar && reg === "rosto" ? 0 : 1;
       if (ehTeal(r, g, b)) cru[i] = 1;
       if (ehEscuro(r, g, b)) escuro[i] = 1;
     }
@@ -590,7 +620,10 @@ export function imprimirExtracao(e: Extracao, caminho: string): void {
   const total = e.mascara.reduce((a, b) => a + b, 0);
   console.log(`P2 — EXTRAÇÃO — ${caminho}\n`);
   console.log(`  pixels da peça          ${total}`);
-  console.log(`  fora da região permitida ${e.foraDaPermitida} px  (ciano ou traço novo sobre rosto/corpo — descartado)`);
+  console.log(
+    `  fora da região permitida ${e.foraDaPermitida} px  ` +
+      `(ciano ou traço novo sobre o ROSTO — descartado; o tronco saiu no Bloco 12)`,
+  );
   console.log(
     `  caixa em unidades       x ${e.caixaUnidades.x0.toFixed(1)}→${e.caixaUnidades.x1.toFixed(1)}  ` +
       `y ${e.caixaUnidades.y0.toFixed(1)}→${e.caixaUnidades.y1.toFixed(1)}`,

@@ -1411,6 +1411,408 @@ lê, então ela não bloqueia o chanel, e se calibra nas fixtures A–F e não n
 
 ---
 
+## BLOCO 11 — o CHANEL, RODADA 2: cinco dos seis defeitos de desenho caem, e o sexto não se move (2026-08-06)
+
+> **A mesma regra da rodada anterior: parar na primeira folha.** Gerar, ler,
+> reportar — sem consertar, sem afinar limiar, sem trocar régua, sem re-rodar com
+> outro N, sem colar em `CABELOS`. Nada foi consertado nesta rodada.
+
+Arte nova gerada no Gemini com o pedido emendado de `PEDIDO-CHANEL.md` (os quatro
+parágrafos 🆕, um por defeito medido no Bloco 10), salva por cima de
+`scripts/avatar/arte/chanel.png`. **A arte da rodada 1 está commitada em `ba18dd0`**
+— sobrescrever foi conferido como reversível antes de copiar.
+
+**Nenhum arquivo de código foi tocado.** `pecas-da-arte.ts` foi regerado por
+`arte:pecas`, que é o que o controle 6 exige.
+
+### O PLACAR DOS QUATRO PARÁGRAFOS 🆕 — 2 de 4
+
+É a régua que importa neste bloco: o pedido nasceu de defeito medido, então ele se
+mede pelo defeito que derrubou.
+
+| parágrafo 🆕 | veredito | a prova |
+|---|---|---|
+| **simetria como espelho** | **obedecido** | 0 saltos ≥ 4 px na faixa da sobrancelha; pontas a 0,25% (arte) e 0,74% (render) da altura da peça, contra 4–5% na rodada 1 |
+| **o cabelo não toca a roupa** | **desobedecido** | as pontas terminam 43–48 px abaixo do queixo e sobrepõem a roupa em ~30 px; **zero fundo bege** entre a ponta e a gola |
+| **contorno fechado e contínuo** | **obedecido ao olho** | espessura mínima 11 px nas três bordas, nenhuma linha < 8 px; mas a sonda de perímetro ainda dá **95,2%** e três trechos fracos. **As duas réguas discordam e não foi investigado qual está certa** |
+| **sem canto reto** | **desobedecido na arte** | a pele salta de 0 px em y=248 para 248 px em y=252 — quatro linhas; a borda de baixo da franja é reta (y=247 constante em 190 px de largura). Quem arredonda é o **render**, com raio ~30 px |
+
+### Os portões, em ordem
+
+| # | gate | resultado |
+|---|---|---|
+| −1 | `arte:gate` | **APROVADA** — hash `d8694eac` confere · 1024² · deslocamento 0,0 px · escala 100,00% · rodapé 100,0% |
+| −1 | causa do que mudou nas protegidas (4 865 px) | **peça 95,1%** · repintura 0,2% · **não explicado 4,7% (229 px)** |
+| 2 | `arte:extrair` | 141 424 px · **4 776 px descartados** fora da permitida · 1 componente, 0 descartadas |
+| 3 | `arte:contorno` | 2 305 pts densos → 28 · erro máx **5,60 u** (teto 6) · IoU contra a máscara 95,7% |
+| 4 | `arte:converter` | massa 28 pts · clara 28 · formas irmãs 0 · **auto-interseções 0** · k = 1,0000 |
+| 5 | `arte:revisao` | **os 6 controles verdes** — a folha aceitou julgar |
+
+Papéis da extração: massa 89 682 px (63,4%) · sombra 17 007 (12,0%) · **luz 8 961
+(6,3%)** · traço 25 774 (18,2%) · não classificados **0**.
+
+**GATE: todos verdes.** identidade 100,0% · careca 0,0% · trocada 70,9% < certa
+90,0% (folga **19,1 pontos**) · `naTela` bate no raster com 0,2 u · denominadores
+141 393 / 150 522 · literal confere ponto a ponto.
+
+### A TABELA DA RODADA — e os quatro números que o pedido mandou derrubar não se moveram
+
+| medida | rodada 1 | **rodada 2** | o que o pedido esperava |
+|---|---|---|---|
+| Gate −1 | APROVADA | **APROVADA** | igual · |
+| não explicado nas protegidas | 335 px (6,7%) | **229 px (4,7%)** | — |
+| descartado fora da permitida | 4 770 px | **4 776 px** | "bem menor" **✗** |
+| vazamento no queixo (arte) | 6 906 px · 4,9% | **6 917 px · 4,9%** | "perto de zero" **✗** |
+| borda amputada por região | 7,1% | **7,2%** | "perto de zero" **✗** |
+| perímetro pintado de preto | 95,1% | **95,2%** | "100%" **✗** |
+| `só na arte` | 5 063 px · 3,6% | **3 151 px · 2,2%** | "igual ou menor" · |
+| IoU dentro do `viewBox` | 89,6% | **90,0%** | diagnóstico |
+| erro máx do contorno | 5,94 u | **5,60 u** (teto 6) | diagnóstico |
+| N · k · cobertura de arco | 28 · 1,000 · 89,3% | **28 · 1,000 · 89,3%** | diagnóstico |
+| fração no papel `luz` (extração) | 9 000 px · 6,4% | **8 961 px · 6,3%** | diagnóstico |
+| desvio lateral p95 | 16,7 u (máx 283,3) | **16,7 u** (máx 280,0) | diagnóstico ✗ teto 6 |
+| desvio de topo p95 | 29,2 u | **31,7 u** (máx 51,7) | diagnóstico ✗ teto 6 |
+| preto do render ÷ arte | 1,25× (IoU 34,3%) | **1,18×** (IoU 34,6%) | diagnóstico |
+| bytes do composto | 9 929 (folga 311) | **10 100 (folga 140)** | risco, **piorou** |
+
+**Os quatro ✗ têm uma causa só: a arte continua descendo sobre a roupa.** Não são
+quatro defeitos, é um defeito medido por quatro réguas.
+
+### O QUE A FOLHA MOSTROU — lida por subagente, com a separação número × olho
+
+**CORRIGIDO contra a rodada 1** — cinco dos seis defeitos de desenho:
+
+1. **O degrau quadrado na sobrancelha sumiu** — *número*. Varredura de salto ≥ 4 px
+   no contorno: **zero ocorrências** na faixa da sobrancelha, na arte e no render.
+   Os únicos saltos estão no topo da cúpula, e são curvatura.
+2. **As pontas terminam na mesma altura** — *número*. Arte **1 px = 0,25%** da
+   altura da peça; render **3 px = 0,74%**. Era 4–5%.
+3. **O contorno furado sumiu** — *número*. Mínimo **11 px** nas bordas esquerda,
+   direita e topo; **nenhuma linha abaixo de 8 px**. O arco superior direito
+   pontilhado não existe mais. *Ressalva registrada:* a sonda de perímetro ainda dá
+   95,2% e três trechos fracos (#19 a 17,0%, #18 a 32,1%, #8 a 34,0%).
+4. **O traço solto do canto inferior direito sumiu** — *número*. O preto da arte é
+   **1 componente conexo de 17 639 px** mais um pixel isolado.
+5. **A curva inferior virou uma linha só** — *número*. Borda externa das duas pontas
+   monotônica, sem repetição nem salto. Uma quebra de 1 px em y=485 à esquerda.
+
+**NÃO CORRIGIDO:**
+
+6. **As laterais continuam caindo sobre a roupa** — *número + olho*. É a causa dos
+   quatro ✗ da tabela. **Ver o Bloco 12: o Doug decidiu que esta mecha FICA**, e com
+   isso este item deixa de ser defeito da arte e vira dívida do pipeline.
+7. **A abertura do rosto ainda é retângulo de canto vivo na arte** — *número*. O
+   render arredonda; nesse item o render está melhor que o modelo.
+8. **A franja subiu, e agora está medida** — *número*. O render põe a franja **14–16
+   px acima** da arte; a testa nua vai de **9 px (2,9% da cabeça) para 20 px (6,4%)**.
+   A **única** região "só na arte" no painel da divergência é uma tira de
+   **222 × 16 px** — exatamente a barra da franja.
+9. **A LUZ PIOROU, e o item 9 dos abertos sobe de preço outra vez** — *olho +
+   número*. A arte tem **6 075 px de tom claro = 7,9% da peça e 12,4% da cúpula**,
+   com **99,2% dele à esquerda**, em três manchas. O render devolve **6 pixels**. A
+   paleta do render tem exatamente **dois** tons de ciano: **não existe terceiro
+   tom**. Na rodada 1 sobrava um filete de 3–5 px; agora não sobra nada.
+10. **O corte cabelo × corpo não bate no entalhe** — *número*. Na ponta esquerda a
+    arte desce até y=486 e o render para em y=444: **42 px mais alto**, e a ponta
+    perde **35% da largura** (132 → 86 px). É a amputação aparecendo.
+11. **A 56 px o fundo escuro continua o pior** — *número*. Contraste do contorno
+    preto contra o fundo escuro **1,22**; do cabelo, **2,04**. No claro é 19,85 e
+    7,96. Separa bem dos controles: **3 051 px** de cabelo contra **612** do
+    `[curto]` e **0** do careca.
+
+**DEFEITOS NOVOS, e os três primeiros são da ROTA e não da arte:**
+
+12. **Dois slivers de fundo nas pontas do render** — *número*. ~90 px cada
+    (3–4 px × 34 px), em x659–670 e x892–903, entre o preenchimento ciano e o traço
+    preto interno. **Não existem na arte** — é desregistro fill/stroke do vetor.
+    Simétricos entre si.
+13. **Rebordo de sombra que a arte não tem** — *número*. O render acompanha todo o
+    contorno com 5–6 px do tom escuro (12–17 px por linha entre y=147 e y=207, onde
+    a arte tem 1–3). É o antialiasing da arte virado segundo caminho pelo tracer.
+14. **O render descartou um traço interno da arte** — *número*. A arte tem três
+    faixas pretas na ponta direita entre y=435–470 (a do meio, x415–429, sem espelho
+    à esquerda); o render tem duas em todas as linhas.
+15. **A varredura de N foi interrompida pelo teto, não pela arte** — *número*, e a
+    própria folha marca com ✗: de N=48 (2,1 u) para N=64 (1,3 u) o desvio **ainda
+    caiu 0,8 u**.
+
+### O ACHADO DO BLOCO: o pedido mandava dobrar por um eixo que não é o eixo
+
+**A instrução *"dobrando pela linha vertical que passa pelo nariz, os dois lados
+coincidem"* é impossível de obedecer nesta base**, e a rodada 1 julgou a simetria
+contra ela.
+
+O subagente mediu a linha do nariz **40,3 px à direita do eixo do corpo** — e mediu
+o mesmo no **controle 2, a careca sem peça nenhuma**. A causa está declarada em
+`geometria.ts:179-183`: `GIRO.eixoCabeca = 7` mais `GIRO.desvioOlhos = 33`, **40
+unidades**, o número exato. A base tem um giro de três quartos por decisão de arte.
+
+| dobra | desbalanço |
+|---|---|
+| pela linha do **nariz** | **30,9%** dos pixels sem par na arte, 30,3% no render; faixa de cabelo 136 px à esquerda contra 45 à direita |
+| pelo **eixo próprio da peça** | mediana **2,0 px** (arte) e **1,0 px** (render); p90 de 9 e 8 px |
+
+**A peça está simétrica; o pedido é que media contra o eixo errado.** E isso se
+propaga: a 56 px a banda de cabelo lê ~15 px à esquerda contra ~5 à direita. Isso é
+o `GIRO` aparecendo, não a peça torta — se ler como "cabeça torta" no produto, o
+item a rever é o `GIRO`, e é decisão de arte.
+
+**Emenda ao pedido, para a rodada 3:** trocar "a linha vertical que passa pelo
+nariz" por "o eixo de simetria do próprio cabelo".
+
+### Bytes e escala
+
+**22 formas · 10 100 bytes**, teto 10 240 — folga de **140 bytes (1,4%)**, contra
+311 na rodada 1. Continua sendo a peça mais pesada do catálogo (Cachos faz 9 045).
+A peça a 100% encosta no teto (−6,7 u); no quadro de 92%, que é o que manda, ela
+começa em **68,3 u** e cabe. **A compressão não tira nada**: as áreas de ciano de
+"crua a 92%" e "peça a 92%" são idênticas pixel a pixel (69 699 px).
+
+A ponta acima da coroa: arte 46,3 u · peça 52,2 u — a peça **guardou 112,6%** da
+ponta da arte.
+
+### VEREDITO: MEDIDO, e o julgamento MUDOU DE OBJETO
+
+Nenhum gate reprovou, e a arte melhorou em cinco dos seis defeitos de desenho. O
+sexto — cabelo sobre a roupa — **não se moveu um pixel**, e é ele que segura os
+quatro ✗ da tabela.
+
+**Mas o Doug olhou a folha e decidiu o contrário do que o pedido pedia: a mecha
+FICA.** Com isso, `descartado`, `borda amputada` e `vazamento no queixo` deixam de
+ser piso com causa da ARTE e viram **dívida do pipeline** — é o Bloco 12.
+
+Os defeitos que sobram são mais da rota que da arte: a luz sumiu de vez, e
+apareceram três divergências arte × render que a rodada 1 não tinha (12, 13 e 14).
+
+### Verificação
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm test` | **441 passando**, 24 arquivos |
+| `npm run avatar:folha-base` | **19 formas · 7 468 bytes** — os dois congelados parados, `conferirSvg` 0 problemas |
+
+---
+
+## BLOCO 12 — a mecha FICA: o tronco sai da extração, e a peça deixa de ser amputada (2026-08-06)
+
+**Decisão do Doug, olhando a folha da rodada 2:** o cabelo que cai sobre o tronco
+não é defeito da arte, é peça — e quem o matava era o pipeline.
+
+### A causa, uma linha
+
+`extrair.ts` descartava da máscara todo ciano que caísse sobre a região `corpo`.
+A dívida estava declarada desde a R0: *"a região do corpo virou silhueta justamente
+para salvar cabelo que cai AO LADO do tronco, e nada salva cabelo que cai NA FRENTE
+dele."*
+
+```
+-  permitida[i] = limitar && (reg === "rosto" || reg === "corpo") ? 0 : 1;
++  permitida[i] = limitar && reg === "rosto" ? 0 : 1;
+```
+
+### A BANCADA — e ela decidiu quase tudo sozinha
+
+Varridos como pisos possíveis os pontos de `TRONCO.perfil` abaixo do queixo —
+**medidas do desenho, não desta arte**. `Y_QUEIXO` é o de hoje; `Infinity` é tirar
+o tronco de vez.
+
+| piso | y | descartado | amputada | pts | desvio | bytes |
+|---|---|---|---|---|---|---|
+| hoje | 353,2 | **4 776 px** | **7,2%** | 28 | 5,60 u | 10 100 |
+| perfil | 363,7 | 3 813 px | 6,7% | 28 | 5,61 u | 10 069 |
+| **perfil** | **411,6** | 51 px | **0,0%** | 28 | 5,61 u | **10 335** |
+| perfil | 483,4 → 615,3 | 43 → 28 px | 0,0% | 28 | 5,61 u | 10 335 |
+| **sem piso** | ∞ | **21 px** | **0,0%** | 28 | 5,61 u | **10 335** |
+
+**Do piso 411,6 para cima a peça sai IDÊNTICA — conferido por string, não por
+contagem de bytes.** Sete pisos emitem o mesmo SVG byte a byte. Os 21 px que sobram
+são recorte de **rosto**, que a bancada não move de propósito.
+
+Com a peça idêntica, sobrou um eixo só: **manutenção.** Um piso finito limpa a peça
+de hoje e teria de ser re-derivado para uma mais comprida — a armadilha que esta
+rota já pisou ("uma amostra não estabelece limite"). Tirar o tronco não tem esse
+custo. **Escolhida a variante sem piso.** A chave de bancada foi removida junto,
+como o `arquitetura` do Bloco 3; o registro dela é esta seção.
+
+**O que se perdeu, com todas as letras:** se o gerador pintar a roupa de ciano, a
+roupa vira cabelo e nada reclama. Risco aceito — o defeito é berrante.
+
+**O que NÃO se perdeu, e é estrutural e não empírico:** o Gate −1 chama
+`mascaraDaPeca` com `limitar = false` (`gate-menos-um.ts:624`), o `&&` curto-circuita
+e `permitida` fica 1 em todo pixel. **O gate nunca enxergou esta linha.** `corpo`
+continua inteiro em `REGIOES_QUE_REPROVAM`, e quem prova que o gerador não redesenhou
+o tronco é a NCC sobre `região ∧ ¬peça`.
+
+### Uma régua teve de mudar junto, e não mudar seria o erro
+
+`bordaAmputada` contava borda que encosta em `rosto` **ou** `corpo`. Com o tronco
+fora da extração, contar o tronco devolveria amputação onde não há corte. É o modo
+de falha que esta rota já viu quatro vezes: **régua que sobrevive à mudança do que
+ela mede e passa a medir outra coisa.** Passou a contar só `rosto`.
+
+### AS QUATRO ARTES, e todas as quatro mudaram
+
+Conferido peça a peça no literal de `pecas-da-arte.ts`, **antes × depois** — porque
+contagem de pontos igual não prova coordenada igual:
+
+| arte | descartado | borda amputada | cobertura de arco | literal |
+|---|---|---|---|---|
+| `entrada` (espetado) | 442 → **0 px** | 0,0% → 0,0% | 100,0% → **100,0%** (1 arco) | **MUDOU** 3 686 → 3 806 b |
+| `entrada-2` | 26 354 → **2 396 px** | 6,5% → **3,6%** | 82,5% → **97,5%** (1 arco) | **MUDOU** 2 825 → 2 908 b |
+| `entrada-3` | 2 702 → **27 px** | 0,0% → 0,0% | 87,5% → **100,0%** (1 arco) | **MUDOU** 1 794 → 1 845 b |
+| `chanel` | 4 776 → **21 px** | 7,2% → **0,0%** | 89,3% → **100,0%** (1 arco) | **MUDOU** 1 794 → 2 108 b |
+
+**Consequência que precisa ficar escrita: o espetado foi APROVADO no Bloco 9 contra
+uma peça que não existe mais.** Mudou pouco (442 px de 113 165 = 0,4%, +120 bytes) e
+mudou. Ou a aprovação se estende por analogia, ou o espetado é rejulgado. **É decisão
+do Doug, e ninguém deve presumir a primeira.**
+
+E a `entrada-2`, que a R0 dizia que *"não sobrevive a esta rota"*, hoje tem **3,6%**
+de amputação — e esses 3,6% são `rosto`, que é o certo: ela cobre o rosto.
+
+### O `chanel` pela esteira inteira
+
+| medida | rodada 2 (amputada) | **rodada 2 (a mecha fica)** |
+|---|---|---|
+| pixels da peça | 141 424 | **146 963** (+5 539) |
+| descartado | 4 776 px | **21 px** |
+| borda amputada | 7,2% | **0,0%** |
+| perímetro pintado de preto | 95,2% | **100,0%** |
+| traço declarado | 2 arcos · 89,3% | **1 arco · 100,0%** |
+| `só na arte` | 3 151 px | **2 390 px** |
+| IoU acima do queixo | 90,5% | **91,2%** |
+| IoU no `viewBox` | 90,0% | 89,9% |
+| clara | 28 pts · 5,18 u | **32 pts · 3,14 u** |
+| controle 3 (folga) | 70,9 < 90,0 (19,1 pt) | **67,4 < 89,9 (22,5 pt)** |
+| bytes do composto | 10 100 | **10 335** ✗ estoura o teto de 10 240 |
+| vazamento abaixo do queixo | arte 4,9% · render 5,6% · simétrico | arte **8,5%** · render **10,1%** · ✗ **assimétrico** |
+
+**O vazamento abaixo do queixo virou régua obsoleta na interpretação, não na conta.**
+O valor absoluto agora mede o que a decisão de arte **autorizou** — a leitura "a arte
+desobedeceu o pedido" do Bloco 11 morreu. O que continua valendo é a comparação
+arte × render, e ela ficou assimétrica: o render põe 1,6 ponto a mais abaixo do
+queixo que a arte.
+
+### A FOLHA — lida por subagente, medida nas máscaras e não a olho
+
+**A amputação acabou de verdade** (*número*): as regiões "só na arte" somam 2 390 px
+em **três** regiões, e **nenhuma delas está nas pontas ou sobre o tronco**. O render
+não para acima da arte em lugar nenhum — passa **6 a 8 px abaixo**, que é o traço
+vetorial correndo por fora da máscara. As duas pontas voltaram igualmente (esquerda
++8 px de profundidade e +25 de largura; direita +6 e +22). Sobre a roupa: arte
+5 970 px, render **7 241 px**.
+
+**O entalhe caiu de 42 px para 7–8 px** (*número*). **Os dois slivers de fundo
+sumiram** (*número*): sobrou **um furo de 1 px** em (642, 560).
+
+**O contorno do render é UM componente de 34 485 px**, curva fechada única, sem
+trecho falhado nem traço solto, espessura entre 13 e 18 px em 90% do percurso
+(mediana 14). O da arte é 1 componente de 28 456 px mais 4 fagulhas de antialias.
+
+### O QUE NÃO MELHOROU — e é tudo a mesma coisa: a TINTA não é transcrita
+
+Este é o achado do bloco, e ele reorganiza três defeitos soltos num só.
+
+**A forma é transcrita bem. A tinta não é transcrita de jeito nenhum.**
+
+| camada | a ARTE tem | o RENDER devolve |
+|---|---|---|
+| **luz** | **9 072 px = 6,17%**, em 3 manchas, todas na metade esquerda: crescente de borda 5 191 px (x249–605, y105–393), **oval do domo alto-esquerdo 3 456 px (x311–416, y151–251)**, pingo 419 px | **55 px = 0,03%**, em 11 fraturas de ≤12 px, todas em y264–273 — **é serrilha de antialias, não brilho** |
+| **sombra** | **13 131 px = 8,9%**, em 3 massas: mecha inferior esquerda (x243–445, y353–553), faixa da borda direita (x696–777, y277–543), gancho direito (x643–702, y500–551) | **não é a sombra da arte**: é uma faixa de 2–6 px abraçando o traço preto pela peça inteira, mais massa sólida nos 60 px de baixo das mechas. **Sombreamento sistêmico do compositor** |
+| **traço interno** | a arte desenha traço preto **dentro** da peça | **descartado** — ver abaixo |
+| tons de ciano | **3** + traço | **2** + traço |
+
+**O traço interno é estruturalmente impossível hoje, e isso não é limiar mal
+escolhido.** `Cabelo.linhas` são arcos **do laço da massa**: um traço que corre por
+dentro da peça, e não pela borda dela, não tem onde morar no tipo. É por isso que o
+traço da mecha direita perto do queixo some — e some por construção.
+
+### A PERGUNTA DO DOUG, registrada: *"o preto da arte está perfeito, não daria para usar direto?"*
+
+**Daria, e é o mesmo conserto dos três itens da tabela acima.** O preto da arte é
+uma curva fechada única de 28 456 px que o `Cabelo.formas` (Bloco 4) já sabe
+representar como forma irmã preenchida. Isso deixaria de sintetizar o contorno e
+passaria a **transcrevê-lo** — com a espessura que a artista deu, e com os traços
+internos que hoje não têm onde caber.
+
+**O preço, medido antes de qualquer decisão:** a faixa preta é um anel — borda
+externa **mais** borda interna —, então ela custa da ordem do dobro dos pontos da
+massa, e o composto **já está 95 bytes acima do teto**. Não foi medido; é a bancada
+do bloco seguinte.
+
+### Defeitos novos que a folha mostrou
+
+1. **A franja virou o déficit inteiro** (*número*). Ela é **2 301 dos 2 390 px** de
+   "só na arte" — **96,3%**. Resolvida ela, o magenta desabaria para 89 px.
+2. **A franja do render está TORTA** (*número*, novo). Na arte a base é uma barra
+   nivelada: y=278 constante em 57 colunas amostradas, sem um pixel de variação. No
+   render é uma rampa monotônica de 263 a 273 — **10 px de inclinação**. A testa nua
+   vai de **10 px constantes** (arte) para **15 a 25 px** (render). É defeito de
+   forma, não só de altura.
+3. **Lasca de 5 × 48 px** (*número*, novo) em x402–406, y304–351 — o render recuou
+   5 px por 48 linhas na aresta interna da mecha esquerda. É a única perda fora da
+   franja.
+4. **Furo de agulha de 1 px** em (642, 560) — sujeira de conversão que a arte não tem.
+5. **A seção 5 da folha compara uma imagem com ela mesma** (*número*, e é defeito da
+   FOLHA): `.r-crua-1.png`, `.r-peca.png` e `.r-gemeo.png` são **byte-idênticos**
+   (md5 `fcc556da…`), e `.r-crua-92.png` = `.r-peca-92.png`. Os painéis *"crua a
+   92%"* e *"peça a 92%"* são o mesmo arquivo. **A escada de escala, como está, não
+   prova nada sobre compressão.**
+6. **O controle `[curto]` é um piso baixo demais** (*número*, colateral): ele e o
+   careca têm **silhueta idêntica nas 56 linhas** a 56 px — é uma touca pintada, não
+   altera o contorno em um pixel. O `chanel` muda a silhueta em **26 das 56**.
+
+### A 56 px: LÊ COMO CABELO
+
+O subagente respondeu a pergunta que decide, e com razão medida: as duas mechas
+descem abaixo da linha do queixo e **terminam em pontas destacadas sobre a roupa**,
+com recorte visível entre a ponta e o ombro — capacete é massa que abraça o crânio e
+para na orelha. As pontas recuperadas **sobrevivem até a linha 34** e alargam a
+silhueta em ~4 px por lado. Nas duas últimas linhas elas são mais traço que cabelo
+(linha 34: 6 px de cabelo contra 10 de preto).
+
+**Pior fundo: o escuro**, de novo — castanho e preto colapsam e a aresta externa das
+mechas some. A ponta da direita é sempre a mais frágil.
+
+### Verificação
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm test` | **441 passando**, 24 arquivos |
+| `npm run verify:arte` | **21 de 21**, cor proibida PASSA, hash da base CONFERE |
+| `npm run avatar:folha-base` | **19 formas · 7 468 bytes**, `conferirSvg` 0 problemas |
+| Gate −1 nas 6 fixtures | **REPROVA·REPROVA·REPROVA·REPROVA·APROVA·REPROVA** — os seis exatos |
+| `arte:revisao -- chanel` | **os 6 controles verdes** |
+
+---
+
+# O QUE VEM AGORA — o plano do Bloco 13 já está escrito
+
+> **TRANSCREVER O PRETO DA ARTE, em vez de sintetizá-lo.** O plano de execução mora
+> **fora do repositório**, em:
+>
+> ```
+> C:\Users\Lenovo\.claude\plans\gostei-desta-solu-o-isso-tranquil-kahan.md
+> ```
+>
+> Ele nasceu do item 15 abaixo, foi criticado por um Plan agent e por revisão externa
+> em duas rodadas, e as duas rodadas acharam defeito real: um critério de camada que
+> se anulava (`componentes` antes do recorte) e **um teto inventado por mim**
+> (`perdido ≤ 1,5 × inventado`) que reprovava a própria evidência. Os dois estão
+> corrigidos e registrados lá, na seção *"O que a revisão externa corrigiu"*.
+
+## AS TRÊS DECISÕES DO DOUG — 2026-08-06, e elas mandam no plano
+
+| # | decisão | consequência |
+|---|---|---|
+| **A** | **O teto de bytes fica como está.** `ORCAMENTO_COMPOSTO` (`cabelo.ts:322`) é autoimposto; `docs/avatar/15-plano-ate-pronto.md:463` já declara que ele **não veta arte aprovada**, e nenhum gate de CI enxerga `PECAS_DA_ARTE`. Levantado e conferido: **nada em produção consome `compor()`** — a única chamada fora de teste é `/dev/avatar-kokeshi`, o banco guarda o *slug*, e o `AvatarDisplay` monta `<img>` de `public/` | o valor medido é **registrado**, não vetando. O número só muda quando o benchmark do 10.6 existir |
+| **B** | **A luz entra, como último passo** | Passo 8 do plano, **depois da parada da folha**, separável e cortável |
+| **C** | **O espetado fica CONGELADO no estado de hoje** | só a `chanel` transcreve. `entrada`, `entrada-2` e `entrada-3` mantêm o contorno sintetizado. ⚠️ **Custo declarado: duas famílias de peça traçada convivendo**, e o Passo 7 (a limpeza do sintetizado) fica **bloqueado por construção** até as quatro transcreverem |
+
+---
+
 # O QUE FICA ABERTO — o próximo a mexer aqui lê isto
 
 | # | o quê | quem decide |
@@ -1423,6 +1825,13 @@ lê, então ela não bloqueia o chanel, e se calibra nas fixtures A–F e não n
 | 6 | **A amarra da base de edição virou disciplina** (`escala: 1` explícito). `arte:escala` é o que sobra guardando | risco declarado |
 | ~~7~~ | ~~`npm run estado`~~ — **rodado**, `docs/ESTADO.md` recontado (123 linhas, bloco "Agora" preservado). `verify:estado`: **0 violações** | fechado |
 | 8 | **Nada foi commitado.** A rota está no índice (`git add`), não commitada | Doug |
-| 9 | **Papel `luz` sem correspondente no render de 2 tons; `tresTons` sempre parte em três.** O Bloco 10 subiu o preço disto: no chanel novo a mancha de brilho (20–25% da cúpula) virou **um filete junto da franja** — outro lugar, outra forma — e a peça a 100% lê como capacete. **Nenhuma das 21 asserções toca nisso**, e o mesmo filete aparece no controle 3, logo é padrão do conversor. É a régua que falta | eu |
-| 10 | **O chanel novo foi MEDIDO e NÃO aprovado** (Bloco 10). Todo gate verde, o olho reprovou por assimetria, corte sobre a roupa e contorno furado. Recomendação registrada: **regerar a arte** antes da régua da luz e antes do guia | Doug |
+| 9 | **Papel `luz` sem correspondente no render de 2 tons; `tresTons` sempre parte em três.** O Bloco 10 subiu o preço disto e **o Bloco 11 subiu de novo**: na rodada 1 a mancha de brilho (20–25% da cúpula) virava um filete de 3–5 px; na rodada 2 ela é **7,9% da peça e 12,4% da cúpula, e o render devolve 6 pixels**. A paleta do render tem exatamente **dois** tons de ciano — não existe terceiro. **Nenhuma das 21 asserções toca nisso.** É a régua que falta | eu |
+| ~~10~~ | ~~**O chanel novo foi MEDIDO e NÃO aprovado** (Bloco 10)~~ — **a rodada 2 rodou (Bloco 11).** Cinco dos seis defeitos de desenho caíram; o sexto (cabelo sobre a roupa) não se moveu, e o Doug decidiu que **ele fica** — ver item 12. Sobram três defeitos NOVOS de rota (slivers de fundo, rebordo de sombra, traço interno descartado) e a franja alta | parcial |
+| ~~12~~ | ~~**A MECHA SOBRE O TRONCO FICA**~~ — **feito no Bloco 12.** O tronco saiu da extração; descartado 4 776 → **21 px**, borda amputada 7,2% → **0,0%**, perímetro de preto 95,2% → **100,0%**. As pontas voltaram inteiras e o entalhe caiu de 42 px para 7–8 | fechado |
+| ~~14~~ | ~~**O ESPETADO FOI APROVADO CONTRA UMA PEÇA QUE NÃO EXISTE MAIS**~~ — **decidido: CONGELAR** (decisão C acima). O espetado não passa pelo caminho novo e a aprovação do Bloco 9 vale para o literal de hoje (3 806 bytes, com a mecha recuperada). O preço é duas famílias de peça traçada convivendo | fechado |
+| 15 | **A TINTA NÃO É TRANSCRITA — e são três defeitos que viraram um.** A forma vai bem (IoU 89,4%, contorno 100%); a tinta não vai. **Luz:** arte 6,17% em 3 manchas, render **55 px de serrilha**. **Sombra:** a arte tem 3 massas medidas, o render devolve sombreamento **sistêmico** do compositor abraçando o traço — não é a sombra da arte. **Traço interno:** descartado por construção — `Cabelo.linhas` são arcos DO LAÇO DA MASSA, e traço que corre por dentro da peça não tem onde morar no tipo. **PLANO ESCRITO** — ver o bloco no topo desta seção. **Duas correções ao que eu havia dito:** o anel **não** custa o dobro dos pontos (a borda externa já é o laço da massa, e o stroke de hoje já re-emite o laço inteiro — fica ~neutro, equilíbrio em N′ ≈ 30 a ~34 bytes por comando `C`); e o furo **não some, muda de lado** — passa a ser do ciano, e ali é barato | em execução |
+| 16 | **A franja é 96,3% de todo o déficit** (2 301 de 2 390 px), e no render ela está **torta**: a arte tem base nivelada (y=278 constante em 57 colunas), o render tem rampa de 10 px. Testa nua 10 px constantes → 15–25 px | eu |
+| 17 | **A seção 5 da folha compara uma imagem com ela mesma.** `.r-crua-1.png` = `.r-peca.png` = `.r-gemeo.png` (md5 `fcc556da…`) e `.r-crua-92.png` = `.r-peca-92.png`. A escada de escala não prova nada sobre compressão hoje | eu |
+| 18 | **O controle `[curto]` é piso baixo demais**: a 56 px ele tem silhueta **idêntica ao careca** nas 56 linhas — é touca pintada. Como referência de "o que passa", não separa nada | eu |
+| 13 | **O pedido mandava dobrar pela linha do nariz, e ela não é o eixo** (Bloco 11). `GIRO.eixoCabeca + GIRO.desvioOlhos = 40 u`, e o desvio medido é 40,3 px — aparece no controle 2, a careca sem peça. Emenda pronta para a rodada 3: trocar por "o eixo de simetria do próprio cabelo". **Se o giro ler como cabeça torta a 56 px, o item a rever é o `GIRO`** | Doug |
 | 11 | **`pecas-da-arte.ts` tem 4 peças, e a decisão 2 mandou apagar duas.** `entrada-2` e `entrada-3` continuam lá ao lado do `chanel`. Apagar exige conferir antes se alguma sustenta controle — a `entrada-3` é hoje a isca do controle 3 de `arte:revisao` | Doug |

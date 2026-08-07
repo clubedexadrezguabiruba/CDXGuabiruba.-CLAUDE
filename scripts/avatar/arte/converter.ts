@@ -148,14 +148,19 @@ function sondarTraco(
 /**
  * QUANTO DA BORDA DA MÁSCARA É CORTE DE REGIÃO, e não desenho.
  *
- * `extrair.ts:193-197` descarta o pixel da peça que cai sobre `rosto` ou `corpo`
- * ANTES de qualquer componente ser formada. Numa peça que cobre o olho ou desce
- * na frente do ombro, isso amputa a peça — e a borda que sobra corre em linha
- * reta sobre a fronteira da caixa do rosto ou sobre a silhueta do tronco.
+ * `mascaraDaPeca` descarta o pixel da peça que cai sobre o `rosto` ANTES de
+ * qualquer componente ser formada. Numa peça que cobre o olho, isso amputa a peça
+ * — e a borda que sobra corre em linha reta sobre a fronteira da caixa do rosto.
  *
  * Sem este número, um erro de corda alto se lê como "a arte é ruim". Com ele, dá
  * para separar: borda amputada alta significa que quem desenhou aquela linha foi
  * a região protegida, não o Doug.
+ *
+ * **`corpo` SAIU desta conta no Bloco 12, e sair era obrigatório.** A extração
+ * deixou de recortar o tronco, então contar o tronco aqui devolveria amputação
+ * onde não há corte nenhum — a régua passaria a acusar um defeito que a decisão
+ * de arte eliminou. É o modo de falha que esta rota já viu quatro vezes: régua
+ * que sobrevive à mudança do que ela mede e passa a medir outra coisa.
  */
 function bordaAmputada(m: Uint8Array, w: number, h: number): number {
   let borda = 0;
@@ -174,7 +179,7 @@ function bordaAmputada(m: Uint8Array, w: number, h: number): number {
         if (m[q]) continue;
         borda++;
         const r = regiaoDoPixel(x + dx, y + dy);
-        if (r === "rosto" || r === "corpo") cortada++;
+        if (r === "rosto") cortada++;
         break;
       }
     }

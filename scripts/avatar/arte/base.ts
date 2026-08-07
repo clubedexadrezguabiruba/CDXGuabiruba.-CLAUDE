@@ -257,12 +257,27 @@ export const dentroDa = (c: Caixa, x: number, y: number) =>
   x >= c.x0 && x <= c.x1 && y >= c.y0 && y <= c.y1;
 
 /**
- * O papel de um pixel. `rosto` e `corpo` reprovam; `sobrancelha` só relata;
- * `permitida` é onde a peça pode nascer.
+ * O papel de um pixel — e ele NÃO É MAIS UM SÓ, desde o Bloco 12.
+ *
+ * As regiões respondem a duas perguntas diferentes, e a partir do Bloco 12 elas
+ * respondem coisas diferentes:
+ *
+ *  - **para o Gate −1**: `rosto` e `corpo` reprovam. Ali a pergunta é *"o gerador
+ *    mexeu no boneco?"*, e mexer no tronco é tão defeito quanto mexer no olho.
+ *    Quem lê esta lista é `REGIOES_QUE_REPROVAM`, e ela não mudou;
+ *  - **para a EXTRAÇÃO**: só `rosto` recorta. A pergunta ali é outra — *"que
+ *    pixels são a peça?"* — e cabelo caindo sobre a roupa é peça. Ver
+ *    `mascaraDaPeca` (`extrair.ts`), que é o único lugar onde essa distinção mora.
+ *
+ * `sobrancelha` só relata, nos dois casos.
  */
 export type Regiao = "rosto" | "corpo" | "sobrancelha" | "permitida";
 
-/** As duas que reprovam. A lista existe para ninguém confundir com a de cima. */
+/**
+ * As duas que reprovam **no Gate −1**. A lista existe para ninguém confundir com a
+ * de cima — e desde o Bloco 12 ela também não se confunde com a da extração, que
+ * é menor e mora em `extrair.ts`.
+ */
 export const REGIOES_QUE_REPROVAM: readonly Regiao[] = ["rosto", "corpo"];
 
 export function regiaoDoPixel(xPx: number, yPx: number): Regiao {
