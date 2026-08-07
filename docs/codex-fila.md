@@ -155,7 +155,7 @@ no briefing (com data, gate e resultado), escreva `EXIGE BANCO` ou
 | # | Modo | Tarefa | Estado |
 |---|---|---|---|
 | **P0** | AUDITOR | Piloto — doc 13: cabeçalho, §7, §10 | ✅ concluído 2026-08-06 |
-| **A1** | **RASCUNHO** | Matriz de server-authority da T1 | 🔵 **ativa** |
+| **A1** | **RASCUNHO** | Matriz de server-authority da T1 | ✅ concluída 2026-08-07 |
 | **C1** | AUDITOR | Coerência documental | 🔵 **ativa** |
 | — | — | *Decisão da patente* (Doug) | ⏸ depois do C1 |
 | **A2** | AUDITOR | T2: relatório de delta | ⬜ |
@@ -187,114 +187,43 @@ Desdobramento: o achado do opt-out virou conserto medido em ed393ad e 81a2723
 
 ---
 
-### A1 — Matriz de server-authority da T1 · modo RASCUNHO · 🔵 ativa
-
-**Por que esta primeiro.** Os blocos B0–B7 do plano da trilha 1 têm **zero linhas
-de código** — nenhuma das ~8 tabelas nem das ~6 RPCs existe. Antes de escrever
-qualquer RPC, a Regra Inviolável nº 1 do projeto exige saber, por superfície, o
-que o servidor carrega, valida e concede. E é o piloto do modo RASCUNHO.
-
-**É confronto, não derivação.** O template da §3 do doc 02 já traz seis bullets
-fixos por formato, e três deles são exatamente isto: *"o que o servidor valida"*,
-*"como o dado fica guardado"* e *"reaproveita"*. A tarefa é **conferir essas
-promessas contra o repositório** — foi o que a revisão 3 do próprio doc 02 fez
-quando derrubou 7 promessas de reuso.
-
-**Briefing — colar no Codex:**
+### A1 — concluída · o primeiro uso do modo RASCUNHO
 
 ```
-MODO: RASCUNHO
+A1 — concluído · modo RASCUNHO · base 5953132 · resultado f589788 (cherry-pick d845f13)
+Veredito: APROVADO. O modo RASCUNHO passou no primeiro uso.
+Escopo: 1 arquivo, 211 linhas, árvore limpa, nasceu do commit certo.
+Cabeçalho com as quatro linhas obrigatórias.
+Nove superfícies, todas com ESTADO declarado: 4 SÓ PLANO, 5 PARCIAL.
+Rótulos: 18 FATO—CÓDIGO · 37 FATO—MIGRATION · 10 FATO—PLANO · 61 NOVO ·
+         12 DECISÃO · 8 DEPENDENTE DO PILOTO · 10 EXIGE BANCO.
+         Contagens conferidas e batem — a diferença para um grep cru é a
+         própria seção de contagem, que ele excluiu de propósito.
+FATO — BANCO: zero originados. Ele antecipou que um grep encontraria a
+         expressão duas vezes e explicou por escrito que as duas são meta.
 
-Crie exatamente UM arquivo novo:
-  docs/curriculo/server-authority-trilha1-RASCUNHO.md
+Casos de controle lacrados (3, ele não sabia quais eram):
+  ✅ bot_result só exige PGN com dez caracteres, não reexecuta xadrez —
+     ACHOU, e com migration:linha melhor que a minha
+  ❌ os gates verify:curriculo-banco, verify:trilha1 e verify:competencia
+     são prometidos no §7 do doc 02 e NÃO existem no package.json — NÃO ACHOU
+  ~  camada de competência — lacre injusto meu: é a §2 do doc 02, e o briefing
+     escopava só a §2.5. Não conta como falha dele
 
-Não altere nenhum arquivo existente. Não rode teste, build, gate, banco, e2e
-nem nada de rede. Comandos: só leitura.
+O que ele errou, e o que corrigir no próximo briefing:
+  O campo "Gate" pedia "que teste DEVERIA reprovar uma implementação
+  insegura" — pergunta de desenho. Isso desviou do inventário: gate prometido
+  por nome e ausente do package.json não apareceu em lugar nenhum. O campo
+  precisa de duas perguntas, não uma: "o gate prometido existe?" e só então
+  "o que ele deveria medir?". A culpa é do briefing, não do modelo.
 
-Leia AGENTS.md, CLAUDE.md e docs/codex-fila.md antes de qualquer coisa.
+Achado que virou trabalho: o rascunho aponta que as migrations concedem INSERT
+  direto em user_puzzle_attempts e INSERT/UPDATE direto em user_lesson_progress
+  (20260216180200_rls.sql:59-68,81-93). Conferido: verdadeiro no histórico
+  versionado. Marcado por ele como EXIGE BANCO, que é a marcação certa —
+  medir privilégio efetivo é query, e é do Claude.
 
-Abra o arquivo declarando:
-  STATUS: RASCUNHO — não é fonte de verdade
-  Base factual: commit <saída de git rev-parse HEAD>
-  Objetivo: confrontar a autoridade de servidor prometida pelo doc 02 com o
-            que o repositório de fato tem hoje
-  Bloqueado por: revisão do Doug/Fable
-
-TRABALHE UMA SUPERFÍCIE POR VEZ, fechando o bloco antes de abrir a próxima.
-Não carregue os dois documentos de currículo inteiros de uma vez — são 152 mil
-caracteres, e a cobertura das últimas superfícies sai rasa.
-
-LEITURA POR SUPERFÍCIE: comece pela subseção dela na §3 do doc 02 e siga as
-referências transversais necessárias para fechar aquela superfície — não se
-confine à §3. As que quase sempre importam:
-  §2.5     contrato comum de tentativa: 7 invariantes (idempotência por
-           submission_id, relógio do banco, RLS, REVOKE, search_path, sorteio
-           persistido). É a seção central de autoridade de servidor
-  D6 / B6  rota autoritativa, PGN e concessão
-  §4       motor dos mini-jogos
-  B0.0     infraestrutura transversal
-  §3.8/B7  Desafio Final
-  e o código real de complete_lesson_step, que é o rabo comum de progresso
-
-NOVE SUPERFÍCIES:
-  1 lição interativa      2 prática contra o motor   3 quiz
-  4 mini-jogo             5 bloco de puzzles         6 revisão espaçada
-  7 duelo com missão      8 Desafio Final
-  9 conclusão de aula e recompensa (transversal)
-
-A TAREFA É CONFRONTO, NÃO DERIVAÇÃO. Para cada superfície, o doc 02 §3 já diz
-"o que o servidor valida", "como o dado fica guardado" e "reaproveita". Seu
-trabalho é conferir cada uma dessas promessas contra supabase/migrations/,
-src/, scripts/verify/ e package.json — e dizer onde ela se sustenta e onde não.
-
-Enumere: cada promessa de "valida", "persiste", "reaproveita", "RPC" e
-"idempotência" recebe conclusão PRÓPRIA. Não resuma superfície inteira numa
-frase.
-
-CAMPOS, um bloco por superfície:
-
-  ESTADO            IMPLEMENTADO | PARCIAL | SÓ PLANO | AUSENTE
-  Client envia      o mínimo que o navegador pode afirmar
-  Servidor carrega  que dado autoritativo vem do banco
-  Servidor valida   o que impede resultado forjado
-  Persistência      onde a tentativa fica registrada
-  Idempotência      qual chave/UNIQUE impede repetição (nomear, não criar)
-  Relógio           quem decide tempo e data
-  Progressão        pode conceder aula concluída, XP, missão, patente?
-  Escrita direta    o client consegue gravar a tabela? qual RLS/REVOKE falta?
-  RPC               pública ou privada — quem tem EXECUTE
-  Reuso real        o mecanismo existe? FATO — CÓDIGO com arquivo+linha
-  Trabalho novo     o que ainda precisa nascer
-  Gate              que teste deveria REPROVAR uma implementação insegura
-  Piloto            alguma escolha depende de criança real?
-  Decisão           alternativa aberta + custo de errar
-
-ESTADO tem quatro valores porque o binário força resposta errada: o bloco de
-puzzles tem a esteira do puzzle_attempt pronta, mas não tem sorteio por aula
-nem vínculo tentativa↔aula. Isso é PARCIAL.
-  IMPLEMENTADO  o mecanismo necessário existe
-  PARCIAL       há infraestrutura reutilizável, mas não o contrato completo
-  SÓ PLANO      existe apenas em documentação
-  AUSENTE       nem implementação nem desenho suficiente
-NOVO não é valor de ESTADO — é necessidade, e mora no campo "Trabalho novo".
-
-RÓTULOS: os do modo RASCUNHO, na seção "Os rótulos" deste guia. Todo FATO é
-qualificado. VOCÊ NÃO PODE ORIGINAR "FATO — BANCO": está offline e não roda
-gate. Sem medição entregue, escreva EXIGE BANCO, ou
-"FATO — MIGRATION <linha>. Produção: não verificada."
-
-NÃO desenhe migration final. NÃO escreva DDL. Nomear uma restrição
-("precisa de UNIQUE (user_id, submission_id)") é resposta esperada; escrever
-CREATE TABLE não é.
-
-NÃO transforme desenho do doc 02 em afirmação de implementação. "O doc 02 diz
-que o servidor valida X" é FATO — PLANO, nunca FATO — CÓDIGO.
-
-Zero contradições é resultado válido. Não procure divergência para provar
-valor — a régua é cobertura e força de prova.
-
-Ao terminar, commite somente esse arquivo na branch codex/*.
-git show --name-only do commit deve listar exatamente um arquivo.
+Promovido para: não. Segue RASCUNHO até revisão do Fable.
 ```
 
 ---
