@@ -1245,6 +1245,172 @@ os três saem também de `parametrico-congelado.ts`.
 
 ---
 
+## BLOCO 10 — o CHANEL NOVO, medido e NÃO aprovado (2026-08-06)
+
+> **A regra da rodada: parar na primeira folha.** Gerar, ler, reportar — sem
+> consertar, sem afinar limiar, sem trocar régua, sem re-rodar com outro N para
+> melhorar o placar, sem colar em `CABELOS`. Número ruim aqui é **resultado**, não
+> convite a mexer. Esta seção é o dado; o que fazer com ele é decisão do Doug.
+
+Arte nova gerada no Gemini sobre a `base-oficial.png`, salva em
+`scripts/avatar/arte/chanel.png`. **Não confundir com `entrada-3`**, o chanel
+velho que a decisão 2 mandou apagar — os dois coexistem no `pecas-da-arte.ts` de
+hoje, sob os rótulos "Chanel" (velho) e "Chanel novo".
+
+### O único toque em código
+
+`arte/pecas.ts:38-43` — o gerador conhecia 3 PNGs, passa a conhecer 4. **Sem isso
+não há folha**: o controle 6 (*o literal colado é o que o conversor produz hoje*)
+recusa desenhar. As três frases de cabeçalho que diziam "as três peças" foram
+ajustadas junto, porque texto gerado que mente é o M7.
+
+**A isca do controle 3 NÃO foi trocada**, de propósito: mexer em régua antes de
+medir era o que a rodada proibia. A ressalva declarada — *isca do mesmo corte
+torna a folga otimista* — **não mordeu**: a folga saiu **18,7 pontos** (trocada
+70,9% contra certa 89,6%). Não há conserto a fazer ali.
+
+### Os portões, em ordem
+
+| # | gate | resultado |
+|---|---|---|
+| −1 | `arte:gate` | **APROVADA** — hash `d8694eac` confere · 1024² · deslocamento 0,0 px · escala 100,00% · rodapé 100,0% |
+| −1 | causa do que mudou nas protegidas (4 967 px) | **peça 93,0%** · repintura 0,2% · **não explicado 6,7% (335 px)** |
+| 2 | `arte:extrair` | 141 519 px · **4 770 px descartados** fora da permitida · 1 componente, 0 descartadas |
+| 3 | `arte:contorno` | 2 313 pts densos → 28 · erro máx **5,94 u** (teto 6) · IoU contra a máscara 95,9% |
+| 4 | `arte:converter` | massa 28 pts · clara 24 · formas irmãs 0 · **auto-interseções 0** · k = 1,0000 |
+| 5 | `arte:revisao` | **os 6 controles verdes** — a folha aceitou julgar |
+
+Papéis da extração: massa 89 879 px (63,5%) · sombra 18 489 (13,1%) · **luz 9 000
+(6,4%)** · traço 24 151 (17,1%) · não classificados **0**.
+
+### A TABELA DE TRÊS FAIXAS — adotada nesta rodada, e é a régua daqui para a frente
+
+A revisão externa do plano estava certa: **os números do espetado não são barra
+universal.** `escolherN` escolhe N por peça, e o 64 do espetado foi o **último
+degrau da escada**, não uma escolha. Escrever "N = 64" como teto era herdar por
+analogia — o defeito que o docstring de `tracar-cabelo.ts:2216-2226` já nomeava.
+Mas `IoU` e `só na arte` não são a mesma categoria, então são **três faixas**, não
+duas:
+
+| faixa | o que é | quem entra |
+|---|---|---|
+| **GATE** — reprova | invariante do pipeline, resposta certa igual para toda peça | hash · registro · **os 6 controles** · denominador > 0 · simetria dos dois lados · sistema de coordenadas · 441 testes / 19 formas / 7 468 bytes · **o olho a 56 px** |
+| **PISO COM CAUSA** — não reprova sozinho, exige **causa nomeada** | direção-livre: só há um lado bom | `só na arte` · borda amputada · vazamento no queixo |
+| **DIAGNÓSTICO** — imprime, não julga | depende da geometria da peça | IoU · N · k · bytes · cobertura de arco · fração no papel `luz` · desvio lateral p95 |
+
+**GATE: todos verdes.** identidade 100,0% · careca 0,0% · trocada 70,9% < certa
+89,6% · `naTela` bate no raster com 0,2 u · denominadores 141 487 / 147 253 ·
+literal confere ponto a ponto.
+
+**PISO COM CAUSA — três valores materiais, três causas nomeadas:**
+
+| medida | valor | a causa |
+|---|---|---|
+| `só na arte` | 5 063 px (3,6%) | **a franja subiu.** A maior mancha da folha corre na aresta superior da abertura do rosto, 3–6% da altura da peça, mais aberta à direita. Não é massa perdida como na cortina de 79% — é deslocamento |
+| borda amputada | 7,1% | **a arte desceu sobre a roupa.** 7,1% do contorno foi desenhado pela região, não pela artista (caixa de corpo y 353→638) |
+| vazamento no queixo | arte 4,9% · render 5,7% · **simétrico** | **a arte desobedeceu o pedido.** 6 906 px da própria arte estão abaixo de `Y_QUEIXO`; o pedido dizia "terminam na altura do queixo ou acima". O render só reproduziu |
+
+**DIAGNÓSTICO:** IoU 89,6% (canvas 89,1% · acima do queixo 90,0%) · **N = 28** ·
+**k = 1,000** (pico 1,4 u) · cobertura de arco **89,3%** · fração no papel `luz`
+**6,4%** · desvio lateral p95 16,7 u (máx 283,3) · desvio de topo p95 29,2 u ·
+preto do render **1,25×** a área do da arte (IoU do preto 34,3%).
+
+**As quatro previsões escritas ANTES de medir bateram** — e é isso que separa
+previsão de racionalização:
+
+| previsto para um chanel | medido |
+|---|---|
+| cobertura de arco menor que a do espetado, ~87,5% | **89,3%** |
+| `k = 1,000` por não precisar comprimir, não por mérito | **1,000**, pico 1,4 u — nunca chegou perto do teto |
+| `escolherN` escolhe menos que 64 numa curva inferior limpa | **28** |
+| ~30% no papel `luz` (o da `entrada-3`) | **6,4%** — errou para melhor |
+
+### O QUE A FOLHA MOSTROU — lida por subagente, com a separação número × olho
+
+**Erros da ARTE** (o gerador desobedeceu o pedido de `PEDIDO-GEMINI.md`):
+
+1. **Assimetria** — *olho*. Ponta esquerda desce 4–5% da altura da peça a mais que
+   a direita; e a lateral direita tem um **degrau quadrado** à altura da
+   sobrancelha, uma quina reta numa peça de vocabulário todo curvo. Sobreviveu à
+   conversão, arredondada. O pedido dizia "diferença imperceptível".
+2. **As laterais caem sobre a roupa** — *número + olho*. É a causa de dois dos três
+   itens do piso com causa.
+3. **Contorno preto furado** — *olho + número*. Trechos pontilhados no arco
+   superior direito; a sonda concorda: a arte pintou **95,1%** do perímetro denso,
+   com os trechos #18 a 23,1%, #17 a 29,6%, #9 a 32,7%.
+4. **Traço solto** pendurado no canto inferior direito, sem fechar em nada —
+   *olho*. O conversor descartou.
+5. **A abertura do rosto é um retângulo de cantos vivos** — *olho*. O render
+   arredondou; divergência de forma, não de espessura.
+6. **A curva inferior não é uma linha só** — *olho*. O pedido pedia contínua,
+   virando para dentro.
+
+**Erros da ROTA — e o item 7 é o achado do bloco:**
+
+7. **A LUZ SUMIU, E NENHUMA RÉGUA ACUSOU** — *olho*. A arte pôs brilho cobrindo
+   **20–25% da cúpula esquerda** mais um ponto isolado; o render devolveu **um
+   filete de 3–5 px correndo junto da franja**: outro lugar, outra forma, área
+   menor em mais de uma ordem de grandeza. Chapada assim, a peça a 100% lê como
+   **capacete, não cabelo**. É o F6 declarado no Bloco 8 — e **o mesmo filete
+   aparece no controle 3**, ou seja é padrão do conversor, não acidente desta arte.
+   É o quarto defeito desta rota achado por olho e nenhum por número.
+8. **A franja subiu** — *número + olho*. Sobra testa nua entre franja e
+   sobrancelha, mais à direita; no quadro do produto lê como cabeça torta.
+9. **O corte cabelo×corpo não bate** entre arte e render nos dois degraus
+   inferiores — *olho*.
+10. **Leitura a 56 px: passa no limite, e o `[curto]` lê melhor** — *olho*.
+    Sobrevivem a tigela, as duas colunas laterais e a aresta da franja; somem
+    brilho, sombra, pontas e o degrau. **No fundo escuro o contorno preto funde com
+    o fundo** e o vão entre a coluna lateral e a bochecha quase fecha — o pior dos
+    quatro fundos.
+
+### Bytes e escala
+
+**22 formas · 9 929 bytes**, teto 10 240 — folga de **311 bytes (3%)**. Seria a
+peça mais pesada do catálogo (Cachos faz 9 045). Risco declarado; quem decide é o
+Doug. A peça a 100% encosta no teto (−6,7 u), mas o quadro que manda é o de 92%,
+onde ela começa em **68,3 u** e cabe — é a razão de o teto ser lido na escala de
+entrega.
+
+### VEREDITO: MEDIDO, NÃO APROVADO
+
+Nenhum gate reprovou e o olho reprovou. **Número verde não é peça aprovada** — foi
+a quarta vez nesta rota. Recomendação registrada: **regerar a arte antes de
+escrever a régua da luz ou o guia.** Seis dos dez erros são da arte, custam um
+pedido ao Gemini e zero código, e os três itens do piso com causa descendem todos
+do mesmo defeito. A régua da luz continua dívida real — mas a 56 px o brilho não
+lê, então ela não bloqueia o chanel, e se calibra nas fixtures A–F e não nesta arte.
+
+### Verificação
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm run arte:reguas` | **21 de 21** |
+| `npm run verify:arte` | exit 0 — réguas, cor proibida (margem 138,2°), hash da base **CONFERE** |
+| `npm test` | **441 passando**, 24 arquivos |
+| `npm run avatar:folha-base` | **19 formas · 7 468 bytes** — os dois congelados parados |
+
+### As emendas ao plano do guia que esta rodada deixa prontas
+
+1. **`references/esteira.md`** nasce como *"baseline do primeiro cabelo aprovado"*,
+   não *"barra que a próxima peça tem de bater"*, com as três faixas acima. Os
+   números do espetado vão para uma coluna de comparação: **uma amostra positiva
+   não estabelece limite.**
+2. **`references/reguas.md`, regra 5** — obrigatório é o `SEPARA` + a fixture do
+   incidente; o método defeituoso preservado fica **só quando o contraste é o único
+   controle**. A proteção contra regressão mora no `SEPARA`, não no método velho.
+   Os três casos de hoje (`coroa`, `barra`, salpico) **têm** controle independente,
+   logo os três são opcionais pela regra nova.
+3. **`verify:arte` entra no `verify:all` depois de medido** — duas rodadas, delta
+   abaixo de ~90 s e estável → entra inteiro. **O Chromium já é dependência
+   hoje**: `verify:all` → `verify:pose` → `verificar-pose.ts:71,577`. Splitar
+   "estrutural dentro, browser fora" entregaria aparência de cobertura: das quatro
+   etapas de `verify:arte`, só `cor-proibida` e `fixtures` dispensam browser, e as
+   **21 asserções** de `arte:reguas` — o objeto inteiro — precisam renderizar.
+
+---
+
 # O QUE FICA ABERTO — o próximo a mexer aqui lê isto
 
 | # | o quê | quem decide |
@@ -1257,4 +1423,6 @@ os três saem também de `parametrico-congelado.ts`.
 | 6 | **A amarra da base de edição virou disciplina** (`escala: 1` explícito). `arte:escala` é o que sobra guardando | risco declarado |
 | ~~7~~ | ~~`npm run estado`~~ — **rodado**, `docs/ESTADO.md` recontado (123 linhas, bloco "Agora" preservado). `verify:estado`: **0 violações** | fechado |
 | 8 | **Nada foi commitado.** A rota está no índice (`git add`), não commitada | Doug |
-| 9 | Papel `luz` sem correspondente no render de 2 tons; `tresTons` sempre parte em três | eu |
+| 9 | **Papel `luz` sem correspondente no render de 2 tons; `tresTons` sempre parte em três.** O Bloco 10 subiu o preço disto: no chanel novo a mancha de brilho (20–25% da cúpula) virou **um filete junto da franja** — outro lugar, outra forma — e a peça a 100% lê como capacete. **Nenhuma das 21 asserções toca nisso**, e o mesmo filete aparece no controle 3, logo é padrão do conversor. É a régua que falta | eu |
+| 10 | **O chanel novo foi MEDIDO e NÃO aprovado** (Bloco 10). Todo gate verde, o olho reprovou por assimetria, corte sobre a roupa e contorno furado. Recomendação registrada: **regerar a arte** antes da régua da luz e antes do guia | Doug |
+| 11 | **`pecas-da-arte.ts` tem 4 peças, e a decisão 2 mandou apagar duas.** `entrada-2` e `entrada-3` continuam lá ao lado do `chanel`. Apagar exige conferir antes se alguma sustenta controle — a `entrada-3` é hoje a isca do controle 3 de `arte:revisao` | Doug |

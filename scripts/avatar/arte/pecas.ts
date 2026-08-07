@@ -34,11 +34,12 @@ import type { Cabelo, PontoFranja } from "../../../src/lib/avatar/estilo/cabelo"
 import { converter } from "./converter";
 import { PASTA } from "./base";
 
-/** As três artes e o rótulo que cada uma leva na página. */
+/** As artes e o rótulo que cada uma leva na página. */
 const ARTES: { arquivo: string; nome: string; nota: string }[] = [
   { arquivo: "entrada", nome: "Espetado", nota: "espetado, com pontas altas" },
   { arquivo: "entrada-2", nome: "Assimétrico", nota: "largo, assimétrico, desce ao lado do rosto" },
   { arquivo: "entrada-3", nome: "Chanel", nota: "liso, chanel" },
+  { arquivo: "chanel", nome: "Chanel novo", nota: "chanel simétrico, gerado sobre a base oficial" },
 ];
 
 const SAIDA = "src/lib/avatar/estilo/pecas-da-arte.ts";
@@ -86,7 +87,7 @@ function corpoDaPeca(id: string, nome: string, c: Cabelo): string {
 }
 
 const CABECALHO = `/**
- * AS TRÊS PEÇAS TRAÇADAS DA ARTE, para conferência no runtime — **e só isso**.
+ * AS PEÇAS TRAÇADAS DA ARTE, para conferência no runtime — **e só isso**.
  *
  * ---------------------------------------------------------------------------
  * ELAS NÃO ESTÃO NO CATÁLOGO, E A DIFERENÇA IMPORTA
@@ -99,7 +100,7 @@ const CABECALHO = `/**
  * promove ninguém.
  *
  * Este arquivo existe para uma coisa: a página \`/dev/avatar-kokeshi\` poder
- * mostrar as três peças no navegador, no runtime real, do jeito que o
+ * mostrar as peças no navegador, no runtime real, do jeito que o
  * \`AvatarDisplay\` vai montá-las. Render em PNG de folha e render no navegador não
  * são a mesma coisa — foi por isso que a primeira folha desta rota saiu com o
  * rosto preto e ninguém viu até alguém olhar.
@@ -108,7 +109,7 @@ const CABECALHO = `/**
  * GERADO por \`npm run arte:pecas\` — não editar à mão
  * ---------------------------------------------------------------------------
  *
- * Ele roda \`converter()\` sobre os três PNGs versionados em \`scripts/avatar/arte/\`
+ * Ele roda \`converter()\` sobre os PNGs versionados em \`scripts/avatar/arte/\`
  * e escreve este arquivo inteiro. **Regerar quando:** uma arte for redesenhada, ou
  * quando uma decisão do conversor mudar o que ele produz para todas — foi o caso
  * do teto de compressão passar a ser lido na escala de entrega.

@@ -1,5 +1,5 @@
 /**
- * AS TRÊS PEÇAS TRAÇADAS DA ARTE, para conferência no runtime — **e só isso**.
+ * AS PEÇAS TRAÇADAS DA ARTE, para conferência no runtime — **e só isso**.
  *
  * ---------------------------------------------------------------------------
  * ELAS NÃO ESTÃO NO CATÁLOGO, E A DIFERENÇA IMPORTA
@@ -12,7 +12,7 @@
  * promove ninguém.
  *
  * Este arquivo existe para uma coisa: a página `/dev/avatar-kokeshi` poder
- * mostrar as três peças no navegador, no runtime real, do jeito que o
+ * mostrar as peças no navegador, no runtime real, do jeito que o
  * `AvatarDisplay` vai montá-las. Render em PNG de folha e render no navegador não
  * são a mesma coisa — foi por isso que a primeira folha desta rota saiu com o
  * rosto preto e ninguém viu até alguém olhar.
@@ -21,7 +21,7 @@
  * GERADO por `npm run arte:pecas` — não editar à mão
  * ---------------------------------------------------------------------------
  *
- * Ele roda `converter()` sobre os três PNGs versionados em `scripts/avatar/arte/`
+ * Ele roda `converter()` sobre os PNGs versionados em `scripts/avatar/arte/`
  * e escreve este arquivo inteiro. **Regerar quando:** uma arte for redesenhada, ou
  * quando uma decisão do conversor mudar o que ele produz para todas — foi o caso
  * do teto de compressão passar a ser lido na escala de entrega.
@@ -319,6 +319,69 @@ export const PECAS_DA_ARTE = {
       { t: 0.391, y: 23.106 },
     ],
     linhas: [[10,19],[20,9]],
+  },
+
+  /** chanel simétrico, gerado sobre a base oficial. Traçada de `chanel.png` por `npm run arte:pecas`. */
+  "chanel": {
+    id: "chanel" as Cabelo["id"],
+    nome: "Chanel novo",
+    massa: [
+      { t: 0.586, y: 1.439 },
+      { t: 0.787, y: 20.909 },
+      { t: 1.154, y: 57.500 },
+      { t: 1.041, y: 86.667 },
+      { t: 1.056, y: 130.833 },
+      { t: 1.134, y: 277.500 },
+      { t: 1.178, y: 322.500 },
+      { t: 1.069, y: 350.833 },
+      { t: 0.959, y: 380.909 },
+      { t: 0.834, y: 391.742 },
+      { t: 0.787, y: 352.727 },
+      { t: 0.738, y: 349.545 },
+      { t: 0.969, y: 318.333 },
+      { t: 0.932, y: 157.045 },
+      { t: 0.248, y: 156.591 },
+      { t: 0.215, y: 252.500 },
+      { t: 0.210, y: 315.000 },
+      { t: 0.294, y: 351.288 },
+      { t: 0.174, y: 352.727 },
+      { t: 0.125, y: 390.227 },
+      { t: -0.001, y: 376.061 },
+      { t: -0.316, y: 332.500 },
+      { t: -0.208, y: 300.833 },
+      { t: -0.170, y: 229.167 },
+      { t: -0.081, y: 109.167 },
+      { t: 0.061, y: 45.152 },
+      { t: 0.226, y: 13.636 },
+      { t: 0.361, y: 2.197 },
+    ],
+    clara: [
+      { t: 0.608, y: 13.864 },
+      { t: 1.927, y: 47.197 },
+      { t: 1.005, y: 80.000 },
+      { t: 1.017, y: 120.000 },
+      { t: 1.099, y: 270.000 },
+      { t: 1.114, y: 305.833 },
+      { t: 0.980, y: 349.167 },
+      { t: 1.023, y: 254.167 },
+      { t: 0.979, y: 129.167 },
+      { t: 0.940, y: 105.076 },
+      { t: 0.954, y: 141.212 },
+      { t: 0.229, y: 145.455 },
+      { t: 0.186, y: 238.333 },
+      { t: 0.179, y: 302.500 },
+      { t: 0.255, y: 351.364 },
+      { t: 0.174, y: 352.727 },
+      { t: 0.155, y: 361.136 },
+      { t: -0.134, y: 326.667 },
+      { t: -0.118, y: 298.333 },
+      { t: -0.133, y: 222.500 },
+      { t: -0.054, y: 117.500 },
+      { t: -0.042, y: 88.333 },
+      { t: -0.387, y: 51.439 },
+      { t: 0.302, y: 17.576 },
+    ],
+    linhas: [[10,17],[19,9]],
   },
 } as const satisfies Record<string, Cabelo>;
 
