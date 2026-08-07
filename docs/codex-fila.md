@@ -100,6 +100,15 @@ Regra sem motivo é regra que se racionaliza para fora numa hora apertada.
 8. **Commit é memória.** Nada depende de "o agente lembra". Vale para este
    arquivo também: briefing de tarefa fechada é compactado, e o texto integral
    fica recuperável no histórico do git.
+9. **Achar não é consertar.** Achado vai para
+   [`docs/achados.md`](achados.md) e **para ali**. Nada vira trabalho sem o Doug
+   mandar. *Por quê:* quem acha está com o contexto quente e a tentação de já
+   resolver — mas prioridade é do dono do produto, e conserto fora de hora
+   atropela a frente que estava em execução. **Quem acha registra · quem decide a
+   hora é o Doug · quem executa é o Claude.**
+   Vale para o Claude também, e é a regra que ele mais tende a quebrar.
+   **Antes de reportar, confira se o achado já está lá** — repetido gasta a
+   rodada.
 
 ---
 

@@ -91,8 +91,14 @@ valem para ele). Ele é **subordinado a este arquivo** e só repete as proibiç�
 que aqui têm trava técnica e lá não têm. Não deixe virar segunda fonte de verdade.
 
 O que já foi delegado ao Codex e o que está na fila fica em
-[docs/codex-fila.md](docs/codex-fila.md) — com as regras de engajamento em sete
-linhas e o modelo de briefing pronto para colar.
+[docs/codex-fila.md](docs/codex-fila.md) — com as regras de engajamento, os modos
+de trabalho e os briefings.
+
+**Achar não é consertar.** Problema descoberto vai para
+[docs/achados.md](docs/achados.md), ranqueado por gravidade, e **para ali** —
+nada vira trabalho sem o usuário mandar. Quem acha registra; quem decide a hora é
+ele; quem executa sou eu. Vale inclusive quando o conserto parece óbvio e o
+contexto está quente: conserto fora de hora atropela a frente em execução.
 
 ## Skills — invocar, não torcer para lembrar
 
