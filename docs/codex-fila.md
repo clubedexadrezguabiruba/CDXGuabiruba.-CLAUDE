@@ -1,161 +1,413 @@
-# Fila do Codex — o que já rodou e o que falta
+# Guia do Codex — como se trabalha aqui, e o que fazer agora
 
-> **Isto é registro de progresso, mantido à mão.** Não escreva aqui número
-> agregado nem percentual: o `docs/ESTADO.md` é gerado e é ele que mede. Aqui vai
-> só o estado de cada rodada e onde o resultado caiu.
->
-> As regras de como operar o Codex vivem no `AGENTS.md` (o que ele nunca pode
-> fazer) e na seção **Coordenação entre agentes** do `CLAUDE.md`.
+> **Se você é um agente e sua tarefa veio da fila abaixo, leia este arquivo
+> inteiro antes de tocar em qualquer coisa.** Ele não repete a arquitetura do
+> produto — isso é do `CLAUDE.md`. Ele diz **como** se trabalha, e **o que** está
+> na vez.
+
+| Arquivo | Papel | Quando ler |
+|---|---|---|
+| [`AGENTS.md`](../AGENTS.md) | **a porta** — o que nunca se faz, e por quê | sempre, primeiro |
+| [`CLAUDE.md`](../CLAUDE.md) | **o projeto** — fonte de verdade | sempre, depois |
+| **este arquivo** | **como se trabalha + o que fazer agora** | sempre que a tarefa vier da fila |
+
+---
+
+## Quem é quem
+
+| Papel | Faz |
+|---|---|
+| **Doug** | dono do produto e diretor visual. **Decide.** Aprova aparência, pedagogia e qualquer ação sobre produção |
+| **Codex** | investiga o repositório e redige rascunho. **Não decide, não implementa** |
+| **Claude Code** | verifica achado a achado, corrige, roda gate, aplica migration e integra. É quem tem banco e runtime |
+| **ChatGPT** | arquiteta, contesta e gera arte. Não lê o repositório de forma confiável |
+| **Fable** | promove rascunho a documento e implementa o que custa caro errar |
+
+Isto está escrito porque **modelo que entende o porquê da regra a segue melhor do
+que modelo que lê lista.** Quando uma regra abaixo parecer atrapalhar a tarefa,
+volte a esta tabela: quase sempre a regra existe porque outro papel resolve
+aquilo melhor.
+
+---
+
+## A escada de três modos
+
+O modo vem escrito na fila, junto com a tarefa. **Cada modo é conquistado pelo
+anterior.**
+
+| Modo | Estado | Pode |
+|---|---|---|
+| **1 · AUDITOR** | ✅ **provado** (piloto de 2026-08-06) | ler e relatar. Zero escrita |
+| **2 · RASCUNHO** | ⏳ **a provar** | tudo do AUDITOR, mais **criar e commitar exatamente um** arquivo `*-RASCUNHO.md` |
+| **3 · IMPLEMENTADOR** | ❌ **não existe** | — |
+
+### Modo AUDITOR
+Snapshot congelado · só leitura · arquivo+linha em toda afirmação · os rótulos
+abaixo · **nenhum arquivo alterado, nenhum commit**.
+
+### Modo RASCUNHO
+Pode criar **um** arquivo novo cujo nome termine em `-RASCUNHO.md`, declarado no
+briefing, e commitar **só ele**, na branch `codex/*` do worktree próprio.
+
+**Não pode:** editar arquivo existente · migration · código de produção ·
+`package.json` · teste · `.env.local` · banco · e2e · `push` · `merge`.
+
+**Nada com `RASCUNHO` no nome é fonte de verdade.** Não entra na lista de
+referências do `CLAUDE.md` nem na lista de frescor de `scripts/estado.ts`. Vira
+documento de verdade só por promoção do Claude ou do Fable, em commit separado.
+
+Cabeçalho obrigatório de todo rascunho:
+
+```
+STATUS: RASCUNHO — não é fonte de verdade
+Base factual: commit <hash>
+Objetivo: <o que este documento adianta>
+Bloqueado por: <o que falta para promover>
+```
+
+### Modo IMPLEMENTADOR
+Não existe. O modo 2 precisa entregar algumas vezes e ser corrigido antes de
+ganhar direito de tocar código. **Escrever código é o único modo em que o erro
+entra em produção.**
+
+---
+
+## As regras, e o motivo de cada uma
+
+Regra sem motivo é regra que se racionaliza para fora numa hora apertada.
+
+1. **Fotografia estável.** A rodada nasce de um worktree do commit da hora, e **o
+   relatório abre declarando o hash auditado**. *Por quê:* número de linha anda.
+   Sem o hash, `arquivo:linha` não é conferível, e conferir vira arqueologia.
+2. **Comandos: só leitura.** `rg`, `Get-Content`, `ls`, `git log/show/diff`.
+   Proibido teste, build, gate, rede, `.env.local`, escrita, e todo git que
+   altere estado (`add`, `commit` fora do modo 2, `checkout`, `reset`, `clean`,
+   `stash`, `push`). *Por quê:* o `npm run test:e2e` deste projeto cria e apaga
+   **usuários reais em produção**. Não existe ambiente de teste separado.
+3. **Arquivo + linha em toda afirmação.** *Por quê:* é o que torna o relatório
+   conferível em segundos em vez de refazer a investigação.
+4. **Migration não é prova de produção.** *Por quê:* aconteceu duas vezes em
+   2026-08-06 — ver os rótulos abaixo.
+5. **Uma tarefa, um executor.** *Por quê:* dois agentes no mesmo arquivo se
+   sobrescrevem sem conflito de git, porque não é edição, é sobrescrita.
+6. **Deixar em branco é acerto, não fracasso.** *Por quê:* no piloto, o resultado
+   certo foi marcar 2 de 16 e deixar 14 com o motivo. Auditor que preenche tudo
+   não está medindo, está adivinhando.
+7. **Não procure erro para provar valor.** Cobertura e força de prova são a
+   régua; **zero contradições é resultado válido** se cada afirmação foi
+   confrontada individualmente. *Por quê:* "achar erro" como métrica de sucesso
+   pressiona o modelo a fabricar defeito — o oposto da regra 6.
+8. **Commit é memória.** Nada depende de "o agente lembra". Vale para este
+   arquivo também: briefing de tarefa fechada é compactado, e o texto integral
+   fica recuperável no histórico do git.
+
+---
+
+## Os rótulos
+
+### Nos relatórios (modo AUDITOR)
+
+| Rótulo | Significa |
+|---|---|
+| `COMPROVADO` | a afirmação **inteira** está provada pelo que você leu |
+| `ESTÁTICO — FALTA BANCO` | o código diz a intenção; o comportamento não foi visto |
+| `EXIGE RUNTIME` | precisa render, tela, celular ou medição |
+| `AUSENTE` | procurei em `<onde>` e não existe |
+
+Fora do doc 13, **não use `[x]`** — ele lê como "o requisito está resolvido", que
+foi exatamente a armadilha que reprovou uma marca do piloto.
+
+### Nos rascunhos (modo RASCUNHO)
+
+| Rótulo | Significa |
+|---|---|
+| `FATO` | o que existe — **sempre qualificado**, ver abaixo |
+| `NOVO` | precisa ser construído |
+| `DECISÃO` | escolha em aberto, com **alternativa nomeada e custo de errar** |
+| `DEPENDENTE DO PILOTO` | não fecha antes de observar a T1 com criança real |
+
+**Todo `FATO` diz fato de quê.** Em 2026-08-06 o projeto se queimou duas vezes
+confundindo níveis de evidência:
+
+```
+FATO — CÓDIGO      <arquivo:linha>
+FATO — MIGRATION   <migration:linha> — intenção versionada, NÃO produção
+FATO — BANCO       medido por gate; o único que fala de produção
+FATO — PLANO       o doc promete; não prova implementação
+```
+
+Os dois casos que criaram esta regra:
+
+- **A matview.** Nenhuma migration escrevia `GRANT` ou `REVOKE` sobre
+  `user_public_profiles`. Lendo só migration, a conclusão era "nada a ver aqui".
+  O banco dizia outra coisa: `SELECT` exposto a `anon` e `authenticated`.
+- **A régua da patente.** O Claude escreveu "a quarta fonte é o banco" citando
+  uma linha de *migration*. Migration prova intenção, não estado.
+
+**Um agente offline não pode originar `FATO — BANCO`.** Sem uma medição entregue
+no briefing (com data, gate e resultado), escreva `EXIGE BANCO` ou
+`FATO — MIGRATION <linha>. Produção: não verificada.`
+
+---
 
 ## Painel
 
-| # | Tarefa | Estado | Quando | Onde caiu |
-|---|---|---|---|---|
-| **P0** | Piloto — doc 13: cabeçalho, §7 e §10 | ✅ **feito** | 2026-08-06 | `260e657`, mais `ed393ad` |
-| **C1** | Varredura de coerência entre documentos | ⬜ não iniciada | — | — |
-| **C2** | Doc 13 — §1 (dados/schema) e §5 (assets) | ⬜ não iniciada | — | — |
-| **C3** | Doc 15 §10 — checklist de lançamento | ⬜ não iniciada | — | — |
-| **C4** | Prioridade de teste por superfície de recompensa | ⬜ opcional | — | — |
+| # | Modo | Tarefa | Estado |
+|---|---|---|---|
+| **P0** | AUDITOR | Piloto — doc 13: cabeçalho, §7, §10 | ✅ concluído 2026-08-06 |
+| **A1** | **RASCUNHO** | Matriz de server-authority da T1 | 🔵 **ativa** |
+| **C1** | AUDITOR | Coerência documental | 🔵 **ativa** |
+| — | — | *Decisão da patente* (Doug) | ⏸ depois do C1 |
+| **A2** | AUDITOR | T2: relatório de delta | ⬜ |
+| **A3** | AUDITOR | T2: mapa factual de reuso | ⬜ só se A2 disser que delta não basta |
+| **A4** | RASCUNHO | T2: pré-plano bloqueado | ⬜ só depois de A2/A3 |
+| **V1** | AUDITOR | Auditoria adversarial do A4 — **outro thread** | ⬜ |
+| **A5** | RASCUNHO | Os 31 pedidos de arte da F4 | ⬜ corre por fora |
+| **C2** | AUDITOR | Doc 13 §1 e §5 | ⬜ |
+
+**Teto: duas frentes técnicas simultâneas.** Acima disso o gargalo de revisão
+passa a ser o Doug. Arte corre por fora e não conta.
 
 ---
 
-## As regras, em sete linhas
+### P0 — concluído
 
-1. **Só relatório.** O Codex não escreve no repositório. Eu aplico o que valer.
-2. **Fotografia estável.** A rodada nasce de um worktree `--detach` do commit da
-   hora, e **o relatório abre declarando o hash auditado** — sem ele,
-   `arquivo:linha` não é conferível, porque número de linha anda.
-3. **Comandos: só leitura.** `rg`, `Get-Content`, `ls`, `git log/show/diff`.
-   Proibidos teste, build, gate, rede, `.env.local`, escrita e todo git que
-   altere estado.
-4. **Quatro rótulos por extenso**, nunca `[x]`:
-   `COMPROVADO` · `ESTÁTICO — FALTA BANCO` · `EXIGE RUNTIME` · `AUSENTE`.
-5. **Arquivo + linha em toda afirmação.**
-6. **Migration nunca é prova de produção.** Ela diz a intenção de um momento.
-7. **Amostra julga o relatório; ela não autoriza aplicar.** Cinco pares dizem se
-   o relatório merece confiança. Cada achado que for aplicado é conferido um a um.
-
----
-
-## P0 — Piloto ✅ feito em 2026-08-06
-
-**Escopo:** tabela de inventário do cabeçalho, §7 Segurança, §10 Cobertura de teste.
-
-**Voltou:** 16 linhas de checkbox — **2** comprovadas, **7** estáticas pendentes de
-banco, **0** exigindo runtime, **7** ausentes.
-
-**Inventário do cabeçalho, quatro células erradas:**
-faltavam as tabelas `xp_grants` e `title_tiers` · policies não eram 5 e sim 9 no
-histórico versionado · testes unitários não eram zero e sim 8 arquivos · gates da
-fase 8 não eram zero e sim 4.
-
-**Achou o que estava lacrado**, com o número exato nos dois casos (8 testes, 4
-gates), e **pegou uma sutileza que eu não vi**: `title_tiers_select_all` tem
-`DROP` seguido de recriação na linha seguinte, o que quebra a contagem ingênua.
-
-**Dois achados registrados sem conclusão:**
-- `titles_select_classmate` foi criada junto das duas policies de vazamento,
-  nunca foi dropada, e não consta de `POLICIES_PROIBIDAS` do gate — assimetria
-  sem justificativa escrita. **Segue em aberto.**
-- O ranking de turma ignora `ranking_visible` de propósito. **Metade fechou** em
-  `ed393ad` (a matview estava legível por `anon`; revogada e vigiada pelo gate);
-  a outra metade é decisão sua e **segue em aberto**.
-
-**O que eu tive de corrigir nele:** uma marca `[x]` enganosa no gate de
-integridade catálogo↔assets — verdadeira sobre o gate existir, falsa sobre o bug
-estar resolvido, porque os 45 itens invisíveis seguem congelados no baseline. Foi
-o que motivou a regra 4 acima.
+```
+P0 — concluído · modo AUDITOR · base 1ace81b · resultado 260e657
+Veredito: aprovado com 1 correção
+O que ele errou: marcou [x] no gate de integridade catálogo↔assets. Verdadeiro
+  sobre o gate existir, falso sobre o bug estar resolvido — os 45 itens
+  invisíveis seguem congelados no baseline. É por isso que os rótulos hoje são
+  por extenso e não caixinha.
+O que ele acertou e ninguém tinha visto: title_tiers_select_all tem DROP seguido
+  de recriação na linha seguinte, o que quebra a contagem ingênua de policies.
+Promovido para: docs/avatar/13-checklist-de-verificacao.md
+Desdobramento: o achado do opt-out virou conserto medido em ed393ad e 81a2723
+```
 
 ---
 
-## C1 — Varredura de coerência entre documentos
+### A1 — Matriz de server-authority da T1 · modo RASCUNHO · 🔵 ativa
 
-**Por que primeiro:** a doença fundadora do projeto, escrita no `CLAUDE.md` —
-*"o estado deste projeto vivia em 13 documentos que discordavam"*. O `ESTADO.md`
-resolveu os **números**; a prosa segue divergindo.
+**Por que esta primeiro.** Os blocos B0–B7 do plano da trilha 1 têm **zero linhas
+de código** — nenhuma das ~8 tabelas nem das ~6 RPCs existe. Antes de escrever
+qualquer RPC, a Regra Inviolável nº 1 do projeto exige saber, por superfície, o
+que o servidor carrega, valida e concede. E é o piloto do modo RASCUNHO.
 
-**Escopo:** `CLAUDE.md`, `docs/ESTADO.md`, `docs/avatar/12`–`18`,
-`docs/curriculo/01` e `02`. Ignorar `_superado/`.
+**É confronto, não derivação.** O template da §3 do doc 02 já traz seis bullets
+fixos por formato, e três deles são exatamente isto: *"o que o servidor valida"*,
+*"como o dado fica guardado"* e *"reaproveita"*. A tarefa é **conferir essas
+promessas contra o repositório** — foi o que a revisão 3 do próprio doc 02 fez
+quando derrubou 7 promessas de reuso.
 
-**Divergências já conhecidas — não são a tarefa, são a calibragem:**
+**Briefing — colar no Codex:**
+
+```
+MODO: RASCUNHO
+
+Crie exatamente UM arquivo novo:
+  docs/curriculo/server-authority-trilha1-RASCUNHO.md
+
+Não altere nenhum arquivo existente. Não rode teste, build, gate, banco, e2e
+nem nada de rede. Comandos: só leitura.
+
+Leia AGENTS.md, CLAUDE.md e docs/codex-fila.md antes de qualquer coisa.
+
+Abra o arquivo declarando:
+  STATUS: RASCUNHO — não é fonte de verdade
+  Base factual: commit <saída de git rev-parse HEAD>
+  Objetivo: confrontar a autoridade de servidor prometida pelo doc 02 com o
+            que o repositório de fato tem hoje
+  Bloqueado por: revisão do Doug/Fable
+
+TRABALHE UMA SUPERFÍCIE POR VEZ, fechando o bloco antes de abrir a próxima.
+Não carregue os dois documentos de currículo inteiros de uma vez — são 152 mil
+caracteres, e a cobertura das últimas superfícies sai rasa.
+
+LEITURA POR SUPERFÍCIE: comece pela subseção dela na §3 do doc 02 e siga as
+referências transversais necessárias para fechar aquela superfície — não se
+confine à §3. As que quase sempre importam:
+  §2.5     contrato comum de tentativa: 7 invariantes (idempotência por
+           submission_id, relógio do banco, RLS, REVOKE, search_path, sorteio
+           persistido). É a seção central de autoridade de servidor
+  D6 / B6  rota autoritativa, PGN e concessão
+  §4       motor dos mini-jogos
+  B0.0     infraestrutura transversal
+  §3.8/B7  Desafio Final
+  e o código real de complete_lesson_step, que é o rabo comum de progresso
+
+NOVE SUPERFÍCIES:
+  1 lição interativa      2 prática contra o motor   3 quiz
+  4 mini-jogo             5 bloco de puzzles         6 revisão espaçada
+  7 duelo com missão      8 Desafio Final
+  9 conclusão de aula e recompensa (transversal)
+
+A TAREFA É CONFRONTO, NÃO DERIVAÇÃO. Para cada superfície, o doc 02 §3 já diz
+"o que o servidor valida", "como o dado fica guardado" e "reaproveita". Seu
+trabalho é conferir cada uma dessas promessas contra supabase/migrations/,
+src/, scripts/verify/ e package.json — e dizer onde ela se sustenta e onde não.
+
+Enumere: cada promessa de "valida", "persiste", "reaproveita", "RPC" e
+"idempotência" recebe conclusão PRÓPRIA. Não resuma superfície inteira numa
+frase.
+
+CAMPOS, um bloco por superfície:
+
+  ESTADO            IMPLEMENTADO | PARCIAL | SÓ PLANO | AUSENTE
+  Client envia      o mínimo que o navegador pode afirmar
+  Servidor carrega  que dado autoritativo vem do banco
+  Servidor valida   o que impede resultado forjado
+  Persistência      onde a tentativa fica registrada
+  Idempotência      qual chave/UNIQUE impede repetição (nomear, não criar)
+  Relógio           quem decide tempo e data
+  Progressão        pode conceder aula concluída, XP, missão, patente?
+  Escrita direta    o client consegue gravar a tabela? qual RLS/REVOKE falta?
+  RPC               pública ou privada — quem tem EXECUTE
+  Reuso real        o mecanismo existe? FATO — CÓDIGO com arquivo+linha
+  Trabalho novo     o que ainda precisa nascer
+  Gate              que teste deveria REPROVAR uma implementação insegura
+  Piloto            alguma escolha depende de criança real?
+  Decisão           alternativa aberta + custo de errar
+
+ESTADO tem quatro valores porque o binário força resposta errada: o bloco de
+puzzles tem a esteira do puzzle_attempt pronta, mas não tem sorteio por aula
+nem vínculo tentativa↔aula. Isso é PARCIAL.
+  IMPLEMENTADO  o mecanismo necessário existe
+  PARCIAL       há infraestrutura reutilizável, mas não o contrato completo
+  SÓ PLANO      existe apenas em documentação
+  AUSENTE       nem implementação nem desenho suficiente
+NOVO não é valor de ESTADO — é necessidade, e mora no campo "Trabalho novo".
+
+RÓTULOS: os do modo RASCUNHO, na seção "Os rótulos" deste guia. Todo FATO é
+qualificado. VOCÊ NÃO PODE ORIGINAR "FATO — BANCO": está offline e não roda
+gate. Sem medição entregue, escreva EXIGE BANCO, ou
+"FATO — MIGRATION <linha>. Produção: não verificada."
+
+NÃO desenhe migration final. NÃO escreva DDL. Nomear uma restrição
+("precisa de UNIQUE (user_id, submission_id)") é resposta esperada; escrever
+CREATE TABLE não é.
+
+NÃO transforme desenho do doc 02 em afirmação de implementação. "O doc 02 diz
+que o servidor valida X" é FATO — PLANO, nunca FATO — CÓDIGO.
+
+Zero contradições é resultado válido. Não procure divergência para provar
+valor — a régua é cobertura e força de prova.
+
+Ao terminar, commite somente esse arquivo na branch codex/*.
+git show --name-only do commit deve listar exatamente um arquivo.
+```
+
+---
+
+### C1 — Coerência documental · modo AUDITOR · 🔵 ativa
+
+**Por que.** A doença fundadora, escrita no `CLAUDE.md`: *"o estado deste projeto
+vivia em 13 documentos que discordavam"*. O `docs/ESTADO.md` resolveu os
+**números**; a prosa segue divergindo.
+
+**Divergências já conhecidas — calibragem, não a tarefa:**
 
 | Divergência | Estado |
 |---|---|
-| Plano técnico da trilha 1 "não existe" (`CLAUDE.md`) | ✅ corrigida 2026-08-06 |
+| Plano técnico da T1 "não existe" (`CLAUDE.md`) | ✅ corrigida 2026-08-06 |
 | idem, na §13 de `docs/curriculo/01` | ✅ corrigida 2026-08-06 |
 | Reseed do catálogo: **60** (doc 14, T4.9) vs **54** (doc 15 §9.1) | ⬜ aberta |
 | Pool de baú "nunca relíquia" (doc 14, T4.11) — a relíquia foi cortada pela D-E; o lugar é a moldura (`frame`) | ⬜ aberta |
-| **Régua da patente: decidida ✅ no doc 15 §3 vs aberta e travando o Bloco 7b no bloco AGORA do `ESTADO.md`** | ⬜ **aberta — a grave** |
-| Branch em execução: bloco AGORA diz `avatar/estilo-kokeshi`; a real é `avatar/vtracer` | ⬜ aberta (bloco AGORA é escrito à mão) |
+| **Régua da patente: `decidida ✅` no doc 15 §3 vs `aberta e travando o Bloco 7b` no bloco AGORA do `ESTADO.md`** | ⬜ **aberta — a grave** |
+| Branch em execução: bloco AGORA diz `avatar/estilo-kokeshi`; a real é `avatar/vtracer` | ⬜ aberta |
+| Doc 13 listado como decisão aberta no bloco AGORA — mas fechou por uso (0 de 92 → 2 de 92) | ⬜ aberta |
+| `docs/ESTADO.md:19` aponta para `.scratch/estilo/BRIEFING-CABELO.md`, **que não existe** | ⬜ aberta |
 
-A quinta é a que custa dias: dois documentos discordam sobre se uma decisão que
-**trava trabalho** foi tomada.
-
-**Entrega:** tabela `arquivo:linha A` × `arquivo:linha B`, qual parece obsoleto e
-por quê, precedida do hash auditado. Sem editar nada.
-
-**Quando rodar** — não antes de todo bloco, que vira burocracia. Os gatilhos:
-documento de fonte de verdade foi alterado · um plano novo depende de três ou
-mais documentos · retomada depois de semanas · indício concreto de conflito.
-
----
-
-## C2 — Doc 13, §1 (dados e schema) e §5 (assets e integridade)
-
-Continua o piloto nas duas seções que sobraram com massa estática. A §5 cobre o
-**bloqueador de lançamento nº 1** do próprio doc: os 45 itens que não vestem o
-boneco.
-
-**Não mandar §6, §8, §9.** Exigem ver na tela e medir em celular fraco —
-voltariam inteiras como `EXIGE RUNTIME`, gastando uma rodada para nada.
-
----
-
-## C3 — Doc 15 §10, checklist de lançamento
-
-14 caixas, **zero marcadas desde que o arquivo nasceu** — o doc 13 de novo, em
-menor escala, e é a lista de "estamos prontos?". Não urgente: as fases 11 e 12
-não começaram, então boa parte volta `AUSENTE` com razão.
-
----
-
-## C4 — Prioridade de teste por superfície de recompensa *(opcional)*
-
-20 dos 28 RPCs chamados em `src/` não aparecem em teste nenhum — inclusive
-`claim_chest` e `end_rush`, que são caminho de economia. A lista crua sai de um
-grep; o valor é o **julgamento** de quais concedem recompensa e portanto tocam a
-Regra Inviolável nº 1.
-
-**Entrega apenas um backlog priorizado.** Validar RPC de recompensa continua
-comigo e com os gates.
-
----
-
-## Modelo de briefing — abrir, preencher as duas linhas, colar
+**Briefing — colar no Codex:**
 
 ```
-Você é um auditor. Não altera nada no repositório: a entrega é um relatório.
+MODO: AUDITOR
+
+Você não altera nada. A entrega é um relatório, na sua resposta.
+
+Leia AGENTS.md, CLAUDE.md e docs/codex-fila.md antes de qualquer coisa.
 
 Abra o relatório declarando o hash do commit auditado (git rev-parse HEAD).
 
-Leia, nesta ordem: AGENTS.md, CLAUDE.md, docs/ESTADO.md.
+TAREFA: encontrar afirmações que se contradizem entre documentos.
 
-TAREFA: <<< o escopo da rodada, arquivo e seções >>>
+ESCOPO: CLAUDE.md · docs/ESTADO.md · docs/avatar/12 a 18 ·
+        docs/curriculo/01 e 02.
+FORA DE ESCOPO: qualquer coisa em _superado/, e todo arquivo de código.
+
+COMANDOS: só leitura — rg, Get-Content, ls, git log/show/diff. NÃO rodar teste,
+build, gate, nada de rede, nada que use .env.local, nada que escreva, e nenhum
+git que altere estado.
+
+A seção C1 do docs/codex-fila.md lista 8 divergências já conhecidas, sendo 2 já
+corrigidas. Elas são CALIBRAGEM, não a tarefa: confirme que ainda valem e
+procure as que ninguém viu.
+
+ENTREGA — uma linha por divergência:
+  arquivo:linha A  ×  arquivo:linha B
+  o que cada um afirma, em meia linha
+  qual parece obsoleto, e a evidência de por quê
+  gravidade: TRAVA TRABALHO | ENGANA QUEM LÊ | COSMÉTICA
+
+Priorize as que TRAVAM TRABALHO — dois documentos discordando sobre se uma
+decisão foi tomada custa dias.
+
+Zero divergências novas é resultado válido. Não invente para provar valor.
+
+ENTREGUE no fim: quantas confirmou das conhecidas, quantas novas achou, e a
+contagem por gravidade.
+```
+
+---
+
+### A2 · A3 · A4 · V1 · A5 · C2 — ainda sem briefing
+
+Os briefings nascem aqui quando a rodada for começar. **Briefing escrito com
+semanas de antecedência apodrece igual a documento** — é a doença que este
+arquivo existe para não repetir.
+
+- **A2 — T2: relatório de delta.** *A trilha 2 precisa de algum mecanismo
+  pedagógico que o plano da T1 não cubra?* Por aula: formato · mecanismo
+  necessário · correspondente na T1 · diferença · decisão · dependência do
+  piloto. Pode colapsar a questão inteira da T2 — o doc 02 §9 adia o *move
+  trainer* para o plano da **T3**, não da T2.
+- **A3 — T2: mapa factual de reuso.** Só se A2 disser que delta não basta.
+- **A4 — T2: pré-plano.** Modo RASCUNHO, **e nasce bloqueado**: o doc 02 fecha a
+  questão em três lugares (linha 1184, linha 1111, linha 29) — Trilhas 2–7
+  dependem dos dados reais do piloto da T1.
+- **V1 — auditoria adversarial do A4**, em **outro thread**. Quem redigiu defende
+  o que escreveu. Caça as palavras que escondem trabalho: *já existe · basta ·
+  reutiliza · herda · mesma RPC · mesma tabela · mesmo gate · sem mudança*.
+- **A5 — os 31 pedidos de arte da F4** (5 cabelos, 6 chapéus, 20 pets), a partir
+  do gabarito de `scripts/avatar/arte/PEDIDO-CHANEL.md` e do
+  `docs/avatar/16-uniformes-runbook.md`. Pré-requisito de escrita para os
+  chapéus: a regra chapéu × cabelo do doc 15, linha 1073.
+- **C2 — doc 13, §1 e §5.** A §5 cobre o bloqueador de lançamento nº 1. **Não
+  mandar §6, §8, §9:** voltariam inteiras como `EXIGE RUNTIME`.
+
+---
+
+## Modelo de briefing
+
+```
+MODO: AUDITOR | RASCUNHO
+
+Leia AGENTS.md, CLAUDE.md e docs/codex-fila.md antes de qualquer coisa.
+Declare o hash do commit auditado no topo da entrega (git rev-parse HEAD).
+
+TAREFA: <<< id da fila + escopo >>>
 FORA DE ESCOPO: <<< o que não tocar >>>
 
 COMANDOS: só leitura — rg, Get-Content, ls, git log/show/diff. NÃO rodar teste,
 build, gate, nada de rede, nada que use .env.local, nada que escreva, e nenhum
-git que altere estado (add, commit, checkout, reset, clean, stash, push).
+git que altere estado.
+[modo RASCUNHO: exceto o commit do único arquivo *-RASCUNHO.md declarado acima]
 
-RÓTULOS — um por afirmação, sempre com arquivo+linha:
-  COMPROVADO             a afirmação INTEIRA está provada pelo que você leu
-  ESTÁTICO — FALTA BANCO o código diz a intenção; o comportamento não foi visto
-  EXIGE RUNTIME          precisa render, tela, celular ou medição
-  AUSENTE                procurei em <onde> e não existe
+RÓTULOS: os da seção "Os rótulos" deste guia. Todo FATO é qualificado, e um
+agente offline nunca origina FATO — BANCO.
 
-REGRA DURA: migration não é prova de produção. Achar ENABLE ROW LEVEL SECURITY
-numa migration NÃO autoriza COMPROVADO em "RLS ativo" — migration posterior pode
-ter desligado, e objeto pode ter nascido fora do versionamento.
+Zero achados é resultado válido. A régua é cobertura e força de prova, não
+número de problemas encontrados.
 
-ENTREGUE no fim: os quatro números, um por rótulo.
+ENTREGUE no fim: a contagem por rótulo.
 ```

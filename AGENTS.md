@@ -6,6 +6,10 @@ coisa, porque as travas técnicas do projeto não valem fora do Claude Code.
 
 Ordem de leitura: este arquivo → `CLAUDE.md` → `docs/ESTADO.md`.
 
+**Se a sua tarefa veio da fila, leia também [docs/codex-fila.md](docs/codex-fila.md)
+— é lá que moram os modos de trabalho, os rótulos de evidência e o briefing da
+tarefa.** Este arquivo diz o que nunca se faz; aquele diz como se faz.
+
 Não acrescente regra de produto, de estilo ou de arquitetura aqui. Elas vivem no
 `CLAUDE.md`, e duplicá-las cria duas fontes que divergem — o problema que o
 `docs/ESTADO.md` foi criado para resolver.
