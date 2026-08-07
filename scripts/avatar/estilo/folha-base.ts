@@ -142,7 +142,24 @@ const TAMANHOS = [56, 100, 200, 425] as const;
  * derruba o raio mínimo do contorno de 34,4 para 14,5.
  */
 const TETO_BASE_FORMAS = 19;
-const TETO_BASE_BYTES = 7418;
+/**
+ * **7 468, e não mais 7 418 — remedido de propósito em 2026-08-06.**
+ *
+ * Os 92% viraram padrão (`ESCALA_PADRAO` em `compositor.ts`), o que acrescenta um
+ * `<g transform="translate(…) scale(.92)">` de **50 bytes** a toda composição. O
+ * motivo está lá e no docstring de `parametrico-congelado.ts`: o `viewBox` deixa
+ * 45,5 u acima da coroa, a peça traçada da primeira arte real sobe a −38,9 u, e o
+ * viewport guilhotinava sem erro e sem aviso.
+ *
+ * As **formas continuam 19** — um `<g>` não pinta, então ele não entra na conta do
+ * orçamento. É a mesma razão de `<defs>` e `<clipPath>` não contarem.
+ *
+ * **Os closes e o mapa de facetas desta folha compõem com `escala: 1`**, e isso não
+ * é exceção: eles comparam o render com a `referencia-base.png`, que é uma foto da
+ * arte no sistema de coordenadas interno. A escala é transformação EXTERNA — medir
+ * a geometria depois de encolher seria medir a régua, não o boneco.
+ */
+const TETO_BASE_BYTES = 7468;
 const TETO_COMPOSTO_FORMAS = ORCAMENTO_COMPOSTO.formas;
 const TETO_COMPOSTO_BYTES = ORCAMENTO_COMPOSTO.bytes;
 
@@ -454,7 +471,7 @@ async function main() {
      */
     const base = (h: number, ns: string, vb = `0 0 ${VIEWBOX.w} ${VIEWBOX.h}`, pele: string = PELE_COMPARACAO) => {
       const [, , w0, h0] = vb.split(" ").map(Number);
-      return compor({ pele, cabelo: CABELO_COMPARACAO, ns })
+      return compor({ pele, cabelo: CABELO_COMPARACAO, ns, escala: 1 })
         .replace(`viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}"`, `viewBox="${vb}"`)
         .replace("<svg ", `<svg width="${Math.round((h * w0) / h0)}" height="${h}" `);
     };
@@ -477,7 +494,7 @@ async function main() {
       modelo: ModeloCabelo | undefined,
       cor: string = CABELO_COMPARACAO,
     ) =>
-      compor({ pele: PELE_COMPARACAO, cabelo: cor, modeloCabelo: modelo, ns }).replace(
+      compor({ pele: PELE_COMPARACAO, cabelo: cor, modeloCabelo: modelo, ns, escala: 1 }).replace(
         "<svg ",
         `<svg width="${Math.round((h * VIEWBOX.w) / VIEWBOX.h)}" height="${h}" `,
       );

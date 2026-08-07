@@ -1,0 +1,54 @@
+{
+  "versao": "base-oficial-v1",
+  "gerado": "P0",
+  "canvas": {
+    "largura": 1024,
+    "altura": 1024,
+    "fundo": "#FBF8F5"
+  },
+  "viewBox": {
+    "w": 500,
+    "h": 700
+  },
+  "transformacao": {
+    "escala": 1.2,
+    "origem": {
+      "x": 212,
+      "y": 92
+    },
+    "comentario": "x_u = (x_px - origem.x) / escala; y_u = (y_px - origem.y) / escala"
+  },
+  "pele": "#E9B183",
+  "regioes": {
+    "rosto": {
+      "x0": 187.5,
+      "y0": 184.5,
+      "x1": 392.5,
+      "y1": 307.45
+    },
+    "sobrancelhas": {
+      "x0": 183.5,
+      "y0": 159.20000000000002,
+      "x1": 396.5,
+      "y1": 179.4,
+      "reprova": false
+    },
+    "corpo": {
+      "yQueixo": 353.2,
+      "yFimTronco": 603,
+      "comentario": "silhueta do tronco entre as duas alturas; abaixo, o canvas inteiro"
+    }
+  },
+  "caixaCabeca": {
+    "x0": 75.2,
+    "x1": 439.2,
+    "y0": 45.5,
+    "y1": 347.2,
+    "larg": 364,
+    "alt": 301.7
+  },
+  "hash": {
+    "png": "d8694eac68fa16eefb8954943e807a8058362da7cac617cbf2aa2cfb91d6c84d",
+    "svg": "ecdf5b10337dfe95293586132ecf6120fe6c1cef654a5710d3ce31d62dfa8118"
+  }
+}

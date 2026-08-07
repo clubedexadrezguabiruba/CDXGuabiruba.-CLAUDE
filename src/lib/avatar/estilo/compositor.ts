@@ -79,6 +79,7 @@ import {
   pathCabeloClaro,
   pathCabeloLinhas,
   pathExtensao,
+  pathExtensaoLinhas,
   resolverCabelo,
   type CabeloOuModelo,
 } from "./cabelo";
@@ -160,14 +161,20 @@ function estilo(ns: string, animado: boolean, modelo: CabeloOuModelo | undefined
   const risco =
     `stroke:var(--av-linha);stroke-width:var(--av-traco);` +
     `stroke-linejoin:round;stroke-linecap:round`;
+  // O arco pode vir da massa OU de uma das formas irmãs, e a regra do traço sai se
+  // qualquer uma declarar — senão uma peça cuja única linha está numa forma extra
+  // sairia sem contorno nenhum.
+  const temArco = Boolean(c?.linhas?.length) || Boolean(c?.formas?.some((f) => f.linhas?.length));
   const cabelo = !c
     ? ""
     : `.${ns} .kk-cabelo{fill:var(--av-cabelo)}` +
       (c.massa
-        ? `.${ns} .kk-cabelo-m{fill:var(--av-cabelo-s)}` +
-          (c.linhas?.length ? `.${ns} .kk-cabelo-l{fill:none;${risco}}` : "")
-        : `.${ns} .kk-cabelo-s{fill:var(--av-cabelo-s);${risco}}`) +
-      `.${ns} .kk-cabelo-e{fill:var(--av-cabelo);${risco}}`;
+        ? // A peça sobreposta não tem extensão: as formas irmãs são a própria peça,
+          // pintadas pela mesma `.kk-cabelo-m`, então `.kk-cabelo-e` não sai.
+          `.${ns} .kk-cabelo-m{fill:var(--av-cabelo-s)}` +
+          (temArco ? `.${ns} .kk-cabelo-l{fill:none;${risco}}` : "")
+        : `.${ns} .kk-cabelo-s{fill:var(--av-cabelo-s);${risco}}` +
+          `.${ns} .kk-cabelo-e{fill:var(--av-cabelo);${risco}}`);
 
   return (
     `.${ns} .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);` +
@@ -353,6 +360,73 @@ function extensoesCabelo(modelo: CabeloOuModelo | undefined, atras: boolean): st
   return `<path class="kk-cabelo-e" d="${lista.map(pathExtensao).join(" ")}"/>`;
 }
 
+/**
+ * A PEÇA SOBREPOSTA — desenhada por cima, sem clip, dona da própria silhueta.
+ *
+ * ---------------------------------------------------------------------------
+ * ESTE É O MODELO QUE OS CHAPÉUS VÃO USAR, e não "o jeito do cabelo"
+ * ---------------------------------------------------------------------------
+ *
+ * Cabelo e chapéu são as únicas 11 das 33 peças do catálogo que batem no problema
+ * da fronteira do crânio — traje, pet, fundo e moldura são imunes por construção,
+ * porque não compartilham borda com a cabeça. Escrever isto como caminho do cabelo
+ * obrigaria a inventar um segundo caminho para o chapéu; escrito como peça
+ * sobreposta, é um só.
+ *
+ * ---------------------------------------------------------------------------
+ * O ACHADO QUE O JUSTIFICA
+ * ---------------------------------------------------------------------------
+ *
+ * **Conteúdo CLIPADO nunca alcança os 6 u externos do contorno.** O traço tem 12 u
+ * centradas na linha de centro do crânio (`geometria.ts:851`), a massa é clipada
+ * nessa mesma linha, e SVG não tem `stroke-alignment` — zero ocorrências de
+ * `stroke-alignment`, `paint-order` e `vector-effect` no repositório. Não existe
+ * conserto por dentro do clip; foi por isso que `massaPorCima` só conseguiu levar
+ * a barra de 12 u a 6 u, e nunca a zero.
+ *
+ * Conteúdo NÃO clipado desenhado depois cobre os 12 u inteiros. Este arquivo já
+ * usa esse mecanismo em dois lugares — `:527`, onde o preenchimento opaco da
+ * cabeça apaga o contorno do tronco, e `:280-287`, as extensões de traje — sob a
+ * doutrina declarada em `:45-46`: *a ordem resolve por oclusão, que é o mesmo
+ * mecanismo que o estilo inteiro usa*. Máscara e filtro continuam vetados por
+ * escrito (doc 15 §7c item 17).
+ *
+ * ---------------------------------------------------------------------------
+ * O QUE SAIU JUNTO
+ * ---------------------------------------------------------------------------
+ *
+ * O ganho de simplificação só é real se o perdedor sair, e saíram quatro coisas:
+ * `EstadoAvatar.massaPorCima`, o `atras` da peça traçada, a **sangria** da
+ * conversão e a **partição massa/extensão**. Os três donos possíveis do contorno
+ * do cabelo viraram um: a própria peça.
+ *
+ * As formas saem num `<path>` só, com subpaths `M…Z M…Z` — o mesmo mecanismo de
+ * `extensoesCabelo`. Multi-componente passa a ser representável sem custar uma
+ * forma do orçamento por lóbulo. Medido na bancada do Bloco 3: a perda por
+ * multi-componente foi de 3 165 u² a 1 u², e o composto ficou com 22 formas contra
+ * 23 do arranjo anterior e 24 da alternativa que mantinha o clip.
+ */
+function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
+  if (!modelo) return "";
+  const c = resolverCabelo(modelo);
+  if (!c.massa) return "";
+  const desenhadas = [pathCabelo(modelo), ...(c.formas ?? []).map(pathExtensao)]
+    .filter(Boolean)
+    .join(" ");
+  if (!desenhadas) return "";
+  const claro = pathCabeloClaro(modelo);
+  // O traço vai por ÚLTIMO, e não junto com a massa: a clara é desenhada depois da
+  // massa, então um traço emitido antes dela seria coberto em todo trecho onde as
+  // duas se encostam. Ele é a borda externa da peça e fica acima do que a peça
+  // pinta — a mesma ordem que `cabeloNoCranio` já usava.
+  const risco = pathCabeloLinhas(modelo) + (c.formas ?? []).map(pathExtensaoLinhas).join("");
+  return (
+    `<path class="kk-cabelo-m" d="${desenhadas}"/>` +
+    (claro ? `<path class="kk-cabelo" d="${claro}"/>` : "") +
+    (risco ? `<path class="kk-cabelo-l" d="${risco}"/>` : "")
+  );
+}
+
 /** Um olho. Cápsula vertical, com o `rx` fazendo as pontas semicirculares. */
 function olho(cx: number, cy: number): string {
   return (
@@ -437,6 +511,99 @@ const FIGURA_Y1 = SOMBRA_CHAO.cy + SOMBRA_CHAO.ry;
  */
 const FOLGA_BASE = 20;
 
+/**
+ * A ESCALA PADRÃO DA FIGURA: **92%**, e ela deixou de ser opcional em 2026-08-06.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE O PADRÃO MUDOU
+ * ---------------------------------------------------------------------------
+ *
+ * O `viewBox` deixa **45,5 unidades** acima da coroa, e a peça traçada da primeira
+ * arte real sobe a **−38,9 u** — ou seja, 38,9 unidades ACIMA do topo do quadro. O
+ * viewport corta ali sem erro e sem aviso (doc 14, T1.5): medido no render, a
+ * tinta da peça crua a 100% começa em **y = 0,0**, que é a assinatura da
+ * guilhotina. A 92% ela começa em **y = 33,0** e cabe.
+ *
+ * Enquanto isto era campo opcional ausente, o produto continuava cortando cabelo
+ * alto em silêncio — e o silêncio é o problema, não o corte.
+ *
+ * ---------------------------------------------------------------------------
+ * A BASE DE EDIÇÃO PEDE `escala: 1`, E ISSO É O QUE MANTÉM A ARTE JÁ GERADA
+ * ---------------------------------------------------------------------------
+ *
+ * São dois conceitos no mesmo `compor()`, e agora os dois são explícitos:
+ *
+ *  - a **base de render** — o que o produto desenha, a 92%;
+ *  - a **base de edição** — o que vai ao gerador, a 100%, com o sistema de
+ *    coordenadas interno intacto para a arte voltar registrada.
+ *
+ * `base-oficial.ts` passa `escala: 1` com o motivo escrito ao lado. A amarra
+ * mudou de natureza — era "o caminho não existe", virou "a base pede" — e por isso
+ * ela ganhou um gate que roda sempre: `arte:escala` confere o hash do PNG da base
+ * contra o manifesto, e `verify:arte` o executa.
+ *
+ * O mesmo vale para os gates de GEOMETRIA (`verify:pose`, `avatar:fidelidade`):
+ * eles medem o sistema de coordenadas interno, que a escala não toca, então pedem
+ * `escala: 1` de propósito. Encolher a figura antes de medir a pose seria medir a
+ * régua, não o boneco.
+ */
+export const ESCALA_PADRAO = 0.92;
+
+/**
+ * ONDE UM PONTO DO SISTEMA INTERNO CAI NA TELA, dada a escala da composição.
+ *
+ * O `viewBox` continua sendo 500 × 700 e `geometria.ts` continua descrevendo o
+ * boneco nele — mas com a figura reancorada e encolhida, o ponto `(x, y)` das
+ * constantes **não está mais em `(x, y)` do quadro**. Quem quiser recortar um
+ * close, posicionar uma seta ou desenhar uma guia sobre o render precisa desta
+ * conta, e escrevê-la de novo em cada chamador é a segunda descrição da mesma
+ * transformação — o defeito que este repositório evita por princípio.
+ *
+ * É exatamente a inversa do que `abre` emite, e as duas leem as mesmas três
+ * constantes. A folha do Bloco 6 nasceu sem ela e o resultado foi medido: o
+ * close recortava a largura da cabeça a 100% sobre um render a 92%, e a arte
+ * sangrava para fora do quadro nos dois lados.
+ */
+export function naTela(
+  p: { x?: number; y?: number },
+  s: number = ESCALA_PADRAO,
+): { x: number; y: number } {
+  if (s === 1) return { x: p.x ?? 0, y: p.y ?? 0 };
+  return {
+    x: (VIEWBOX.w * (1 - s)) / 2 + (p.x ?? 0) * s,
+    y: VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s + (p.y ?? 0) * s,
+  };
+}
+
+/**
+ * A INVERSA DE `naTela`: onde um ponto do QUADRO cai no sistema interno.
+ *
+ * Ela existe pelo mesmo motivo que a direta: escrever a conta de novo em cada
+ * chamador é a segunda descrição da mesma transformação. E existe AGORA por um
+ * caso concreto — **um teto expresso em unidades de quadro, lido em unidades
+ * internas.**
+ *
+ * `TETO_Y = 8` (`tracar-cabelo.ts`) diz *"a tinta da peça tem de começar 8
+ * unidades abaixo do topo do QUADRO, senão o viewport come metade do traço"*.
+ * Enquanto o produto entregava a 100% os dois sistemas coincidiam e ninguém
+ * precisou distinguir. A 92% eles deixaram de coincidir: o topo do quadro passou
+ * a ser `y = −72,4` em coordenada interna, e um teto de 8 comprime peça que caberia
+ * com 80 unidades de sobra.
+ *
+ * As duas leem as mesmas três constantes, e `s === 1` é identidade nas duas —
+ * porque a 100% `compor()` não emite transformação nenhuma.
+ */
+export function daTela(
+  p: { x?: number; y?: number },
+  s: number = ESCALA_PADRAO,
+): { x: number; y: number } {
+  if (s === 1) return { x: p.x ?? 0, y: p.y ?? 0 };
+  return {
+    x: ((p.x ?? 0) - (VIEWBOX.w * (1 - s)) / 2) / s,
+    y: ((p.y ?? 0) - (VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s)) / s,
+  };
+}
+
 export function compor(estado: EstadoAvatar): string {
   const { ns, traje, animado = false, modeloCabelo } = estado;
   const pele = estado.pele;
@@ -445,7 +612,7 @@ export function compor(estado: EstadoAvatar): string {
   // Os dois são construídos para que AUSENTE signifique "a string de sempre". O
   // `escala === 1` cai no mesmo lugar que o campo ausente de propósito: não há
   // motivo para emitir um `<g transform>` que não transforma nada.
-  const s = estado.escala ?? 1;
+  const s = estado.escala ?? ESCALA_PADRAO;
   const abre =
     s === 1
       ? ""
@@ -453,12 +620,14 @@ export function compor(estado: EstadoAvatar): string {
         `${n(VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s)}) scale(${s})">`;
   const fecha = s === 1 ? "" : `</g>`;
 
-  const cabeloDentro = cabeloNoCranio(modeloCabelo);
-  const massaPorCima = (estado.massaPorCima ?? false) && cabeloDentro !== "";
-  const cabeloNoLugarDeSempre = massaPorCima ? "" : cabeloDentro;
-  const cabeloDepoisDoTraco = massaPorCima
-    ? `<g clip-path="url(#${ns}-c-cabeca)">${cabeloDentro}</g>`
-    : "";
+  // AS DUAS FAMÍLIAS SEGUEM CAMINHOS DIFERENTES, e é o `massa` que decide qual.
+  //
+  //  - **paramétrica** (`pontos`): dentro do clip da cabeça, como sempre. É o que
+  //    os cinco modelos do catálogo são, e nada aqui os toca;
+  //  - **traçada** (`massa`): peça sobreposta, depois do contorno, sem clip.
+  const traçada = modeloCabelo ? Boolean(resolverCabelo(modeloCabelo).massa) : false;
+  const cabeloNoLugarDeSempre = traçada ? "" : cabeloNoCranio(modeloCabelo);
+  const sobreposta = traçada ? pecaSobreposta(modeloCabelo) : "";
 
   // As duas do cabelo entram SÓ quando há cabelo. `escurecer` sem fator é o 0,82 do
   // item 2.4, e o docstring dele já nomeia "embaixo da franja" como um dos três
@@ -542,9 +711,10 @@ export function compor(estado: EstadoAvatar): string {
     `<path class="kk-luz" d="${pathEspecular()}"/>` +
     `</g>` +
     `<use href="#${ns}-p-cabeca" class="kk-traco"/>` +
-    // Com `massaPorCima`, a massa entra AQUI — depois do contorno da cabeça e do
-    // especular, e ainda dentro do mesmo clip. Vazio no caminho de sempre.
-    cabeloDepoisDoTraco +
+    // A PEÇA SOBREPOSTA ENTRA AQUI — depois do contorno da cabeça, fora de todo
+    // clip. É a posição que faz o traço do crânio sumir por oclusão. Vazia no
+    // caminho paramétrico.
+    sobreposta +
     extensoesCabelo(modeloCabelo, false) +
     olho(OLHO_CX_ESQ, OLHO_CY_ESQ) +
     olho(OLHO_CX_DIR, OLHO_CY_DIR) +

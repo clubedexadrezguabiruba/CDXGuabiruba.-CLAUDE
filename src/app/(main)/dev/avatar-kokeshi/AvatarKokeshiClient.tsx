@@ -13,7 +13,8 @@
 import { useState } from "react";
 import { compor } from "@/lib/avatar/estilo/compositor";
 import { CABELO, PELE } from "@/lib/avatar/palette";
-import { CABELOS, MODELOS_CABELO, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
+import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
+import { IDS_DA_ARTE, PECAS_DA_ARTE, type IdDaArte } from "@/lib/avatar/estilo/pecas-da-arte";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
 
 /** Os quatro tamanhos do `SIZE_CONFIG`. 56 é o do ranking e é o que manda. */
@@ -34,7 +35,8 @@ function Boneco({
 }: {
   pele: string;
   cabelo: string;
-  modelo: ModeloCabelo | undefined;
+  /** Modelo do catálogo, peça traçada da arte, ou `undefined` para careca. */
+  modelo: ModeloCabelo | Cabelo | undefined;
   h: number;
   animado: boolean;
   ns: string;
@@ -51,6 +53,18 @@ export default function AvatarKokeshiClient() {
   // aparece careca. A opção "careca" fica no seletor como controle — é a base do
   // Bloco 1d, e é contra ela que se vê o que o cabelo acrescenta.
   const [modelo, setModelo] = useState<ModeloCabelo | undefined>("curto");
+  /**
+   * A peça TRAÇADA da arte, quando há uma escolhida. Ela vence o `modelo`.
+   *
+   * São dois estados e não um porque as duas famílias são coisas diferentes: o
+   * catálogo é escolhido por `id` (`"curto"`), e a peça de arte é um objeto
+   * `Cabelo` inteiro que não está em `CABELOS` e não tem `id` de catálogo. Juntar
+   * os dois num estado só obrigaria a inventar um `id` falso para a peça de arte —
+   * e `id` falso em catálogo é exatamente o defeito que a rota já pegou quando três
+   * artes diferentes se diziam `"curto"`.
+   */
+  const [daArte, setDaArte] = useState<IdDaArte | undefined>(undefined);
+  const peca = daArte ? (PECAS_DA_ARTE[daArte] as Cabelo) : modelo;
   const [animado, setAnimado] = useState(true);
   const [fundo, setFundo] = useState<string>("#EFEAE2");
 
@@ -104,19 +118,44 @@ export default function AvatarKokeshiClient() {
           ))}
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-zinc-500">modelo:</span>
+          <span className="text-zinc-500">catálogo:</span>
           {[undefined, ...MODELOS_CABELO].map((m) => (
             <button
               key={m ?? "careca"}
               type="button"
-              onClick={() => setModelo(m)}
+              onClick={() => {
+                setModelo(m);
+                setDaArte(undefined);
+              }}
               className={`rounded border px-2 py-1 text-xs ${
-                m === modelo
+                m === modelo && !daArte
                   ? "border-zinc-900 bg-zinc-900 text-white"
                   : "border-zinc-300 text-zinc-600"
               }`}
             >
               {m ? CABELOS[m].nome : "careca"}
+            </button>
+          ))}
+        </div>
+        {/*
+          AS PEÇAS TRAÇADAS DA ARTE, num seletor SEPARADO do catálogo.
+          Elas não estão em `CABELOS` e não devem parecer que estão: colar uma
+          peça de arte no catálogo é decisão do Doug, e a rota só produz o literal.
+        */}
+        <div className="flex items-center gap-1">
+          <span className="text-zinc-500">da arte:</span>
+          {IDS_DA_ARTE.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setDaArte(daArte === id ? undefined : id)}
+              className={`rounded border px-2 py-1 text-xs ${
+                daArte === id
+                  ? "border-amber-600 bg-amber-600 text-white"
+                  : "border-amber-400 text-amber-700"
+              }`}
+            >
+              {PECAS_DA_ARTE[id].nome}
             </button>
           ))}
         </div>
@@ -152,7 +191,7 @@ export default function AvatarKokeshiClient() {
             <Boneco
               pele={pele}
               cabelo={cabelo}
-              modelo={modelo}
+              modelo={peca}
               h={t.h}
               animado={animado}
               ns={`kk-${t.h}`}
@@ -160,6 +199,72 @@ export default function AvatarKokeshiClient() {
             <figcaption className="mt-1 text-[10px] text-zinc-500">{t.rot}</figcaption>
           </figure>
         ))}
+      </div>
+
+      {/*
+        AS TRÊS PEÇAS DA ARTE, LADO A LADO COM O CONTROLE APROVADO.
+        O `[curto]` fica na mesma linha de propósito: comparar de memória é o que
+        a folha antiga obrigava a fazer, e é onde o olho erra.
+      */}
+      <h2 className="mt-8 font-semibold text-zinc-900">
+        As três peças traçadas da arte — e o <code>[curto]</code> ao lado
+      </h2>
+      <p className="text-zinc-500">
+        Elas <b>não estão no catálogo</b>. São o que <code>npm run arte:converter</code> produziu
+        das três artes, desenhadas pelo modelo de <b>peça sobreposta</b>: sem clip, dona da
+        própria silhueta. O que conferir é a <b>coroa</b> — nenhum traço preto deve atravessar a
+        massa com cabelo dos dois lados.
+      </p>
+      <div className="mt-2 flex flex-wrap items-end gap-6 rounded-lg p-4" style={{ background: fundo }}>
+        {IDS_DA_ARTE.map((id) => (
+          <figure key={id} className="m-0 text-center">
+            <Boneco
+              pele={pele}
+              cabelo={cabelo}
+              modelo={PECAS_DA_ARTE[id] as Cabelo}
+              h={280}
+              animado={animado}
+              ns={`kka-${id}`}
+            />
+            <figcaption className="mt-1 text-[10px] text-zinc-500">
+              {PECAS_DA_ARTE[id].nome}
+              <span className="block text-[9px] text-zinc-400">{id}.png</span>
+            </figcaption>
+          </figure>
+        ))}
+        <figure className="m-0 text-center">
+          <Boneco
+            pele={pele}
+            cabelo={cabelo}
+            modelo="curto"
+            h={280}
+            animado={animado}
+            ns="kka-controle"
+          />
+          <figcaption className="mt-1 text-[10px] text-zinc-500">
+            {CABELOS.curto.nome}
+            <span className="block text-[9px] text-zinc-400">controle aprovado</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      {/* As mesmas quatro a 56 px, que é o tamanho que manda. */}
+      <div className="mt-2 flex flex-wrap items-end gap-4 rounded-lg p-3" style={{ background: fundo }}>
+        {IDS_DA_ARTE.map((id) => (
+          <Boneco
+            key={id}
+            pele={pele}
+            cabelo={cabelo}
+            modelo={PECAS_DA_ARTE[id] as Cabelo}
+            h={56}
+            animado={false}
+            ns={`kkp-${id}`}
+          />
+        ))}
+        <Boneco pele={pele} cabelo={cabelo} modelo="curto" h={56} animado={false} ns="kkp-c" />
+        <span className="self-center text-[10px] text-zinc-500">
+          ← 56 px, o tamanho do ranking
+        </span>
       </div>
 
       {/*

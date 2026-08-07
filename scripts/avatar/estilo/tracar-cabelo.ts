@@ -120,7 +120,7 @@ import {
   type Cabelo,
   type PontoFranja,
 } from "../../../src/lib/avatar/estilo/cabelo";
-import { compor } from "../../../src/lib/avatar/estilo/compositor";
+import { compor, daTela } from "../../../src/lib/avatar/estilo/compositor";
 import {
   CABECA,
   CAIXA_CABECA,
@@ -2243,9 +2243,31 @@ export function escolherN(denso: { x: number; y: number }[], fechado: boolean): 
  * unidades de margem de cada lado contra 39 em cima: encolher os lados junto seria
  * mexer no que está funcionando.
  */
-export function comprimirNoTeto(pico: number): number {
+/**
+ * O TETO É DO QUADRO, E O QUADRO ENCOLHEU — a emenda de 2026-08-06.
+ *
+ * `TETO_Y = 8` foi medido quando o produto entregava a 100%, e naquele mundo o
+ * sistema interno e o quadro eram o mesmo: 8 internas eram 8 do quadro. Desde o
+ * Bloco 5 o padrão é **92%**, a figura é reancorada, e os dois deixaram de
+ * coincidir — o topo do quadro virou `y = −72,4` em coordenada interna.
+ *
+ * O custo, medido na primeira arte real: a peça da `entrada` tem pico em −38,9,
+ * que a 92% sobra **33 unidades** abaixo do teto. Ela era comprimida por `k =
+ * 0,445` mesmo assim, e **guardou 51,3% da ponta da arte** — num cabelo chamado
+ * *espetado*. A compressão continuava resolvendo um problema que os 92% já
+ * tinham resolvido em outro lugar.
+ *
+ * `escala = 1` por padrão é deliberado: os cinco paramétricos e o pipeline
+ * vigente chamam sem o argumento e continuam recebendo o número de sempre, byte
+ * a byte. Quem entrega a 92% **declara** que entrega.
+ *
+ * A guarda continua inteira para quem precisa dela: uma peça que exceda o teto
+ * MESMO na escala de entrega continua sendo comprimida, e pelo mesmo `k`.
+ */
+export function comprimirNoTeto(pico: number, escala = 1): number {
   const y0 = CAIXA_CABECA.y0;
-  return pico < TETO_Y ? (y0 - TETO_Y) / (y0 - pico) : 1;
+  const teto = daTela({ y: TETO_Y }, escala).y;
+  return pico < teto ? (y0 - teto) / (y0 - pico) : 1;
 }
 
 export const aplicarK =

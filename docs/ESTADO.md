@@ -46,9 +46,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 45 |
-| **Árvore** | **6 arquivos sujos** |
-| **Último commit** | ed393ad · 2026-08-06 · docs(avatar): a linha do opt-out sai do "falta confirmar" e ganha as duas saidas |
+| **Commits à frente de `origin/main`** | 46 |
+| **Árvore** | **40 arquivos sujos** |
+| **Último commit** | f6b97f8 · 2026-08-06 · docs(curriculo): o plano tecnico dos formatos para de ser declarado inexistente |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -115,7 +115,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-04 |
 | `docs/avatar/15-plano-ate-pronto.md` | 2026-08-04 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
-| `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-07-31 |
+| `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-06 |
 | `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-05 |
 
 _Doc parado há semanas e ainda citado como fonte é candidato a `_superado/`._

@@ -1,0 +1,27 @@
+# O QUE NÃO GRADUA: tudo que a própria rota regenera.
+#
+# O que mora aqui versionado é o que NÃO se regenera: o código, os dois `.md`, a
+# base de edição com o manifesto, e as três artes — que foram desenhadas à mão no
+# Gemini e não têm semente, então não voltam.
+#
+# Todo o resto sai de `npm run arte:*`. Máscaras, contornos, painéis de papel,
+# closes e a folha são derivados: guardá-los no histórico seria guardar a mesma
+# informação duas vezes, e a cópia velha ao lado da nova é armadilha.
+
+# Uma pasta por arte (`saidaDaArte` em base.ts), mais fixtures e réguas.
+*/
+
+# Os artefatos soltos.
+folha.html
+folha.png
+close-rosto.png
+simulada.png
+base-regioes.png
+.r-*.png
+
+# Os intermediários da folha, que `arte:folha` regenera a cada rodada: o boneco a
+# 56 px (`.f-`), o close de 1000×1400 (`.fc-`) e o recorte dele (`.fx-`). São 15
+# arquivos que apareciam como não rastreados e entrariam num `git add .` distraído.
+.f-*.png
+.fc-*.png
+.fx-*.png

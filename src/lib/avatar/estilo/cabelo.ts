@@ -94,20 +94,35 @@ export interface Ponto {
 }
 
 /**
- * Uma peça que EXCEDE a silhueta da cabeça: coque, trança, crista, volume de cacho.
- *
- * Mesma natureza — e mesma regra — das `extensoes` de `Traje`: elas não compartilham
- * fronteira com a cabeça, elas a COBREM, e por isso podem ter forma própria. O
- * contorno continua sendo do compositor.
+ * UMA FORMA FECHADA EM COORDENADA ABSOLUTA, com os arcos que ela traça.
  *
  * **É `forma: Ponto[]` e não `d: string`, e a troca tem consequência.** Guardando o
  * path já emitido, a régua de folga do rosto enxergava só a franja e ficava cega
- * para a peça — e o moicano, que passou a ser só extensão, cairia justamente na
- * cegueira. Dado guardado como dado é dado que o gate consegue medir.
+ * para a peça — e o moicano, que é só extensão, cairia justamente na cegueira. Dado
+ * guardado como dado é dado que o gate consegue medir.
+ *
+ * É o tipo comum das duas coisas que o compositor desenha fora do clip da cabeça:
+ * a **extensão** de um cabelo paramétrico (um coque, uma crista) e cada **forma
+ * irmã** de uma peça sobreposta. Elas têm a mesma natureza — um laço próprio, com
+ * contorno próprio — e o que as separa é uma só coisa, `atras`, que a peça
+ * sobreposta não usa.
  */
-export interface Extensao {
+export interface FormaDaPeca {
   /** O laço fechado, em coordenada absoluta. */
   forma: readonly Ponto[];
+  /**
+   * ONDE ESTA FORMA CARREGA TRAÇO — mesmos arcos de índice de `Cabelo.linhas`.
+   *
+   * Ausente, o laço INTEIRO é traçado, que é o comportamento das extensões
+   * paramétricas e o que mantém os cinco modelos do catálogo byte a byte iguais.
+   * Presente, o traço vira um `<path>` próprio com um subpath por arco — o que uma
+   * peça vinda de arte precisa, porque nela nem toda borda do laço é borda externa
+   * de alguma coisa.
+   */
+  linhas?: readonly (readonly [number, number])[];
+}
+
+export interface Extensao extends FormaDaPeca {
   /**
    * Põe a peça SOB a cabeça. É o que faz um coque parecer preso atrás em vez de
    * colado na testa: a cabeça é opaca e come a emenda, oclusão em vez de máscara.
@@ -217,6 +232,22 @@ export interface Cabelo {
    */
   clara?: readonly PontoFranja[];
   /**
+   * AS FORMAS CLARAS ADICIONAIS — a região clara partida em mais de um pedaço.
+   *
+   * `bordaOrdenada` percorre UMA componente (`tracar-cabelo.ts:1508-1516`), e até
+   * aqui a segunda sumia em silêncio: medido na `entrada-2`, **3 165 u² de área
+   * clara** ficavam fora do laço sem nenhum gate acusar. Um cabelo com uma mecha
+   * iluminada destacada da massa principal é desenho comum, não caso raro.
+   *
+   * Ela vive no mesmo `<path>` da `clara`, como subpaths `M…Z M…Z` — o mesmo
+   * mecanismo que `extensoesCabelo` já usa para agrupar formas irmãs. Não custa
+   * forma do orçamento por pedaço e não muda uma linha de CSS.
+   *
+   * Ausente, o comportamento é o de sempre, e é por isso que os cinco modelos do
+   * catálogo não veem este campo.
+   */
+  claras?: readonly (readonly PontoFranja[])[];
+  /**
    * ONDE O LAÇO DA MASSA CARREGA TRAÇO — em ARCOS DE ÍNDICE, não numa segunda curva.
    *
    * ---------------------------------------------------------------------------
@@ -257,6 +288,22 @@ export interface Cabelo {
    * `avatar:importar`, a partir da mesma sonda pela normal que mede a massa.
    */
   linhas?: readonly (readonly [number, number])[];
+  /**
+   * AS FORMAS IRMÃS DA PEÇA SOBREPOSTA — os pedaços que `massa` não alcança.
+   *
+   * `bordaOrdenada` percorre UMA componente (`tracar-cabelo.ts:1508-1516`), então
+   * uma peça com um lóbulo destacado — uma mecha solta, um espeto separado — perdia
+   * a segunda parte em silêncio. Elas saem no MESMO `<path>` da massa, como
+   * subpaths `M…Z M…Z`, então multi-componente deixa de custar uma forma do
+   * orçamento por pedaço.
+   *
+   * **Não são `extensoes`, e a diferença não é de nome.** Uma extensão é a parte da
+   * peça que EXCEDE a silhueta, existe porque a massa é clipada, e pode ir atrás da
+   * cabeça. Numa peça sobreposta não há clip nem "atrás": ela é desenhada inteira,
+   * por cima, e estes são simplesmente os outros pedaços dela. Foi a partição
+   * massa/extensão que saiu quando a peça virou dona da própria silhueta.
+   */
+  formas?: readonly FormaDaPeca[];
   extensoes?: readonly Extensao[];
 }
 
@@ -628,14 +675,41 @@ export function pathCabeloClaro(modelo: CabeloOuModelo): string {
   // Peça traçada: a região clara é um laço próprio, ou não existe. Um cabelo
   // chapado é legítimo — o que não pode é a clara ser inventada por deslocamento,
   // que é justamente a faixa paralela reprovada como arte.
-  if (c.massa) return c.clara ? lacoTY(c.clara, 0) : "";
+  if (c.massa) {
+    const formas = [...(c.clara ? [c.clara] : []), ...(c.claras ?? [])];
+    return formas.map((f) => lacoTY(f, 0)).join(" ");
+  }
   if (!c.pontos) return "";
   return c.sombra ? touca(c.sombra, 0) : touca(c.pontos, -DEGRAU);
 }
 
 /** O path de uma extensão. Laço fechado, coordenada absoluta, sem clip. */
-export function pathExtensao(e: Extensao): string {
+export function pathExtensao(e: FormaDaPeca): string {
   return laco(e.forma);
+}
+
+/**
+ * O TRAÇO DE UMA EXTENSÃO que declara arcos. Vazio quando ela não declara.
+ *
+ * É `pathCabeloLinhas` para `{x, y}` em vez de `{t, y}`, e a duplicação de quatro
+ * linhas é preferível a um genérico: os dois espaços têm origens diferentes e
+ * juntá-los pediria um parâmetro de conversão que só existiria para satisfazer o
+ * compilador. Os comandos `C` emitidos são os MESMOS de `pathExtensao` no trecho
+ * apontado — mesma `spline`, mesmos pontos —, então não há duas descrições da
+ * mesma borda para divergirem.
+ */
+export function pathExtensaoLinhas(e: FormaDaPeca): string {
+  if (!e.linhas?.length) return "";
+  const pts = e.forma;
+  const N = pts.length;
+  return e.linhas
+    .map((arco) => {
+      const de = ((arco[0] % N) + N) % N;
+      return (
+        `M ${n(pts[de].x)} ${n(pts[de].y)} ` + spline(pts, true, de, de + trechosDoArco(arco, N))
+      );
+    })
+    .join("");
 }
 
 /**

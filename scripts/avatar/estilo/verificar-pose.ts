@@ -577,7 +577,7 @@ async function main() {
   const nav = await chromium.launch();
   try {
     // ---- a base de verdade ----
-    const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", ns: "pose" });
+    const svg = compor({ pele: PELE[2], cabelo: "#3A2F2A", ns: "pose", escala: 1 });
     const base = await medirSvg(nav, svg);
     console.log(`base autorada renderizada a ${ALTURA_RENDER} px de altura`);
 
@@ -587,7 +587,7 @@ async function main() {
     // ---- (c) unicidade de id, com as instâncias JUNTAS ----
     console.log(`\n(c) UNICIDADE DE id — 30 instâncias no mesmo documento`);
     const trinta = Array.from({ length: 30 }, (_, i) =>
-      dimensionar(compor({ pele: PELE[i % PELE.length], cabelo: "#3A2F2A", ns: `r${i}` }), 78),
+      dimensionar(compor({ pele: PELE[i % PELE.length], cabelo: "#3A2F2A", ns: `r${i}`, escala: 1 }), 78),
     ).join("");
     const ids = idsDe(trinta);
     const unicos = new Set(ids).size;
@@ -681,8 +681,8 @@ async function main() {
     // ficou sem casar e a fixture reportou "nada mudou em pixel" — que é a mensagem
     // certa para um teste que virou teatro, e foi assim que ela apareceu.
     const clipEstreito = `<clipPath id="dup-c-tronco"><path d="M 200 320 L 300 320 L 300 620 L 200 620 Z"/></clipPath>`;
-    const a = dimensionar(compor({ pele: PELE[2], cabelo: "#3A2F2A", ns: "dup" }), 600);
-    const bMutado = dimensionar(compor({ pele: PELE[6], cabelo: "#3A2F2A", ns: "dup" }), 600).replace(
+    const a = dimensionar(compor({ pele: PELE[2], cabelo: "#3A2F2A", ns: "dup", escala: 1 }), 600);
+    const bMutado = dimensionar(compor({ pele: PELE[6], cabelo: "#3A2F2A", ns: "dup", escala: 1 }), 600).replace(
       /<clipPath id="dup-c-tronco">.*?<\/clipPath>/,
       clipEstreito,
     );

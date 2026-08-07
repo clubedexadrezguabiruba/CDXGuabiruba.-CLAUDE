@@ -482,7 +482,7 @@ async function comparar(arte: Segmentacao, peca: Cabelo, k: number): Promise<Med
   const aArte = arte.ancoras;
   const mArte = REGISTRO_DA_ARTE ?? mapa(aArte, vb);
 
-  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns: "fid" });
+  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns: "fid", escala: 1 });
   const bmpRender = await rasterizar(svg, ALTURA);
   const segRender = segmentarPorMatiz(bmpRender);
   const aRender = ancoras(bmpRender);
@@ -656,7 +656,7 @@ function cranioEm(x: number): { y0: number; y1: number } | null {
  */
 async function semClip(peca: Cabelo): Promise<Bitmap> {
   const ns = "nc";
-  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns });
+  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns, escala: 1 });
   const alvo = ` clip-path="url(#${ns}-c-cabeca)"`;
   if (!svg.includes(alvo)) {
     throw new Error(`--onde: o clip da cabeça não foi encontrado no composto (ns=${ns})`);
@@ -1104,8 +1104,8 @@ async function folha(alvo: string) {
   const descomprimir = (uy: number) => (uy >= Y0 || kTeto >= 1 ? uy : Y0 - (Y0 - uy) / kTeto);
 
   // 4. AS IMAGENS
-  const svgTeal = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns: "ft" });
-  const svgReal = compor({ pele: PELE[1], cabelo: CABELO[0], modeloCabelo: peca, ns: "rt" });
+  const svgTeal = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: peca, ns: "ft", escala: 1 });
+  const svgReal = compor({ pele: PELE[1], cabelo: CABELO[0], modeloCabelo: peca, ns: "rt", escala: 1 });
   const formas = (svgReal.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
   const bytes = Buffer.byteLength(svgReal, "utf-8");
 
