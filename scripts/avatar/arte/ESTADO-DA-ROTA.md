@@ -1224,10 +1224,11 @@ fidelidade; `escolherN` não foi tocada.
 
 > ⚠️ **AS DECISÕES 2 E 4 FORAM REVOGADAS em 2026-08-07**, depois da aprovação do
 > chanel: *"não deletar nenhum, na verdade, do catálogo atual."* Ninguém sai — nem
-> as artes, nem os cinco paramétricos. A `entrada-2` (Assimétrico) **será arrumada**
-> pelo Doug, não apagada: ele edita a arte de novo sobre a base oficial e ela passa
-> pela mesma esteira (Gate −1 → revisão → folha → aprovação visual). Com isso o
-> risco da decisão 4 (o `curto` como controle de régua e valor de banco) deixa de
+> as artes, nem os cinco paramétricos. A `entrada-2` (Assimétrico) **será arrumada
+> por AJUSTE FINO, não refeita**: o Doug disse que ela está quase boa, então a arte
+> atual fica e recebe retoque — não uma geração nova. Qualquer versão retocada
+> passa pela mesma esteira (Gate −1 → revisão → folha → aprovação visual). Com isso
+> o risco da decisão 4 (o `curto` como controle de régua e valor de banco) deixa de
 > precisar de resposta. As linhas acima ficam como história.
 
 ### ⚠ O RISCO DA DECISÃO 4, e ele precisa de resposta antes de executar
@@ -2201,9 +2202,10 @@ compartilhada (o refino mora lá): não é "pipeline velho", não apagar.
    a doc/runbook, e **atualizar a skill `avatar-importar-arte`, que hoje descreve a
    rota VELHA** (fonte semântica SVG do gerador externo) — do jeito que está, ela
    ensina o caminho morto.
-3. **Arrumar a `entrada-2`** (Doug edita a arte; a esteira já existe): quando a
-   nova versão aprovar, ela entra em `TRANSCREVEM` como as próximas. Nada é
-   apagado — a `entrada-3` continua como isca do controle 3.
+3. **Arrumar a `entrada-2` por AJUSTE FINO** — ela está quase boa e **não será
+   refeita**: a arte atual recebe retoque, e a versão retocada passa pela esteira
+   de sempre. Aprovando, entra em `TRANSCREVEM` como as próximas. Nada é apagado
+   — a `entrada-3` continua como isca do controle 3.
 4. **Colar os aprovados em `CABELOS`** — item 3 da lista aberta; custa os 11
    selos, as amarras de `cabelo.test.ts` e o orçamento (bytes estouram: decisão A
    já cobre). É o passo que põe as peças no produto.
@@ -2247,4 +2249,4 @@ compartilhada (o refino mora lá): não é "pipeline velho", não apagar.
 | 17 | **A seção 5 da folha compara uma imagem com ela mesma.** `.r-crua-1.png` = `.r-peca.png` = `.r-gemeo.png` (md5 `fcc556da…`) e `.r-crua-92.png` = `.r-peca-92.png`. A escada de escala não prova nada sobre compressão hoje | eu |
 | 18 | **O controle `[curto]` é piso baixo demais**: a 56 px ele tem silhueta **idêntica ao careca** nas 56 linhas — é touca pintada. Como referência de "o que passa", não separa nada | eu |
 | 13 | **O pedido mandava dobrar pela linha do nariz, e ela não é o eixo** (Bloco 11). `GIRO.eixoCabeca + GIRO.desvioOlhos = 40 u`, e o desvio medido é 40,3 px — aparece no controle 2, a careca sem peça. Emenda pronta para a rodada 3: trocar por "o eixo de simetria do próprio cabelo". **Se o giro ler como cabeça torta a 56 px, o item a rever é o `GIRO`** | Doug |
-| ~~11~~ | ~~**`pecas-da-arte.ts` tem 4 peças, e a decisão 2 mandou apagar duas.**~~ — **REVOGADO em 2026-08-07: ninguém é apagado.** A `entrada-2` será arrumada pelo Doug (nova edição da arte, mesma esteira); a `entrada-3` fica, inclusive como isca do controle 3 | fechado |
+| ~~11~~ | ~~**`pecas-da-arte.ts` tem 4 peças, e a decisão 2 mandou apagar duas.**~~ — **REVOGADO em 2026-08-07: ninguém é apagado.** A `entrada-2` será arrumada por **ajuste fino** (a arte atual fica; retoque, não geração nova), passando pela mesma esteira; a `entrada-3` fica, inclusive como isca do controle 3 | fechado |
