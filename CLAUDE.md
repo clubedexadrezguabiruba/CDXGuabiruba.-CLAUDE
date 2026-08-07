@@ -90,6 +90,10 @@ sejam o Claude Code (o Codex o lê; `.claude/settings.json` e os hooks **não**
 valem para ele). Ele é **subordinado a este arquivo** e só repete as proibições
 que aqui têm trava técnica e lá não têm. Não deixe virar segunda fonte de verdade.
 
+O que já foi delegado ao Codex e o que está na fila fica em
+[docs/codex-fila.md](docs/codex-fila.md) — com as regras de engajamento em sete
+linhas e o modelo de briefing pronto para colar.
+
 ## Skills — invocar, não torcer para lembrar
 
 Este projeto tem skills escritas para si mesmo e elas quase nunca dispararam: em
