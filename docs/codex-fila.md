@@ -237,66 +237,44 @@ Promovido para: não. Segue RASCUNHO até revisão do Fable.
 
 ---
 
-### C1 — Coerência documental · modo AUDITOR · 🔵 ativa
-
-**Por que.** A doença fundadora, escrita no `CLAUDE.md`: *"o estado deste projeto
-vivia em 13 documentos que discordavam"*. O `docs/ESTADO.md` resolveu os
-**números**; a prosa segue divergindo.
-
-**Divergências já conhecidas — calibragem, não a tarefa:**
-
-| Divergência | Estado |
-|---|---|
-| Plano técnico da T1 "não existe" (`CLAUDE.md`) | ✅ corrigida 2026-08-06 |
-| idem, na §13 de `docs/curriculo/01` | ✅ corrigida 2026-08-06 |
-| Reseed do catálogo: **60** (doc 14, T4.9) vs **54** (doc 15 §9.1) | ⬜ aberta |
-| Pool de baú "nunca relíquia" (doc 14, T4.11) — a relíquia foi cortada pela D-E; o lugar é a moldura (`frame`) | ⬜ aberta |
-| **Régua da patente: `decidida ✅` no doc 15 §3 vs `aberta e travando o Bloco 7b` no bloco AGORA do `ESTADO.md`** | ⬜ **aberta — a grave** |
-| Branch em execução: bloco AGORA diz `avatar/estilo-kokeshi`; a real é `avatar/vtracer` | ⬜ aberta |
-| Doc 13 listado como decisão aberta no bloco AGORA — mas fechou por uso (0 de 92 → 2 de 92) | ⬜ aberta |
-| `docs/ESTADO.md:19` aponta para `.scratch/estilo/BRIEFING-CABELO.md`, **que não existe** | ⬜ aberta |
-
-**Briefing — colar no Codex:**
+### C1 — concluída
 
 ```
-MODO: AUDITOR
+C1 — concluído · modo AUDITOR · base 5953132 · resultado: relatório (não escreveu)
+Veredito: APROVADO. Amostra de 5 pares conferida pelo Claude: 5 de 5 confirmados.
+Entrega: 8 de 8 conhecidas confirmadas (2 já corrigidas, 6 abertas) + 12 novas.
+         18 divergências ativas — 13 TRAVA TRABALHO, 5 ENGANA QUEM LÊ.
+         17 COMPROVADO · 1 AUSENTE · 0 EXIGE RUNTIME · 0 ESTÁTICO — FALTA BANCO.
+         Zero nos dois últimos é correto, não padding: coerência documental é
+         100% estática.
 
-Você não altera nada. A entrega é um relatório, na sua resposta.
+Achou 12 quando a calibragem listava 8 — mais que dobrou o conhecido.
 
-Leia AGENTS.md, CLAUDE.md e docs/codex-fila.md antes de qualquer coisa.
+O melhor achado: o 15-plano-ate-pronto.md se contradiz SOZINHO, e é justamente o
+documento que o CLAUDE.md nomeia como árbitro ("onde divergir dos outros, ele
+vence"). 15:398 diz que a sobrancelha fica preta por decisão medida; 15:974 diz
+que a cor do cabelo a move. E 15:1103 põe o reseed em 54 enquanto 15:1474 ainda
+diz 60 de 60. Regra de precedência não resolve documento contra si mesmo.
 
-Abra o relatório declarando o hash do commit auditado (git rev-parse HEAD).
+Também pegou erro do Claude do dia anterior: a §13 do currículo 01 foi corrigida
+e o cabeçalho, linha 6, não — e segue dizendo que o plano técnico "ainda não foi
+escrito". O cabeçalho é o que se lê primeiro.
 
-TAREFA: encontrar afirmações que se contradizem entre documentos.
+Numa das cinco da amostra, o teste do Claude é que estava errado, não a
+afirmação dele: avatar_hair foi testado contra as migrations quando ele citava o
+plano — que é a fonte certa, porque a coluna é da T2.1 e ainda não existe.
 
-ESCOPO: CLAUDE.md · docs/ESTADO.md · docs/avatar/12 a 18 ·
-        docs/curriculo/01 e 02.
-FORA DE ESCOPO: qualquer coisa em _superado/, e todo arquivo de código.
+O que ele errou: nada material. Uma imprecisão de forma — chamou "sete patentes
+× seis uniformes" de conflito de dois lados; são três, porque a migration insere
+oito tiers (até Lenda, 210). Ele não tinha como ver o terceiro sem medir o banco,
+e a regra o proíbe de originar FATO — BANCO. O limite é do modo, não do modelo.
 
-COMANDOS: só leitura — rg, Get-Content, ls, git log/show/diff. NÃO rodar teste,
-build, gate, nada de rede, nada que use .env.local, nada que escreva, e nenhum
-git que altere estado.
+Onde caiu: docs/achados.md. As 13 divergências do conjunto do avatar foram
+consolidadas num achado só (T3) — é uma doença com treze sintomas, e fecha numa
+passada. Nada foi corrigido: regra 9.
 
-A seção C1 do docs/codex-fila.md lista 8 divergências já conhecidas, sendo 2 já
-corrigidas. Elas são CALIBRAGEM, não a tarefa: confirme que ainda valem e
-procure as que ninguém viu.
-
-ENTREGA — uma linha por divergência:
-  arquivo:linha A  ×  arquivo:linha B
-  o que cada um afirma, em meia linha
-  qual parece obsoleto, e a evidência de por quê
-  gravidade: TRAVA TRABALHO | ENGANA QUEM LÊ | COSMÉTICA
-
-Priorize as que TRAVAM TRABALHO — dois documentos discordando sobre se uma
-decisão foi tomada custa dias.
-
-Zero divergências novas é resultado válido. Não invente para provar valor.
-
-ENTREGUE no fim: quantas confirmou das conhecidas, quantas novas achou, e a
-contagem por gravidade.
+Promovido para: não se aplica (modo AUDITOR).
 ```
-
----
 
 ### A2 · A3 · A4 · V1 · A5 · C2 — ainda sem briefing
 
