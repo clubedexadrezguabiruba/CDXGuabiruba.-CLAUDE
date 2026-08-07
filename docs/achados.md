@@ -86,6 +86,60 @@ assume a escada do currículo enquanto o banco tem 15.
 intenção, não estado.
 **Quem decide:** Doug. É pedagogia e produto, não investigação técnica.
 
+### T3 — Os documentos do avatar se contradizem sobre decisões **já tomadas**
+**Prova:** `LIDO` — 13 pares, todos com arquivo:linha. Achado por Codex, C1,
+2026-08-07. Cinco conferidos por amostra pelo Claude: cinco confirmados.
+
+**É um achado, não treze.** A doença é uma: decisão tomada num documento e não
+propagada aos outros. Fecha numa passada só pelo conjunto 12·13·14·15·17·18 —
+e o `CLAUDE.md` já diz quem vence: *"onde divergir dos outros, o doc 15 vence"*.
+
+O caso mais grave é o doc 15 **contra ele mesmo**, justamente o que deveria
+arbitrar:
+
+| Diz | E também diz |
+|---|---|
+| `15:398` — "A sobrancelha ✅ **DECIDIDA em 2026-07-31: fica PRETA**" | `15:974` — "a cor do cabelo move também a **sobrancelha**" |
+| `15:1103` — alvo do reseed é **54** | `15:1474` — o checklist ainda diz **60 de 60** |
+
+Os outros onze:
+
+| Divergência | Obsoleto | Vigente |
+|---|---|---|
+| Reseed do catálogo: 60 × 54 | `14:457` | `15:1103` — o 60 ainda conta o `hand`, removido em `15:1063` |
+| Baú "nunca relíquia" × "nunca frame" | `14:459` | `15:1108-1109` — a relíquia saiu com o `hand`; a moldura assumiu o mérito |
+| **Sete patentes** (Grão-Mestre, Lenda) × **seis uniformes** | `15:117`, `14:405` | `17:14` — "por que são 6 uniformes", e o `CLAUDE.md:184` nomeia o 17 como design vigente |
+| Total 54 derivado de **sete** uniformes | `15:1103` | com seis, a soma dá **53** |
+| Escolha de **cor de fundo** | `14:460`, `15:1115` | `15:926` — sem `avatar_bg_color`, pela emenda à D27 (`12:74`) |
+| Sobrancelha segue a cor do cabelo | `12:85`, `14:365` | `15:398` — fica preta, por medição |
+| Base ganha **cabelo assado** | `12:29` | `15:935` — a D5 fechou pela terceira saída; base fica careca |
+| Pets em **APNG** | `12:108` | `14:139` — SVG animado, por decisão medida |
+| **Oito slots**, incluindo `hand` | `12:35`, `13:26` | `15:332` — o `hand` foi removido |
+| Pipeline `avatar:garment`, variantes e máscaras | `CLAUDE.md:180`, `18:353` | `16:3`, `15:768` — é da base antiga, passa por vacuidade, **suspenso**. A substituição segue em aberto (`15:784`) |
+| Asset ausente "hoje falha em silêncio" | `13:75` | `14:49` — a falha alta já está implementada, com erro e marcador |
+
+**O que falta para fechar:** uma passada pelos seis documentos aplicando "o doc
+15 vence", **mais** resolver as duas autocontradições internas dele, que nenhuma
+regra de precedência resolve. E decidir de fato a escada de patentes, porque
+`15`/`14` dizem sete, o `17` diz seis e a migration insere **oito** tiers (até
+`Lenda`, 210) — três respostas, não duas. Conecta com o **T1**.
+
+### T4 — Dois documentos do currículo ainda declaram o plano técnico inexistente
+**Prova:** `LIDO` — `docs/curriculo/01-curriculo-definitivo-v1.md:6`
+
+> *"O plano técnico é documento separado, **ainda não escrito**."*
+
+**Trabalho meu incompleto, não achado de terceiro.** Em 2026-08-06 eu corrigi a
+§13 (linha 615) e não vi o cabeçalho (linha 6) — e o cabeçalho é o que se lê
+primeiro. O doc 02 também preserva a narrativa antiga em `02:7`.
+
+Cabe junto: `01:234` lista a **peça cravada** entre as competências críticas da
+T1, mas a grade põe o tema na T2 (`01:297`), e o plano técnico a remove por isso
+(`02:104`).
+
+**O que falta:** três linhas. Está aqui, e não no conserto, porque a regra 9 vale
+para mim também.
+
 ### T2 — O `docs/ESTADO.md` mente sobre o próprio estado
 **Prova:** `LIDO` — bloco AGORA, escrito à mão (linhas 12–41)
 
@@ -149,25 +203,17 @@ A outra metade deste achado **fechou** em 2026-08-06: a matview era legível por
 (`81a2723`). Falta decidir se o ranking de turma é exceção legítima.
 **Quem decide:** Doug.
 
-### D2 — Reseed do catálogo: 60 ou 54?
-**Prova:** `LIDO` — `docs/avatar/14-backlog-execucao.md` T4.9 (60) ×
-`docs/avatar/15-plano-ate-pronto.md` §9.1 (54)
+### D2 — Por qual caminho a arte do cabelo volta
+**Prova:** `LIDO` — bloco AGORA do `ESTADO.md:22` × `15:558`
 
-O doc 15 vence quando diverge, segundo o próprio `CLAUDE.md`. Falta o doc 14
-receber a atualização.
+Listado como decisão travada, mas **já foi tomada**: o plano 15 registra três
+decisões fechadas — arte do Doug, dois modelos extremos, aprovação visual. Resta
+bloqueio **técnico** (`15:574`), não bloqueio de decisão. E os commits `5db008e`,
+`ba18dd0` e `49389a6` de 2026-08-06 fecharam a rota de arte e o chanel.
 
-### D3 — "Pool de baú nunca relíquia" ficou obsoleto
-**Prova:** `LIDO` — `docs/avatar/14-backlog-execucao.md` T4.11
-
-A relíquia foi cortada pela decisão D-E; o lugar dela é a moldura (`frame`). O
-texto do backlog não acompanhou.
-
-### D4 — Por qual caminho a arte do cabelo volta
-**Prova:** `LIDO` — bloco AGORA do `ESTADO.md`
-
-Listado como decisão travada, mas **provavelmente já resolvido na prática**: os
-commits `5db008e`, `ba18dd0` e `49389a6` de 2026-08-06 fecharam a rota de arte e
-o chanel. Conferir antes de tratar como aberto.
+*(Antes eram quatro entradas aqui. Reseed 60×54, relíquia×moldura e o caminho do
+cabelo migraram para o **T3**, que é onde elas de fato vivem: a mesma doença, no
+mesmo conjunto de documentos, que fecha numa passada.)*
 
 ---
 

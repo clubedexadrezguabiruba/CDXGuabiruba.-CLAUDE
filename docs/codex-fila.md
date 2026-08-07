@@ -165,7 +165,7 @@ no briefing (com data, gate e resultado), escreva `EXIGE BANCO` ou
 |---|---|---|---|
 | **P0** | AUDITOR | Piloto — doc 13: cabeçalho, §7, §10 | ✅ concluído 2026-08-06 |
 | **A1** | **RASCUNHO** | Matriz de server-authority da T1 | ✅ concluída 2026-08-07 |
-| **C1** | AUDITOR | Coerência documental | 🔵 **ativa** |
+| **C1** | AUDITOR | Coerência documental | ✅ concluída 2026-08-07 |
 | — | — | *Decisão da patente* (Doug) | ⏸ depois do C1 |
 | **A2** | AUDITOR | T2: relatório de delta | ⬜ |
 | **A3** | AUDITOR | T2: mapa factual de reuso | ⬜ só se A2 disser que delta não basta |
