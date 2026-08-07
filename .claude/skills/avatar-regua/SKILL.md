@@ -119,8 +119,10 @@ medida. Sem o 5, o número não sobrevive ao próximo bloco.
 | cabe no orçamento? os cabelos se distinguem? | `npm run avatar:folha-base` | `folha-base.ts` |
 | nasce aberto, pisca, respira, obedece reduced-motion? | `npm run avatar:animacao` | `medir-animacao.ts` |
 | minhas 3 candidatas divergem de verdade? | `npm run avatar:variantes` | `variantes.ts` |
-| esta arte aprovada vira peça de catálogo | `npm run avatar:tracar -- <png>` | `tracar-cabelo.ts` |
-| o traço se parece com a arte? quanto disso é piso? | `npm run avatar:fidelidade` | `fidelidade.ts` |
+| esta arte editada pelo Doug vira peça | a rota de arte — skill `avatar-importar-arte` | `scripts/avatar/arte/` |
+| o render trai a arte? sobrepostos, com 6 controles | `npm run arte:revisao -- <arte>` | `arte/revisao.ts` |
+| a banda preta da arte dá para ler a 56 px? | `npm run arte:espessura` | `arte/espessura.ts` |
+| ~~o traço se parece com a arte?~~ (rota **legada**) | `npm run avatar:fidelidade` | `fidelidade.ts` |
 
 Quando a pergunta não estiver aqui, ou quando duas técnicas parecerem responder à
 mesma coisa, carregue [references/tecnicas.md](references/tecnicas.md).

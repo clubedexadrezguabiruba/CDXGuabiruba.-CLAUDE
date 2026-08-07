@@ -26,9 +26,21 @@
  * decisão do Doug e custa os onze selos, as amarras de `cabelo.test.ts` e o
  * orçamento composto. Este gerador só garante que o que a página mostra é o que
  * a rota produz hoje.
+ *
+ * ---------------------------------------------------------------------------
+ * `--check` — O MESMO GERADOR, SEM ESCREVER
+ * ---------------------------------------------------------------------------
+ *
+ * O controle 6 de `arte:revisao` já pega a defasagem, mas ele **renderiza**: abre
+ * navegador, compõe SVG, desenha folha. Caro demais para o CI, e ele só roda para
+ * a arte que se passa por argumento — nunca para as quatro.
+ *
+ * `--check` gera as quatro em memória e compara a string com o arquivo em disco.
+ * Sem render, sem imagem, sem escrita. É o que entra em `verify:arte`: o CI fica
+ * vermelho quando `pecas-da-arte.ts` defasa do `converter()` que o produziu.
  */
 
-import { mkdirSync, writeFileSync } from "fs";
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
 
 import type { Cabelo, PontoFranja } from "../../../src/lib/avatar/estilo/cabelo";
 import { converter } from "./converter";
@@ -148,8 +160,8 @@ export type IdDaArte = keyof typeof PECAS_DA_ARTE;
 export const IDS_DA_ARTE = Object.keys(PECAS_DA_ARTE) as IdDaArte[];
 `;
 
-async function principal(): Promise<void> {
-  console.log(`GERANDO ${SAIDA}\n`);
+/** Gera o arquivo inteiro em memória, imprimindo a linha de cada arte. */
+async function gerar(): Promise<string> {
   const blocos: string[] = [];
   for (const a of ARTES) {
     const c = await converter(`${PASTA}/${a.arquivo}.png`);
@@ -169,8 +181,51 @@ async function principal(): Promise<void> {
         corpoDaPeca(a.arquivo, a.nome, p),
     );
   }
+  return `${CABECALHO}\n${blocos.join("\n\n")}\n${RODAPE}`;
+}
+
+/** A primeira linha em que as duas strings divergem — para o laudo dizer ONDE. */
+function primeiraDivergencia(a: string, b: string): number {
+  const la = a.split("\n");
+  const lb = b.split("\n");
+  for (let i = 0; i < Math.max(la.length, lb.length); i++) {
+    if (la[i] !== lb[i]) return i + 1;
+  }
+  return 0;
+}
+
+async function principal(): Promise<void> {
+  const check = process.argv.includes("--check");
+
+  if (check) {
+    console.log(`CONFERINDO ${SAIDA} (--check: gera em memória, não escreve)\n`);
+    const esperado = await gerar();
+    let emDisco: string;
+    try {
+      emDisco = readFileSync(SAIDA, "utf-8");
+    } catch {
+      console.error(`\n  ✗ ${SAIDA} NÃO EXISTE. Rode \`npm run arte:pecas\`.`);
+      process.exit(1);
+    }
+    if (emDisco === esperado) {
+      console.log(`\n  · ${SAIDA} confere byte a byte com o \`converter()\` de hoje.`);
+      return;
+    }
+    const linha = primeiraDivergencia(emDisco, esperado);
+    console.error(
+      `\n  ✗ ${SAIDA} DEFASOU do \`converter()\`.\n` +
+        `    Primeira divergência na linha ${linha}` +
+        ` (disco ${emDisco.length} bytes × gerado ${esperado.length} bytes).\n` +
+        `    Conserto: \`npm run arte:pecas\` e conferir o \`git diff\` — se ele mudar\n` +
+        `    uma arte que ninguém redesenhou, a mudança veio do conversor e é achado.`,
+    );
+    process.exit(1);
+  }
+
+  console.log(`GERANDO ${SAIDA}\n`);
+  const texto = await gerar();
   mkdirSync("src/lib/avatar/estilo", { recursive: true });
-  writeFileSync(SAIDA, `${CABECALHO}\n${blocos.join("\n\n")}\n${RODAPE}`, "utf-8");
+  writeFileSync(SAIDA, texto, "utf-8");
   console.log(`\n  escrito. Confira com \`npm run arte:revisao -- entrada\` (controle 6).`);
 }
 

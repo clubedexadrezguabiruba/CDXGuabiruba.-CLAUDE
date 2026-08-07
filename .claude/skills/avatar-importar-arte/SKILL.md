@@ -1,30 +1,27 @@
 ---
 name: avatar-importar-arte
-description: Importa uma arte aprovada do avatar para o catálogo por fonte semântica versionada — a peça é declarada path a path num SVG, não adivinhada a partir de pixels. Use quando já existe arte gerada e aprovada e ela precisa virar peça de código; quando um traçado saiu com menos massa que a arte; quando algo da referência "sumiu" da peça sem nenhum gate reprovar; ou quando o pedido for "importa esse cabelo", "cola esse traje", "por que a cortina não apareceu?". Não é para inventar forma nova (isso é avatar-desenho) nem para medir número solto de referência (isso é avatar-regua).
-version: 1.0.0
-argument-hint: "[peça] [caminho da arte aprovada]"
+description: Importa uma arte do avatar para o catálogo pela rota de arte — o Doug edita o cabelo sobre um render do próprio compositor, o Gate −1 prova que o boneco não se mexeu, e a peça sai medida em vez de adivinhada. Use quando já existe arte editada sobre a base oficial e ela precisa virar peça de código; quando uma arte retocada volta para reentrada; quando um traçado saiu com menos massa que a arte; quando algo da referência "sumiu" da peça sem nenhum gate reprovar; ou quando o pedido for "importa esse cabelo", "cola esse cabelo no catálogo", "por que a mecha não apareceu?". Não é para inventar forma nova (isso é avatar-desenho) nem para medir número solto de referência (isso é avatar-regua).
+version: 2.0.0
+argument-hint: "[nome da arte, sem extensão]"
 ---
 
-# Importar arte aprovada para o catálogo
+# Importar arte para o catálogo — a rota de arte
 
-*Escrita em 2026-08-04, depois de três folhas reprovadas do `curto-espetada`
-(93ETYY, HSHC93, XHHXP9) em que **todos os gates automáticos passaram e a folha
-visual reprovou**.*
+*Reescrita em 2026-08-07. A versão 1.0 desta skill ensinava a **rota semântica**
+(SVG anotado path a path, `avatar:semantizar` → `avatar:importar`), que foi
+substituída pela rota de `scripts/avatar/arte/`. O que sobrou dela está na §6, como
+legado.*
 
-## O defeito que esta skill existe para fechar
+## O runbook é a fonte de verdade
 
-O traçado antigo decide o que pertence à peça **olhando pixel**: filtra o matiz do
-cabelo, acha as componentes conexas, e fica com a maior. O que sobra vira um `⚠` no
-log e não reprova nada.
+**[docs/avatar/19-rota-de-arte-runbook.md](../../../docs/avatar/19-rota-de-arte-runbook.md)**
+— a esteira comando a comando, o significado de cada reprovação, as duas famílias
+de peça, a promoção e a reentrada. **Leia antes de rodar qualquer coisa.**
 
-Numa arte com cortina — a massa que desce ao lado do rosto, separada do volume por
-um vão — a cortina **é outra componente**. Ela saía da peça em silêncio. O render
-ficava com 79% da massa da arte, e 77% do desvio de fidelidade não tinha causa
-apontada: *"a peça simplesmente não tem os pontos lá"*.
-
-**Adivinhar não tem conserto por afinação.** A saída é a peça deixar de ser inferida
-e passar a ser **declarada**, num arquivo versionado, path a path — e o que não foi
-declarado **reprova**, em vez de sumir.
+O registro de execução — cada número medido, contra que teto — fica em
+[`scripts/avatar/arte/ESTADO-DA-ROTA.md`](../../../scripts/avatar/arte/ESTADO-DA-ROTA.md).
+Ele é longo (2 000+ linhas) e **não é para ler inteiro**: vá pela lista de blocos
+ou por `grep`.
 
 ## A regra que decide se é esta skill
 
@@ -32,79 +29,97 @@ declarado **reprova**, em vez de sumir.
 |---|---|
 | inventar forma nova, variantes, refazer peça que lê errado | `avatar-desenho` |
 | medir um número de referência para `geometria.ts` | `avatar-regua` |
-| **arte já aprovada precisa virar peça de código** | **esta** |
+| **arte editada sobre a base oficial precisa virar peça** | **esta** |
+| **arte retocada volta para reentrada** | **esta** (§8 do runbook) |
 
-Se a peça já tem arte aprovada, **não desenhe variante**: importe.
+Se a peça já tem arte, **não desenhe variante**: importe. Desenhar três
+interpretações de uma decisão já tomada faz o Doug escolher a que por acaso mais
+se parece com o PNG que ele já tinha.
 
-## O fluxo, e o que é fonte de verdade em cada etapa
+## O fluxo, em uma tela
 
 ```
-referencia.png (congelado)      ← cor, enquadramento, julgamento visual
-   ↓ conversor Adobe
-origem.svg (congelado)          ← forma bruta, tom por path
-   ↓ npm run avatar:semantizar   ← ASSISTÊNCIA: propõe o papel de cada path
-semantica.svg (VERSIONADO)      ← A FONTE: um data-avatar-role por <path>
-   ↓ npm run avatar:importar     ← contrato + completude + máscara→pontos
-peca.ts (VERSIONADO, ao lado da fonte)  ← o literal {t,y}, colado à mão
-   ↓ npm run avatar:importar -- --check   ← o literal ainda bate com a fonte?
-   ↓ npm run avatar:fidelidade   ← por papel, e a folha
-folha  →  olho do Doug  →  selo em ficha.md  →  SÓ ENTÃO cola em cabelo.ts
+arte:base → base-oficial.png (1024²)   ← UMA para todas as artes
+   ↓ o Doug edita no Gemini pelo PEDIDO-GEMINI.md (contorno de 12 u OBRIGATÓRIO)
+scripts/avatar/arte/<ARTE>.png (VERSIONADO)
+   ↓ arte:gate      GATE −1: o boneco se mexeu?   (reprovou → arte:causa)
+   ↓ arte:extrair   ciano ∩ região permitida → máscara + papéis
+   ↓ arte:contorno  bordaOrdenada (Moore) → decimação por erro
+   ↓ arte:converter massa {t,y} + clara + formas + o preto
+   ↓ arte:espessura A RÉGUA QUE DECIDE A VARIANTE — fiel ou lei
+   ↓ TRANSCREVEM em converter.ts
+   ↓ arte:pecas     → src/lib/avatar/estilo/pecas-da-arte.ts (GERADO)
+   ↓ arte:revisao   6 controles, e ela RECUSA desenhar se o literal defasou
+   ↓ arte:folha     as artes entre si a 56 px
+   ↓ /dev/avatar-kokeshi → parecer do Doug   ← a única aprovação que existe
+   ↓ promoção em CABELOS (§7 do runbook)
 ```
 
-A fonte mora em `scripts/avatar/fonte/estilo-kokeshi/<família>/<peça>/`, com cinco
-arquivos: `referencia.png`, `origem.svg`, `semantica.svg`, `peca.ts`, `ficha.md`.
-**Nada depende de `.scratch/`** — foi de lá que veio metade do problema: o insumo
-do pipeline morava numa pasta que o git ignora.
+## As seis coisas que não se negocia
 
-**O literal não entra no catálogo antes da folha.** `peca.ts` fica ao lado da fonte
-que o originou: o `--check` já tem dente (fonte mudou sem recolar = vermelho, e ele
-está no `verify:all`), o catálogo fica intocado enquanto a peça não é aprovada, e a
-regressão dos cinco cabelos paramétricos continua valendo para os cinco.
+**1. O registro já está feito por construção.** A arte foi desenhada **sobre o
+render**, então não há cabeça a registrar contra cabeça. O Gate −1 não calcula o
+registro: ele **prova que não se quebrou**. É o passo caro que a rota antiga fazia
+e esta tornou desnecessário.
 
-## As cinco coisas que não se negocia
+**2. Régua nova entra com controle negativo, e o número errado fica impresso ao
+lado do certo.** Este é *o* modo de falha da rota: régua que devolve o mesmo número
+para coisas diferentes. Aconteceu cinco vezes, todas registradas. Uma régua sem
+controle devolve 0% e ninguém sabe se é conserto ou vacuidade.
 
-**1. O papel vai em cada `<path>`, nunca em `<g>`.** O parser lança em `<g>`,
-`transform` e `<use>`, e a razão está escrita em `fonte-svg.ts`: matriz de grupo
-tornaria toda coordenada não confiável. Sem grupo, o problema **não existe** — não
-há regra nova para escrever nem para testar.
+**3. `arte:revisao` recusa desenhar quando o controle 6 falha.** Julgar uma peça
+enquanto o navegador mostra outra é pior que não julgar. Se ele reclamar, rode
+`arte:pecas` antes de olhar a folha.
 
-**2. Fechado é geométrico, jamais sintático.** O conversor escreve 520 `M` para 437
-`z`: 83 subpaths não escrevem o próprio fecho, e a folga medida entre o último ponto
-e o primeiro é **0,0000 em todos os 520**. Ler `z` reprovaria 83 paths corretos.
+**4. A régua da espessura decide a variante, e decide ANTES de custar tipo.**
+Banda legível (p50 ≳ 9 u) → `fiel`, que preserva a modulação de peso da artista.
+Banda fina → **redesenhar** com contorno de 12 u (o pedido ao Gemini já exige) ou,
+como rede, `lei`. O espetado tem 79,8% do perímetro abaixo de 8 u e não sobrevive
+à `fiel`; o chanel tem 2,3% e é por isso que ela funcionou nele.
 
-**3. A linha de centro é produto do importador, não da fonte.** O conversor traça
-tinta como **região fechada**; ele nunca emite stroke (`stroke="none"` em 437/437).
-Então `linha-mascara` é fechada na fonte, e a polilinha **aberta** sai da mesma
-sondagem por normal que o PNG usa — `medirMassa`, em `tracar-cabelo.ts`.
+**5. Nada é apagado.** A família sintetizada (o `stroke` de 12 u, `Cabelo.linhas`)
+está **congelada, não morta** — três peças usam. `tracar-cabelo.ts` é biblioteca
+compartilhada e o refino da spline mora lá: **não apagar**.
 
-**4. Identidade de path é hash do `d`, nunca índice.** *"O conversor não promete
-ordem"* — `fonte-svg.ts` já aprendeu isso para a moldura. Medido: 235 identidades
-distintas para 235 subpaths, zero colisões.
+**6. Bytes acima do teto não vetam arte aprovada.** Decisão A de 2026-08-06, e o
+doc 15:463 já dizia. O valor é registrado; `ORCAMENTO_COMPOSTO` é autoimposto.
 
-**5. Descarte tem motivo escrito.** `data-motivo` é obrigatório. Descarte sem motivo
-é exatamente o buraco que esta skill fecha.
+## Ao promover: a asserção negativa é o trabalho
 
-**6. `t` é fração da largura da cabeça NAQUELA altura — inclusive na hora de medir.**
-Registrar caixa contra caixa acerta escala e posição e erra **forma**: a cabeça do
-gerador é redonda, a do kokeshi é de canto arredondado, e medido, a arte fica até
-100 unidades mais estreita na cúpula com as duas caixas coincidindo. O cabelo, que
-na arte encosta na borda da cabeça em toda linha, aparecia com couro cabeludo à
-mostra em volta da coroa — 8,3% de cobertura onde se exige 100. A conversão fiel
-pergunta à ARTE o mesmo que `bordasEm` pergunta ao produto. Ver `reancorarNaCabeca`.
+Promover uma peça mexe em teste congelado. **O que tem de ficar parado, e você tem
+de mostrar que ficou:**
+
+- `pecas-da-arte.ts` com **uma hunk só**, dentro do bloco da arte que mudou;
+- os selos de `parametrico-congelado.ts` **verdes** por lista explícita
+  (`MODELOS_PARAMETRICOS`), nunca por filtro automático — um paramétrico que mude
+  de família não pode sumir do teste em silêncio;
+- `npm run avatar:folha-base` nos números do dia;
+- **critério de fronteira:** rodar a esteira de outra arte não move um byte do
+  render das peças já promovidas.
+
+**Se algo além do previsto se mexer, pare e mostre.** Um paramétrico que muda um
+byte quer dizer que a mudança veio do conversor e vale para todos — isso é achado
+(`docs/achados.md`), não rebase.
 
 ## O que os gates NÃO pegam — e é declarado
 
-**Rótulo plausível mas errado.** Marcar a silhueta da cabeça como `massa` produz um
-arquivo perfeitamente legal: fechado, com papel, com tinta, reclamado uma vez.
-Nenhuma contabilidade de conjunto acusa isso.
+**Beleza.** A folha e o olho do Doug julgam a peça; os controles julgam a régua.
+Nenhum número desta rota diz que a peça é bonita, e a franja torta do chanel
+atravessou três blocos com todos os gates verdes.
 
-Tentei uma regra exata para ele e ela é **vazia nesta arte** — ver o cabeçalho de
-`fonte-peca.ts`. Um teto de área resolveria, e teto calibrado na peça que se quer
-aprovar aprova o defeito junto. Quem pega rótulo errado é a **folha** e a trava de
-silhueta do runtime. Não finja o contrário.
+**O papel `luz`.** A arte tem três tons de ciano; o render tem **dois**. Não existe
+terceiro. Uma mancha de brilho de 12,4% da cúpula vira 6 pixels no render, e
+**nenhuma das 21 asserções toca nisso.** É a régua que falta (item 9 da lista
+aberta), e a luz é o Passo 8, decidido para entrar por último.
+
+**Barra enterrada.** Não chega a zero, e a régua não separa contorno de mecha de
+contorno de crânio.
 
 ## Referências
 
-- `references/contrato-fonte.md` — os atributos, papel a papel, e o que reprova
-- `references/gates.md` — cada gate, a pergunta que ele faz, a fixture que o prova
-  e o que ele não pega
+- `references/gates.md` — cada gate desta rota, a pergunta que ele faz, o controle
+  que o prova e o que ele não pega
+- `references/rota-semantica-legado.md` — a rota antiga, por que ela existiu, o que
+  dela continua vivo e **o que não apagar**
+- `references/contrato-fonte.md` — o contrato da fonte semântica. **Legado**, mas
+  exato, e ainda é a régua de `verify:fonte-peca`, que está no `verify:all`

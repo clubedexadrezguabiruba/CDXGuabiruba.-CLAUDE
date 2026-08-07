@@ -57,13 +57,24 @@ processo quando ele importa.
 | a peça | o que fazer |
 |---|---|
 | não existe ainda — só o pedido | **desenhar**: as seis fases abaixo, três variantes |
-| existe como **arte gerada aprovada** (PNG do `avatar:gerar`) | **traçar**: `npm run avatar:tracar -- <png>`, e não desenhar variante nenhuma |
+| existe como **arte editada pelo Doug sobre a base oficial** (`arte:base` → Gemini) | **importar**: skill `avatar-importar-arte`, e não desenhar variante nenhuma |
 
 Desenhar variante de uma arte que já foi aprovada é inventar três interpretações de
 uma decisão que já foi tomada — e a que o Doug escolher vai ser aquela que por acaso
-se parece mais com o PNG que ele já tinha aprovado. O fluxo do traçado está em
-[references/traco-fiel.md](references/traco-fiel.md), com os números da rodada que o
-produziu: IoU 68,77% contra 36,62% do desenho paramétrico, na mesma régua.
+se parece mais com o PNG que ele já tinha aprovado.
+
+**A rota vigente é a de `scripts/avatar/arte/`**, documentada em
+[docs/avatar/19-rota-de-arte-runbook.md](../../../docs/avatar/19-rota-de-arte-runbook.md):
+o Doug edita sobre um render do próprio compositor, o Gate −1 prova que o boneco não
+se mexeu, e a peça sai medida em vez de registrada. Ela produziu as duas peças
+aprovadas até hoje — espetado (2026-08-06) e chanel (2026-08-07).
+
+[references/traco-fiel.md](references/traco-fiel.md) descreve o traçado **antigo**
+(`avatar:tracar` → `avatar:fidelidade`), que exigia registrar a cabeça da arte contra
+a do produto. Ele é **legado**: vale como histórico dos números daquela rodada (IoU
+68,77% contra 36,62% do paramétrico), não como caminho a seguir. `tracar-cabelo.ts`
+continua vivo e **não deve ser apagado** — é biblioteca compartilhada, e o refino da
+spline do Bloco 14 mora lá.
 
 ## 3. As seis fases
 

@@ -2250,3 +2250,102 @@ compartilhada (o refino mora lá): não é "pipeline velho", não apagar.
 | 18 | **O controle `[curto]` é piso baixo demais**: a 56 px ele tem silhueta **idêntica ao careca** nas 56 linhas — é touca pintada. Como referência de "o que passa", não separa nada | eu |
 | 13 | **O pedido mandava dobrar pela linha do nariz, e ela não é o eixo** (Bloco 11). `GIRO.eixoCabeca + GIRO.desvioOlhos = 40 u`, e o desvio medido é 40,3 px — aparece no controle 2, a careca sem peça. Emenda pronta para a rodada 3: trocar por "o eixo de simetria do próprio cabelo". **Se o giro ler como cabeça torta a 56 px, o item a rever é o `GIRO`** | Doug |
 | ~~11~~ | ~~**`pecas-da-arte.ts` tem 4 peças, e a decisão 2 mandou apagar duas.**~~ — **REVOGADO em 2026-08-07: ninguém é apagado.** A `entrada-2` será arrumada por **ajuste fino** (a arte atual fica; retoque, não geração nova), passando pela mesma esteira; a `entrada-3` fica, inclusive como isca do controle 3 | fechado |
+
+---
+---
+
+# BLOCO I — o pipeline vira instituição (2026-08-07)
+
+> Regra 6: o bloco fecha registrando o número medido. O deste é a **defasagem que
+> o CI passou a enxergar** — antes ela era invisível fora de um render.
+
+## O que passou a existir
+
+| o quê | onde |
+|---|---|
+| **runbook** | `docs/avatar/19-rota-de-arte-runbook.md` — a esteira comando a comando, o que cada reprovação quer dizer, a régua que decide `fiel` × `lei`, a promoção, a reentrada |
+| **skill reescrita no lugar** | `avatar-importar-arte` v1.0 → **v2.0**. A rota semântica virou `references/rota-semantica-legado.md`; `references/gates.md` foi reescrita para os gates desta rota; `contrato-fonte.md` ganhou cabeçalho de legado e **fica**, porque `verify:fonte-peca` está no `verify:all` |
+| **`arte:espessura`** | `espessura.ts` era rodado por `npx tsx` e não tinha entrada. O gate do bloco exige que todo comando citado exista |
+| **`arte:pecas -- --check`** | modo novo em `pecas.ts`: gera as quatro em memória e compara a string com o disco. **Sem render** |
+| **`arte:pecas-check`** | a entrada que `verify:arte` chama |
+
+## O NÚMERO DO BLOCO — o `--check` nasceu vermelho
+
+A regra 2 da rota manda a régua nascer reprovando. Medido, trocando **um dígito**
+(`t: 0.500` → `t: 0.501`) em `pecas-da-arte.ts`:
+
+| | exit code | laudo |
+|---|---|---|
+| com um byte trocado | **1** | `DEFASOU` · primeira divergência na **linha 78** · disco 15 560 × gerado 15 560 bytes |
+| restaurado | **0** | `confere byte a byte` · `git diff` vazio |
+
+Ele diz **em que linha** divergiu, e não só que divergiu — sem isso o conserto é
+reger o arquivo inteiro e torcer.
+
+**Por que ele existe se o controle 6 de `arte:revisao` já pegava:** o controle 6
+**renderiza** (abre navegador, compõe SVG, desenha folha) e só roda para a arte
+passada por argumento. Caro demais para CI, e nunca para as quatro.
+
+## As duas direções que o CI passou a fechar
+
+`verify:arte` entrou em `verify:all` — ele existia desde o Bloco 4 e **não estava
+lá** (`package.json:45` × `:82`). A cadeia agora é:
+
+```
+arte:fixtures → arte:reguas → arte:cor-proibida → arte:escala → arte:pecas --check
+```
+
+| se isto mudar | quem fica vermelho |
+|---|---|
+| o render de um literal **promovido** | os selos de `parametrico-congelado.ts`, via `npm test` |
+| `pecas-da-arte.ts` **defasar** do `converter()` | `arte:pecas --check`, via `verify:arte` |
+
+Antes deste bloco a segunda não tinha guarda nenhuma no CI.
+
+## Os gatilhos corrigidos — a rota morta saiu de quatro lugares
+
+| arquivo | dizia | diz |
+|---|---|---|
+| `CLAUDE.md` (tabela de gatilhos) | `avatar-desenho` + `references/traco-fiel.md` (`avatar:tracar` → `avatar:fidelidade`) | **`avatar-importar-arte`** + o runbook 19 |
+| `CLAUDE.md` (referências) | cinco docs de avatar | **seis**, com o 19 |
+| `avatar-desenho/SKILL.md` | *"traçar: `npm run avatar:tracar -- <png>`"* | **importar** pela rota de arte; o `traco-fiel.md` fica marcado como legado |
+| `avatar-regua/SKILL.md` | `avatar:tracar` / `avatar:fidelidade` na tabela de técnicas | `arte:revisao` e `arte:espessura`; a linha antiga fica riscada |
+| `avatar-desenho/references/traco-fiel.md` | abria como caminho vigente | cabeçalho de **rota legada**, com o aviso de não apagar |
+
+**Conferido mecanicamente: 102 citações de comando nos oito arquivos, 1 ausente** —
+`verify:curriculo-banco`, no `CLAUDE.md`, que é o achado **G1** já registrado
+(gate prometido por nome que não existe) e anterior a este bloco.
+
+## O ACHADO DO BLOCO — registrado, não consertado
+
+**G4:** `gate-menos-um.ts:796` ainda tem `.scratch/arte/entrada.png` escrito
+literalmente como caminho padrão — resíduo da graduação do Bloco 4. Os outros oito
+scripts da rota usam `${PASTA}`. `npm run arte:gate` **sem argumento** falha com
+ENOENT, ou lê um arquivo de uma pasta que o git ignora. Nada em execução depende
+disto (o runbook sempre passa caminho explícito). Foi para `docs/achados.md`.
+
+## O bloco "Agora" do `docs/ESTADO.md` estava três semanas atrás
+
+Ele ainda dizia branch `avatar/estilo-kokeshi`, *"a arte reprovou em 2026-08-03"* e
+listava **"por qual caminho a arte volta"** como decisão travando trabalho — uma
+decisão tomada em 06/08 e provada duas vezes desde então. Reescrito à mão (é a
+única parte do arquivo que é), e `npm run estado` recontou o resto: **128 linhas**,
+e a tabela de gates passou de 21 para **26 scripts** sozinha, porque ela é medida.
+
+## Verificação do bloco
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm run lint` | 1 warning **anterior** em `GameReview.tsx:285` |
+| `npm test` | **463 passando**, 26 arquivos — os 11 pares bytes+SHA inclusive |
+| `npm run verify:all` | **exit 0**, agora com `verify:arte` dentro |
+| `arte:reguas` | **21 de 21** |
+| `arte:cor-proibida` | PASSA |
+| `arte:escala` | hash da base **CONFERE** |
+| `arte:pecas --check` | confere byte a byte |
+| `verify:estado` | **0 violações** |
+
+**A asserção negativa:** este bloco não tocou em `converter.ts`, em `CABELOS` nem
+em literal nenhum. `pecas-da-arte.ts` com `git diff` **vazio** — e agora isso é
+conferido por gate, não por disciplina.

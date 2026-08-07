@@ -10,21 +10,26 @@
 ## Agora
 
 <!-- AGORA:inicio -->
-**Em execução:** avatar kokeshi, branch `avatar/estilo-kokeshi`. Base visual
-aprovada no Bloco 1d. Duas frentes abertas, e **elas não dependem uma da outra**:
+**Em execução:** avatar kokeshi, branch `avatar/vtracer`. Base visual aprovada no
+Bloco 1d.
 
-- **2a — o cabelo voltou.** O código está pronto e a medição passou; **a arte
-  reprovou em 2026-08-03** ("tudo muito quadrado, sem toque humano"). Diagnóstico
-  com as quatro causas medidas no **2a.4** do doc 15; briefing para a sessão de
-  desenho em `.scratch/estilo/BRIEFING-CABELO.md`.
+- **2a — o cabelo voltou, e a rota de arte é o caminho.** **Decidido e provado em
+  2026-08-06/07:** o Doug edita a arte sobre um render do próprio compositor e a
+  peça sai medida. Duas peças aprovadas por ela — **espetado** (Bloco 9) e
+  **chanel** (Bloco 14, variante `fiel`, preto transcrito). O processo está em
+  `docs/avatar/19-rota-de-arte-runbook.md`; o registro de execução, número a
+  número, em `scripts/avatar/arte/ESTADO-DA-ROTA.md`.
 - **2b** — arremate do tronco (2b.0) e o `avatar:garment`, que hoje passa por
   vacuidade (2b.1). Mexe em tronco; o cabelo é cortado pelo `clipPath` da cabeça.
 
-**Decisões travando trabalho:**
+**Na fila do avatar, em ordem:** colar espetado e chanel em `CABELOS` (5 → 7
+modelos) · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
+**não** será refeita) · rodada de unificação (espetado pela variante `lei`, com
+nova aprovação visual) · a luz, por último (decisão B). A tela do aluno é do
+**Bloco 5/F2**, que está **0 de 16** e tem plano e gate próprios — quando existir,
+ela deve consumir `MODELOS_CABELO`/`CABELOS` como fonte, sem hardcodar modelos.
 
-- **Cabelo — por qual caminho a arte volta.** Desenho em código pela skill
-  `avatar-desenho` (que nunca rodou nesta peça), arte gerada pelo Doug e convertida
-  por régua, ou line-art vetorial. Trava o 2a. As quatro perguntas estão no briefing.
+**Decisões travando trabalho:**
 
 - **Régua da patente — três versões vivas e incompatíveis.** 15 aulas por nível
   (doc 15 §3), 30 aulas (memória do `UPDATE` sem `UPSERT`), e 0·26·47·66·84·101·115·126
@@ -46,9 +51,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 53 |
-| **Árvore** | **14 arquivos sujos** |
-| **Último commit** | c1d8382 · 2026-08-07 · docs(codex): o modo RASCUNHO passa no primeiro uso, e o briefing ganha a emenda |
+| **Commits à frente de `origin/main`** | 58 |
+| **Árvore** | **12 arquivos sujos** |
+| **Último commit** | 1d9a5da · 2026-08-07 · docs(avatar): a entrada-2 não será refeita — ajuste fino sobre a arte atual |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -64,9 +69,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**18 entradas** em `verify:all`, que expandem para **21 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **26 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-assets` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-assets` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
 
 ## Frentes
 

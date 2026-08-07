@@ -114,7 +114,7 @@ pelo gatilho abaixo, antes de começar, sem esperar o usuário pedir.**
 | Construir componente novo, migrar tela para os primitivos de `src/components/ui/`, ou mexer em espaçamento/hierarquia/estado vazio | `impeccable` |
 | Bug, comportamento errado, "isso não devia acontecer" | `/gate` |
 | Desenhar peça do elenco do avatar — cabelo, chapéu, traje, pet, fundo — ou refazer uma que lê errado | `avatar-desenho` (3 variantes, crítica renderizada) |
-| **Já existe arte gerada e aprovada** para a peça — não desenhe variante: **trace** | `avatar-desenho`, e vá direto a `references/traco-fiel.md` (`avatar:tracar` → `avatar:fidelidade`) |
+| **O Doug editou a arte sobre a base oficial** (`arte:base` → Gemini) e ela precisa virar peça — não desenhe variante: **importe pela rota de arte** | `avatar-importar-arte` (o runbook é [docs/avatar/19-rota-de-arte-runbook.md](docs/avatar/19-rota-de-arte-runbook.md)) |
 | Referência de arte nova, ou qualquer número de `geometria.ts` que precise sair de medição | `avatar-regua` |
 | Detalhe de movimento, transição, o que faz a interface "sentir" bem | `emil-design-eng` |
 | Antes de mexer em auth, RLS, RPC de recompensa, ou qualquer coisa que o repositório público exponha | `security-review` |
@@ -179,10 +179,19 @@ quando não há `.env.local` — é assim que funcionam em CI.
   está na §9, "o que este plano adia com todas as letras"
 - Roadmap Técnico: docs/Recruta64_Roadmap_Tecnico_v1.md (a seção "Estado real" é a
   única parte confiável — a Parte 1 é um guia de setup pré-projeto)
-- Avatar: **o plano vigente é o v4**, e são cinco documentos com papéis distintos:
+- Avatar: **o plano vigente é o v4**, e são seis documentos com papéis distintos:
   - `docs/avatar/15-plano-ate-pronto.md` — **comece por aqui.** O plano de
     execução do estado atual até pronto, em 10 blocos com gate. Onde divergir
     dos outros, ele vence. As §7, §7b e §7c são as regras de arte e de composição
+  - `docs/avatar/19-rota-de-arte-runbook.md` — **antes de mexer em arte de peça
+    (cabelo, chapéu), leia este.** A rota vigente: o Doug edita sobre um render do
+    próprio compositor, o Gate −1 prova que o boneco não se mexeu, e a peça sai
+    medida. A esteira comando a comando, o que cada reprovação significa, a régua
+    que decide `fiel` × `lei`, a promoção e a reentrada. O registro de execução
+    número a número fica em `scripts/avatar/arte/ESTADO-DA-ROTA.md`. **Ele
+    substitui o traçado antigo** (`avatar:tracar` → `avatar:fidelidade`) como
+    caminho para arte nova — mas `tracar-cabelo.ts` é biblioteca compartilhada e
+    **não se apaga**
   - `docs/avatar/16-uniformes-runbook.md` — **antes de gerar arte de uniforme,
     leia este.** O processo de ponta a ponta: o que pedir ao gerador, a tabela de
     matiz, as três camadas do asset, as variantes por DPR, os oito gates e o que

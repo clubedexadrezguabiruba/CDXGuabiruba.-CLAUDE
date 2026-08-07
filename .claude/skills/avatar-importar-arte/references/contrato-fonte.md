@@ -1,4 +1,12 @@
-# O contrato da fonte semântica
+# O contrato da fonte semântica — **rota LEGADA**
+
+> **Este não é o caminho para arte nova.** A rota vigente é a de
+> `scripts/avatar/arte/`, no
+> [runbook 19](../../../../docs/avatar/19-rota-de-arte-runbook.md). Este documento
+> continua exato e continua valendo para a peça que já entrou por aqui
+> (`curto-espetada`) e para o gate `verify:fonte-peca`, que está no `verify:all` e
+> **não deve ser removido**. Contexto e o que não apagar:
+> [rota-semantica-legado.md](rota-semantica-legado.md).
 
 A régua de verdade é `scripts/avatar/estilo/fonte-peca.ts`, medida por
 `scripts/avatar/estilo/__tests__/fonte-peca.test.ts`. Este documento explica; ele

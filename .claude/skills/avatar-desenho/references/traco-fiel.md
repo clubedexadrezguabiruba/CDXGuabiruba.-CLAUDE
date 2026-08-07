@@ -1,4 +1,15 @@
-# O traço fiel — de PNG gerado a peça de catálogo
+# O traço fiel — de PNG gerado a peça de catálogo · **rota LEGADA**
+
+> **Este não é o caminho para arte nova.** Desde 2026-08-07 a rota vigente é a de
+> `scripts/avatar/arte/`, no
+> [runbook 19](../../../../docs/avatar/19-rota-de-arte-runbook.md) — o Doug edita
+> sobre um render do próprio compositor, e o registro caro que esta página faz
+> (cabeça da arte × cabeça do produto) deixa de ser necessário.
+>
+> Esta página vale como **histórico dos números daquela rodada**. E o que ela
+> descreve **não se apaga**: `tracar-cabelo.ts` é biblioteca compartilhada — o
+> `refinarPelaSpline` do Bloco 14, o `escolherN` e o `medirMassa` moram lá e são
+> usados pela rota vigente.
 
 Quando a arte já existe e foi aprovada, **não se desenha variante: traça-se.** Esta
 página é o fluxo inteiro, com os números da rodada que o produziu.

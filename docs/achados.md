@@ -187,6 +187,20 @@ A seção 4, criada em 2026-08-06, confere `SELECT` numa lista de objetos. Não
 confere `INSERT`/`UPDATE`/`DELETE` em tabela nenhuma — que é exatamente o que o
 R1 precisa.
 
+### G4 — `arte:gate` sem argumento aponta para uma pasta que o git ignora
+**Prova:** `LIDO` — `scripts/avatar/arte/gate-menos-um.ts:796`
+
+O caminho padrão ficou `.scratch/arte/entrada.png`, escrito literalmente em vez de
+usar `PASTA` — resíduo da graduação da rota (Bloco 4, `.scratch/arte/` →
+`scripts/avatar/arte/`). Os outros oito scripts da rota já usam `${PASTA}`.
+
+Consequência real: `npm run arte:gate` **sem argumento** falha com ENOENT, ou pior,
+lê um arquivo de `.scratch/` se alguém tiver um lá — e `.scratch/` não é versionado,
+então o Gate −1 conferiria uma arte que ninguém mais tem. O runbook 19 sempre passa
+o caminho explícito, então nada em execução depende disto hoje.
+
+**Conserto:** uma linha, trocar por `${PASTA}/entrada.png`. **Quem decide:** Doug.
+
 ---
 
 ## 🔵 Decisão ou divergência
