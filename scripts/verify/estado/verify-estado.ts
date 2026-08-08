@@ -53,6 +53,7 @@ import {
   medirGates,
   contarNumeradas,
   porFase,
+  medirCabelos,
 } from "../../estado";
 
 const violacoes: string[] = [];
@@ -246,6 +247,30 @@ function main() {
       );
     }
   }
+  despejar();
+
+  // -------------------------------------------------------------------------
+  // 4. A CONTAGEM DE CABELO NÃO PODE SER VÁCUA
+  //
+  // `medirCabelos` lê a união `ModeloCabelo` por regex. O modo de falha dela não
+  // é errar o número — é **devolver 0 calada** no dia em que alguém reformatar a
+  // declaração do tipo, e o painel passar a anunciar "0 de 10" como se o
+  // catálogo tivesse sumido. É a vacuidade que este projeto já pagou duas vezes.
+  //
+  // O piso é 5: são os paramétricos, e eles estão congelados por selo em
+  // `MODELOS_PARAMETRICOS`. Menos que isso não é catálogo encolhendo, é a régua
+  // quebrada.
+  // -------------------------------------------------------------------------
+  console.log("\n4. A régua do catálogo de cabelo enxerga alguma coisa\n");
+
+  const cabelos = medirCabelos(ler("src/lib/avatar/estilo/cabelo.ts"));
+  checar(
+    cabelos.tem >= 5,
+    "medirCabelos não é vácua",
+    cabelos.tem >= 5
+      ? `${cabelos.tem} modelos na união \`ModeloCabelo\` (mínimo encomendado: ${cabelos.minimo})`
+      : `contou ${cabelos.tem} — abaixo dos 5 paramétricos congelados. O regex da união parou de casar`,
+  );
   despejar();
 
   // -------------------------------------------------------------------------

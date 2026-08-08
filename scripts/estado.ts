@@ -223,6 +223,28 @@ export function porFase(doc: string | null): Array<{ fase: string; c: Contagem }
 // aparece em lugar nenhum.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// O CATÁLOGO DE CABELO — quantos existem contra quantos foram encomendados
+//
+// Existe porque o doc 15 escrevia "tem 7" à mão, e o `CLAUDE.md` proíbe
+// exatamente isso: *"ou o painel já mede, ou é caso de ensinar o `estado.ts` a
+// medir"*. O "7" envelhece na primeira promoção — e a próxima já está na fila.
+//
+// Conta a união `ModeloCabelo`, não as chaves de `CABELOS`, porque é ela que o
+// compilador amarra (`Record<ModeloCabelo, Cabelo>`): um modelo que entre no
+// objeto sem entrar no tipo não compila, então contar o tipo conta os dois.
+// ---------------------------------------------------------------------------
+
+/** O piso decidido pelo Doug em 2026-08-07 — doc 15, Bloco 8, linha 2. É piso, não teto. */
+const CABELOS_MINIMO = 10;
+
+export function medirCabelos(fonte: string | null): { tem: number; minimo: number } {
+  if (!fonte) return { tem: 0, minimo: CABELOS_MINIMO };
+  const uniao = /export type ModeloCabelo =([\s\S]*?);/.exec(fonte);
+  const tem = uniao ? (uniao[1].match(/\|\s*"[^"]+"/g) ?? []).length : 0;
+  return { tem, minimo: CABELOS_MINIMO };
+}
+
 export type Passivo = { rotulo: string; valor: string; desde: string };
 
 function lerJson(caminho: string): Record<string, unknown> | null {
@@ -304,6 +326,7 @@ export function gerarPainel(agora: string): string {
   const auditoria = contarCheckboxes(doc13);
   const fasesAvatar = porFase(doc14);
   const passivo = medirPassivo();
+  const cabelos = medirCabelos(ler("src/lib/avatar/estilo/cabelo.ts"));
 
   const migrations = existsSync("supabase/migrations")
     ? readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql")).length
@@ -400,6 +423,11 @@ export function gerarPainel(agora: string): string {
   );
   L.push(
     `| Auditoria do avatar | **${auditoria.fechadas} de ${auditoria.total}** (${pct(auditoria)}) | \`docs/avatar/13-checklist-de-verificacao.md\` |`,
+  );
+  L.push(
+    `| Catálogo de cabelo | **${cabelos.tem} de ${cabelos.minimo}** no mínimo` +
+      `${cabelos.tem >= cabelos.minimo ? " ✅" : ` (faltam **${cabelos.minimo - cabelos.tem}**)`} ` +
+      `| \`docs/avatar/19-rota-de-arte-runbook.md\` |`,
   );
   L.push("");
   if (fasesAvatar.length) {

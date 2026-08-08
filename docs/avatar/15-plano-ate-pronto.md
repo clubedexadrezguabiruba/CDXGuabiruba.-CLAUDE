@@ -1058,13 +1058,19 @@ agora entregaria item invisível.*
 | ordem | o quê | quantos | quem refina |
 |---|---|---|---|
 | 1 | Uniformes: **Aspirante feito**. Restam **Capitão, Comandante, General e Mestre** — 4, não 5, porque o tier 7 (Lenda) saiu da escada. O **design das 4 já está pronto e travado por gate**: cor, bota, detalhe e o pedido colável em [17](17-patentes-uniformes-design.md) e [18](18-uniformes-blocos.md). Falta só gerar a imagem, e quem gera é o Doug | ~~6~~ **4** | Doug gera, eu asso |
-| 2 | Cabelos — ⚠️ **a intenção desta linha mudou, ver abaixo** | ~~5~~ **?** | Doug decide |
+| 2 | Cabelos — **mínimo de 10 no catálogo**, decidido em 2026-08-07. Tem 7; **faltam 3**, e saem por arte do Doug — ver abaixo | ~~5~~ **3** | Doug gera, eu meço |
 | 3 | Chapéus | 6 | eu |
 | ~~4~~ | ~~Relíquias (2 famílias × 3 tiers)~~ **cortadas pela D-E** — o slot `hand` não existe neste boneco | ~~6~~ **0** | — |
 | 5 | Backgrounds | 8 | eu |
 | 6 | **Pets** | 20 | **você refina bastante** |
 
-**Total: ~~39~~ → 33 desenhos**, pela D-E — **e a linha 2 deixou de ter número.**
+⚠️ **O total desta tabela é escrito à mão e não fecha — não confie nele.** O texto
+dizia *"39 → 33, pela D-E"*, contando só o corte das relíquias; a linha 1 já tinha
+caído de 6 para 4 e isso nunca entrou na conta, e agora a linha 2 fixou em 3. Somar
+as colunas hoje dá **41**, não 33. Está aqui como aviso em vez de um quarto número
+errado: **a régua é a coluna "quantos", linha a linha** — e, para o que já existe em
+código, `docs/ESTADO.md`, que é medido. Vale a proibição do `CLAUDE.md`: número de
+progresso não se escreve em doc, ou o painel mede, ou se ensina o `estado.ts` a medir.
 
 **Regra de ouro do lote:** cada desenho passa pela folha de contato antes do
 seguinte começar. Trinta e nove desenhos revisados só no fim é como se descobre,
@@ -1083,14 +1089,36 @@ era o catálogo inteiro a produzir. Isso deixou de ser verdade duas vezes:
    sobre a base oficial, o programa mede, e a peça sai. Os 5 paramétricos ficam
    como estão; a família nova entra por ali.
 
-**O que a linha ainda encomenda é decisão do Doug, e fica registrado como pendência
-em vez de resolvido em silêncio.** As perguntas são: quantos cabelos o catálogo
-final quer, e quantos deles saem por arte contra quantos ficam paramétricos. O
-número "5" **não** é o que sobrou — ele descreve um mundo que mudou.
+### ✅ DECIDIDO em 2026-08-07: **catálogo mínimo de 10 cabelos**
 
-⚠️ **O Bloco 9 depende disto.** A conta de itens do 9.1 e as combinações
-chapéu × cabelo abaixo já foram corrigidas para 7, que é o estado de hoje. Se o
-Doug encomendar mais cabelos, as duas voltam a mudar.
+O Doug fixou o piso: **10**, e é piso, não teto — o mínimo aceito para o catálogo,
+não a meta a parar em cima. Os que faltam saem **por arte dele**, pela rota do
+runbook 19.
+
+📊 **Quantos existem hoje: `docs/ESTADO.md`, linha "Catálogo de cabelo".** O número
+não se escreve aqui — `scripts/estado.ts` conta a união `ModeloCabelo` e compara com
+o mínimo. Este parágrafo já teve um "5" e um "7" escritos à mão, e os dois
+envelheceram.
+
+**Um dos que faltam já tem arte:** a `entrada-2` (Assimétrico) espera retoque e entra
+pela esteira de reentrada (§8 do runbook). **O resto é arte nova** — um pedido ao
+Gemini sobre a base oficial e uma passada pela esteira, cada um.
+
+⛔ **A instrução que decide se esses dois custam uma rodada ou três:** a arte tem de
+voltar com **contorno de 12 u**, a mesma espessura do contorno do boneco, como o
+`PEDIDO-GEMINI.md` já exige. **Foi exatamente aí que o espetado morreu** — a banda
+dele veio com p50 de 6,3 u, 79,8% do perímetro abaixo de 8 u, e nenhuma das duas
+variantes de transcrição serviu (T5 em `docs/achados.md`). O chanel obedeceu os 12 u
+e entrou `fiel` de primeira. Banda fina não tem conserto no conversor; tem redesenho.
+
+**Os 5 paramétricos ficam como estão.** Cabelo novo não nasce mais por desenho
+paramétrico — a rota de arte é o pipeline permanente.
+
+⚠️ **O Bloco 9 depende disto.** A conta de itens do 9.1 e as combinações chapéu ×
+cabelo estão corrigidas para **7**, que é o estado **de hoje** — não para 10. Elas
+sobem a cada cabelo promovido, e quem promover atualiza: com 10, as combinações
+chapéu × cabelo vão a **6 × 10 = 60**. O reseed lê `MODELOS_CABELO` e se corrige
+sozinho; as contas escritas no doc, não.
 
 ### ⚠️ ANTES DOS 6 CHAPÉUS: a regra de chapéu × cabelo — 2026-08-03
 
@@ -1105,8 +1133,8 @@ fechado não pode ter mecha atravessando o metal.
 mesmo idioma do `atras` que as extensões já usam. A alternativa é um `if` por
 chapéu dentro do compositor, e seis chapéus × ~~cinco~~ **sete** cabelos são
 ~~30~~ **42 combinações** para consertar caso a caso — o argumento **engordou** com
-a promoção de 2026-08-07, e engorda de novo a cada cabelo que a rota de arte
-entregar.
+a promoção de 2026-08-07, e **vai a 60** quando o catálogo chegar ao mínimo de 10
+decidido no mesmo dia. Cada cabelo novo engorda de novo.
 
 ⚠️ **E os dois cabelos novos sobem o preço de outra forma:** eles são **peça
 sobreposta**, desenhada por cima sem clip. Um chapéu que precise esconder a franja

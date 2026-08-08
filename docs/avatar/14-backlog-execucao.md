@@ -547,8 +547,17 @@ espetado fica congelado no sintetizado e o Passo 7 sai do plano.
 ### O que sobra vivo, e mudou de motivo
 
 **A `entrada-2` (Assimétrico) continua valendo a reentrada** — §8 do runbook 19 —,
-mas agora **como cabelo novo do catálogo**, não como pré-condição do Passo 7. A
-`entrada-3` fica onde está: é a isca do controle 3 de `arte:revisao`.
+mas agora **como cabelo novo do catálogo**, não como pré-condição do Passo 7. E o
+motivo ganhou número no mesmo dia: o Doug fixou **mínimo de 10 cabelos** no catálogo
+(doc 15, Bloco 8, linha 2). A `entrada-2` é **um** dos que faltam; o resto é arte
+nova, um pedido ao Gemini cada. Quantos faltam hoje: `docs/ESTADO.md`, linha
+"Catálogo de cabelo" — medido, não escrito à mão.
+
+⛔ **Os dois pedidos novos têm de voltar com contorno de 12 u**, como o
+`PEDIDO-GEMINI.md` exige. É onde o espetado morreu (T5), e é a diferença entre uma
+rodada e três.
+
+A `entrada-3` fica onde está: é a isca do controle 3 de `arte:revisao`.
 
 **A luz (Passo 8) segue não iniciada** — decisão B. Separável e cortável, e depende
 de uma régua que **não existe**: a arte tem três tons de ciano e a paleta do render
