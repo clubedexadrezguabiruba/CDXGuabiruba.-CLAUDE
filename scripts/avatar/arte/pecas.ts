@@ -50,7 +50,6 @@ import { PASTA } from "./base";
 const ARTES: { arquivo: string; nome: string; nota: string }[] = [
   { arquivo: "entrada", nome: "Espetado", nota: "espetado, com pontas altas" },
   { arquivo: "entrada-2", nome: "Assimétrico", nota: "largo, assimétrico, desce ao lado do rosto" },
-  { arquivo: "entrada-3", nome: "Chanel", nota: "liso, chanel" },
   { arquivo: "chanel", nome: "Chanel novo", nota: "chanel simétrico, gerado sobre a base oficial" },
 ];
 
@@ -115,25 +114,24 @@ const CABECALHO = `/**
  * AS PEÇAS TRAÇADAS DA ARTE — a saída da rota, e a **fonte** das promovidas.
  *
  * ---------------------------------------------------------------------------
- * DUAS DELAS ESTÃO NO CATÁLOGO. AS OUTRAS DUAS NÃO. A DIFERENÇA IMPORTA
+ * AS TRÊS ESTÃO NO CATÁLOGO — e desde 2026-08-08 não sobra nenhuma de fora
  * ---------------------------------------------------------------------------
  *
- * Em 2026-08-07 o Doug aprovou \`entrada\` (espetado) e \`chanel\`, e elas foram
- * promovidas: \`CABELOS.espetado\` e \`CABELOS.chanel\` **espalham os objetos daqui**
- * e sobrescrevem só a identidade (\`id\` e \`nome\`). A geometria não é recopiada —
- * duas descrições da mesma borda é o defeito que a rota inteira evita.
+ * Em 2026-08-07 o Doug aprovou \`entrada\` (espetado) e \`chanel\`; em 2026-08-08,
+ * \`entrada-2\` (assimétrico). As três foram promovidas: \`CABELOS.espetado\`,
+ * \`CABELOS.chanel\` e \`CABELOS.assimetrico\` **espalham os objetos daqui** e
+ * sobrescrevem só a identidade (\`id\` e \`nome\`). A geometria não é recopiada — duas
+ * descrições da mesma borda é o defeito que a rota inteira evita.
  *
  * ⚠️ **Por isso, mexer neste arquivo mexe no catálogo.** Regerá-lo com uma arte
  * redesenhada move o render de um modelo do produto, e os selos de
  * \`parametrico-congelado.ts\` reprovam — o que é o comportamento certo: promoção é
  * decisão do Doug, e mudança silenciosa de peça aprovada é o que o selo pega.
  *
- * \`entrada-2\` e \`entrada-3\` **não** estão no catálogo. Elas existem para a página
- * \`/dev/avatar-kokeshi\` poder mostrá-las no navegador, no runtime real, do jeito
- * que o \`AvatarDisplay\` vai montá-las — e a \`entrada-3\` é a isca do controle 3 de
- * \`arte:revisao\`. Render em PNG de folha e render no navegador não são a mesma
- * coisa: foi por isso que a primeira folha desta rota saiu com o rosto preto e
- * ninguém viu até alguém olhar.
+ * A \`entrada-3\` **foi apagada** na mesma poda: era a única arte que não virava peça
+ * nenhuma, e servia de isca do controle 3 de \`arte:revisao\`. A isca passou a ser uma
+ * peça paramétrica do catálogo, o que é mais seguro — ver o comentário em
+ * \`revisao.ts\`.
  *
  * ---------------------------------------------------------------------------
  * GERADO por \`npm run arte:pecas\` — não editar à mão

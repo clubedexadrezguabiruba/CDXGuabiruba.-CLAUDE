@@ -187,6 +187,39 @@ A seção 4, criada em 2026-08-06, confere `SELECT` numa lista de objetos. Não
 confere `INSERT`/`UPDATE`/`DELETE` em tabela nenhuma — que é exatamente o que o
 R1 precisa.
 
+### G7 — a variante `faixa` fura a própria álgebra, e o teto não age na calota
+**Prova:** `MEDIDO` — 2026-08-08, render a 2 px/unidade da `entrada-2`
+
+A variante `faixa` (`scripts/avatar/arte/converter.ts`) deriva o núcleo por
+
+```
+núcleo = { d > PISO } ∩ ( ciano ∪ { d > TETO } )
+```
+
+Por álgebra, `núcleo_lei = { d > TETO }` é **subconjunto** de `núcleo_faixa` — todo
+pixel com `d > TETO` satisfaz os dois termos. Logo o preto da `faixa`, que é
+`massa − núcleo`, teria de ser **subconjunto do preto da `lei`**.
+
+**Medido: 7 741 px de preto existem na `faixa` e não existem na `lei`**, com focos na
+calota. E lá a massa contígua tem **155–583 u de profundidade**, ou seja `d > TETO`
+é alcançável com folga — o teto tinha como agir e não agiu. O que roda não é a
+fórmula que o comentário descreve.
+
+**O custo, e é o que tirou a variante de uso:** amplitude ÷ mediana de **0,91**
+contra 0,39 da `fiel` e 0,29 do chanel, com máximo de **20,6 u** — o dobro da `lei`,
+que já tinha sido reprovada por grossa. A variante existe, está documentada e **não
+está em `TRANSCREVEM`**.
+
+**Hipótese mais curta, NÃO PROVADA:** o piso parte o núcleo em componentes abaixo de
+`PISO_FORMA` numa mecha de ~21 u (8 u de cada lado deixam ~5 no meio),
+`lacosPorComponente` as descarta, e a mecha inteira sai preta. Outros candidatos: a
+decimação do contorno do núcleo, o `TETO_REFINO`, a ordem das camadas.
+
+**O que falta para fechar:** medir qual dos quatro, com a máscara crua ao lado do
+laço decimado. **A causa escrita aqui é hipótese, não causa** — é a lição do G6, e
+ela vale para esta entrada também.
+**Quem decide se vale a pena:** Doug. Hoje nada depende da `faixa`.
+
 ### G5 — `folgaDoRosto` não separa franja de cortina numa peça de laço fechado
 **Prova:** `MEDIDO` — `src/lib/avatar/estilo/cabelo.ts`, `folgaDoRosto`
 

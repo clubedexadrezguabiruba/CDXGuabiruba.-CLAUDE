@@ -2,25 +2,24 @@
  * AS PEÇAS TRAÇADAS DA ARTE — a saída da rota, e a **fonte** das promovidas.
  *
  * ---------------------------------------------------------------------------
- * DUAS DELAS ESTÃO NO CATÁLOGO. AS OUTRAS DUAS NÃO. A DIFERENÇA IMPORTA
+ * AS TRÊS ESTÃO NO CATÁLOGO — e desde 2026-08-08 não sobra nenhuma de fora
  * ---------------------------------------------------------------------------
  *
- * Em 2026-08-07 o Doug aprovou `entrada` (espetado) e `chanel`, e elas foram
- * promovidas: `CABELOS.espetado` e `CABELOS.chanel` **espalham os objetos daqui**
- * e sobrescrevem só a identidade (`id` e `nome`). A geometria não é recopiada —
- * duas descrições da mesma borda é o defeito que a rota inteira evita.
+ * Em 2026-08-07 o Doug aprovou `entrada` (espetado) e `chanel`; em 2026-08-08,
+ * `entrada-2` (assimétrico). As três foram promovidas: `CABELOS.espetado`,
+ * `CABELOS.chanel` e `CABELOS.assimetrico` **espalham os objetos daqui** e
+ * sobrescrevem só a identidade (`id` e `nome`). A geometria não é recopiada — duas
+ * descrições da mesma borda é o defeito que a rota inteira evita.
  *
  * ⚠️ **Por isso, mexer neste arquivo mexe no catálogo.** Regerá-lo com uma arte
  * redesenhada move o render de um modelo do produto, e os selos de
  * `parametrico-congelado.ts` reprovam — o que é o comportamento certo: promoção é
  * decisão do Doug, e mudança silenciosa de peça aprovada é o que o selo pega.
  *
- * `entrada-2` e `entrada-3` **não** estão no catálogo. Elas existem para a página
- * `/dev/avatar-kokeshi` poder mostrá-las no navegador, no runtime real, do jeito
- * que o `AvatarDisplay` vai montá-las — e a `entrada-3` é a isca do controle 3 de
- * `arte:revisao`. Render em PNG de folha e render no navegador não são a mesma
- * coisa: foi por isso que a primeira folha desta rota saiu com o rosto preto e
- * ninguém viu até alguém olhar.
+ * A `entrada-3` **foi apagada** na mesma poda: era a única arte que não virava peça
+ * nenhuma, e servia de isca do controle 3 de `arte:revisao`. A isca passou a ser uma
+ * peça paramétrica do catálogo, o que é mais seguro — ver o comentário em
+ * `revisao.ts`.
  *
  * ---------------------------------------------------------------------------
  * GERADO por `npm run arte:pecas` — não editar à mão
@@ -184,11 +183,13 @@ export const PECAS_DA_ARTE = {
       { t: 1.030, y: 322.273 },
       { t: 0.985, y: 313.333 },
       { t: 0.980, y: 175.000 },
+      { t: 0.870, y: 135.000 },
       { t: 0.804, y: 103.182 },
       { t: 0.729, y: 151.667 },
       { t: 0.656, y: 181.667 },
       { t: 0.487, y: 183.939 },
       { t: 0.502, y: 159.924 },
+      { t: 0.440, y: 172.500 },
       { t: 0.310, y: 184.924 },
       { t: 0.258, y: 198.788 },
       { t: 0.232, y: 236.667 },
@@ -221,6 +222,7 @@ export const PECAS_DA_ARTE = {
       { t: 0.545, y: 182.045 },
       { t: 0.568, y: 150.833 },
       { t: 0.559, y: 116.136 },
+      { t: 0.437, y: 138.333 },
       { t: 0.146, y: 183.939 },
       { t: 0.048, y: 220.000 },
       { t: 0.048, y: 244.545 },
@@ -260,70 +262,137 @@ export const PECAS_DA_ARTE = {
         { t: 0.906, y: 123.030 },
       ],
     ],
-    linhas: [[16,15]],
-  },
-
-  /** liso, chanel. Traçada de `entrada-3.png` por `npm run arte:pecas`. */
-  "entrada-3": {
-    id: "entrada-3" as Cabelo["id"],
-    nome: "Chanel",
-    massa: [
-      { t: 0.524, y: 9.167 },
-      { t: 0.730, y: 19.848 },
-      { t: 0.844, y: 37.424 },
-      { t: 1.039, y: 70.833 },
-      { t: 1.033, y: 131.667 },
-      { t: 1.063, y: 225.833 },
-      { t: 1.129, y: 325.833 },
-      { t: 1.004, y: 426.667 },
-      { t: 0.961, y: 448.106 },
-      { t: 0.850, y: 470.379 },
-      { t: 0.815, y: 458.333 },
-      { t: 0.746, y: 352.500 },
-      { t: 0.863, y: 340.758 },
-      { t: 0.970, y: 319.167 },
-      { t: 0.947, y: 216.667 },
-      { t: 0.924, y: 151.515 },
-      { t: 0.179, y: 154.470 },
-      { t: 0.038, y: 315.833 },
-      { t: 0.214, y: 350.000 },
-      { t: 0.144, y: 457.500 },
-      { t: 0.116, y: 468.939 },
-      { t: 0.020, y: 447.121 },
-      { t: -0.056, y: 404.167 },
-      { t: -0.090, y: 203.333 },
-      { t: -0.054, y: 126.667 },
-      { t: -0.068, y: 68.333 },
-      { t: -59.222, y: 45.530 },
-      { t: 0.270, y: 20.682 },
+    nucleo: [
+      [
+        { t: 0.645, y: 11.894 },
+        { t: 0.768, y: 37.879 },
+        { t: 0.873, y: 43.561 },
+        { t: 1.077, y: 65.530 },
+        { t: 1.040, y: 107.348 },
+        { t: 1.071, y: 154.167 },
+        { t: 1.091, y: 220.833 },
+        { t: 1.080, y: 287.500 },
+        { t: 1.063, y: 313.106 },
+        { t: 1.008, y: 310.303 },
+        { t: 1.007, y: 174.015 },
+        { t: 0.942, y: 156.364 },
+        { t: 0.818, y: 101.288 },
+        { t: 0.815, y: 85.455 },
+        { t: 0.740, y: 136.894 },
+        { t: 0.673, y: 170.303 },
+        { t: 0.610, y: 184.167 },
+        { t: 0.504, y: 183.712 },
+        { t: 0.520, y: 147.045 },
+        { t: 0.453, y: 162.348 },
+        { t: 0.181, y: 204.773 },
+        { t: 0.227, y: 202.652 },
+        { t: 0.184, y: 295.833 },
+        { t: 0.225, y: 384.091 },
+        { t: 0.296, y: 495.833 },
+        { t: 0.297, y: 544.621 },
+        { t: 0.279, y: 570.758 },
+        { t: 0.217, y: 598.636 },
+        { t: 0.146, y: 607.500 },
+        { t: 0.070, y: 606.894 },
+        { t: 0.003, y: 599.242 },
+        { t: -0.051, y: 581.364 },
+        { t: -0.122, y: 531.136 },
+        { t: -0.118, y: 478.106 },
+        { t: -0.140, y: 497.348 },
+        { t: -0.195, y: 485.227 },
+        { t: -0.191, y: 453.636 },
+        { t: -0.129, y: 419.091 },
+        { t: -0.096, y: 367.500 },
+        { t: -0.068, y: 382.727 },
+        { t: -0.207, y: 315.152 },
+        { t: -0.179, y: 238.182 },
+        { t: -0.160, y: 180.833 },
+        { t: -0.133, y: 145.833 },
+        { t: -0.084, y: 95.455 },
+        { t: -0.397, y: 52.348 },
+        { t: 0.178, y: 25.530 },
+        { t: 0.286, y: 11.742 },
+        { t: 0.448, y: 2.879 },
+      ],
     ],
-    clara: [
-      { t: 0.604, y: 22.121 },
-      { t: 0.808, y: 42.879 },
-      { t: 0.984, y: 75.455 },
-      { t: 0.995, y: 123.333 },
-      { t: 1.034, y: 241.667 },
-      { t: 0.995, y: 401.667 },
-      { t: 0.944, y: 438.333 },
-      { t: 0.883, y: 453.485 },
-      { t: 0.922, y: 415.000 },
-      { t: 1.013, y: 321.667 },
-      { t: 0.980, y: 224.167 },
-      { t: 0.950, y: 141.061 },
-      { t: 0.167, y: 142.273 },
-      { t: 0.128, y: 173.333 },
-      { t: 0.050, y: 379.167 },
-      { t: 0.079, y: 448.030 },
-      { t: -0.005, y: 417.500 },
-      { t: -0.043, y: 375.833 },
-      { t: -0.063, y: 217.500 },
-      { t: -0.044, y: 162.500 },
-      { t: -0.006, y: 110.833 },
-      { t: 0.004, y: 84.167 },
-      { t: -0.444, y: 49.167 },
-      { t: 0.391, y: 23.106 },
+    pretas: [
+      [
+        { t: 1.001, y: 227.273 },
+        { t: 1.002, y: 227.576 },
+        { t: 1.001, y: 235.833 },
+        { t: 1.003, y: 239.394 },
+        { t: 1.003, y: 241.667 },
+        { t: 1.002, y: 245.000 },
+        { t: 1.002, y: 252.500 },
+        { t: 1.002, y: 255.000 },
+        { t: 1.002, y: 260.833 },
+        { t: 1.000, y: 266.667 },
+        { t: 0.999, y: 269.848 },
+        { t: 0.999, y: 271.212 },
+        { t: 1.000, y: 274.924 },
+        { t: 0.998, y: 277.500 },
+        { t: 0.998, y: 286.061 },
+        { t: 0.997, y: 284.848 },
+        { t: 0.996, y: 282.500 },
+        { t: 0.996, y: 273.333 },
+        { t: 0.995, y: 269.167 },
+        { t: 0.997, y: 260.000 },
+        { t: 0.997, y: 255.833 },
+        { t: 0.999, y: 246.667 },
+        { t: 0.999, y: 242.500 },
+        { t: 1.001, y: 233.333 },
+      ],
+      [
+        { t: 0.166, y: 206.364 },
+        { t: 0.158, y: 210.000 },
+        { t: 0.150, y: 212.273 },
+        { t: 0.116, y: 218.636 },
+        { t: 0.114, y: 218.030 },
+        { t: 0.119, y: 214.848 },
+        { t: 0.140, y: 209.848 },
+        { t: 0.161, y: 206.439 },
+      ],
+      [
+        { t: -0.063, y: 387.273 },
+        { t: -0.059, y: 388.485 },
+        { t: -0.053, y: 395.833 },
+        { t: -0.040, y: 405.833 },
+        { t: -0.039, y: 411.818 },
+        { t: -0.049, y: 405.833 },
+        { t: -0.061, y: 395.000 },
+        { t: -0.064, y: 390.833 },
+      ],
+      [
+        { t: 0.244, y: 417.273 },
+        { t: 0.246, y: 419.167 },
+        { t: 0.259, y: 439.167 },
+        { t: 0.259, y: 441.818 },
+        { t: 0.258, y: 441.818 },
+        { t: 0.254, y: 437.500 },
+        { t: 0.247, y: 427.500 },
+        { t: 0.244, y: 421.667 },
+      ],
+      [
+        { t: 0.215, y: 198.106 },
+        { t: 0.214, y: 198.788 },
+        { t: 0.212, y: 199.545 },
+        { t: 0.191, y: 202.879 },
+        { t: 0.182, y: 203.864 },
+        { t: 0.185, y: 202.348 },
+        { t: 0.198, y: 199.621 },
+        { t: 0.208, y: 198.258 },
+      ],
+      [
+        { t: -0.036, y: 584.848 },
+        { t: -0.021, y: 588.409 },
+        { t: -0.010, y: 592.348 },
+        { t: -0.008, y: 593.485 },
+        { t: -0.008, y: 594.394 },
+        { t: -0.014, y: 593.182 },
+        { t: -0.033, y: 587.045 },
+        { t: -0.038, y: 584.773 },
+      ],
     ],
-    linhas: [[0,0]],
   },
 
   /** chanel simétrico, gerado sobre a base oficial. Traçada de `chanel.png` por `npm run arte:pecas`. */

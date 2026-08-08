@@ -567,10 +567,18 @@ async function principal(): Promise<void> {
   // O gêmeo do controle 1: render INDEPENDENTE da mesma coisa. Comparar um buffer
   // com ele mesmo provaria só que `===` funciona.
   const rGemeo = await renderNoCanvasDaArte(nav, "rg", { ...forma, peca: c.peca }, png("gemeo"));
+  // A ISCA — uma peça PROPOSITALMENTE DIFERENTE, para provar que a comparação
+  // enxerga diferença. Sem ela o controle mediria só que `===` funciona.
+  //
+  // Era a `entrada-3`, apagada em 2026-08-08 junto com a poda do catálogo. A isca
+  // passou a ser uma peça PARAMÉTRICA, e a troca é melhoria: a `entrada-3` era outra
+  // arte, e no dia em que alguém a revisasse a isca seria a própria peça sob exame —
+  // o controle compararia uma coisa com ela mesma e passaria por vacuidade. Um
+  // paramétrico nunca é a peça sob exame, porque esta rota só revisa arte.
   const rTrocada = await renderNoCanvasDaArte(
     nav,
     "rt",
-    { ...forma, peca: PECAS_DA_ARTE["entrada-3"] as Cabelo },
+    { ...forma, peca: CABELOS.coque },
     png("trocada"),
   );
 
@@ -997,7 +1005,7 @@ async function principal(): Promise<void> {
   };
   const tira: [string, string][] = [
     [nome, await em56("peca", c.peca)],
-    ["[curto] — aprovado", await em56("curto", CABELOS.curto)],
+    ["[curto] — aprovado", await em56("curto", CABELOS.coque)],
     ["careca — o piso", await em56("careca", undefined)],
   ];
   const cand56: Record<number, string> = {};

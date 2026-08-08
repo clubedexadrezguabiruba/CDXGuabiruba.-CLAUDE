@@ -388,6 +388,20 @@ export interface Laco {
    */
   espessura: { p05: number; p50: number; p95: number; fracaoFina: number; fracaoSaturada: number };
   /**
+   * A MESMA MEDIÇÃO, PONTO A PONTO — em pixel do canvas, para desenhar.
+   *
+   * Os percentis acima dizem *quanto*; este diz **onde**, que é a pergunta de quem
+   * vai retocar a arte. Sem ele, "46,2% do perímetro abaixo de 8 u" manda engrossar
+   * o contorno inteiro, e metade desse trabalho é desperdício.
+   *
+   * `u = 0` é **ausência de banda, não banda fina**, e a diferença é o que impede
+   * um retoque errado: no alto do laço quem desenha o contorno é a cabeça do
+   * BONECO, que é descarte e não faz parte da peça — medido em 876 de 3 028 pontos
+   * na `curto-espetada`. Pintar esses pontos como "fino" mandaria o Doug engrossar
+   * a coroa, onde não há o que engrossar.
+   */
+  porPonto: { x: number; y: number; u: number }[];
+  /**
    * O DESVIO DA CURVA QUE O NAVEGADOR PINTA, e não o da corda — ver `desvioDaSpline`.
    *
    * `desvio` acima mede a poligonal, que é o que `escolherN` escolhe por. Este mede
@@ -530,6 +544,7 @@ function laco(
         ? comTraco.filter((e) => e.saturada).length / comTraco.length
         : 0,
     },
+    porPonto: esp.map((e, k) => ({ x: borda[k].x, y: borda[k].y, u: e.u })),
     spline: ref && {
       antes: ref.erroAntes,
       depois: ref.erro,
@@ -567,10 +582,83 @@ function laco(
  * As duas vão lado a lado na folha com o número embaixo. A escolha é direção de
  * arte, e o Passo 1 já mediu o que ela custa: na `chanel` a banda da artista tem
  * p50 **9,6 u** (0,77 px a 56) e só **2,3%** do perímetro abaixo de 8 u.
+ *
+ * ---------------------------------------------------------------------------
+ * A TERCEIRA: `faixa` — a modulação da artista, entre um piso e um teto
+ * ---------------------------------------------------------------------------
+ *
+ * Nasceu em 2026-08-08, de uma queixa do Doug olhando a `entrada-2` pela `fiel`:
+ * *"traços ficaram mais finos, mas algumas partes mais finas que outras"* e
+ * *"alguns traços ficaram pela metade"*. As duas são o mesmo fato — a banda da arte
+ * dela vai de **4,6 a 10,4 u**, e onde é fina demais ela some no render.
+ *
+ * A `fiel` guarda a modulação e herda os buracos; a `lei` apaga os buracos e joga
+ * fora a modulação junto, entregando banda constante 26% mais grossa que a do
+ * chanel aprovado. Nenhuma das duas serve para uma arte que é boa em quase todo
+ * lugar e fina em alguns.
+ *
+ * `faixa` é **`clamp(banda da arte, PISO, TETO)`**, ponto a ponto:
+ *
+ *     núcleo = { d > PISO } ∩ ( ciano ∪ { d > TETO } )
+ *
+ * onde `d` é a profundidade do pixel dentro da máscara. O primeiro termo põe o
+ * chão; o segundo devolve a modulação da artista onde ela cabe na faixa, e força o
+ * corte onde ela passa do teto. As outras duas variantes são casos particulares
+ * desta fórmula — `fiel` é `PISO = 0, TETO = ∞`; `lei` é `PISO = TETO = TRACO`.
+ *
+ * ⛔ **ELA NÃO ESTÁ EM USO, E NÃO DEVE ENTRAR SEM ANTES FECHAR O ACHADO ABAIXO.**
+ *
+ * Construída e medida em 2026-08-08 contra a `entrada-2`. Resolve dois dos três
+ * critérios — **zero vãos** (a `fiel` tem 2) e **mediana igual à do chanel** (8,0 u)
+ * — e reprova no terceiro, que é justamente o que o Doug pediu:
+ *
+ * | | amplitude ÷ mediana | máximo |
+ * |---|---|---|
+ * | `fiel` | **0,39** | 14,0 u |
+ * | `faixa` | **0,91** | **20,6 u** |
+ * | `lei` | 0,27 | 15,8 u |
+ * | chanel (a régua) | 0,29 | 17,7 u |
+ *
+ * O remédio para *"partes mais finas que outras"* produz **mais** desigualdade que a
+ * doença, e o estouro mora no lugar mais visível da peça: a calota.
+ *
+ * ⚠️ **E o teto NÃO age lá — a monotonicidade está quebrada, e a causa é achado
+ * aberto.** Por álgebra, `núcleo_lei = {d>TETO}` é subconjunto de `núcleo_faixa`,
+ * logo o preto da `faixa` teria de ser subconjunto do preto da `lei`. Medido no
+ * render: **7 741 px de preto existem na `faixa` e não existem na `lei`**,
+ * concentrados na calota — onde a massa tem 155–583 u de profundidade, ou seja
+ * `d > TETO` é alcançável com folga e mesmo assim o corte não aconteceu.
+ *
+ * A hipótese mais curta, **não provada**: o piso parte o núcleo em componentes
+ * abaixo de `PISO_FORMA` numa mecha de ~21 u de largura (8 u de cada lado deixam ~5
+ * no meio), `lacosPorComponente` as descarta, e a mecha inteira sai preta. Os outros
+ * candidatos são a decimação do contorno do núcleo, o `TETO_REFINO` e a ordem das
+ * camadas. Registrado em `docs/achados.md`; **a causa que se escreve ao achar não é
+ * necessariamente a causa**, e este repositório já pagou isso no G6.
  */
-export type VarianteNucleo = "fiel" | "lei";
+export type VarianteNucleo = "fiel" | "lei" | "faixa";
 
-/** A máscara do núcleo, pelas duas regras. Ver `VarianteNucleo`. */
+/** As três, na ordem em que a folha e o relatório as mostram. */
+export const VARIANTES: readonly VarianteNucleo[] = ["fiel", "lei", "faixa"];
+
+/**
+ * O CHÃO E O TETO DA BANDA na variante `faixa`, em unidades.
+ *
+ * **Nenhum dos dois é número novo, e isso é o ponto.** O piso é o `ESPESSURA_FINA`
+ * que a régua da espessura já usa para separar banda legível de banda que some — 8 u
+ * = 0,64 px a 56 px, logo abaixo da sobrancelha inteira (0,66 px), que é o limite do
+ * legível medido em `cabelo.ts`. O teto é o `TRACO`, a espessura do contorno do
+ * próprio boneco, que o `PEDIDO-GEMINI.md` já manda a artista seguir.
+ *
+ * Juntos eles reproduzem a faixa da peça aprovada: a banda do chanel mede p05
+ * **8,3 u** e p95 **12,1 u**. Inventar um segundo par de limiares para a mesma
+ * pergunta é como duas descrições da mesma fronteira divergem, e este repositório já
+ * pagou isso seis vezes.
+ */
+const PISO_DA_BANDA = ESPESSURA_FINA;
+const TETO_DA_BANDA = TRACO;
+
+/** A máscara do núcleo, pelas três regras. Ver `VarianteNucleo`. */
 function mascaraDoNucleo(
   variante: VarianteNucleo,
   mascara: Uint8Array,
@@ -589,6 +677,22 @@ function mascaraDoNucleo(
   const fora = new Uint8Array(mascara.length);
   for (let i = 0; i < fora.length; i++) fora[i] = mascara[i] ? 0 : 1;
   const d = distanciaDe(fora, w, h);
+
+  if (variante === "faixa") {
+    // `{ d > PISO } ∩ ( ciano ∪ { d > TETO } )`, e cada termo faz uma coisa:
+    //   d > piso           — o chão: nada mais fino que o legível
+    //   ciano              — a modulação da artista, onde ela cabe na faixa
+    //   ∪ { d > teto }     — o corte: onde ela passou do teto, o núcleo volta
+    //
+    // Sem o último termo a banda vira "no mínimo o piso, no máximo o que der" — e o
+    // que dá, numa mecha estreita, é a mecha inteira preta. Ver a ⚠️ do tipo.
+    const rPiso = PISO_DA_BANDA * ESCALA;
+    const rTeto = TETO_DA_BANDA * ESCALA;
+    for (let i = 0; i < out.length; i++)
+      out[i] = mascara[i] && d[i] > rPiso && (papeis[i] !== 4 || d[i] > rTeto) ? 1 : 0;
+    return out;
+  }
+
   const R = TRACO * ESCALA; // um traço inteiro — ver a ⚠️ em `VarianteNucleo`
   for (let i = 0; i < out.length; i++) out[i] = d[i] > R ? 1 : 0;
   return out;
@@ -791,11 +895,58 @@ function derivarNucleo(
  * QUAIS ARTES TRANSCREVEM O PRETO — a lista declarada, e é ela que cumpre a
  * decisão 3 do Bloco 13.
  *
- * `entrada`, `entrada-2` e `entrada-3` ficam no contorno sintetizado, e isso é
- * **permanente**: o Passo 7 (a limpeza do sintetizado) foi **cancelado pelo Doug em
- * 2026-08-07**, e `Cabelo.linhas` passou a ser campo definitivo do tipo. A lista
- * abaixo não é um estágio a caminho de crescer — é a resposta final para estas
- * quatro artes.
+ * `entrada` e `entrada-3` ficam no contorno sintetizado, e isso é **permanente**: o
+ * Passo 7 (a limpeza do sintetizado) foi **cancelado pelo Doug em 2026-08-07**, e
+ * `Cabelo.linhas` passou a ser campo definitivo do tipo.
+ *
+ * ---------------------------------------------------------------------------
+ * A `entrada-2` ENTROU PELA `fiel` EM 2026-08-08, E FOI DECISÃO VISUAL
+ * ---------------------------------------------------------------------------
+ *
+ * O Doug olhou a Assimétrico em `/dev/avatar-kokeshi` e disse que o traço preto
+ * estava grosso demais **contra o chanel**. Medido no render a 280 px, largura do
+ * núcleo de preto puro na lateral do cabelo:
+ *
+ * | atual (sintetizada) | `lei` | `fiel` | chanel (a régua dele) |
+ * |---|---|---|---|
+ * | 3,55 px | 3,27 px | **2,00 px** | **2,00 px** |
+ *
+ * A `fiel` bate o chanel na casa decimal; a `lei` erra por 63%, porque mantém a
+ * caneta de 12. A queixa dele estava certa e a variante certa é a `fiel`.
+ *
+ * **O que ela custa, e está aceito:** `vazando 14` amostras, contenção **−1,88 u** —
+ * o ciano ultrapassa o preto em 4 pontos de 1 a 2 px, invisíveis a 280 px e ausentes
+ * a 56. E o contorno **quebra** em três lugares (um vão a x≈167/y≈130, e dois
+ * trechos afinando para 1 px), porque os 5% mais finos da banda da arte medem 4,6 u
+ * contra os 12 do alvo. Consertar isso pedia um modo novo — "fiel com piso" —, e o
+ * Doug escolheu explicitamente ficar só na grossura por ora.
+ *
+ * ⚠️ **O teto `vazando 0` não é vigiado por gate nesta peça:** `contencaoDoNucleo`
+ * roda sobre o catálogo, e a `entrada-2` está fora dele. Se ela for promovida a
+ * `CABELOS` um dia, o teste passa a cobri-la e **vai reprovar** — é dívida
+ * declarada, não descuido.
+ *
+ * **O que a `fiel` NÃO resolveu, e não era do programa:** a mecha que cruza a testa
+ * continua sem contorno preto. Medida a fronteira inteira dela na arte — ~160 px —,
+ * há **zero pixel preto**: ela se distingue só por tom (massa contra sombra). Nenhum
+ * modo de render mostra linha que não foi desenhada. Acrescentá-la é trabalho à
+ * parte, e o Doug adiou.
+ *
+ * ---------------------------------------------------------------------------
+ * A `entrada-2` PASSOU DE `fiel` PARA `faixa` NO MESMO DIA, e o motivo é visual
+ * ---------------------------------------------------------------------------
+ *
+ * Com a `fiel` o Doug apontou duas coisas na mesma frase: *"algumas partes do cabelo
+ * mais finas que outras"* e *"alguns traços ficaram pela metade"*. São o mesmo fato —
+ * a banda da arte dela vai de 4,6 a 10,4 u, e abaixo de 8 u ela some no render.
+ * Medido: **2 vãos** de largura zero e **18 focos de traço ≤ 2,5 u**.
+ *
+ * A `faixa` prende a banda entre o piso do legível e o traço do boneco. Ela também
+ * apaga, de graça, a dívida que a `fiel` tinha declarado aqui: o `vazando 14` que
+ * reprovaria no dia em que a peça entrasse no catálogo passou a **0**, e a contenção
+ * de −1,88 u virou **+3,85 u**. O traço interno subiu junto — 7 formas / 750 px
+ * contra 6 / 671 da `fiel` —, porque com o núcleo preservado nas partes grossas as
+ * marcas internas continuam separadas em vez de fundir na borda.
  *
  * **Por que o espetado não entra: a `lei` foi TENTADA e MEDIDA, e reprova.** A banda
  * preta da arte tem p50 de 6,3 u com 79,8% do perímetro abaixo de 8 u — fina demais
@@ -823,7 +974,10 @@ function derivarNucleo(
  * conversão sintetizada e acusaria divergência para sempre. Chave visível, num
  * lugar só, em vez de disciplina em três.
  */
-export const TRANSCREVEM: Record<string, VarianteNucleo> = { chanel: "fiel" };
+export const TRANSCREVEM: Record<string, VarianteNucleo> = {
+  chanel: "fiel",
+  "entrada-2": "fiel",
+};
 
 export interface Convertido {
   peca: Cabelo;
@@ -860,6 +1014,8 @@ export interface Convertido {
   traco: { arcos: number; fracao: number; densa: number; porTrecho: number[] };
   /** A espessura da banda preta da ARTE, em unidades — ver `Laco.espessura`. */
   espessura: Laco["espessura"];
+  /** A espessura ponto a ponto, em pixel do canvas — ver `Laco.porPonto`. */
+  porPonto: Laco["porPonto"];
   /** O núcleo de ciano pelas DUAS regras, e as pretas internas. Ver `Nucleo`. */
   nucleo: Record<VarianteNucleo, Nucleo>;
   /** Perda silenciosa por multi-componente, agora medida. Em px do canvas. */
@@ -928,6 +1084,26 @@ export async function converter(
     const p = e.papeis[i];
     if (!dentro[i]) continue;
     if (p === 1 || p === 3) claraMask[i] = 1; // massa (tom médio) ou luz
+  }
+
+  // A CLARA É CORTADA PELA MESMA MÁSCARA DO NÚCLEO, e sem isto a `faixa` não fecha.
+  //
+  // Na `fiel` a clara já estava dentro do núcleo **por construção**: o núcleo é
+  // `papeis ≠ 4` e a clara é `papeis ∈ {1,3}`, então uma é subconjunto da outra e o
+  // que sobrava para `conterAClara` era só ruído de decimação.
+  //
+  // A `faixa` quebra essa construção. Ela encolhe o núcleo por profundidade, e a
+  // clara — derivada só dos papéis — continua chegando à borda. O que sobra não é
+  // ruído: é tom claro pintado **em cima da banda preta**, exatamente o defeito que
+  // `contencaoDaClara` existe para pegar, e `conterAClara` desiste dele com
+  // `convergiu: false` porque conter dobraria o laço. Medido: `arte:pecas` reprovou
+  // nomeando a `entrada-2` no primeiro dia da variante.
+  //
+  // Cortar a clara pela mesma máscara restaura a contenção por construção, em vez de
+  // pedir ao conversor que conserte depois o que a derivação estragou antes.
+  if (variante) {
+    const mn = mascaraDoNucleo(variante, dentro, e.papeis, w, h);
+    for (let i = 0; i < claraMask.length; i++) if (!mn[i]) claraMask[i] = 0;
   }
 
   // Só a MASSA recebe os papéis: é a única camada que leva traço. A clara nunca
@@ -1043,6 +1219,7 @@ export async function converter(
   const nucleo: Record<VarianteNucleo, Nucleo> = {
     fiel: derivarNucleo("fiel", dentro, e.papeis, w, h, lMassa.pts, nForcado),
     lei: derivarNucleo("lei", dentro, e.papeis, w, h, lMassa.pts, nForcado),
+    faixa: derivarNucleo("faixa", dentro, e.papeis, w, h, lMassa.pts, nForcado),
   };
 
   // ------------------------------------------- A CLARA CONTIDA NO NÚCLEO
@@ -1089,6 +1266,7 @@ export async function converter(
       porTrecho: lMassa.densa.porTrecho,
     },
     espessura: lMassa.espessura,
+    porPonto: lMassa.porPonto,
     spline: lMassa.spline,
     nucleo,
     perda: {
@@ -1179,7 +1357,7 @@ if (process.argv[1]?.endsWith("converter.ts")) {
       console.log(
         `    variante   N     comps  contenção   vazando   cruzam.  furos     camada 4 (ordem certa × invertida)`,
       );
-      for (const v of ["fiel", "lei"] as const) {
+      for (const v of VARIANTES) {
         const nu = c.nucleo[v];
         console.log(
           `    ${v.padEnd(10)} ${String(nu.pontos).padStart(3)}   ` +

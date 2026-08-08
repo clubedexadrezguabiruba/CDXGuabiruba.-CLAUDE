@@ -128,7 +128,7 @@ async function principal(): Promise<void> {
   const artes =
     process.argv.length > 2
       ? process.argv.slice(2)
-      : [`${PASTA}/entrada.png`, `${PASTA}/entrada-2.png`, `${PASTA}/entrada-3.png`];
+      : [`${PASTA}/entrada.png`, `${PASTA}/entrada-2.png`, `${PASTA}/chanel.png`];
 
   // --------------------------------------------------------------- as medidas
   const medidas: Medida[] = [];
@@ -150,8 +150,8 @@ async function principal(): Promise<void> {
 
   // O CONTROLE: uma peça do catálogo que nunca passou por arte nenhuma, e que o
   // Doug já aprovou. Ele vai AO LADO das três, não a três seções de distância.
-  const controleCoroa = await medirCoroa(CABELOS.curto, "f-controle", `${PASTA}/reguas`);
-  const controleSonda = await sondar(CABELOS.curto, "f-controle", `${PASTA}/reguas`);
+  const controleCoroa = await medirCoroa(CABELOS.coque, "f-controle", `${PASTA}/reguas`);
+  const controleSonda = await sondar(CABELOS.coque, "f-controle", `${PASTA}/reguas`);
   const carecaCoroa = await medirCoroa(undefined, "f-careca", `${PASTA}/reguas`);
 
   // --------------------------------------------------------------- os renders
@@ -233,7 +233,7 @@ async function principal(): Promise<void> {
 
   const tela: Record<string, string> = {};
   for (const m of medidas) tela[m.nome] = await em56(m.nome, m.c.peca);
-  tela["controle"] = await em56("controle", CABELOS.curto);
+  tela["controle"] = await em56("controle", CABELOS.coque);
 
   /**
    * O RECORTE É FEITO COM `sharp.extract`, e não com `clip-path` no HTML.
@@ -275,7 +275,7 @@ async function principal(): Promise<void> {
   // topo medido protege.
   const alvos: [string, Cabelo | undefined][] = [
     ...medidas.map((m) => [m.nome, m.c.peca] as [string, Cabelo]),
-    ["controle", CABELOS.curto],
+    ["controle", CABELOS.coque],
     ["careca", undefined],
   ];
   const largC = Math.round((ALT_CLOSE * VIEWBOX.w) / VIEWBOX.h);

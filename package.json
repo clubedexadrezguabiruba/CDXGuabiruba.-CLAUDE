@@ -84,7 +84,8 @@
     "verify:arte": "npm run arte:fixtures && npm run arte:reguas && npm run arte:cor-proibida && npm run arte:escala && npm run arte:pecas-check",
     "avatar:mapear": "tsx scripts/avatar/estilo/mapear.ts",
     "aberturas:gerar": "tsx scripts/chess/gerar-livro-aberturas.ts",
-    "verify:aberturas": "tsx scripts/verify/chess/verify-livro-aberturas.ts"
+    "verify:aberturas": "tsx scripts/verify/chess/verify-livro-aberturas.ts",
+    "arte:mapa": "tsx scripts/avatar/arte/mapa.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.70",

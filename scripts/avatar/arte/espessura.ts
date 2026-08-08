@@ -39,7 +39,7 @@ import { converter } from "./converter";
 import { medirCoroa } from "./coroa";
 import { extrair } from "./extrair";
 
-const ARTES = ["entrada", "entrada-2", "entrada-3", "chanel"];
+const ARTES = ["entrada", "entrada-2", "chanel"];
 
 /** Unidades do `viewBox` viram pixels no tamanho que manda, o do ranking. */
 const U_POR_PX_56 = VIEWBOX.h / 56;
