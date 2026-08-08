@@ -623,7 +623,7 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
    *
    * 1. O contorno tem **2 vãos e 18 focos de traço fino**, herdados da arte, cuja
    *    banda vai de 4,6 a 10,4 u. A variante `faixa` foi construída para isso e
-   *    reprovou por piorar a uniformidade — ver o G7 em `docs/achados.md`. A 56 px,
+   *    reprovou por piorar a uniformidade — ver o G8 em `docs/achados.md`. A 56 px,
    *    que é o tamanho que o aluno vê, os vãos não aparecem.
    * 2. `contencaoDoNucleo` mede **−1,88 u** nela: o ciano ultrapassa o preto em 4
    *    pontos de 1 a 2 px. O catálogo não cobra esse eixo hoje (o teste dele roda

@@ -155,6 +155,36 @@ Quatro erros no documento que o `CLAUDE.md` manda ler primeiro:
 **O que falta:** reescrever o bloco AGORA. Ele é a única parte manual de um
 arquivo gerado, então o gate `verify:estado` não o alcança.
 
+### T6 — O matcher do proxy não isenta `sounds/` nem `stockfish/`
+**Prova:** `VERSIONADO` — `src/proxy.ts:16-20` · efeito em runtime **não reproduzido**
+
+O matcher isenta `_next/static`, `_next/image`, `favicon`, `robots`, `sitemap`, `chess/`
+e uma lista de extensões — `svg|png|jpg|jpeg|gif|webp|mp4|webm|ogg|ico`. **Não** isenta
+`sounds/`, `stockfish/`, `.mp3` nem `.wasm`.
+
+O comentário logo acima (`src/proxy.ts:8-15`) descreve esta classe de falha em detalhe,
+porque o projeto **já a pagou uma vez** com `chess/`: uma ida ao Supabase por download, e
+um modo de falha silencioso — cookie expira → 307 para `/login` → o fetch segue o
+redirecionamento → o parser recebe HTML → devolve `null` sem avisar ninguém.
+
+Consumidores reais existem: `public/sounds/` (17 `.mp3`, via `soundManager.ts`) e
+`public/stockfish/` (`stockfish.js` + `stockfish.wasm`, via
+`new Worker("/stockfish/stockfish.js")` em `StockfishEngine.ts`). Não autenticado em rota
+protegida vira redirect para `/login` (`src/lib/supabase/proxy.ts:46-51`).
+
+**É hipótese de efeito, não bug provado.** O fato estático está confirmado; ninguém
+observou a requisição. A lição do G6 é exatamente esta: *a causa que se escreve ao achar
+não é necessariamente a causa.*
+
+**O que falta para fechar:** rodar `/gate` — observar `/sounds/move.mp3`,
+`/stockfish/stockfish.js` e `/stockfish/stockfish.wasm` com sessão válida, deslogado e com
+cookie expirado. Se atravessar o proxy, o fix mínimo é acrescentar `sounds/` e `stockfish/`
+ao matcher, nunca abrir a regex.
+**Gravidade provisória:** a taxonomia não tem casa para bug latente de runtime; fica 🟠
+porque a Fase 11 (sons + service worker cacheando exatamente estes caminhos) construiria
+sobre a premissa de que asset público não passa pelo proxy. Revisar depois da medição.
+**Achado por:** Fable, revisão da integração, 2026-08-07.
+
 ---
 
 ## 🟡 Promessa sem lastro
@@ -187,7 +217,7 @@ A seção 4, criada em 2026-08-06, confere `SELECT` numa lista de objetos. Não
 confere `INSERT`/`UPDATE`/`DELETE` em tabela nenhuma — que é exatamente o que o
 R1 precisa.
 
-### G7 — a variante `faixa` fura a própria álgebra, e o teto não age na calota
+### G8 — a variante `faixa` fura a própria álgebra, e o teto não age na calota
 **Prova:** `MEDIDO` — 2026-08-08, render a 2 px/unidade da `entrada-2`
 
 A variante `faixa` (`scripts/avatar/arte/converter.ts`) deriva o núcleo por
@@ -278,6 +308,26 @@ bloqueio **técnico** (`15:574`), não bloqueio de decisão. E os commits `5db00
 *(Antes eram quatro entradas aqui. Reseed 60×54, relíquia×moldura e o caminho do
 cabelo migraram para o **T3**, que é onde elas de fato vivem: a mesma doença, no
 mesmo conjunto de documentos, que fecha numa passada.)*
+
+### D3 — Não existe Supabase separado para teste, CI e e2e
+**Prova:** `LIDO` — `.github/workflows/ci.yml:10-13,77-78` · `AGENTS.md:28-30`
+
+O CI roda `npm run verify:all`, e o próprio workflow registra que *"A maioria toca o banco
+remoto"* (`ci.yml:77-78`). O e2e está fora do CI de propósito, pelo motivo escrito em
+`ci.yml:10-13`: *"cria e deleta usuários reais no Supabase de PRODUÇÃO via admin API…
+Pré-requisito para incluí-lo um dia: um projeto Supabase separado para teste."* O
+`AGENTS.md:30` diz o mesmo em uma linha: *"Não existe ambiente de teste separado."*
+
+**O que NÃO está medido:** para qual projeto os secrets do GitHub apontam. O repositório
+documenta um único projeto Supabase, mas isso é leitura de documento, não medição — confere
+em Settings → Secrets, e não se afirma antes disso.
+
+Hoje não há dado de aluno em produção, então o risco é futuro, não corrente.
+
+**Decisão do Doug, 2026-08-08:** criar o projeto separado é **pré-requisito de lançamento**.
+O produto não entra em uso real com alunos sem isso resolvido. Construir o ambiente é
+trabalho próprio, fora dos lotes atuais.
+**Achado por:** Fable, revisão da integração, 2026-08-07.
 
 ---
 
