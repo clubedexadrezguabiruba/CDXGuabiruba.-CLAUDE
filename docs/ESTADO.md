@@ -51,9 +51,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 63 |
-| **Árvore** | **33 arquivos sujos** |
-| **Último commit** | 12aa2c7 · 2026-08-08 · feat(avatar): o catálogo de cabelo ganha piso de 10, e o painel passa a contar sozinho |
+| **Commits à frente de `origin/main`** | 65 |
+| **Árvore** | limpa |
+| **Último commit** | 65cb0da · 2026-08-08 · feat(avatar): o cabelo passa a tapar o rosto, e o catálogo fica só com o que foi aprovado |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
