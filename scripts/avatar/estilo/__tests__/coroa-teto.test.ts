@@ -102,7 +102,7 @@ const FUNDO = 200;
 /** A touca cheia: cobre a coroa inteira com folga nos três lados. */
 function toucaCheia(): Cabelo {
   return {
-    id: "curto",
+    id: "coque",
     nome: "cheia",
     massa: [
       emT(X0 - FORA, Y0 - FORA),
@@ -116,7 +116,7 @@ function toucaCheia(): Cabelo {
 /** O ARO: a mesma touca com o topo `d` unidades mais baixo — a touca pequena demais. */
 function toucaComAro(d: number): Cabelo {
   return {
-    id: "curto",
+    id: "coque",
     nome: `aro-${d}`,
     massa: [
       emT(X0 - FORA, Y0 + d),
@@ -139,7 +139,7 @@ function toucaComEntalhes(n: number, d: number, larg: number): Cabelo {
   }
   topo.push(emT(b, Y0 - FORA));
   return {
-    id: "curto",
+    id: "coque",
     nome: `entalhes-${n}x${d}`,
     massa: [...topo, emT(b, FUNDO), emT(a, FUNDO)],
   };

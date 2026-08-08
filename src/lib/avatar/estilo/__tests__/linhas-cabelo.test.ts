@@ -34,10 +34,13 @@ import {
   MODELOS_PARAMETRICOS,
   MODELOS_TRACADOS,
   arcosDeTraco,
+  coberturaDaSobrancelha,
   pathCabelo,
   pathCabeloLinhas,
 } from "../cabelo";
 import type { Cabelo, PontoFranja } from "../cabelo";
+import { PECAS_DA_ARTE } from "../pecas-da-arte";
+import { SOBRANCELHA } from "../geometria";
 import { compor } from "../compositor";
 import { conferirSvg } from "../../svgContrato";
 import { CABELO, PELE } from "../../palette";
@@ -68,7 +71,7 @@ const MASSA: readonly PontoFranja[] = [
 
 /** Traço na borda de baixo (0→7) e num pedaço da volta. A coroa fica sem linha. */
 const tracado: Cabelo = {
-  id: "curto",
+  id: "coque",
   nome: "curto (traçado, com arcos de traço)",
   massa: MASSA,
   linhas: [
@@ -169,9 +172,110 @@ describe("os traçados promovidos continuam byte a byte", () => {
   });
 });
 
+describe("a peça sobreposta é emitida DEPOIS das feições, e o cabelo tapa o rosto", () => {
+  /**
+   * O GATE DO DEFEITO DE 2026-08-08 — a sobrancelha aparecia POR CIMA do cabelo.
+   *
+   * Medido na `entrada-2` (Assimétrico): **315 dos 753 px visíveis de sobrancelha,
+   * 41,8%, pintados em cima da massa**. A causa era ordem de emissão — a peça
+   * sobreposta saía logo depois do contorno da cabeça, antes de olhos, sobrancelhas
+   * e boca, porque a lista de camadas foi escrita quando cabelo só existia dentro do
+   * clip do crânio e nunca alcançava a testa.
+   *
+   * **Por que ordem de string e não pixel:** medir o defeito de verdade pede render
+   * (Playwright, duas passadas, classificar cor sob cada pixel) — caro demais para a
+   * suíte, e é o que o script de reprodução faz. Aqui mede-se o MECANISMO: se a peça
+   * sai depois das feições, o cabelo tapa; se sai antes, não tapa. A relação entre os
+   * dois é determinística, porque é oclusão de SVG, não heurística.
+   *
+   * **A não-vacuidade é metade deste teste.** Um gate que só compara dois índices
+   * passa liso no dia em que um dos dois marcadores deixar de existir — foi assim que
+   * `conferirSvg` aprovou auto-trace e que `--av-cabelo` ficou congelado sem nunca ser
+   * emitido. Por isso cada índice é exigido presente ANTES de serem comparados, e a
+   * família paramétrica é cobrada de NÃO ter a marca, para o teste não passar por
+   * medir a peça errada.
+   */
+  const iSobrancelha = (svg: string) => svg.indexOf(`<path class="kk-risco"`);
+  /** A peça sobreposta é o `<g>` fora de clip que carrega a massa traçada. */
+  const iPeca = (svg: string) => svg.search(/<path class="kk-(tinta|cabelo-m)"/);
+
+  it.each(MODELOS_TRACADOS)("%s: a massa sai depois da sobrancelha", (modelo) => {
+    const svg = svgDe(modelo);
+    const s = iSobrancelha(svg);
+    const p = iPeca(svg);
+    expect(s, `${modelo}: nenhuma sobrancelha no SVG — o gate mediria o nada`).toBeGreaterThan(-1);
+    expect(p, `${modelo}: nenhuma massa traçada no SVG — o gate mediria o nada`).toBeGreaterThan(-1);
+    expect(p, `${modelo}: a massa sai ANTES da sobrancelha, e a sobrancelha vaza por cima`).toBeGreaterThan(s);
+  });
+
+  it("o paramétrico não tem peça sobreposta — e é por isso que a ordem nunca o afetou", () => {
+    // O controle negativo do bloco. Se um dia um paramétrico passar a emitir massa
+    // fora do clip, esta linha cai e o teste de cima passa a valer para ele também.
+    for (const modelo of MODELOS_PARAMETRICOS) {
+      expect(iPeca(svgDe(modelo)), `${modelo} passou a emitir massa fora do clip`).toBe(-1);
+    }
+  });
+});
+
+describe("a sobrancelha coberta pelo cabelo não é desenhada", () => {
+  /**
+   * O SEGUNDO GATE DO MESMO DEFEITO — e ele existe porque a ordem não bastou.
+   *
+   * Emitir a peça depois das feições fez o cabelo tapar o que está sob ele, mas na
+   * `entrada-2` a massa cobre **97,6%** da sobrancelha esquerda e sobravam 19 px da
+   * ponta. Medido em close a 4×, esse resto lia como rebarba no contorno do cabelo,
+   * não como sobrancelha. O alvo é cobertura total.
+   *
+   * **A não-vacuidade aqui tem nome: contar `toBe(2)`, e não `toBeGreaterThan(0)`.**
+   * Um gate que só exigisse "existe sobrancelha" passaria no dia em que as duas
+   * sumissem por acidente — que é o modo de falha exato deste conserto, já que ele
+   * REMOVE elemento. Por isso o número é exato dos dois lados: 2 para quem não é
+   * coberto, 1 para a `entrada-2`. Zero reprova.
+   */
+  const quantasSobrancelhas = (svg: string) =>
+    (svg.match(new RegExp(`<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}"`, "g")) ?? [])
+      .length;
+
+  it("cada peça emite exatamente as sobrancelhas que ela NÃO cobre", () => {
+    // A conta sai da MEDIÇÃO, não de uma lista escrita à mão de quem cobre o quê:
+    // uma lista envelheceria no dia em que uma arte nova cobrisse a testa, e o teste
+    // continuaria verde medindo a peça errada.
+    for (const modelo of MODELOS_CABELO) {
+      const c = coberturaDaSobrancelha(CABELOS[modelo]);
+      const cobertas = (c.esq >= 0.85 ? 1 : 0) + (c.dir >= 0.85 ? 1 : 0);
+      expect(quantasSobrancelhas(svgDe(modelo)), `${modelo}: emissão × cobertura`).toBe(
+        2 - cobertas,
+      );
+    }
+    // A careca é o piso absoluto: sem cabelo nenhum, as duas têm de sair.
+    expect(quantasSobrancelhas(svgDe(undefined))).toBe(2);
+  });
+
+  it("o catálogo tem os DOIS casos vivos — sem isso a régua acima não prova nada", () => {
+    // A não-vacuidade deste bloco. A asserção de cima passaria feliz num catálogo em
+    // que **ninguém** cobre (0 − 0 = 2 sempre) ou em que **todos** cobrem. Ela só
+    // mede alguma coisa enquanto os dois lados existirem, e é isto que cobra isso.
+    const coberturas = MODELOS_CABELO.map((m) => coberturaDaSobrancelha(CABELOS[m]));
+    const comCobertura = coberturas.filter((c) => c.esq >= 0.85 || c.dir >= 0.85);
+    const semCobertura = coberturas.filter((c) => c.esq < 0.85 && c.dir < 0.85);
+    expect(comCobertura.length, "nenhuma peça cobre sobrancelha — a régua ficou vácua").toBeGreaterThan(0);
+    expect(semCobertura.length, "todas as peças cobrem — a régua ficou vácua").toBeGreaterThan(0);
+  });
+
+  it("a `assimetrico` cobre a esquerda e ela some — a direita fica", () => {
+    const c = coberturaDaSobrancelha(CABELOS.assimetrico);
+    // O par de asserções que impede o teste de passar medindo o nada: a esquerda
+    // tem de estar coberta E a direita tem de estar livre. Uma peça que cobrisse as
+    // duas, ou nenhuma, cairia aqui em vez de passar calada.
+    expect(c.esq, "a assimetrico deixou de cobrir a sobrancelha esquerda").toBeGreaterThan(0.85);
+    expect(c.dir, "a assimetrico passou a cobrir a direita também").toBeLessThan(0.85);
+    expect(quantasSobrancelhas(svgDe("assimetrico"))).toBe(1);
+  });
+});
+
 describe("as classes do cabelo saem por família, e nenhuma regra sai à toa", () => {
   it("o paramétrico emite `.kk-cabelo-s` com fill E stroke, e nenhuma das duas novas", () => {
-    const css = cssDe(svgDe("curto"));
+    const css = cssDe(svgDe("coque"));
     expect(css).toContain(".t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha)");
     expect(css).not.toContain(".kk-cabelo-m");
     expect(css).not.toContain(".kk-cabelo-l");
@@ -187,7 +291,7 @@ describe("as classes do cabelo saem por família, e nenhuma regra sai à toa", (
   });
 
   it("traçado SEM arcos não emite `.kk-cabelo-l` — regra emitida à toa custa bytes", () => {
-    const semTraco: Cabelo = { id: "curto", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
     const css = cssDe(svgDe(semTraco));
     expect(css).toContain(".kk-cabelo-m");
     expect(css).not.toContain(".kk-cabelo-l");
@@ -224,9 +328,9 @@ describe("o traço é a própria massa, no trecho apontado", () => {
   });
 
   it("sem `linhas`, não há path de traço — e o compositor não emite forma vazia", () => {
-    const semTraco: Cabelo = { id: "curto", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
     expect(pathCabeloLinhas(semTraco)).toBe("");
-    expect(pathCabeloLinhas("curto")).toBe("");
+    expect(pathCabeloLinhas("coque")).toBe("");
   });
 });
 
@@ -239,8 +343,8 @@ describe("a régua dos arcos", () => {
   });
 
   it("devolve `null` quando não há o que medir, e os dois casos são nomeados", () => {
-    expect(arcosDeTraco("curto")).toBeNull(); // paramétrico
-    expect(arcosDeTraco({ id: "curto", nome: "chapado", massa: MASSA })).toBeNull();
+    expect(arcosDeTraco("coque")).toBeNull(); // paramétrico
+    expect(arcosDeTraco({ id: "coque", nome: "chapado", massa: MASSA })).toBeNull();
   });
 
   it("R10: reprova índice fora da massa — o `d` sairia com NaN e nada acusaria", () => {
@@ -278,7 +382,7 @@ describe("a peça traçada composta", () => {
   });
 
   it("paga UMA forma pelo traço, e só quando há arcos", () => {
-    const semTraco: Cabelo = { id: "curto", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
     // Sem clara: massa (1) + traço (1). A base careca são 19.
     expect(formas(svgDe(tracado))).toBe(19 + 2);
     expect(formas(svgDe(semTraco))).toBe(19 + 1);

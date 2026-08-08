@@ -849,7 +849,7 @@ function imprimir(rotulo: string, med: Medicao, piso?: Medicao): string[] {
  * gate 1 saber de quanto do desvio o traço é responsável. Ver `limiar()`.
  */
 const pecaDensa = (t: Awaited<ReturnType<typeof tracarArquivo>>["tracado"]): Cabelo => ({
-  id: "curto",
+  id: "coque",
   nome: "densa",
   massa: t.denso.massa,
   ...(t.denso.clara.length ? { clara: t.denso.clara } : {}),
@@ -1065,7 +1065,7 @@ async function folha(alvo: string) {
     );
   }
   const peca: Cabelo = {
-    id: "curto",
+    id: "coque",
     nome: alvo,
     ...(PECA.massa ? { massa: PECA.massa } : {}),
     ...(PECA.clara ? { clara: PECA.clara } : {}),
@@ -2005,7 +2005,7 @@ async function main() {
     const piso = await comparar(segArte, pecaDensa(tracado), tracado.teto.k);
     const falhas = imprimir(
       "o paramétrico, que TEM de reprovar:",
-      await comparar(segArte, CABELOS.curto, 1),
+      await comparar(segArte, CABELOS.coque, 1),
       piso,
     );
     if (falhas.length) {

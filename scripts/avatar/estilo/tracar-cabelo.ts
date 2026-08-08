@@ -2135,7 +2135,7 @@ const num = (v: number) => Number(v.toFixed(3));
  * reprovando. Por isso o `Math.min`.
  */
 function liberarORosto(med: Medida): { med: Medida; levante: number } {
-  const antes = folgaDoRosto({ id: "curto", nome: "medido", pontos: med.pontos });
+  const antes = folgaDoRosto({ id: "coque", nome: "medido", pontos: med.pontos });
   // Meia unidade a mais que o déficit exato. Subtrair exatamente deixa a folga em
   // 23,999999 e o gate reprova com a mensagem "24.0 contra o piso de 24", que é
   // ilegível — o número impresso passa e o teste não. Meia unidade é 0,04 px a 56.
@@ -2175,7 +2175,7 @@ export function montarPeca(bruta: Medida) {
    */
   const extensoes = med.lobos.map((l) => ({ atras: true, forma: fecharLobo(l, -levante) }));
   const peca = {
-    id: "curto" as const,
+    id: "coque" as const,
     nome: "medido",
     pontos: med.pontos,
     sombra: med.sombra,
@@ -2782,7 +2782,7 @@ function tracar(seg: Segmentacao, m: Mapa, aImagem: Ancoras): Tracado {
   }));
 
   const peca: Cabelo = {
-    id: "curto",
+    id: "coque",
     nome: "traçado",
     massa: massaFina.map(paraTY),
     ...(claraContida.length ? { clara: claraContida.map(paraTY) } : {}),
@@ -3162,7 +3162,7 @@ async function idaEVolta() {
   const svg = compor({
     pele: PELE[1],
     cabelo: CABELO_TEAL,
-    modeloCabelo: "curto",
+    modeloCabelo: "coque",
     ns: "iv",
   });
   const bmp = await rasterizar(svg, ALTURA);
@@ -3171,7 +3171,7 @@ async function idaEVolta() {
   const aImg = ancoras(bmp);
   const med = medirFranja(segmentarPorMatiz(bmp), mapa(aImg, vb), aImg);
 
-  const esperado = CABELOS.curto.pontos!;
+  const esperado = CABELOS.coque.pontos!;
   console.log("IDA E VOLTA — o `curto` de hoje, renderizado em teal e medido de volta");
   console.log(`raster ${bmp.w}x${bmp.h} · pescoço ${aImg.yPescoco}px · base ${aImg.yBase}px`);
 
@@ -3227,7 +3227,7 @@ async function idaEVolta() {
  */
 async function idaEVoltaMassa(): Promise<number> {
   const { vb } = await ancorasDoViewBox();
-  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: "curto", ns: "ivm" });
+  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: "coque", ns: "ivm" });
   const bmp = await rasterizar(svg, ALTURA);
   const aImg = ancoras(bmp);
   const t = tracar(segmentarPorMatiz(bmp), mapa(aImg, vb), aImg);
@@ -3289,7 +3289,7 @@ async function diagnosticar(caminho?: string) {
   const bmp = caminho
     ? await cru(caminho)
     : await rasterizar(
-        compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: "curto", ns: "d" }),
+        compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: "coque", ns: "d" }),
         ALTURA
       );
   const e = enquadramento(bmp);

@@ -1131,10 +1131,12 @@ fechado não pode ter mecha atravessando o metal.
 **A resposta vive no item, nunca no compositor.** Um campo declarado no chapéu
 (`escondeCabelo?: "nada" | "franja" | "tudo"`) e o `compor()` obedecendo — o
 mesmo idioma do `atras` que as extensões já usam. A alternativa é um `if` por
-chapéu dentro do compositor, e seis chapéus × ~~cinco~~ **sete** cabelos são
-~~30~~ **42 combinações** para consertar caso a caso — o argumento **engordou** com
-a promoção de 2026-08-07, e **vai a 60** quando o catálogo chegar ao mínimo de 10
-decidido no mesmo dia. Cada cabelo novo engorda de novo.
+chapéu dentro do compositor, e seis chapéus × ~~cinco~~ ~~sete~~ **cinco** cabelos
+são ~~30~~ ~~42~~ **30 combinações** para consertar caso a caso. O número foi a 42
+com a promoção de 2026-08-07 e **voltou a 30** com a poda de 2026-08-08, que tirou
+`curto`, `cacheado` e `tranca`. Ele **vai a 60** quando o catálogo chegar ao mínimo
+de 10, então o argumento não encolheu — só adiou. A contagem viva é
+`docs/ESTADO.md`, linha "Catálogo de cabelo".
 
 ⚠️ **E os dois cabelos novos sobem o preço de outra forma:** eles são **peça
 sobreposta**, desenhada por cima sem clip. Um chapéu que precise esconder a franja
@@ -1158,7 +1160,7 @@ invisível · `asset-baseline.json` **zerado** (é o momento em que o passivo do
 
 ## Bloco 9 — F4 dados: o catálogo novo
 
-- **9.1** Reseed: **77 → ~~60~~ ~~54~~ 56 itens** (7 uniforme + 6 head + **7 hair**
+- **9.1** Reseed: **77 → ~~60~~ ~~54~~ ~~56~~ 54 itens** (7 uniforme + 6 head + **5 hair**
   + 20 pet + 8 background + 8 frame). O `hand` saiu pela **D-E**, e as suas 8 linhas
   já terão sido removidas no **2c** — aqui não sobra nada dele para reseed.
   ⚠️ **`hair` foi de 5 para 7** com a promoção de `espetado` e `chanel` em

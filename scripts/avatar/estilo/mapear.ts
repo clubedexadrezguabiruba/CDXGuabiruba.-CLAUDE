@@ -443,13 +443,13 @@ export async function bancada(caminhoSemantica: string): Promise<{
     const contida = conterAClara(claraFina, massaFina);
 
     const peca: Cabelo = {
-      id: "curto",
+      id: "coque",
       nome: m.nome + v.sufixo,
       massa: massaFina.map(paraTY),
       ...(contida.pts.length ? { clara: contida.pts.map(paraTY) } : {}),
     };
 
-    const pecaDensa: Cabelo = { id: "curto", nome: `${m.nome}${v.sufixo}-denso`, massa: massaC.map(paraTY) };
+    const pecaDensa: Cabelo = { id: "coque", nome: `${m.nome}${v.sufixo}-denso`, massa: massaC.map(paraTY) };
 
     const svg = compor({ pele: PELE[1], cabelo: CABELO[0], modeloCabelo: peca, ns: "mp" });
     const desvioDe = (denso: { x: number; y: number }[], red: { x: number; y: number }[]) =>
@@ -503,13 +503,13 @@ export async function bancada(caminhoSemantica: string): Promise<{
 /**
  * SEM CONTROLE, "MELHOROU" NÃO TEM ESCALA.
  *
- * `CABELOS.curto` é peça aprovada, desenhada à mão, e passa pelos mesmos três gates.
+ * `CABELOS.coque` é peça aprovada, desenhada à mão, e passa pelos mesmos três gates.
  * Sem ela na tabela não se sabe que nota uma peça BOA tira nestes números — e um
  * candidato que chegue a 0,80 de coroa pode ser ótimo ou péssimo dependendo do que
  * uma peça aprovada tira.
  */
 function controle(): Resultado[] {
-  return (["curto", "cacheado", "moicano"] as const).map((id) => {
+  return (["coque", "moicano"] as const).map((id) => {
     const peca = CABELOS[id];
     const svg = compor({ pele: PELE[1], cabelo: CABELO[0], modeloCabelo: peca, ns: "ct" });
     return {
@@ -845,7 +845,7 @@ export function encostaNaCabeca(
  * parece o penteado?* — e para respondê-la os candidatos têm de estar lado a lado, no
  * mesmo tamanho, com uma peça **aprovada** no meio deles.
  *
- * O controle não é enfeite. Sem `CABELOS.curto` na mesma folha, "o M1M2 melhorou" é
+ * O controle não é enfeite. Sem `CABELOS.coque` na mesma folha, "o M1M2 melhorou" é
  * uma frase sobre duas peças ruins; com ele, a distância até uma peça que já passou
  * pelo olho do Doug fica visível na mesma linha.
  *

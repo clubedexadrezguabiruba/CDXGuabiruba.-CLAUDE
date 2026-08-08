@@ -52,7 +52,7 @@ export default function AvatarKokeshiClient() {
   // `curto` é o padrão porque é o padrão do `criar-personagem` (D5): ninguém
   // aparece careca. A opção "careca" fica no seletor como controle — é a base do
   // Bloco 1d, e é contra ela que se vê o que o cabelo acrescenta.
-  const [modelo, setModelo] = useState<ModeloCabelo | undefined>("curto");
+  const [modelo, setModelo] = useState<ModeloCabelo | undefined>("coque");
   /**
    * A peça TRAÇADA da arte, quando há uma escolhida. Ela vence o `modelo`.
    *
@@ -236,13 +236,13 @@ export default function AvatarKokeshiClient() {
           <Boneco
             pele={pele}
             cabelo={cabelo}
-            modelo="curto"
+            modelo="coque"
             h={280}
             animado={animado}
             ns="kka-controle"
           />
           <figcaption className="mt-1 text-[10px] text-zinc-500">
-            {CABELOS.curto.nome}
+            {CABELOS.coque.nome}
             <span className="block text-[9px] text-zinc-400">controle aprovado</span>
           </figcaption>
         </figure>
@@ -261,7 +261,7 @@ export default function AvatarKokeshiClient() {
             ns={`kkp-${id}`}
           />
         ))}
-        <Boneco pele={pele} cabelo={cabelo} modelo="curto" h={56} animado={false} ns="kkp-c" />
+        <Boneco pele={pele} cabelo={cabelo} modelo="coque" h={56} animado={false} ns="kkp-c" />
         <span className="self-center text-[10px] text-zinc-500">
           ← 56 px, o tamanho do ranking
         </span>

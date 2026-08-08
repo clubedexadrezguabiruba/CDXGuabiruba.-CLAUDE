@@ -40,6 +40,7 @@ import {
   folgaDoRosto,
   pathCabelo,
   pathCabeloClaro,
+  sobrancelhaEscondida,
   sombraSobreAFranja,
 } from "../cabelo";
 import type { Cabelo, PontoFranja } from "../cabelo";
@@ -80,7 +81,7 @@ const PONTOS_PARAMETRICO: readonly PontoFranja[] = [
 ];
 
 const CURTO_PARAMETRICO: Cabelo = {
-  id: "curto",
+  id: "coque",
   nome: "curto (paramétrico congelado)",
   pontos: PONTOS_PARAMETRICO,
 };
@@ -119,7 +120,7 @@ const camadasDaTouca = (c: Cabelo): number => {
  * Quando um destes se mover, a pergunta é a mesma dos selos: *por que uma peça
  * aprovada mudou?* — e a resposta não é editar este número.
  */
-const BYTES_TRACADOS = { espetado: 13319, chanel: 11867 } as const;
+const BYTES_TRACADOS = { espetado: 13319, chanel: 11867, assimetrico: 14074 } as const;
 
 describe("a base careca não paga nada pelo slot de cabelo", () => {
   const careca = svgDe();
@@ -140,7 +141,7 @@ describe("a base careca não paga nada pelo slot de cabelo", () => {
 });
 
 describe("com modelo, o cabelo é o único leitor de --av-cabelo", () => {
-  const svg = svgDe("curto");
+  const svg = svgDe("coque");
 
   it("declara as duas custom properties", () => {
     expect(svg).toContain("--av-cabelo:");
@@ -270,7 +271,13 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     const svg = svgDe(modelo);
     expect(svg).not.toContain(`d=""`);
     const grupos = new Set((cabelo.extensoes ?? []).map((e) => Boolean(e.atras))).size;
-    expect(formas(svg)).toBe(19 + camadasDaTouca(cabelo) + grupos);
+    // A SOBRANCELHA QUE O CABELO COBRE NÃO É EMITIDA, e a conta desconta isso — do
+    // DADO, como o resto desta linha. `assimetrico` cobre 97,6% da esquerda e sai com
+    // 18 formas de base em vez de 19. Escrever "19 ou 18, tanto faz" seria a régua
+    // concordando com o emissor, que é o que este teste existe para não fazer.
+    const escondida = sobrancelhaEscondida(cabelo);
+    const sobrancelhas = (escondida.esq ? 1 : 0) + (escondida.dir ? 1 : 0);
+    expect(formas(svg)).toBe(19 - sobrancelhas + camadasDaTouca(cabelo) + grupos);
   });
 });
 
@@ -314,7 +321,7 @@ describe("a faixa de sombra", () => {
 
   /** A franja paramétrica, com a sombra afinando e engrossando ao longo dela. */
   const comSombra: Cabelo = {
-    id: "curto",
+    id: "coque",
     nome: "curto (sombra própria)",
     pontos: PONTOS_PARAMETRICO,
     sombra: PONTOS_PARAMETRICO.map((p, i) => ({ t: p.t, y: p.y - (12 + 22 * (i % 2)) })),
@@ -390,7 +397,7 @@ describe("o laço fechado", () => {
   ];
 
   const tracado: Cabelo = {
-    id: "curto",
+    id: "coque",
     nome: "curto (traçado)",
     massa: MASSA,
     clara: CLARA,
@@ -440,7 +447,7 @@ describe("o laço fechado", () => {
   });
 
   it("sem região clara, a peça é chapada e o compositor não emite forma vazia", () => {
-    const chapado: Cabelo = { id: "curto", nome: "chapado", massa: MASSA };
+    const chapado: Cabelo = { id: "coque", nome: "chapado", massa: MASSA };
     expect(pathCabeloClaro(chapado)).toBe("");
     expect(pathCabelo(chapado)).not.toBe("");
   });

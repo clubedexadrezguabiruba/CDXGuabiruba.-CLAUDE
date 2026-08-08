@@ -517,7 +517,7 @@ declarado e temporário (decisão C de 2026-08-06); virou definitivo:
 |---|---|---|
 | o preto | `stroke` de 12 u centrado no laço (`Cabelo.linhas`) | diferença entre formas cheias (`nucleo` + `pretas`) |
 | IoU do preto | 34,4% | **80,1%** |
-| quem usa | `espetado` no catálogo; `entrada-2` e `entrada-3` fora dele | `chanel` |
+| quem usa | `espetado` | `chanel` e `assimetrico` |
 | decimação | régua da corda | corda + `refinarPelaSpline` |
 
 **Nem "legada" nem "vigente": as duas são caminhos válidos.** A transcrita é o
@@ -546,18 +546,27 @@ espetado fica congelado no sintetizado e o Passo 7 sai do plano.
 
 ### O que sobra vivo, e mudou de motivo
 
-**A `entrada-2` (Assimétrico) continua valendo a reentrada** — §8 do runbook 19 —,
-mas agora **como cabelo novo do catálogo**, não como pré-condição do Passo 7. E o
-motivo ganhou número no mesmo dia: o Doug fixou **mínimo de 10 cabelos** no catálogo
-(doc 15, Bloco 8, linha 2). A `entrada-2` é **um** dos que faltam; o resto é arte
-nova, um pedido ao Gemini cada. Quantos faltam hoje: `docs/ESTADO.md`, linha
-"Catálogo de cabelo" — medido, não escrito à mão.
+✅ **A `entrada-2` (Assimétrico) ENTROU NO CATÁLOGO em 2026-08-08**, pela `fiel`, e
+sem passar por retoque de arte: o Doug corrigiu olhando o render. A reentrada da §8
+do runbook não chegou a ser usada.
 
-⛔ **Os dois pedidos novos têm de voltar com contorno de 12 u**, como o
+⛔ **E o catálogo foi PODADO no mesmo dia, de sete para cinco.** Ficaram só as peças
+que ele aprovou olhando: `coque`, `moicano`, `espetado`, `chanel` e `assimetrico`.
+Saíram `curto`, `cacheado` e `tranca`. Com a careca — que não é peça, é a ausência
+de uma — o aluno vê **seis opções**.
+
+A `entrada-3` foi **apagada** junto: era a única arte que não virava peça nenhuma.
+Ela servia de isca do controle 3 de `arte:revisao`, e a isca passou a ser uma peça
+paramétrica do catálogo — mais seguro, porque a `entrada-3` seria a própria peça sob
+exame no dia em que alguém a revisasse.
+
+**O mínimo de 10 continua valendo**, e agora faltam 5 — todos por arte nova. Quantos
+faltam hoje: `docs/ESTADO.md`, linha "Catálogo de cabelo", medido e não escrito à
+mão.
+
+⛔ **Os pedidos novos têm de voltar com contorno de 12 u**, como o
 `PEDIDO-GEMINI.md` exige. É onde o espetado morreu (T5), e é a diferença entre uma
 rodada e três.
-
-A `entrada-3` fica onde está: é a isca do controle 3 de `arte:revisao`.
 
 **A luz (Passo 8) segue não iniciada** — decisão B. Separável e cortável, e depende
 de uma régua que **não existe**: a arte tem três tons de ciano e a paleta do render

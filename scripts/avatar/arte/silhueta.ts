@@ -88,7 +88,7 @@ const IGUAL = 24;
  * classificado como CABELO CLARO**.
  *
  * O que isso fazia: a régua da barra pergunta "há cabelo dos dois lados deste
- * preto?". No `CABELOS.curto` — clipado, sem um pixel de cabelo fora do crânio —
+ * preto?". No `CABELOS.coque` — clipado, sem um pixel de cabelo fora do crânio —
  * a resposta virava SIM, porque o fundo do lado de fora se dizia cabelo. O
  * controle aprovado acusava **97,6% de barra enterrada**, um número absurdo que só
  * apareceu quando ele foi posto ao lado das outras na folha do Bloco 6.
@@ -150,7 +150,7 @@ export interface Sonda {
    * cabeça tem 12 u centradas na fronteira e é desenhado por cima de tudo. Então
    * a resposta era "não diferem", e `cobertos` saía **zero**.
    *
-   * O controle que pegou foi `CABELOS.curto`, no Bloco 1: uma peça que cobre a
+   * O controle que pegou foi `CABELOS.coque`, no Bloco 1: uma peça que cobre a
    * coroa inteira devolvia `cobertos = 0`, e com isso `aro = 0/0 = 0`. A régua
    * dizia "não há aro" por VACUIDADE, e teria dito o mesmo sobre qualquer peça.
    *
@@ -399,7 +399,7 @@ export async function sondar(
       // tem ali for de fato superfície, e não a linha.
       // PELE SÓ EXISTE DENTRO DO CRÂNIO, e a régua não sabia disso.
       //
-      // Terceiro erro que o controle `CABELOS.curto` pegou no Bloco 1: fora do
+      // Terceiro erro que o controle `CABELOS.coque` pegou no Bloco 1: fora do
       // crânio, onde a peça não chega, o render com peça é idêntico ao careca
       // porque os dois mostram FUNDO. A régua lia isso como "pele exposta" e
       // devolvia **100% do trecho coberto** para uma touca que não deixa um
@@ -499,7 +499,7 @@ export async function sondar(
   //
   // Quarto erro que o Bloco 1 pegou: ela ia até −6, e −6 é EXATAMENTE a borda
   // interna do contorno da cabeça (12 u centradas na fronteira). Com o
-  // denominador consertado, `CABELOS.curto` — que não tem extensão nenhuma, logo
+  // denominador consertado, `CABELOS.coque` — que não tem extensão nenhuma, logo
   // não pode ter emenda de sangria — acusava 9,3% de aro em −6 u. Era o contorno
   // legítimo, medido no seu último pixel.
   //

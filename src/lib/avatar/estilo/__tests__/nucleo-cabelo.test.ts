@@ -79,7 +79,7 @@ function encolher(pts: readonly PontoFranja[], k: number): PontoFranja[] {
 }
 
 const comNucleo = (extra: Partial<Cabelo> = {}): Cabelo => ({
-  id: "curto" as Cabelo["id"],
+  id: "coque" as Cabelo["id"],
   nome: "fixture transcrita",
   massa: MASSA,
   nucleo: [encolher(MASSA, 0.86)],
@@ -141,7 +141,7 @@ describe("a INÉRCIA: sem os campos novos, o caminho é o de hoje", () => {
    * byte, "congelado" seria promessa e não mecanismo.
    */
   const semNucleo: Cabelo = {
-    id: "curto" as Cabelo["id"],
+    id: "coque" as Cabelo["id"],
     nome: "fixture sintetizada",
     massa: MASSA,
     clara: encolher(MASSA, 0.6),
@@ -196,7 +196,7 @@ describe("contencaoDoNucleo — e o controle negativo", () => {
       { t: 0.2, y: 140 },
     ];
     const c: Cabelo = {
-      id: "curto" as Cabelo["id"],
+      id: "coque" as Cabelo["id"],
       nome: "entalhe",
       massa: entalhe,
       nucleo: [nucleoNosVertices],
@@ -206,11 +206,11 @@ describe("contencaoDoNucleo — e o controle negativo", () => {
 
   it("Infinity pelo caso NOMEADO, nunca por vacuidade", () => {
     // Peça traçada sem núcleo: o contorno dela é sintetizado, e não há o que vazar.
-    expect(contencaoDoNucleo({ id: "curto" as Cabelo["id"], nome: "x", massa: MASSA })).toBe(
+    expect(contencaoDoNucleo({ id: "coque" as Cabelo["id"], nome: "x", massa: MASSA })).toBe(
       Infinity,
     );
     // Peça paramétrica: quem mede é `sombraSobreAFranja`.
-    expect(contencaoDoNucleo("curto")).toBe(Infinity);
+    expect(contencaoDoNucleo("coque")).toBe(Infinity);
   });
 });
 

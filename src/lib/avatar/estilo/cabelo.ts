@@ -91,13 +91,11 @@ import { PECAS_DA_ARTE } from "./pecas-da-arte";
  * existe justamente para pegar isso.
  */
 export type ModeloCabelo =
-  | "curto"
-  | "cacheado"
-  | "tranca"
   | "coque"
   | "moicano"
   | "espetado"
-  | "chanel";
+  | "chanel"
+  | "assimetrico";
 
 /** Um ponto da franja: altura absoluta, e fração da largura da cabeça NAQUELA altura. */
 export interface PontoFranja {
@@ -492,125 +490,26 @@ function lacoTY(pts: readonly PontoFranja[], dy: number): string {
 // ---------------------------------------------------------------------------
 
 /**
- * OS SETE MODELOS — cinco paramétricos e dois vindos da arte.
+ * OS CINCO MODELOS — dois paramétricos e três vindos da arte.
  *
- * A ordem é a do `criar-personagem`, e `curto` é o primeiro porque é o padrão: um
- * aluno que não escolha nada não pode aparecer careca (D5). O default de
- * `avatar_hair` **não mudou** com a promoção.
+ * **Eram sete, e o Doug podou para cinco em 2026-08-08**, mantendo só o que ele
+ * aprovou olhando o render: saíram `curto`, `cacheado` e `tranca`. Com a careca — que
+ * não é peça, é a ausência de uma — o aluno vê **seis opções**.
  *
- * Os dois últimos entram por espalhamento de `PECAS_DA_ARTE`, com a identidade
+ * ⚠️ **`curto` era o primeiro porque era o padrão**: um aluno que não escolhesse nada
+ * não podia aparecer careca (D5). Com ele fora, quem abre a lista é `coque`.
+ *
+ * **Nada quebrou no banco, e isso foi conferido:** a coluna `users.avatar_hair` que
+ * os docstrings deste arquivo citam **ainda não existe** — as colunas de avatar hoje
+ * são `avatar_config`, `avatar_base`, `avatar_url` e `avatar_chosen`. Não há default
+ * apontando para uma peça apagada. Quando a coluna nascer, o default tem de ser um
+ * `ModeloCabelo` vivo, e a lista acima é a fonte.
+ *
+ * Os três últimos entram por espalhamento de `PECAS_DA_ARTE`, com a identidade
  * sobrescrita. Ver `MODELOS_PARAMETRICOS` / `MODELOS_TRACADOS` logo abaixo do
  * catálogo para quem é de qual família, e por que a lista é escrita e não filtrada.
  */
 export const CABELOS: Record<ModeloCabelo, Cabelo> = {
-  /**
-   * O corte-cuia clássico da boneca kokeshi: franja reta e laterais que descem.
-   *
-   * É o modelo de CALIBRAÇÃO — o mais barato dos cinco, e foi ele que fixou o teto
-   * composto medindo o próprio custo em vez de ser espremido num teto adivinhado.
-   */
-  curto: {
-    id: "curto",
-    nome: "Corte curto",
-    pontos: [
-      { t: -0.12, y: 232 },
-      { t: 0.05, y: 178 },
-      { t: 0.2, y: 134 },
-      { t: 0.42, y: 124 },
-      { t: 0.68, y: 123 },
-      { t: 0.88, y: 130 },
-      { t: 0.99, y: 176 },
-      { t: 1.14, y: 228 },
-    ],
-  },
-
-  /**
-   * Cachos: a franja é recortada em quatro festões e o volume passa do crânio.
-   *
-   * O festão tem 24 unidades de amplitude — quase 2 px a 56. Com menos ele vira uma
-   * franja reta borrada, que é o mesmo desenho do `curto` pagando o dobro.
-   */
-  cacheado: {
-    id: "cacheado",
-    nome: "Cachos",
-    pontos: [
-      { t: -0.12, y: 236 },
-      { t: 0.03, y: 184 },
-      { t: 0.12, y: 140 },
-      { t: 0.22, y: 112 },
-      { t: 0.33, y: 132 },
-      { t: 0.45, y: 111 },
-      { t: 0.57, y: 132 },
-      { t: 0.69, y: 111 },
-      { t: 0.79, y: 130 },
-      { t: 0.89, y: 113 },
-      { t: 0.99, y: 172 },
-      { t: 1.14, y: 230 },
-    ],
-    extensoes: [
-      {
-        atras: true,
-        forma: [
-          { x: 96, y: 148 },
-          { x: 88, y: 92 },
-          { x: 126, y: 44 },
-          { x: 150, y: 8 },
-          { x: 208, y: 18 },
-          { x: 262, y: -4 },
-          { x: 318, y: 14 },
-          { x: 372, y: 6 },
-          { x: 406, y: 48 },
-          { x: 432, y: 96 },
-          { x: 424, y: 150 },
-        ],
-      },
-    ],
-  },
-
-  /**
-   * Repartido ao meio, com uma trança caindo do lado esquerdo da imagem.
-   *
-   * O pico central é o que faz ler como repartido: três pontos apertados em torno
-   * de `t` 0,5, com 16 unidades entre o pico e os vizinhos. Uma franja arqueada
-   * suave já existe — é o `curto` —, e dois modelos com a mesma silhueta a 56 px
-   * reprovam o gate (a).
-   */
-  tranca: {
-    id: "tranca",
-    nome: "Trança",
-    pontos: [
-      { t: -0.12, y: 226 },
-      { t: 0.05, y: 176 },
-      { t: 0.19, y: 136 },
-      { t: 0.37, y: 128 },
-      { t: 0.5, y: 108 },
-      { t: 0.63, y: 128 },
-      { t: 0.88, y: 128 },
-      { t: 1.0, y: 174 },
-      { t: 1.14, y: 226 },
-    ],
-    extensoes: [
-      {
-        // A trança ZIGUEZAGUEIA de propósito: os oito pontos alternam de lado, e a
-        // spline centrípeta os liga numa corda ondulada em vez de num charuto. A
-        // primeira tentativa era um contorno suave e leu como uma mancha escura
-        // colada na bochecha — trança sem trançado é borrão.
-        forma: [
-          { x: 96, y: 182 },
-          { x: 58, y: 218 },
-          { x: 82, y: 262 },
-          { x: 48, y: 306 },
-          { x: 70, y: 352 },
-          { x: 52, y: 396 },
-          { x: 98, y: 404 },
-          { x: 104, y: 348 },
-          { x: 100, y: 266 },
-          { x: 124, y: 212 },
-        ],
-      },
-    ],
-  },
-
   /**
    * Cabelo preso: a franja sobe e mostra testa, e o coque fica ATRÁS da cabeça.
    *
@@ -711,6 +610,33 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
     id: "chanel",
     nome: "Chanel",
   },
+
+  /**
+   * ASSIMÉTRICO — promovida em 2026-08-08, e a primeira peça que o Doug corrigiu
+   * **olhando o render** em vez de mexendo na arte.
+   *
+   * Ela entrou pela `fiel`, e por medição: a queixa dele era *"traço grosso demais
+   * comparado ao chanel"*, e a `fiel` bate o chanel na casa decimal — **2,00 px**
+   * contra 2,00 px na lateral, a 280 px de altura. A `lei` erra por 63%.
+   *
+   * **Duas coisas ficam declaradas, e as duas foram decisão dele:**
+   *
+   * 1. O contorno tem **2 vãos e 18 focos de traço fino**, herdados da arte, cuja
+   *    banda vai de 4,6 a 10,4 u. A variante `faixa` foi construída para isso e
+   *    reprovou por piorar a uniformidade — ver o G7 em `docs/achados.md`. A 56 px,
+   *    que é o tamanho que o aluno vê, os vãos não aparecem.
+   * 2. `contencaoDoNucleo` mede **−1,88 u** nela: o ciano ultrapassa o preto em 4
+   *    pontos de 1 a 2 px. O catálogo não cobra esse eixo hoje (o teste dele roda
+   *    contra fixtures), então isto é **dívida declarada, não gate furado**.
+   *
+   * A sobrancelha esquerda **não é desenhada** quando esta peça está no boneco: a
+   * massa cobre 97,6% dela, e o resto lia como rebarba. Ver `sobrancelhaEscondida`.
+   */
+  assimetrico: {
+    ...PECAS_DA_ARTE["entrada-2"],
+    id: "assimetrico",
+    nome: "Assimétrico",
+  },
 };
 
 /** A lista na ordem do catálogo, para as folhas e para o `criar-personagem`. */
@@ -730,16 +656,14 @@ export const MODELOS_CABELO = Object.keys(CABELOS) as ModeloCabelo[];
  * `completudeDasFamilias` cobra que as duas somem `MODELOS_CABELO` — sem isso um
  * modelo novo nasceria fora das duas e escaparia dos dois blocos de selo.
  */
-export const MODELOS_PARAMETRICOS = [
-  "curto",
-  "cacheado",
-  "tranca",
-  "coque",
-  "moicano",
-] as const satisfies readonly ModeloCabelo[];
+export const MODELOS_PARAMETRICOS = ["coque", "moicano"] as const satisfies readonly ModeloCabelo[];
 
 /** Os promovidos pela rota de arte. Ver `docs/avatar/19-rota-de-arte-runbook.md`. */
-export const MODELOS_TRACADOS = ["espetado", "chanel"] as const satisfies readonly ModeloCabelo[];
+export const MODELOS_TRACADOS = [
+  "espetado",
+  "chanel",
+  "assimetrico",
+] as const satisfies readonly ModeloCabelo[];
 
 /**
  * UM CABELO DO CATÁLOGO, **ou um literal** — e o "ou" existe para o desenho.
@@ -1362,6 +1286,88 @@ const COROA = 0.25;
  * dos dois lados de propósito. Ele é `null` e não zero porque zero seria uma
  * reprovação, e o que ele tem não é defeito: é a peça.
  */
+/**
+ * ACIMA DESTA FRAÇÃO COBERTA, A SOBRANCELHA NÃO É DESENHADA.
+ *
+ * **O limiar mora num vão vazio**, e isso é o que o torna honesto em vez de
+ * arbitrário: medido no catálogo de hoje, toda peça dá **0%** de cobertura, e a
+ * `entrada-2` dá **~96%**. Qualquer valor entre os dois se comporta igual — não há
+ * peça na faixa do meio para o número decidir.
+ *
+ * A regra que moveria este valor, se um dia aparecer peça no vão: **o pedaço
+ * visível tem de continuar lendo como sobrancelha.** Medido em close a 4× na
+ * `entrada-2` antes do conserto, o resto de 4,4% lia como *rebarba no contorno do
+ * cabelo* — quina reta de 3 px encostada no preto, sem afilar e sem pele em volta.
+ * Sobrancelha meio coberta só funciona enquanto o resto guarda a assinatura da
+ * forma: comprimento e afilamento **sobre pele**.
+ */
+const SOBRANCELHA_COBERTA = 0.85;
+
+/**
+ * QUANTO DA SOBRANCELHA ESTÁ SOB A MASSA DO CABELO, de cada lado, em fração.
+ *
+ * Existe porque cabelo que cai sobre a testa tem de **tapar** a sobrancelha, como
+ * tapa na vida real — e tapar quase toda deixa um resto que lê pior que tapar
+ * nenhuma. A oclusão de SVG resolve a parte de baixo (a peça sobreposta é emitida
+ * depois das feições desde 2026-08-08); esta régua resolve o resto.
+ *
+ * **Só a `massa` conta.** O paramétrico vive dentro do clip do crânio e não alcança
+ * a testa — devolver 0 para ele não é vacuidade, é o fato, e o teste de controle
+ * cobra exatamente isso. As extensões também ficam de fora: a de trás é ocultada
+ * pela cabeça, e nenhuma peça do catálogo tem extensão frontal sobre a testa.
+ *
+ * Amostra a faixa inteira da sobrancelha — 41 passos ao longo do comprimento × 5
+ * através da espessura —, e não só a linha de centro: uma franja que corta a
+ * sobrancelha ao meio na horizontal cobriria metade da área e nenhum ponto da
+ * linha de centro.
+ */
+export function coberturaDaSobrancelha(modelo: CabeloOuModelo): { esq: number; dir: number } {
+  const m = resolverCabelo(modelo);
+  if (!m.massa) return { esq: 0, dir: 0 };
+  const pts = m.massa.map((p) => ponto(p, 0));
+
+  const AO_LONGO = 41;
+  const ATRAVES = 5;
+
+  const cobertura = (cx: number, cyOlho: number): number => {
+    let dentro = 0;
+    let total = 0;
+    for (let i = 0; i < AO_LONGO; i++) {
+      const u = i / (AO_LONGO - 1);
+      const x = cx - SOBRANCELHA.larg / 2 + u * SOBRANCELHA.larg;
+      // A reta das pontas sobe para a direita (`subida`), e o meio sobe mais
+      // `sagita` acima dela — a mesma parábola que `pathSobrancelha` desenha.
+      const yCentro =
+        cyOlho -
+        SOBRANCELHA.acimaDoOlho -
+        (u - 0.5) * SOBRANCELHA.subida -
+        SOBRANCELHA.sagita * 4 * u * (1 - u);
+      for (let j = 0; j < ATRAVES; j++) {
+        const v = j / (ATRAVES - 1);
+        const y = yCentro + (v - 0.5) * SOBRANCELHA.espessura;
+        total++;
+        if (dentroDe(pts, { x, y })) dentro++;
+      }
+    }
+    return total ? dentro / total : 0;
+  };
+
+  return {
+    esq: cobertura(OLHO_CX_ESQ, OLHO_CY_ESQ),
+    dir: cobertura(OLHO_CX_DIR, OLHO_CY_DIR),
+  };
+}
+
+/** A sobrancelha some quando o cabelo a cobre — ver `SOBRANCELHA_COBERTA`. */
+export function sobrancelhaEscondida(modelo: CabeloOuModelo | undefined): {
+  esq: boolean;
+  dir: boolean;
+} {
+  if (!modelo) return { esq: false, dir: false };
+  const c = coberturaDaSobrancelha(modelo);
+  return { esq: c.esq >= SOBRANCELHA_COBERTA, dir: c.dir >= SOBRANCELHA_COBERTA };
+}
+
 export function coberturaDaCoroa(modelo: CabeloOuModelo): number | null {
   const poli = poligonoDaTouca(resolverCabelo(modelo));
   if (!poli) return null;

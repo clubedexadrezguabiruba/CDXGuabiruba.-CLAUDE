@@ -240,7 +240,7 @@ mais 3 da régua nova da **barra**, que a regra 2 manda existir antes do Bloco 3
 | `coroa` | PASSA | careca é o PISO da régua | careca **1 px** · curto 17 · com faixa 51 |
 | `coroa` | REPROVA | faixa injetada sobe acima do piso | **51 px** contra piso 1 (+50) |
 | `coroa` | SEPARA | `faixaU` separa 1 traço de 2 encostados | curto **11,0 u** · com faixa **23,0 u** (fronteira 18) |
-| `silhueta` | PASSA | `CABELOS.curto` sem extensão: o preto CRUZA a normal | aro **6,8%** em −10 u |
+| `silhueta` | PASSA | `CABELOS.coque` sem extensão: o preto CRUZA a normal | aro **6,8%** em −10 u |
 | `silhueta` | REPROVA | extensão sem `atras`: a emenda corre junto | aro **99,7%** em −7 u (**15×**) |
 | `silhueta` | SEPARA | o que separa é o ARO, não a pele | aro 15× · pele 4,7 → 6,0% (**1,3×**) |
 | `barra` | REPROVA | com `massaPorCima` a barra NÃO some | **6,0 u**, de +0,5 a +6,0 |
@@ -271,18 +271,18 @@ minuto em que um controle conhecido foi passado por elas.
 1. **`silhueta.ts` media contra denominador ZERO — vacuidade total.** `cobertos`
    perguntava se, a **±4 u** da fronteira, o render com peça diferia do careca.
    Ali os dois são pretos nos dois casos, porque o contorno da cabeça tem 12 u
-   **centradas** na fronteira e vai por cima de tudo. `CABELOS.curto`, que cobre a
+   **centradas** na fronteira e vai por cima de tudo. `CABELOS.coque`, que cobre a
    coroa inteira, devolvia **`cobertos = 0`** e com isso `aro = 0/0 = 0`. A régua
    dizia "não há aro" **por vacuidade**, e teria dito o mesmo de qualquer peça.
    Conserto: coberto = a peça pinta **logo por dentro** da fronteira, de meio traço
    para dentro até o alcance. `curto` passou de 0 para **1 095 de 2 262** pontos.
 2. **`silhueta.ts` classificava FUNDO como pele exposta.** Fora do crânio, onde a
    peça não chega, o render com peça é idêntico ao careca — os dois mostram fundo,
-   que tem luminância alta. `CABELOS.curto` acusava **100,0% de pele exposta** numa
+   que tem luminância alta. `CABELOS.coque` acusava **100,0% de pele exposta** numa
    touca que não deixa um milímetro de testa à mostra. Conserto: pele só existe
    **dentro da máscara do crânio**, que a sonda já carregava. 100,0% → **4,7%**.
 3. **A janela do `aro` começava EM CIMA da borda interna do traço.** Ela ia até
-   −6 u, e −6 é exatamente onde o contorno de 12 u centradas acaba. `CABELOS.curto`,
+   −6 u, e −6 é exatamente onde o contorno de 12 u centradas acaba. `CABELOS.coque`,
    sem extensão nenhuma e portanto sem emenda de sangria possível, acusava **9,3%
    de aro em −6 u**. Era o contorno legítimo medido no último pixel dele. Conserto:
    a janela começa em `−TRACO/2 − PASSO`, o primeiro deslocamento estritamente fora
@@ -1233,10 +1233,10 @@ fidelidade; `escolherN` não foi tocada.
 
 ### ⚠ O RISCO DA DECISÃO 4, e ele precisa de resposta antes de executar
 
-`CABELOS.curto` **não é só um cabelo do catálogo — é o controle aprovado de que a
+`CABELOS.coque` **não é só um cabelo do catálogo — é o controle aprovado de que a
 rota inteira depende.** Ele aparece como referência em:
 
-- `reguas-conferidas.ts` — `sondar(CABELOS.curto)` e `medirCoroa(CABELOS.curto)`
+- `reguas-conferidas.ts` — `sondar(CABELOS.coque)` e `medirCoroa(CABELOS.coque)`
   sustentam as asserções PASSA/REPROVA/SEPARA das réguas da coroa e da silhueta;
 - `arte/folha.ts` e `arte/revisao.ts` — é o "[curto] — aprovado" que vai ao lado de
   toda peça nova a 56 px;
@@ -2904,3 +2904,53 @@ cancelada) · `docs/avatar/19-rota-de-arte-runbook.md` §3 e §4 ·
 
 **Não se mexeu em código de produção:** `src/lib/avatar/estilo/pecas-da-arte.ts` e
 `cabelo.ts` seguem byte a byte no HEAD.
+
+---
+
+## ✂️ A PODA DO CATÁLOGO — 2026-08-08
+
+O Doug olhou o catálogo em `/dev/avatar-kokeshi` e mandou deixar **só o que ele
+aprovou olhando o render**:
+
+> careca, coque, moicano, espetado, chanel e assimétrico. delete os outros.
+
+### O que entrou e o que saiu
+
+| | |
+|---|---|
+| **entrou** | `assimetrico`, promovida da `entrada-2` pela `fiel` |
+| **saíram** | `curto`, `cacheado`, `tranca` — os três paramétricos que ele não aprovou |
+| **apagada** | `entrada-3.png` e a pasta de artefatos dela |
+| **catálogo** | 7 → **5 peças**. Com a careca, **6 opções** para o aluno |
+
+`careca` não é peça: é a ausência de uma. Por isso `CABELOS` tem 5 e a tela mostra 6.
+
+### As três coisas que a poda quase quebrou, e como cada uma foi fechada
+
+1. **O `curto` era o CONTROLE APROVADO das ferramentas de medição** — `folha.ts`,
+   `reguas-conferidas.ts`, `mapear.ts` — e o padrão da página `/dev/avatar-kokeshi`.
+   Um controle que aponta para peça apagada **não reprova: ele deixa de existir**, e
+   o gate passa por vacuidade. O controle passou a ser o `coque`.
+2. **A `entrada-3` era a isca do controle 3 de `arte:revisao`** — a peça
+   propositalmente diferente que prova que a comparação enxerga diferença. A isca
+   passou a ser uma peça **paramétrica**, e a troca é melhoria: a `entrada-3` era
+   outra arte, e no dia em que alguém a revisasse a isca seria a própria peça sob
+   exame — o controle compararia uma coisa com ela mesma.
+3. **O default do banco.** `curto` era o primeiro da lista porque era o padrão (D5).
+   Conferido: a coluna `users.avatar_hair` que os docstrings citam **ainda não
+   existe** — as colunas de avatar hoje são `avatar_config`, `avatar_base`,
+   `avatar_url` e `avatar_chosen`. Nenhum default aponta para peça apagada.
+
+### A asserção negativa
+
+Os selos das peças que ficaram **não se moveram um byte**. Foram de 15 para 11: os
+4 dos paramétricos que sobraram, os 6 dos três traçados, e o da careca.
+
+### Verificação
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm test` | **478 passando** (eram 496 com 7 peças — menos peças, menos iterações) |
+| `npm run verify:estado` | 0 violações · painel em **5 de 10** |
+| `arte:pecas --check` | confere caractere a caractere |

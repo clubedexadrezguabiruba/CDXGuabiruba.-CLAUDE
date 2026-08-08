@@ -257,19 +257,25 @@ function main() {
   // declaração do tipo, e o painel passar a anunciar "0 de 10" como se o
   // catálogo tivesse sumido. É a vacuidade que este projeto já pagou duas vezes.
   //
-  // O piso é 5: são os paramétricos, e eles estão congelados por selo em
-  // `MODELOS_PARAMETRICOS`. Menos que isso não é catálogo encolhendo, é a régua
-  // quebrada.
+  // O piso é 2: são os paramétricos que sobraram da poda de 2026-08-08 (`coque` e
+  // `moicano`), congelados por selo em `MODELOS_PARAMETRICOS`. Menos que isso não é
+  // catálogo encolhendo, é a régua quebrada.
+  //
+  // **O piso acompanha a lista, não um número escrito.** Era 5 quando havia 5
+  // paramétricos; ficar em 5 depois da poda transformaria o gate num alarme falso na
+  // primeira vez que o Doug tirasse mais uma peça — e alarme falso é como um gate
+  // deixa de ser lido.
   // -------------------------------------------------------------------------
   console.log("\n4. A régua do catálogo de cabelo enxerga alguma coisa\n");
 
+  const PISO = 2;
   const cabelos = medirCabelos(ler("src/lib/avatar/estilo/cabelo.ts"));
   checar(
-    cabelos.tem >= 5,
+    cabelos.tem >= PISO,
     "medirCabelos não é vácua",
-    cabelos.tem >= 5
+    cabelos.tem >= PISO
       ? `${cabelos.tem} modelos na união \`ModeloCabelo\` (mínimo encomendado: ${cabelos.minimo})`
-      : `contou ${cabelos.tem} — abaixo dos 5 paramétricos congelados. O regex da união parou de casar`,
+      : `contou ${cabelos.tem} — abaixo dos ${PISO} paramétricos congelados. O regex da união parou de casar`,
   );
   despejar();
 

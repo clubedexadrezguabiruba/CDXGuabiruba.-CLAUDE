@@ -54,7 +54,12 @@
  *   6. facetas e especular, dentro do clip da cabeça
  *   7. **contorno da cabeça**
  *   8. olhos, sobrancelhas e boca
- *   9. extensões frontais        (fecho de capa, ombreira) + contorno
+ *   9. **peça de cabelo sobreposta** — por cima do rosto, fora de todo clip
+ *  10. extensões frontais        (fecho de capa, ombreira) + contorno
+ *
+ * **O passo 9 é depois do 8 desde 2026-08-08, e a ordem entre os dois é o conserto
+ * de um defeito medido.** Cabelo que cai sobre a testa tem de tapar a sobrancelha,
+ * como tapa na vida real. Ver o comentário no ponto de emissão.
  *
  * **A lista encurtou no Bloco 1d.** Saíram a orelha direita (que era um passo
  * próprio, com preenchimento e contorno) e a concha da orelha esquerda: a arte nova
@@ -83,6 +88,7 @@ import {
   pathExtensao,
   pathExtensaoLinhas,
   resolverCabelo,
+  sobrancelhaEscondida,
   type CabeloOuModelo,
 } from "./cabelo";
 import {
@@ -655,6 +661,7 @@ export function compor(estado: EstadoAvatar): string {
   const traçada = modeloCabelo ? Boolean(resolverCabelo(modeloCabelo).massa) : false;
   const cabeloNoLugarDeSempre = traçada ? "" : cabeloNoCranio(modeloCabelo);
   const sobreposta = traçada ? pecaSobreposta(modeloCabelo) : "";
+  const semSobrancelha = sobrancelhaEscondida(modeloCabelo);
 
   // As duas do cabelo entram SÓ quando há cabelo. `escurecer` sem fator é o 0,82 do
   // item 2.4, e o docstring dele já nomeia "embaixo da franja" como um dos três
@@ -738,10 +745,6 @@ export function compor(estado: EstadoAvatar): string {
     `<path class="kk-luz" d="${pathEspecular()}"/>` +
     `</g>` +
     `<use href="#${ns}-p-cabeca" class="kk-traco"/>` +
-    // A PEÇA SOBREPOSTA ENTRA AQUI — depois do contorno da cabeça, fora de todo
-    // clip. É a posição que faz o traço do crânio sumir por oclusão. Vazia no
-    // caminho paramétrico.
-    sobreposta +
     extensoesCabelo(modeloCabelo, false) +
     olho(OLHO_CX_ESQ, OLHO_CY_ESQ) +
     olho(OLHO_CX_DIR, OLHO_CY_DIR) +
@@ -751,9 +754,48 @@ export function compor(estado: EstadoAvatar): string {
     // lê como careta, não como piscada. Elas sobem e descem com o respiro porque
     // estão dentro de `kk-respira`, que move a figura inteira — isso é a figura
     // flutuando, e é o certo.
-    `<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}" d="${pathSobrancelha(OLHO_CX_ESQ, OLHO_CY_ESQ)}"/>` +
-    `<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}" d="${pathSobrancelha(OLHO_CX_DIR, OLHO_CY_DIR)}"/>` +
+    // A SOBRANCELHA COBERTA PELO CABELO NÃO É DESENHADA — e isso é o par da ordem
+    // de camadas acima, não uma segunda solução para o mesmo problema.
+    //
+    // A ordem resolve a parte de baixo: o cabelo tapa o que está sob ele. O que ela
+    // não resolve é o RESTO — na `entrada-2` a massa cobre 97,6% da sobrancelha
+    // esquerda e sobravam 19 px da ponta interna. Medido em close a 4×, esse resto
+    // não lia como sobrancelha: lia como **rebarba no contorno do cabelo**, uma quina
+    // reta encostada no preto, sem afilar e sem pele em volta. Tapar quase toda
+    // ficava pior que tapar nenhuma.
+    //
+    // `sobrancelhaEscondida` é medida, não declarada por peça: um cabelo novo entra
+    // no catálogo e a régua responde sozinha. Hoje ela devolve `false` para as sete
+    // peças do catálogo — nenhuma alcança a testa — e `true` só para a esquerda da
+    // `entrada-2`. É por isso que isto **não move o render de nenhuma peça
+    // promovida**, e os selos byte a byte cobram essa imobilidade.
+    (semSobrancelha.esq
+      ? ""
+      : `<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}" d="${pathSobrancelha(OLHO_CX_ESQ, OLHO_CY_ESQ)}"/>`) +
+    (semSobrancelha.dir
+      ? ""
+      : `<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}" d="${pathSobrancelha(OLHO_CX_DIR, OLHO_CY_DIR)}"/>`) +
     `<path class="kk-risco" stroke-width="${BOCA.espessura}" d="${pathBoca()}"/>` +
+    // A PEÇA SOBREPOSTA ENTRA AQUI — DEPOIS DAS FEIÇÕES, e a posição é o conserto
+    // de um defeito medido em 2026-08-08.
+    //
+    // Ela ficava logo após o contorno da cabeça, antes dos olhos. A posição vinha da
+    // lista de camadas do topo deste arquivo, escrita quando cabelo só existia na
+    // família PARAMÉTRICA — e ali ele vive **dentro do clip do crânio**, então nunca
+    // alcança a sobrancelha e a ordem não importava. A peça sobreposta nasceu depois,
+    // fora de todo clip, podendo cobrir a testa; as feições nunca foram remexidas.
+    //
+    // O que se via: na `entrada-2` (Assimétrico), **315 dos 753 px visíveis de
+    // sobrancelha — 41,8% — eram pintados EM CIMA do cabelo**. Nas outras peças o
+    // defeito não aparecia porque a massa delas não chega à sobrancelha: `chanel`,
+    // `espetado`, `curto` e a base careca medem 0 px. É por isso que mover isto **não
+    // muda o render de nenhuma delas**, e o gate abaixo cobra exatamente essa
+    // imobilidade.
+    //
+    // A razão que a posição antiga alegava continua honrada: a peça precisa vir
+    // depois do `<use ... class="kk-traco"/>` da cabeça para o traço do crânio sumir
+    // por oclusão. Depois das feições é **ainda mais tarde** — a oclusão continua.
+    sobreposta +
     extensoes(traje, false) +
     `</g>` +
     fecha +

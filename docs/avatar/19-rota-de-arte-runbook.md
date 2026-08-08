@@ -71,7 +71,6 @@ Os números que fundam a régra, na rodada de 2026-08-07:
 |---|---|---|---|---|---|
 | `entrada` (espetado) | 3,8 u | 6,3 u | 12,9 u | **79,8%** | não sobrevive à `fiel` |
 | `entrada-2` | 4,6 u | 8,3 u | 10,4 u | 46,2% | **na fronteira** |
-| `entrada-3` | 7,1 u | 9,2 u | 10,8 u | 17,0% | — |
 | **`chanel`** | 8,3 u | **9,6 u** | 12,1 u | **2,3%** | **`fiel`** |
 
 **A saída preferida para banda fina é redesenhar, não a `lei`.** O
@@ -99,7 +98,7 @@ da borda não tem variante que sirva; tem redesenho.** Ver **T5** em
 | a clara | direto da máscara | contida no núcleo (`conterAClara`) |
 | IoU do preto | **34,4%** | **80,1%** |
 | traço **interno** à peça | impossível — não tem onde morar no tipo | **866 px** em 4 formas |
-| quem usa | `entrada`, `entrada-2`, `entrada-3` | `chanel` |
+| quem usa | `entrada` (espetado) | `entrada-2` (assimétrico) e `chanel` |
 
 **A transcrita é a melhor das duas, por medição, e é o pipeline permanente para
 arte nova.** A sintetizada tem um defeito de gênero: o stroke de 12 u **esconde**
@@ -232,7 +231,7 @@ aprovando, **13**.
 **A asserção negativa é obrigatória a cada passo**, e ela é o que separa reentrada
 de rebase acidental:
 
-- `entrada`, `entrada-3` e `chanel` **byte a byte paradas** em
+- as OUTRAS artes **byte a byte paradas** em
   `pecas-da-arte.ts` — `git diff` com uma hunk só, dentro do bloco da arte que
   voltou;
 - os selos de `parametrico-congelado.ts` **verdes**;

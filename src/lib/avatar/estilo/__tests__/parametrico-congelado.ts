@@ -78,41 +78,37 @@
  * 2026-08-07, e os onze selos viraram quinze. Os onze antigos **não se moveram um
  * byte** — foi a asserção negativa da promoção.
  *
+ * O caso 4 aconteceu uma vez: **a peça sobreposta passou a ser emitida depois das
+ * feições do rosto**, em 2026-08-08. Antes ela saía logo após o contorno da cabeça,
+ * e a sobrancelha era pintada POR CIMA do cabelo — medido na `entrada-2`: 315 dos
+ * 753 px visíveis de sobrancelha, 41,8%, em cima da massa.
+ *
+ * **Só os 4 selos dos dois traçados se moveram, e só no `sha`: os `bytes` são
+ * idênticos.** Mesma quantidade de conteúdo, ordem diferente — que é exatamente o
+ * que este selo existe para pegar. Os onze paramétricos e o careca não mudaram, e o
+ * render foi conferido pixel a pixel nas duas versões: **0 de 350 000 pixels
+ * diferentes** em espetado, chanel, curto, coque, moicano e careca. Só a
+ * `entrada-2` mudou (322 px), que é o defeito sendo consertado. O selo mediu ordem
+ * de emissão, não aparência — por isso reescrevê-lo aqui é registro, não
+ * afrouxamento.
+ *
+ * O caso 5 aconteceu uma vez: **o Doug podou o catálogo de sete para cinco**, em
+ * 2026-08-08, mantendo só o que ele aprovou olhando o render. Saíram `curto`,
+ * `cacheado` e `tranca`; entrou `assimetrico`, promovida da `entrada-2`. Os selos
+ * foram de quinze para **onze**, e os das peças que ficaram **não se moveram um
+ * byte** — foi a asserção negativa da poda.
+ *
+ * ⚠️ O `curto` era o controle aprovado das ferramentas de medição (`folha.ts`,
+ * `reguas-conferidas.ts`, `mapear.ts`) e o padrão da página `/dev/avatar-kokeshi`.
+ * O controle passou a ser o `coque`, que é o paramétrico que sobrou. **Um controle
+ * que aponta para peça apagada não reprova: ele deixa de existir**, e o gate passa
+ * por vacuidade.
+ *
  * GERADO por `npm run avatar:congelar` (`scripts/avatar/estilo/dump-parametricos.ts`).
  * Não edite à mão: um arquivo meio regerado mistura duas gerações e ninguém
  * consegue mais dizer quais linhas descrevem o quê.
  */
 export const PARAMETRICO_CONGELADO: Record<string, { bytes: number; sha: string; css: string }> = {
-  "curto": {
-    bytes: 7765,
-    sha: "b8b9659be2b5b7deed5f50103cbfea11a73d8aa45d7c6d8f02ce826a195c7442",
-    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
-  },
-  "curto (animado)": {
-    bytes: 8382,
-    sha: "f892ee5f71c41eba8eb51f3a41cecb21f71ef534cd091711b369740d73bf70b1",
-    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
-  },
-  "cacheado": {
-    bytes: 8387,
-    sha: "6b704e66542e7940ada2398827f0e86368119c81452eebdf42161a3a62594bc5",
-    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
-  },
-  "cacheado (animado)": {
-    bytes: 9004,
-    sha: "e7c1004a5903a9d8f28788b5522fc96cef04367d172c8c12f27d4aadc0113095",
-    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
-  },
-  "tranca": {
-    bytes: 8195,
-    sha: "72e8e5da12747f84c1a59e6125d8ddf0ee69047ce76291be080b4a89fa5246c3",
-    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
-  },
-  "tranca (animado)": {
-    bytes: 8812,
-    sha: "4bdbaabc7d40d84c53ae99ab906ea8cb5a9754956042a9d7bfed51336961c401",
-    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo-e{fill:var(--av-cabelo);stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
-  },
   "coque": {
     bytes: 7963,
     sha: "d32dfbd2a9618bce67b213add327aa36e10f8aec497938afca215daa7994389f",
@@ -135,22 +131,32 @@ export const PARAMETRICO_CONGELADO: Record<string, { bytes: number; sha: string;
   },
   "espetado": {
     bytes: 13319,
-    sha: "cff8a3afb67d612c0cd74c159c59c747504d9ad1a40686ad84846a60a7329e3e",
+    sha: "8d64c618dc3a7fbe7288c06066152bf5c3182a4129d732fa087da598f7c6ab99",
     css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-cabelo-l{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
   },
   "espetado (animado)": {
     bytes: 13936,
-    sha: "7bf5ddac41cd23f68a15c6a9d44c914e6afd9b0ee6c4ebc79298ba2d739ad0c3",
+    sha: "00eca1078bf40d6285efe9da09fe3111b95eea9af2af1adfff03301d0ca14b46",
     css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-cabelo-l{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
   },
   "chanel": {
     bytes: 11867,
-    sha: "c6241c9b642f975ac0baac1590a72d3a32bf92022680cebac5384c1be4aa7c7f",
+    sha: "5c10682e89d96350041f92984c7422f2f9a7d3306641a6203afc50be811a4f4c",
     css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
   },
   "chanel (animado)": {
     bytes: 12484,
-    sha: "62f101f73336a801f4d68caf5f40b085f9d707bcba701bca91b77c959491e645",
+    sha: "025e4efcb1bd47fa4243c21f7672b9bd92cef30b74a18c3e79601698bbb91e78",
+    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
+  },
+  "assimetrico": {
+    bytes: 14074,
+    sha: "e33e27bdc704f2862eb62dee9590231903ccafab6a460c703f25c07daec9820c",
+    css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}",
+  },
+  "assimetrico (animado)": {
+    bytes: 14691,
+    sha: "04ed776deb924f7ff4068eef83b46ce2e56ac5a00ea15574036bd6138c6ece20",
     css: ".t .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);stroke-linejoin:round;stroke-linecap:round}.t .kk-cabelo{fill:var(--av-cabelo)}.t .kk-cabelo-m{fill:var(--av-cabelo-s)}.t .kk-pele{fill:var(--av-pele)}.t .kk-pele-s{fill:var(--av-pele-s)}.t .kk-tinta{fill:var(--av-linha)}.t .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}.t .kk-luz{fill:#FFFFFF;opacity:.30}.t .kk-olho{transform-box:fill-box;transform-origin:center}.t .kk-respira{animation:t-respira 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-sombra{animation:t-sombra 3.5s ease-in-out infinite;transform-origin:250px 622px}.t .kk-olho{animation:t-pisca 5.2s ease-in-out infinite}@keyframes t-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}@keyframes t-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}@keyframes t-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}@media(prefers-reduced-motion:reduce){.t .kk-respira,.t .kk-sombra,.t .kk-olho{animation:none}}",
   },
   "__careca": {

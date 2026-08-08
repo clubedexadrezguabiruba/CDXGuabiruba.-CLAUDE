@@ -51,9 +51,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 62 |
-| **Árvore** | **4 arquivos sujos** |
-| **Último commit** | 10b9b13 · 2026-08-08 · fix(avatar): a lei não serve ao espetado, e o gate que devia ter dito isso passa a dizer |
+| **Commits à frente de `origin/main`** | 63 |
+| **Árvore** | **33 arquivos sujos** |
+| **Último commit** | 12aa2c7 · 2026-08-08 · feat(avatar): o catálogo de cabelo ganha piso de 10, e o painel passa a contar sozinho |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -79,7 +79,7 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 |---|---|---|
 | Backlog do avatar | **25 de 67** (37%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
-| Catálogo de cabelo | **7 de 10** no mínimo (faltam **3**) | `docs/avatar/19-rota-de-arte-runbook.md` |
+| Catálogo de cabelo | **5 de 10** no mínimo (faltam **5**) | `docs/avatar/19-rota-de-arte-runbook.md` |
 
 Backlog do avatar, fase a fase:
 
@@ -106,7 +106,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 | | |
 |---|---|
 | **Migrations** | 72 |
-| **Rotas (`page.tsx`)** | 32 |
+| **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 15 |
 | **Primitivos de UI** | 4 |
 
@@ -119,7 +119,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-08 |
-| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-07 |
+| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-08 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
 | `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-06 |
 | `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-05 |

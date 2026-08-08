@@ -139,6 +139,32 @@ const CABECALHO = `/**
  * 2026-08-07, e os onze selos viraram quinze. Os onze antigos **não se moveram um
  * byte** — foi a asserção negativa da promoção.
  *
+ * O caso 4 aconteceu uma vez: **a peça sobreposta passou a ser emitida depois das
+ * feições do rosto**, em 2026-08-08. Antes ela saía logo após o contorno da cabeça,
+ * e a sobrancelha era pintada POR CIMA do cabelo — medido na \`entrada-2\`: 315 dos
+ * 753 px visíveis de sobrancelha, 41,8%, em cima da massa.
+ *
+ * **Só os 4 selos dos dois traçados se moveram, e só no \`sha\`: os \`bytes\` são
+ * idênticos.** Mesma quantidade de conteúdo, ordem diferente — que é exatamente o
+ * que este selo existe para pegar. Os onze paramétricos e o careca não mudaram, e o
+ * render foi conferido pixel a pixel nas duas versões: **0 de 350 000 pixels
+ * diferentes** em espetado, chanel, curto, coque, moicano e careca. Só a
+ * \`entrada-2\` mudou (322 px), que é o defeito sendo consertado. O selo mediu ordem
+ * de emissão, não aparência — por isso reescrevê-lo aqui é registro, não
+ * afrouxamento.
+ *
+ * O caso 5 aconteceu uma vez: **o Doug podou o catálogo de sete para cinco**, em
+ * 2026-08-08, mantendo só o que ele aprovou olhando o render. Saíram \`curto\`,
+ * \`cacheado\` e \`tranca\`; entrou \`assimetrico\`, promovida da \`entrada-2\`. Os selos
+ * foram de quinze para **onze**, e os das peças que ficaram **não se moveram um
+ * byte** — foi a asserção negativa da poda.
+ *
+ * ⚠️ O \`curto\` era o controle aprovado das ferramentas de medição (\`folha.ts\`,
+ * \`reguas-conferidas.ts\`, \`mapear.ts\`) e o padrão da página \`/dev/avatar-kokeshi\`.
+ * O controle passou a ser o \`coque\`, que é o paramétrico que sobrou. **Um controle
+ * que aponta para peça apagada não reprova: ele deixa de existir**, e o gate passa
+ * por vacuidade.
+ *
  * GERADO por \`npm run avatar:congelar\` (\`scripts/avatar/estilo/dump-parametricos.ts\`).
  * Não edite à mão: um arquivo meio regerado mistura duas gerações e ninguém
  * consegue mais dizer quais linhas descrevem o quê.

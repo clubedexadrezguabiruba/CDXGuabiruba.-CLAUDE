@@ -279,7 +279,7 @@ export async function medir(
  * Por isso ela é menor que a de `mapear.ts`. Lá a pergunta era *qual mapa parece o
  * penteado*, e valia uma grade de quatro tamanhos. Aqui as duas peças ou coincidem ou
  * não, e 56 px — o tamanho do boneco no ranking, que é o que manda — mais 200 px para
- * ver o que 56 esconde, respondem. `CABELOS.curto` entra pelo mesmo motivo de sempre:
+ * ver o que 56 esconde, respondem. `CABELOS.coque` entra pelo mesmo motivo de sempre:
  * sem uma peça aprovada na folha, "ficou parecido" é uma frase sobre duas peças.
  */
 const TAMANHOS = [56, 200] as const;
@@ -386,7 +386,7 @@ async function principal() {
     }
   }
 
-  const controle = CABELOS.curto;
+  const controle = CABELOS.coque;
   linhas.push({
     nome: "[curto] aprovado",
     paths: 0,
