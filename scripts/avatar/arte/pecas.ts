@@ -171,12 +171,24 @@ export type IdDaArte = keyof typeof PECAS_DA_ARTE;
 export const IDS_DA_ARTE = Object.keys(PECAS_DA_ARTE) as IdDaArte[];
 `;
 
-/** Gera o arquivo inteiro em memória, imprimindo a linha de cada arte. */
+/**
+ * Gera o arquivo inteiro em memória, imprimindo a linha de cada arte.
+ *
+ * **Reprova quando a contenção da clara não converge.** `conterAClara` desiste com
+ * `convergiu: false` quando conter a clara dobraria o laço, e devolve a clara como
+ * chegou — a decisão certa, porque a alternativa é entregar auto-interseção calada.
+ * O que estava errado era esta rota **descartar a resposta**: em 2026-08-07 o
+ * espetado pela `lei` emitiu clara não-contida sem uma palavra, e quem reprovou foi
+ * `cabelo.test.ts` dois passos depois, com um número que não diz de onde veio.
+ * `importarPeca` sempre reprovou nisso; aqui a trava faltava.
+ */
 async function gerar(): Promise<string> {
   const blocos: string[] = [];
+  const naoConvergiram: string[] = [];
   for (const a of ARTES) {
     const c = await converter(`${PASTA}/${a.arquivo}.png`);
     const p = c.peca;
+    if (c.claraConvergiu === false) naoConvergiram.push(a.arquivo);
     console.log(
       `  ${a.arquivo.padEnd(11)} massa ${String(p.massa?.length ?? 0).padStart(3)} pts · ` +
         `clara ${String(p.clara?.length ?? 0).padStart(3)} · ` +
@@ -191,6 +203,16 @@ async function gerar(): Promise<string> {
       `  /** ${a.nota}. Traçada de \`${a.arquivo}.png\` por \`npm run arte:pecas\`. */\n` +
         corpoDaPeca(a.arquivo, a.nome, p),
     );
+  }
+  if (naoConvergiram.length) {
+    console.error(
+      `\n  ⛔ a contenção da clara NÃO CONVERGIU em: ${naoConvergiram.join(", ")}\n` +
+        `     \`conterAClara\` bateu na guarda de dobra e devolveu a clara como chegou.\n` +
+        `     A clara sai do núcleo — tom claro pintado EM CIMA da banda preta.\n` +
+        `     Não é ruído de decimação: é a clara e o núcleo discordando de forma.\n` +
+        `     A saída é a arte, não o conversor — redesenhar a peça, ou trocar a variante.`,
+    );
+    process.exit(1);
   }
   return `${CABECALHO}\n${blocos.join("\n\n")}\n${RODAPE}`;
 }

@@ -791,10 +791,30 @@ function derivarNucleo(
  * QUAIS ARTES TRANSCREVEM O PRETO — a lista declarada, e é ela que cumpre a
  * decisão 3 do Bloco 13.
  *
- * O Doug decidiu que **só a `chanel` transcreve**: `entrada` (o espetado aprovado
- * no Bloco 9), `entrada-2` e `entrada-3` ficam congeladas no contorno sintetizado.
- * O custo está declarado — duas famílias de peça traçada convivendo, e o Passo 7
- * (a limpeza do sintetizado) bloqueado por construção até as quatro transcreverem.
+ * `entrada`, `entrada-2` e `entrada-3` ficam no contorno sintetizado, e isso é
+ * **permanente**: o Passo 7 (a limpeza do sintetizado) foi **cancelado pelo Doug em
+ * 2026-08-07**, e `Cabelo.linhas` passou a ser campo definitivo do tipo. A lista
+ * abaixo não é um estágio a caminho de crescer — é a resposta final para estas
+ * quatro artes.
+ *
+ * **Por que o espetado não entra: a `lei` foi TENTADA e MEDIDA, e reprova.** A banda
+ * preta da arte tem p50 de 6,3 u com 79,8% do perímetro abaixo de 8 u — fina demais
+ * para a `fiel` —, então a `lei` era a única variante restante. Ela reprova por outro
+ * lado: o núcleo da `lei` erode por `TRACO` inteiro, a clara não cabe nele, e
+ * `conterAClara` **desiste** (`convergiu: false`, 18 vértices, 8 cordas) porque conter
+ * dobraria o laço. O docstring dela já nomeava o caso — *"a topologia do pente, que é
+ * exatamente o que cabelo espetado é"*, 101 de 576 combinações dobram. Resultado
+ * medido: `contencaoDaClara` em **−9,2 u**, tom claro sobre a banda preta.
+ *
+ * A única saída seria redesenhar a arte com o contorno de 12 u que o
+ * `PEDIDO-GEMINI.md` exige, como o chanel fez; o Doug decidiu **não redesenhar**. O
+ * espetado fica com IoU do preto de 34,4% contra a arte — perda de fidelidade, não
+ * peça quebrada, porque o stroke de 12 u centrado é o que encobre o erro da régua da
+ * corda, e é ele que fica.
+ *
+ * **Para ARTE NOVA nada disso muda:** a resposta segue sendo transcrever, com a
+ * variante decidida pela régua da espessura (§3 do runbook 19). Banda fina pede
+ * redesenho, não `lei` — a `lei` é rede com furo, e este caso é o furo.
  *
  * **Ela mora aqui, e não em `pecas.ts`, porque três programas precisam da mesma
  * resposta.** `arte:pecas` gera o literal, o **controle 6** de `arte:revisao`
@@ -846,6 +866,21 @@ export interface Convertido {
   perda: { massa: number; clara: number; compsMassa: number; compsClara: number };
   /** Fração da borda da massa que é corte de região protegida, não desenho. */
   amputada: number;
+  /**
+   * A CONTENÇÃO DA CLARA CHEGOU AO PONTO FIXO? — `null` quando a peça não transcreve.
+   *
+   * `conterAClara` tem uma guarda declarada: **nenhuma passada que aumente as
+   * auto-interseções é aplicada**. Ao bater nela ela devolve a clara como chegou e
+   * `convergiu: false` — o que é a resposta certa, porque uma clara que só entra no
+   * núcleo dobrando é a clara e o núcleo discordando de forma, não ruído de amostragem.
+   *
+   * **O campo existe porque o valor era descartado aqui.** `importarPeca` sempre
+   * reprovou em `convergiu: false`; esta rota consumia só `.pts` e emitia a clara
+   * não-contida calada. Medido em 2026-08-07 no espetado pela `lei`: `convergiu=false`,
+   * 18 vértices projetados, 8 cordas — e a reprovação só apareceu dois passos adiante,
+   * em `contencaoDaClara` (−9,2 u), onde ela não diz de onde veio.
+   */
+  claraConvergiu: boolean | null;
 }
 
 export async function converter(
@@ -1064,6 +1099,7 @@ export async function converter(
       compsClara: lClara?.componentes ?? 0,
     },
     amputada: lMassa.amputada,
+    claraConvergiu: claraContida ? claraContida.convergiu : null,
   };
 }
 
@@ -1159,6 +1195,15 @@ if (process.argv[1]?.endsWith("converter.ts")) {
         `    tetos: vazando 0 · cruzamentos 0. N da massa = ${c.n.massa}` +
           `   (equilíbrio de bytes em N′ ≈ 30)`,
       );
+      if (c.claraConvergiu !== null) {
+        console.log(
+          `    a clara contida no núcleo: ${
+            c.claraConvergiu
+              ? "convergiu"
+              : "NÃO CONVERGIU ⚠  a guarda de dobra impediu a contenção — a clara sai como chegou"
+          }`,
+        );
+      }
 
       console.log(`\n  perda por multi-componente (bordaOrdenada percorre UMA)`);
       console.log(

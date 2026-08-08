@@ -2750,3 +2750,157 @@ todos os sete. **É decisão do Doug, e está em `docs/achados.md`.**
 | `verify:estado` | 0 violações |
 
 Sem UI e sem auth tocadas → **sem e2e**, pela regra do `CLAUDE.md`.
+
+---
+
+# BLOCO 15 — a `lei` foi tentada no espetado e a arte fechou a porta (2026-08-07)
+
+> **A tentativa foi revertida. `pecas-da-arte.ts` está byte a byte no HEAD.** O que
+> sobrou do bloco é um gate que faltava e um documento que dizia coisa falsa.
+
+## O QUE SE IA FAZER, E POR QUE PARECIA BARATO
+
+A pré-condição 1 do Passo 7 mandava re-emitir o espetado pela `lei`. O argumento que
+abriu o bloco: esse custo — **uma re-aprovação visual do Doug** — já estava na conta,
+e a mesma emissão entregaria de brinde o `refinarPelaSpline`, porque
+`refinar = Boolean(variante)` acopla as duas coisas em `converter()`. Uma operação
+pagando duas dívidas. O Doug concordou e mandou rodar a `lei` sobre a arte atual, em
+vez de redesenhar.
+
+## A ESTEIRA RODOU INTEIRA E OS QUATRO PRIMEIROS PASSOS PASSARAM
+
+| passo | resultado |
+|---|---|
+| Gate −1 | **APROVADA** — deslocamento 0/0 px, escala 100,00%, forma das protegidas 0 e 1 ladrilho |
+| extração | 113 165 px, **0 fora da região permitida**, 0 não classificados, 1 componente |
+| contorno | 64 pontos, IoU **95,6%**, erro da corda 4,60 u sob o teto de 6 |
+| régua da espessura | re-mediu e **manteve o veredito**: p50 **6,3 u**, 79,8% `< 8 u` → `lei` |
+
+O `refinarPelaSpline` fez o que promete: massa 64 → **65** pontos, clara 48 → **50**,
+três pontos **inseridos** da borda densa, nenhum movido.
+
+## ONDE ELA REPROVOU — e não é o conversor, é a arte
+
+`cabelo.test.ts` reprovou em **"não tem região clara vazando da massa"**:
+`contencaoDaClara` = **−9,22 u**.
+
+A sonda, com o chanel de controle:
+
+| peça | variante | `conterAClara` |
+|---|---|---|
+| espetado (`entrada`) | `lei` | **`convergiu=false`** · 18 projetados · **8 cordas** |
+| chanel | `fiel` | `convergiu=true` · 6 projetados · 0 cordas |
+
+**`conterAClara` desistiu, e desistir era o certo.** A guarda dela é declarada:
+*nenhuma passada que aumente as auto-interseções é aplicada*. A `lei` erode o núcleo
+por `TRACO` inteiro; a clara desta arte chega perto demais da borda e sobra para fora;
+conter dobraria o laço. O docstring já nomeava o caso três blocos antes — *"a
+topologia do **pente**, que é exatamente o que cabelo espetado é: torres separadas por
+vãos fundos"*, com 101 de 576 combinações medidas dobrando.
+
+**Clara fora do núcleo é tom claro pintado em cima da banda preta** — e a banda da
+`lei` tem 12 u = 0,96 px a 56. Os 9,2 u que vazam comem ~77% da largura dela onde
+vazam.
+
+## O ACHADO DE VERDADE — a rota descartava a resposta
+
+`conterAClara` sempre devolveu `convergiu`, e `importarPeca` sempre reprovou nele.
+**`converter.ts` consumia só `.pts`.** A conversão emitiu clara não-contida sem uma
+palavra, e quem reprovou foi o teste dois passos depois, com um número que não diz de
+onde veio.
+
+Consertado, e é o que sobra do bloco:
+
+- `Convertido.claraConvergiu` carrega a resposta (`null` quando a peça não transcreve);
+- `arte:converter` imprime a linha no bloco do núcleo;
+- **`arte:pecas` reprova**, nomeando a arte e dizendo que a saída é a arte, não o
+  conversor.
+
+**Provado nos dois sentidos**, que é o que a Regra de Evidência pede:
+
+```
+com  entrada: "lei"   → ⛔ a contenção da clara NÃO CONVERGIU em: entrada     EXIT=1
+sem  entrada          → escrito.                                              EXIT=0
+```
+
+## A ASSERÇÃO NEGATIVA, medida por hash de bloco
+
+Enquanto a tentativa esteve de pé, só o `entrada` se mexeu — comparado bloco a bloco,
+com **quebras normalizadas** (a lição do G6):
+
+```
+MUDOU   entrada     d85fb448ca71 → 14638939bc5b
+PARADA  entrada-2   79254acc1a25
+PARADA  entrada-3   6e04530c049a
+PARADA  chanel      71fa206113c1
+```
+
+Revertida a variante, `git diff` em `pecas-da-arte.ts` é **vazio**.
+
+## O QUE FICA ABERTO — e é decisão do Doug
+
+**O espetado não tem variante que sirva.** A `fiel` some a 56 px, a `lei` vaza a
+clara. A saída é **redesenhar a arte** com o contorno de 12 u que o
+`PEDIDO-GEMINI.md` já exige — o caminho do chanel, que é o único que fechou até hoje.
+Registrado como **T5** em `docs/achados.md`; a pré-condição 1 do Passo 7 foi corrigida
+no `14-backlog-execucao.md` e a §3 do runbook 19 ganhou o furo da rede.
+
+Enquanto isso o espetado fica congelado no sintetizado — IoU do preto **34,4%**,
+decimando pela régua da corda que o Bloco 14 provou medir a curva errada — e o
+**Passo 7 segue bloqueado**.
+
+## Verificação do bloco
+
+| gate | resultado |
+|---|---|
+| `npm run typecheck` | limpo, os dois tsconfig |
+| `npm test` | **491 passando**, 26 arquivos |
+| `git diff src/lib/avatar/estilo/pecas-da-arte.ts` | **vazio** |
+| `npm run arte:pecas` | exit 0 |
+
+`verify:all` **não foi rodado** — o Doug recusou a chamada. Fica como pendência do
+bloco, e é o que separa trabalho verde de trabalho completo.
+
+---
+
+## ⛔ A DECISÃO DO DOUG SOBRE O BLOCO 15 — 2026-08-07
+
+Colocadas as duas saídas, ele escolheu a segunda:
+
+> **aceitar o espetado congelado no sintetizado (IoU 34,4%, régua da corda errada) e
+> tirar o Passo 7 do plano**
+
+### O que a decisão fecha
+
+| | |
+|---|---|
+| **Passo 7** (matar o sintetizado) | **CANCELADO** — sai do plano, não é mais "bloqueado" |
+| **espetado** | fica no sintetizado, IoU do preto 34,4%, decimando pela régua da corda |
+| **`Cabelo.linhas`** | campo **permanente** do tipo, não dívida a remover |
+| **as duas famílias** | convivem em caráter **definitivo** — nem legada nem vigente, duas válidas |
+| **T5** em `docs/achados.md` | fechado **por decisão**, não por conserto |
+
+### Por que isto NÃO é entregar peça quebrada
+
+O `stroke` de 12 u **centrado** é exatamente o que encobre o erro da régua da corda —
+foi por isso que o defeito atravessou três blocos invisível, e o Bloco 14 só o
+descobriu quando a transcrição **tirou o encobrimento**. Mantendo o stroke,
+mantém-se o encobrimento: **a peça que o aluno vê é a peça aprovada no Bloco 9.** O
+que se perde é fidelidade à arte de origem, não qualidade do render.
+
+### O que continua vivo, e mudou de motivo
+
+A **`entrada-2`** (Assimétrico) segue valendo a reentrada da §8 do runbook — mas
+agora como **cabelo novo do catálogo**, não como pré-condição de um passo que não
+existe mais. A **`entrada-3`** fica onde está: é a isca do controle 3 de
+`arte:revisao`. O **Passo 8** (a luz) segue não iniciado, pela decisão B.
+
+### Onde a decisão foi escrita
+
+`docs/avatar/14-backlog-execucao.md` (a rodada de unificação, reescrita como
+cancelada) · `docs/avatar/19-rota-de-arte-runbook.md` §3 e §4 ·
+`docs/achados.md` (T5 para os fechados) · `scripts/avatar/arte/converter.ts`
+(docstring de `TRANSCREVEM`).
+
+**Não se mexeu em código de produção:** `src/lib/avatar/estilo/pecas-da-arte.ts` e
+`cabelo.ts` seguem byte a byte no HEAD.

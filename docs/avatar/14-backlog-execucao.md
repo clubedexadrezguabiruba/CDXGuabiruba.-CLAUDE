@@ -506,39 +506,54 @@ Soldado no backfill, e o ranking já mostra.
 | Revisão das aulas | prioridade do usuário: depois do avatar |
 | Piloto com turma | decisão do usuário |
 | Motor de animação (Rive/Lottie) | dependência nova; CSS já resolve o respiro |
-| **Rodada de unificação da peça traçada** | tem **pré-condições**, e nenhuma está cumprida — ver abaixo |
+| **Rodada de unificação da peça traçada (Passo 7)** | ⛔ **CANCELADA em 2026-08-07 pelo Doug** — ver abaixo |
 
-## A rodada de unificação — registrada em 2026-08-07, NÃO iniciada
+## A rodada de unificação — CANCELADA em 2026-08-07, e a decisão é do Doug
 
-Hoje **duas famílias de peça traçada convivem** no catálogo, e isso é custo
-declarado (decisão C de 2026-08-06), não descuido:
+**As duas famílias de peça traçada convivem em caráter PERMANENTE.** Era custo
+declarado e temporário (decisão C de 2026-08-06); virou definitivo:
 
-| | **sintetizada** (legada) | **transcrita** (vigente) |
+| | **sintetizada** | **transcrita** |
 |---|---|---|
 | o preto | `stroke` de 12 u centrado no laço (`Cabelo.linhas`) | diferença entre formas cheias (`nucleo` + `pretas`) |
 | IoU do preto | 34,4% | **80,1%** |
 | quem usa | `espetado` no catálogo; `entrada-2` e `entrada-3` fora dele | `chanel` |
+| decimação | régua da corda | corda + `refinarPelaSpline` |
 
-Unificar é o **Passo 7** (matar o sintetizado), e ele está **bloqueado por
-construção**: enquanto qualquer peça usar `Cabelo.linhas`, o campo não pode sair —
-e três usam. As pré-condições, em ordem:
+**Nem "legada" nem "vigente": as duas são caminhos válidos.** A transcrita é o
+pipeline de arte nova; a sintetizada é o que o espetado usa e vai continuar usando.
 
-1. **O espetado re-emitido pela variante `lei`** — a banda preta da arte dele tem
-   p50 de 6,3 u e **79,8% do perímetro abaixo de 8 u**, fina demais para a `fiel`.
-   Custa **nova aprovação visual do Doug**: a peça muda de aparência.
-2. **A `entrada-2` retocada e aprovada**, entrando por `TRANSCREVEM` (é a esteira
-   de reentrada, §8 do runbook 19). A `entrada-3` fica onde está — ela é a isca do
-   controle 3 de `arte:revisao`.
-3. **Só então** o Passo 7 desbloqueia.
-4. **A luz (Passo 8) entra por último** — decisão B. Ela é separável e cortável, e
-   depende de uma régua que **não existe**: a arte tem três tons de ciano e a
-   paleta do render tem **dois**. Uma mancha de brilho de 12,4% da cúpula devolve
-   6 pixels, e nenhuma das 21 asserções toca nisso.
+### Por que foi cancelada
 
-**Item vizinho, e é decisão do Doug:** as três peças congeladas ainda decimam pela
-**régua da corda**, que o Bloco 14 provou medir a curva errada — o compositor
-desenha spline. Consertar move os literais delas e **invalida a aprovação do
-espetado**. Registro completo em `scripts/avatar/arte/ESTADO-DA-ROTA.md`.
+O Passo 7 dependia de o espetado transcrever, e **ele não tem variante que sirva** —
+medido de ponta a ponta em 2026-08-07: a `fiel` some a 56 px (p50 6,3 u, 79,8% do
+perímetro abaixo de 8 u) e a `lei` vaza a clara para fora do núcleo erodido
+(`conterAClara` desiste com `convergiu: false`; `contencaoDaClara` em −9,2 u). A
+única saída era **redesenhar a arte**, e o Doug decidiu **não redesenhar**: o
+espetado fica congelado no sintetizado e o Passo 7 sai do plano.
+
+### O que isso aceita, com todas as letras
+
+- `Cabelo.linhas` é **campo permanente do tipo**, não dívida a remover. O docstring
+  dele já o descreve como mecanismo legítimo, e passa a estar certo.
+- O espetado fica com **IoU do preto 34,4%** contra a arte, e decimando pela régua
+  da corda que o Bloco 14 provou medir a curva errada.
+- **E isso não é peça quebrada.** O `stroke` de 12 u **centrado** é justamente o que
+  encobre o erro da régua — foi por isso que o defeito atravessou três blocos
+  invisível. Mantendo o stroke, mantém-se o encobrimento: a peça que o aluno vê é a
+  peça que o Doug aprovou no Bloco 9. O que se perde é fidelidade à arte, não
+  qualidade do render.
+
+### O que sobra vivo, e mudou de motivo
+
+**A `entrada-2` (Assimétrico) continua valendo a reentrada** — §8 do runbook 19 —,
+mas agora **como cabelo novo do catálogo**, não como pré-condição do Passo 7. A
+`entrada-3` fica onde está: é a isca do controle 3 de `arte:revisao`.
+
+**A luz (Passo 8) segue não iniciada** — decisão B. Separável e cortável, e depende
+de uma régua que **não existe**: a arte tem três tons de ciano e a paleta do render
+tem **dois**. Uma mancha de brilho de 12,4% da cúpula devolve 6 pixels, e nenhuma
+das 21 asserções toca nisso.
 
 ---
 

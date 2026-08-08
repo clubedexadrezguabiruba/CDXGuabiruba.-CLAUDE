@@ -81,9 +81,18 @@ boneco"* — 12 u. O chanel obedeceu, e é por isso que a `fiel` funcionou nele.
 — ver §5) e entrega banda constante de 12 u, ao preço de achatar as laterais em
 13–16 px. O Doug escolheu `fiel` sobre `lei` no chanel exatamente por isso.
 
-## 4. As duas famílias de peça traçada, e por que as duas convivem
+⛔ **E a rede tem furo, medido em 2026-08-07 no espetado.** A `lei` não é saída
+garantida para banda fina: erodir por `TRACO` inteiro encolhe o núcleo, e numa arte
+cuja clara chega perto da borda ela **sobra para fora**. `conterAClara` desiste
+(`convergiu: false`) porque conter dobraria o laço — a topologia do **pente**, que é
+o que cabelo espetado é. Resultado: `contencaoDaClara` em **−9,2 u**, tom claro sobre
+a banda preta, e `arte:pecas` reprova nomeando a arte. **Banda fina com clara junto
+da borda não tem variante que sirva; tem redesenho.** Ver **T5** em
+`docs/achados.md`.
 
-| | **sintetizada** (legada) | **transcrita** (vigente) |
+## 4. As duas famílias de peça traçada, e por que as duas convivem — para sempre
+
+| | **sintetizada** | **transcrita** |
 |---|---|---|
 | o preto | `stroke` de 12 u **centrado** no laço da massa (`Cabelo.linhas`) | diferença entre duas formas cheias: massa preta + **núcleo** de ciano por cima (`Cabelo.nucleo`), mais as **pretas internas** (`Cabelo.pretas`) |
 | decimação | régua da **corda** (`escolherN`) | corda + **`refinarPelaSpline`** |
@@ -97,10 +106,18 @@ arte nova.** A sintetizada tem um defeito de gênero: o stroke de 12 u **esconde
 o que está por baixo dele. A franja torta do chanel atravessou três blocos
 invisível por causa disso — só apareceu quando o preto passou a ser transcrito.
 
-**A sintetizada fica congelada, não apagada.** O Passo 7 (matar o sintetizado)
-está **bloqueado por construção** enquanto qualquer peça usar `Cabelo.linhas`, e
-três usam. O espetado está congelado por decisão do Doug (decisão C de
-2026-08-06): re-emiti-lo pela `lei` custa nova aprovação visual.
+⛔ **A sintetizada NÃO vai ser apagada — o Passo 7 saiu do plano em 2026-08-07, por
+decisão do Doug.** Ele dependia de o espetado transcrever, e o espetado **não tem
+variante que sirva**: a `fiel` some a 56 px e a `lei` vaza a clara (ver §3). A única
+saída era redesenhar a arte, e o Doug decidiu não redesenhar.
+
+**Consequência, e ela muda como se lê esta tabela:** as duas famílias são caminhos
+válidos, não uma legada e uma vigente. `Cabelo.linhas` é campo **permanente** do
+tipo. Para **arte nova** a resposta continua sendo a transcrita — a §3 decide a
+variante, e banda fina pede redesenho, não `lei`. O espetado fica no sintetizado
+com IoU 34,4%, e isso é fidelidade à arte perdida, **não peça quebrada**: o stroke
+de 12 u centrado é o que encobre o erro da régua da corda, então mantê-lo mantém o
+render que foi aprovado no Bloco 9.
 
 ## 5. O que cada reprovação quer dizer
 
