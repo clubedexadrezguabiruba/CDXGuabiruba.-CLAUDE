@@ -329,6 +329,32 @@ O produto não entra em uso real com alunos sem isso resolvido. Construir o ambi
 trabalho próprio, fora dos lotes atuais.
 **Achado por:** Fable, revisão da integração, 2026-08-07.
 
+### D4 — A tela do aluno (F2) vem antes de mais desenho e antes do currículo?
+**Prova:** `LIDO` — as contagens da F2 e do backlog do avatar estão em `docs/ESTADO.md`,
+que é quem as mede
+
+**O trabalho fechado do avatar não chega a ninguém.** Não existe tela onde o aluno veja o
+próprio boneco. A F2 é o que transforma o que já está pronto em produto — e a proposta é
+que ela venha **antes de mais desenho** (o Bloco 8, a linha A5) e **antes do currículo**.
+
+Não é achado técnico: é ordem de prioridade. Está aqui porque é escolha não tomada, e
+porque a alternativa era viver na conversa.
+
+**Se for adotada:** o **Lote 2** do plano de integração sai da fila e espera — ele existe
+para destravar a A5, que é justamente mais desenho. O **Lote 1** (contrato da oficina) e o
+**Lote 3** (Next 16.2.11) seguem: são oficina e suportabilidade, não arte.
+
+**Conferir ANTES de dimensionar a fase:** se a tela mostra o boneco **vestido**, ela pode
+depender do **2b (traje)**, que está aberto e cujo pipeline antigo foi declarado morto
+(*"Nenhum traje existe ainda — o Soldado é o primeiro"*, doc 15). Se depender, a fase é
+maior do que o painel declara.
+
+**Eleva a prioridade do R1.** Aproximar a tela do aluno aproxima dado de aluno real — e o
+R1 é o único 🔴 aberto, cego por desenho enquanto o **G3** não medir escrita.
+
+**Quem decide:** Doug.
+**Trazido ao plano em:** 2026-08-08.
+
 ---
 
 ## Fechados — ficam aqui como precedente
