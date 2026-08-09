@@ -180,24 +180,19 @@ async function main() {
     `;
     const policySet = new Set(policies.map((r) => `${r.tablename}:${r.policyname}`));
 
+    // Só LEITURA. As policies de escrita destas tabelas foram dropadas no R1
+    // (2026-08-09) — ver a lista PROIBIDAS logo abaixo.
     const expectedPolicies = [
       // classes
       "classes:classes_select_teacher",
       "classes:classes_select_member",
       "classes:classes_select_by_invite",
-      "classes:classes_insert_teacher",
-      "classes:classes_update_teacher",
       // class_members
       "class_members:class_members_select_teacher",
       "class_members:class_members_select_member",
-      "class_members:class_members_insert",
-      "class_members:class_members_delete_teacher",
-      "class_members:class_members_delete_own",
       // class_tasks
       "class_tasks:class_tasks_select_teacher",
       "class_tasks:class_tasks_select_member",
-      "class_tasks:class_tasks_insert_teacher",
-      "class_tasks:class_tasks_update_teacher",
       // user_task_progress
       "user_task_progress:task_progress_select_own",
       "user_task_progress:task_progress_select_teacher",
@@ -207,6 +202,34 @@ async function main() {
     ];
     for (const p of expectedPolicies) {
       assert(`Policy ${p}`, policySet.has(p));
+    }
+
+    // ============================================================
+    // Gate 6b: as policies de ESCRITA não voltaram
+    // ============================================================
+    //
+    // Estas sete existiam e foram dropadas no R1 (docs/achados.md), migrations
+    // 20260809120000 e 20260809140000. Elas deixavam o navegador escrever
+    // direto em `classes`, `class_members` e `class_tasks` — e as de professor
+    // conferiam `role = 'professor'` lendo `public.users`, coluna que o próprio
+    // aluno gravava. Toda escrita passa por RPC SECURITY DEFINER agora:
+    // create_class, join_class, remove_class_member, create_task, set_task_active.
+    //
+    // Apagar da lista de cima bastaria para o gate passar. Não basta para o
+    // gate MEDIR: sem esta seção, uma migration futura recria a policy e nada
+    // reprova. É a lição do G3 — ausência é o ponto cego mais comum.
+    console.log("\n--- Gate 6b: policies de escrita seguem removidas (R1) ---");
+    const proibidas = [
+      "classes:classes_insert_teacher",
+      "classes:classes_update_teacher",
+      "class_members:class_members_insert",
+      "class_members:class_members_delete_teacher",
+      "class_members:class_members_delete_own",
+      "class_tasks:class_tasks_insert_teacher",
+      "class_tasks:class_tasks_update_teacher",
+    ];
+    for (const p of proibidas) {
+      assert(`Policy ${p} continua removida`, !policySet.has(p));
     }
 
     // ============================================================

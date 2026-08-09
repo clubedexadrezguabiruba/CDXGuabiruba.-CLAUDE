@@ -10,7 +10,15 @@
  *  2. Helpers internos que mutam estado NÃO são executáveis por anon nem
  *     authenticated. grant_xp chamável do browser é o caso crítico.
  *
- *  3. Objetos de dados que só devem ser lidos por RPC não são SELECTáveis
+ *  3. Nenhuma tabela de `public` é ESCREVÍVEL pelo browser. Escrever exige
+ *     duas coisas ao mesmo tempo — `GRANT` de INSERT/UPDATE/DELETE ao papel
+ *     **e** uma policy PERMISSIVE daquele comando que alcance o papel (ou RLS
+ *     desligado). Policy sem grant não escreve; grant sem policy não escreve.
+ *     A régua mede o par, que é o privilégio efetivo. Toda concessão é do
+ *     servidor via RPC (Regra Inviolável nº 1): escrita direta do browser é
+ *     dado forjável, e quem lê a tabela depois herda a mentira.
+ *
+ *  4. Objetos de dados que só devem ser lidos por RPC não são SELECTáveis
  *     direto por anon nem authenticated. O caso é `user_public_profiles`:
  *     é MATERIALIZED VIEW, e matview **não aceita RLS** no Postgres — a
  *     única defesa possível é o privilégio. Ela carrega `display_name` cru
@@ -22,6 +30,9 @@
  * O QUE ESTA RÉGUA NÃO ENXERGA:
  *  - Grant por COLUNA. `has_table_privilege(...,'SELECT')` é falso quando o
  *    privilégio foi dado coluna a coluna; ali só `has_column_privilege` veria.
+ *  - Se a expressão da policy de escrita é boa. A seção 5 pergunta "escreve ou
+ *    não escreve", não "escreve só a linha certa". Uma policy que deixa o aluno
+ *    gravar a própria linha reprova do mesmo jeito — é escrita direta.
  *  - Outro objeto que exponha o mesmo dado por outro caminho (view nova
  *    sobre `users`, função sem máscara). Esta régua olha a lista abaixo, não
  *    o dado.
@@ -59,6 +70,23 @@ const HELPERS_INTERNOS = [
  * arquivo de `src/` lê estes objetos direto — só migrations e verify scripts.
  */
 const SEM_LEITURA_DIRETA = ["user_public_profiles"];
+
+/**
+ * Tabelas em que a escrita direta do browser é **decisão registrada**, não
+ * descuido. Nome aqui sem justificativa escrita em `docs/achados.md` é dívida,
+ * não permissão — a lista existe para ser curta e explicada, nunca para
+ * absorver o que o gate reprovou.
+ *
+ * Vazia de propósito enquanto o R1 estiver aberto. Ver `docs/achados.md`, R1.
+ */
+const ESCRITA_PELO_BROWSER_PERMITIDA: string[] = [];
+
+/** polcmd do pg_policy → o privilégio de tabela correspondente. */
+const CMD_PARA_PRIV: Record<string, "INSERT" | "UPDATE" | "DELETE"> = {
+  a: "INSERT",
+  w: "UPDATE",
+  d: "DELETE",
+};
 
 let passed = 0;
 let failed = 0;
@@ -159,6 +187,11 @@ async function main() {
       "end_rush",
       "join_class",
       "hatch_egg",
+      // As duas que substituíram escrita direta do browser no R1. Se um REVOKE
+      // futuro as alcançar, a tela de configurações e o liga-desliga de tarefa
+      // param de salvar em silêncio — é o que esta seção existe para pegar.
+      "set_preferencias",
+      "set_task_active",
     ];
 
     const pub = await sql<{ proname: string; auth_exec: boolean }[]>`
@@ -166,6 +199,16 @@ async function main() {
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.proname = any(${rpcsPublicos})
       order by p.proname`;
+
+    // Sem esta conferência a seção passa por VACUIDADE: o laço percorre só o
+    // que a query achou, então uma RPC dropada some da régua em silêncio — que
+    // é o modo de falha exato que ela existe para pegar.
+    const rpcsNoBanco = new Set(pub.map((r) => r.proname));
+    for (const nome of rpcsPublicos) {
+      if (!rpcsNoBanco.has(nome)) {
+        nok(`${nome} não existe no banco`, "RPC pública sumiu ou foi renomeada");
+      }
+    }
 
     for (const r of pub) {
       if (r.auth_exec) ok(`${r.proname}: executável por authenticated (esperado)`);
@@ -211,6 +254,130 @@ async function main() {
       } else {
         ok(`${o.relname}: SELECT revogado de anon e authenticated (${tipo})`);
       }
+    }
+
+    // --- 5. escrita direta do browser em tabelas de public ---
+    console.log("\n5. INSERT/UPDATE/DELETE direto por anon e authenticated");
+
+    const tabelas = await sql<
+      {
+        oid: number;
+        relname: string;
+        rls: boolean;
+        anon_insert: boolean;
+        anon_update: boolean;
+        anon_delete: boolean;
+        auth_insert: boolean;
+        auth_update: boolean;
+        auth_delete: boolean;
+      }[]
+    >`
+      select c.oid::int as oid,
+             c.relname,
+             c.relrowsecurity as rls,
+             has_table_privilege('anon', c.oid, 'INSERT') as anon_insert,
+             has_table_privilege('anon', c.oid, 'UPDATE') as anon_update,
+             has_table_privilege('anon', c.oid, 'DELETE') as anon_delete,
+             has_table_privilege('authenticated', c.oid, 'INSERT') as auth_insert,
+             has_table_privilege('authenticated', c.oid, 'UPDATE') as auth_update,
+             has_table_privilege('authenticated', c.oid, 'DELETE') as auth_delete
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r', 'p')
+      order by c.relname`;
+
+    // Só policy PERMISSIVE abre porta; RESTRICTIVE apenas estreita.
+    // polroles = {0} significa PUBLIC, que alcança anon e authenticated.
+    const policies = await sql<
+      { oid: number; polname: string; cmd: string; anon: boolean; auth: boolean }[]
+    >`
+      select pol.polrelid::int as oid,
+             pol.polname,
+             pol.polcmd::text as cmd,
+             (0 = any(pol.polroles) or 'anon'::regrole::oid = any(pol.polroles)) as anon,
+             (0 = any(pol.polroles) or 'authenticated'::regrole::oid = any(pol.polroles)) as auth
+      from pg_policy pol
+      join pg_class c on c.oid = pol.polrelid
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public'
+        and pol.polpermissive
+        and pol.polcmd::text in ('a', 'w', 'd', '*')`;
+
+    const escrevem: { relname: string; detalhe: string }[] = [];
+
+    for (const t of tabelas) {
+      const doTabela = policies.filter((p) => p.oid === t.oid);
+      const vias: string[] = [];
+
+      for (const priv of ["INSERT", "UPDATE", "DELETE"] as const) {
+        const temGrant = {
+          anon: t[`anon_${priv.toLowerCase()}` as "anon_insert" | "anon_update" | "anon_delete"],
+          authenticated:
+            t[`auth_${priv.toLowerCase()}` as "auth_insert" | "auth_update" | "auth_delete"],
+        };
+        if (!temGrant.anon && !temGrant.authenticated) continue;
+
+        // RLS desligado: o grant sozinho já escreve, sem policy nenhuma.
+        if (!t.rls) {
+          const papeis = (["anon", "authenticated"] as const).filter((p) => temGrant[p]);
+          vias.push(`${priv} com RLS DESLIGADO [${papeis.join(",")}]`);
+          continue;
+        }
+
+        const doPriv = doTabela.filter((p) => p.cmd === "*" || CMD_PARA_PRIV[p.cmd] === priv);
+        const papeis = (["anon", "authenticated"] as const).filter(
+          (papel) => temGrant[papel] && doPriv.some((p) => (papel === "anon" ? p.anon : p.auth))
+        );
+        if (papeis.length === 0) continue;
+
+        const nomes = [...new Set(doPriv.map((p) => p.polname))].sort();
+        vias.push(`${priv} via ${nomes.join("+")} [${papeis.join(",")}]`);
+      }
+
+      if (vias.length > 0) escrevem.push({ relname: t.relname, detalhe: vias.join(" · ") });
+    }
+
+    if (tabelas.length === 0) {
+      nok("Tabelas de public", "nenhuma encontrada — schema aplicado?");
+    }
+
+    const permitidas = new Set(ESCRITA_PELO_BROWSER_PERMITIDA);
+    for (const nome of ESCRITA_PELO_BROWSER_PERMITIDA) {
+      if (!escrevem.some((e) => e.relname === nome)) {
+        console.log(`  [SKIP] ${nome} está na lista de permitidas mas não é escrevível — linha morta`);
+      }
+    }
+
+    const violacoes = escrevem.filter((e) => !permitidas.has(e.relname));
+
+    for (const e of escrevem.filter((e) => permitidas.has(e.relname))) {
+      ok(`${e.relname}: escrita direta permitida por decisão registrada — ${e.detalhe}`);
+    }
+
+    for (const v of violacoes) {
+      nok(
+        `${v.relname} não deve aceitar escrita direta do browser`,
+        `${v.detalhe} — toda concessão passa por RPC (Regra Inviolável nº 1)`
+      );
+    }
+
+    if (escrevem.length === 0) {
+      ok(
+        `Nenhuma das ${tabelas.length} tabelas de public aceita escrita direta ` +
+          `de anon ou authenticated`
+      );
+    } else if (violacoes.length === 0) {
+      ok(
+        `Das ${tabelas.length} tabelas de public, ${escrevem.length} aceitam escrita ` +
+          `direta e todas estão na lista de decisões registradas`
+      );
+    } else {
+      console.log(
+        "\n  NOTA: `anon` na lista de papéis significa que a policy é PUBLIC — foi criada\n" +
+          "  sem cláusula TO, então alcança o papel anônimo. Se a expressão exigir\n" +
+          "  `auth.uid()`, que é nulo no anônimo, ele não passa. Esta régua mede o\n" +
+          "  privilégio, não a expressão; quem escreve de fato é `authenticated`."
+      );
     }
   } finally {
     await sql.end();

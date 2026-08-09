@@ -26,29 +26,30 @@
 
 ## 🔴 Risco em produção
 
-### R1 — O navegador escreve direto em tabelas de tentativa e progresso
-**Prova:** `VERSIONADO` — `supabase/migrations/20260216180200_rls.sql:59-68,81-93`
+### R3 — o opt-out do ranking só vale depois que a matview refresca
+**Prova:** `MEDIDO` — 2026-08-09, ao escrever a `set_preferencias` do R1.
+Achado pelo Claude, executando o R1. Registrado e **não consertado**, pela regra 9.
 
-```
-attempts_insert_own        ON user_puzzle_attempts   FOR INSERT
-lesson_progress_insert_own ON user_lesson_progress   FOR INSERT
-lesson_progress_update_own ON user_lesson_progress   FOR UPDATE
-```
+`ranking_visible` é **coluna da matview** `user_public_profiles`, e é a cópia de lá
+que `get_ranking` filtra. Quem desliga o botão em Configurações muda
+`public.users` — e continua aparecendo no ranking global até a matview refrescar.
 
-Um aluno autenticado pode gravar nessas tabelas **sem passar por RPC**. A Regra
-Inviolável nº 1 diz que toda concessão acontece exclusivamente no servidor via
-RPC. Se algo lê essas tabelas para estatística, ofensiva ou rating, o dado é
-forjável pelo cliente.
+O refresh acontece por level-up (`20260313500000_phase7_refresh_on_levelup.sql`) e
+dentro de `update_avatar_base`. Nenhum dos dois é o ato de desligar o botão. Numa
+base pouco ativa, a janela é longa.
 
-**O que falta para fechar:** medir o privilégio efetivo no banco — a policy só
-vale se o papel tiver `GRANT` de tabela. Estender `verify:privileges` com a
-asserção de escrita, rodar, e só então decidir se precisa de migration. Depois,
-rastrear quem lê essas tabelas para dimensionar o estrago.
-**Achado por:** Codex, tarefa A1, 2026-08-07. Confirmado pelo Claude.
-**Custo estimado:** meia hora até a tela vermelha ou verde.
-**Decisão do Doug, 2026-08-09:** medir é **lote próprio, e vem antes do Lote 3** (o upgrade
-do Next). É **medição, não conserto** — estender o gate e rodar; nenhuma migration sai daí
-sem nova decisão. Sobe de prioridade porque a F2 aproxima dado de aluno real (ver **D4**).
+**Não é regressão do R1.** O `UPDATE` direto de antes também não refrescava; a RPC
+nova preserva o comportamento **de propósito**, para o passo 2 não misturar conserto
+de segurança com mudança de comportamento. Fica registrado porque agora tem dono
+óbvio: uma linha guardada dentro da RPC.
+
+**O conserto, se o Doug mandar:** `IF p_ranking_visible IS NOT NULL THEN PERFORM
+public.refresh_public_profiles(); END IF;` em `set_preferencias`. É o precedente que
+`update_avatar_base` já usa para a própria coluna. Migration nova, uma linha.
+
+**O que NÃO está medido:** quanto tempo a janela dura na prática, e se
+`REFRESH ... CONCURRENTLY` a cada toque do botão custa caro. A segunda pergunta é o
+motivo de isto não ser óbvio o bastante para consertar sem decisão.
 
 ### R2 — `titles_select_classmate` nunca foi removida, e o gate não a vigia
 **Prova:** `VERSIONADO` — `20260216180200_rls.sql:232` ·
@@ -143,21 +144,6 @@ T1, mas a grade põe o tema na T2 (`01:297`), e o plano técnico a remove por is
 **O que falta:** três linhas. Está aqui, e não no conserto, porque a regra 9 vale
 para mim também.
 
-### T2 — O `docs/ESTADO.md` mente sobre o próprio estado
-**Prova:** `LIDO` — bloco AGORA, escrito à mão (linhas 12–41)
-
-Quatro erros no documento que o `CLAUDE.md` manda ler primeiro:
-
-1. diz "três versões vivas e incompatíveis" da régua da patente — são duas (T1)
-2. diz que a branch em execução é `avatar/estilo-kokeshi` — é `avatar/vtracer`
-3. lista o doc 13 como decisão aberta — ele fechou por uso (0 de 92 → 2 de 92)
-4. a linha 19 aponta para `.scratch/estilo/BRIEFING-CABELO.md`, **que não
-   existe na pasta** — e é o briefing citado como fonte das quatro perguntas que
-   travam o Bloco 2a
-
-**O que falta:** reescrever o bloco AGORA. Ele é a única parte manual de um
-arquivo gerado, então o gate `verify:estado` não o alcança.
-
 ### T6 — O matcher do proxy não isenta `sounds/` nem `stockfish/`
 **Prova:** `VERSIONADO` — `src/proxy.ts:16-20` · efeito em runtime **não reproduzido**
 
@@ -212,13 +198,6 @@ lançamento nº 1** declarado no próprio doc 13.
 
 A marca verde no doc 13 é sobre o gate existir, não sobre o bug estar resolvido.
 Já está escrito lá, para ninguém ler o quadradinho como "resolvido".
-
-### G3 — `verify:privileges` §4 vigia leitura, não escrita
-**Prova:** `MEDIDO` — `scripts/verify/security/verify-privileges.ts`
-
-A seção 4, criada em 2026-08-06, confere `SELECT` numa lista de objetos. Não
-confere `INSERT`/`UPDATE`/`DELETE` em tabela nenhuma — que é exatamente o que o
-R1 precisa.
 
 ### G8 — a variante `faixa` fura a própria álgebra, e o teto não age na calota
 **Prova:** `MEDIDO` — 2026-08-08, render a 2 px/unidade da `entrada-2`
@@ -355,6 +334,13 @@ maior do que o painel declara.
 **Eleva a prioridade do R1.** Aproximar a tela do aluno aproxima dado de aluno real — e o
 R1 é o único 🔴 aberto, cego por desenho enquanto o **G3** não medir escrita.
 
+*Atualização de 2026-08-09: o G3 fechou e a medição saiu — vermelho, 11 tabelas, três
+delas alimentando concessão de XP e patente. O R1 deixou de ser suspeita.*
+
+*Atualização 2 de 2026-08-09: o **R1 fechou** — as 11 portas fecharam, `verify:all` está
+verde. A ordem passa a ser **Lote 3 → F2**, e a ressalva do 2b abaixo continua sendo a
+primeira coisa a fazer quando a F2 abrir.*
+
 **Trazido ao plano em:** 2026-08-08.
 **Decisão do Doug, 2026-08-09: adotada. A F2 sobe.** A ordem passa a ser **Lote 1 → medir o
 R1 → Lote 3 → F2**. O **Lote 2 fica parado** até o desenho voltar à frente, e a linha A5 da
@@ -376,9 +362,13 @@ não está nessa conta.
 | ✅ | **G4** — `arte:gate` sem argumento apontava para `.scratch/arte/`, pasta que o git ignora: resíduo da graduação do Bloco 4, com o caminho escrito à mão em vez de `PASTA` | 2026-08-07 | uma linha. Reproduzido (`Input file is missing: .scratch/arte/entrada.png`, exit 1) e conferido depois (`Resultado: APROVADA`, exit 0) |
 | ✅ | **T5** — o espetado **não tem variante que sirva**: a `fiel` some a 56 px (p50 6,3 u, 79,8% do perímetro `< 8 u`) e a `lei` vaza a clara para fora do núcleo erodido (`conterAClara` desiste com `convergiu: false`, 18 vértices, 8 cordas; `contencaoDaClara` −9,2 u). A pré-condição 1 do Passo 7 — *"re-emitir pela `lei`"* — era **falsa**, e três documentos a repetiam | 2026-08-07 | **fechado por DECISÃO, não por conserto.** O Doug escolheu aceitar o espetado congelado no sintetizado e **tirar o Passo 7 do plano**. As duas famílias de peça traçada passam a conviver em caráter permanente e `Cabelo.linhas` vira campo definitivo. Corrigidos o backlog 14, a §3 e a §4 do runbook 19 e o docstring de `TRANSCREVEM` |
 | ✅ | **G7** — a rota de arte **descartava `convergiu`**. `conterAClara` devolve `convergiu: false` quando conter a clara dobraria o laço, e `importarPeca` sempre reprovou nisso; `converter.ts` consumia só `.pts` e emitia a clara não-contida **calada**. Quem reprovava era `cabelo.test.ts` dois passos depois, com um número que não diz de onde veio | 2026-08-07 | `Convertido.claraConvergiu` passou a carregar a resposta, `arte:converter` a imprime e `arte:pecas` reprova nomeando a arte. Provado nos dois sentidos: exit 1 com o espetado na `lei`, exit 0 sem ele — e o literal voltou byte a byte ao HEAD |
+| ✅ | **G3** — `verify:privileges` vigiava leitura, não escrita: a §4 conferia `SELECT` numa lista de objetos e nenhuma seção conferia `INSERT`/`UPDATE`/`DELETE` em tabela nenhuma — a cegueira exata que o **R1** precisava enxergar | 2026-08-09 | §5 nova, medindo o par que abre a porta (`GRANT` **e** policy PERMISSIVE que alcance o papel), mais RLS desligado. Provada nos dois sentidos: reprova nomeando as 11 tabelas e a via de cada uma; enche-se a allowlist e passa (`33 passed | 0 failed`). O achado que ela destravou está no R1, fechado no mesmo dia |
+| ✅ | **R1** — o navegador escrevia direto em **11 das 30 tabelas** de `public` (o achado original nomeava 2). Três alimentavam concessão de recompensa por `COUNT(*)`, então XP, conquista e patente se compravam forjando o lastro. E `users` era pior que lastro: `users_update_own` não restringia coluna e `authenticated` tinha `UPDATE` nas **26 de 26** — o aluno escrevia o próprio `xp`, `puzzle_rating` e o próprio `role`, que é escalada para professor | 2026-08-09 | **três migrations, um número medido em cada uma.** `20260809120000` dropa 15 policies de escrita nas 9 tabelas que nenhum código de cliente usa (§5: 11→2). `20260809130000` cria `set_preferencias` — 4 booleanos, a assinatura É o whitelist — e faz `REVOKE INSERT, UPDATE, DELETE ON public.users` (§5: 2→1). `20260809140000` cria `set_task_active` e fecha `class_tasks` (§5: **0**). **Rejeitada** a saída de regrantar coluna a coluna: cega o gate, que é o G2 de novo. Provado como o papel `authenticated` de um aluno real, em transação revertida: `UPDATE` de `xp`, `role` e `sound_muted` todos `42501 permission denied`, e as duas RPCs funcionando — inclusive negando a tarefa alheia. `verify:all` verde, 478 testes, build limpo |
+| ✅ | **T2** — o bloco Agora do `ESTADO.md`, único trecho manual de um arquivo gerado e o primeiro que o `CLAUDE.md` manda ler, errava em quatro pontos. Ganhou um quinto ao fechar o R1: seguia mandando **medir** o que já estava consertado | 2026-08-09 | os quatro fechados — a régua da patente passa a dizer **duas** versões e não três (a de 30 morreu na migration seguinte), a branch já tinha sido corrigida em `af7589e`, o doc 13 saiu da lista de decisões abertas por ter fechado por uso, e o ponteiro morto para `.scratch/estilo/BRIEFING-CABELO.md` deu lugar ao runbook 19 e ao `ESTADO-DA-ROTA.md`. Mais o quinto: a ordem agora lê **conferir o 2b → Lote 3 → F2**, e o bloco carrega a pendência de deploy que ninguém mediu. O gate `verify:estado` **não alcança** este bloco por desenho — a trava aqui é humana |
+| ✅ | **2 verdes por vacuidade** achados ao fechar o R1, nas réguas que provariam o próprio conserto | 2026-08-09 | a §3 de `verify:privileges` percorria só as RPCs que a query **achou**, então RPC dropada sumia da régua calada — corrigido, e provado reprovando pelas duas funções que ainda não existiam. E o Gate 6 de `verify:turmas` exigia por nome as 7 policies de escrita que o R1 removeu: viraram **Gate 6b**, que agora exige que continuem **removidas**. Apagar da lista bastaria para passar; não bastaria para medir |
 | ✅ | **G6** — `npm run build` vermelho no `prebuild`. **A causa registrada estava ERRADA:** não era manifesto defasado. Era `--check` comparando **bytes crus** através da fronteira LF/CRLF — o gerador escreve `\n`, o `git checkout` desta máquina (`core.autocrlf=true`) devolve `\r\n`, e a comparação reprovava **todo arquivo que o git tivesse tocado** | 2026-08-07 | quebras normalizadas antes de comparar, como `gerar-livro-aberturas.ts:116` já fazia. Provado nos dois sentidos: passa com o arquivo em CRLF, e reprova nomeando o defeito quando um caminho falso é injetado |
 
-O precedente que importa: **os cinco fecharam com gate ou com prova medida, nunca
+O precedente que importa: **todos fecharam com gate ou com prova medida, nunca
 com relatório.** É o padrão a repetir.
 
 E o precedente **novo**, do G6: *a causa que se escreve ao achar não é

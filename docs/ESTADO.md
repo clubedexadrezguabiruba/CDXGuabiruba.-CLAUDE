@@ -23,11 +23,30 @@ Bloco 1d.
   vacuidade (2b.1). Mexe em tronco; o cabelo é cortado pelo `clipPath` da cabeça.
 
 **A prioridade virou em 2026-08-09 (D4): a tela do aluno vem primeiro.** A ordem
-agora é **Lote 1** (feito) → **medir o R1** → **Lote 3** (Next 16.2.11) → **F2**.
+era **Lote 1** → **R1** → **Lote 3** → **F2**; os dois primeiros fecharam no mesmo
+dia. **O que resta é: conferir a dependência do 2b → Lote 3 (Next 16.2.11) → F2.**
 O Lote 2 e a linha A5 da fila do Codex ficam parados, porque existem para
-destravar desenho. **Antes de dimensionar a F2, conferir se ela depende do 2b**
-(traje) — o que o painel conta são tarefas da F2, não o traje. Quando existir, a
-tela deve consumir `MODELOS_CABELO`/`CABELOS` como fonte, sem hardcodar modelos.
+destravar desenho.
+
+**A conferência do 2b vem antes do Lote 3, e é a mais barata que existe aqui:** se
+a tela do aluno mostra o boneco **vestido**, ela depende do **2b (traje)**, que
+está aberto e cujo pipeline antigo foi declarado morto — *"nenhum traje existe
+ainda, o Soldado é o primeiro"*. As tarefas que o painel conta abaixo são da F2; **o
+traje não está nessa conta.** Meia hora de leitura decide se a F2 é uma fase ou
+duas. Quando a tela existir, ela deve consumir `MODELOS_CABELO`/`CABELOS` como
+fonte, sem hardcodar modelos.
+
+**O R1 fechou em 2026-08-09** — nenhuma das 30 tabelas de `public` aceita escrita
+direta do navegador, `verify:all` está verde. Três migrations (`20260809120000`,
+`130000`, `140000`) e duas RPCs novas: `set_preferencias` e `set_task_active`. O que
+sobrou dele está registrado como **R3** em `docs/achados.md`, e é decisão, não
+trabalho parado.
+
+**Pendência de deploy, não medida:** as migrations do R1 foram aplicadas ao Supabase
+de **produção**; o código das duas telas que dependem delas está nesta branch, 71
+commits à frente da `main` e nunca mesclada. Se houver site no ar servindo a `main`,
+Configurações e o liga/desliga de tarefa estão quebrados em silêncio. **Ninguém
+conferiu se há deploy ativo.**
 
 **O avatar espera, e o que sobrou dele está em ordem:** colar espetado e chanel em
 `CABELOS` · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
@@ -36,12 +55,12 @@ nova aprovação visual) · a luz, por último (decisão B).
 
 **Decisões travando trabalho:**
 
-- **Régua da patente — três versões vivas e incompatíveis.** 15 aulas por nível
-  (doc 15 §3), 30 aulas (memória do `UPDATE` sem `UPSERT`), e 0·26·47·66·84·101·115·126
-  (currículo §, "decidida e não executada"). Trava o Bloco 7b. Nenhum script
-  resolve isto — é escolha.
-- **Doc 13 inerte.** 92 itens de auditoria, **zero marcados desde que o arquivo
-  nasceu**. Ou passa a ser usado, ou vai para `_superado/`.
+- **Régua da patente — duas versões vivas, não três** (achado **T1**). O histórico
+  versionado e o doc 15 §3 **concordam em 15 aulas** por nível; o currículo quer as
+  fronteiras de trilha (26·47·66·84·101·115·126). A versão de 30 morreu duas horas
+  depois de nascer, na migration seguinte. Trava o Bloco 7b e o B0.5 do currículo.
+  Nenhum script resolve isto — é escolha, e é do Doug. **Falta medir**
+  `title_tiers.lessons_required` no banco: migration prova intenção, não estado.
 
 **Pendências grandes fora do avatar:** fase 11 (PWA — não existe manifest nem
 service worker) e fase 12 (lançamento). Fase 6C (extras) segue aberta.
@@ -56,9 +75,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 70 |
-| **Árvore** | limpa |
-| **Último commit** | e1d69a2 · 2026-08-09 · docs(codex): o contrato da oficina ganha as cinco linhas que faltavam |
+| **Commits à frente de `origin/main`** | 71 |
+| **Árvore** | **10 arquivos sujos** |
+| **Último commit** | af7589e · 2026-08-09 · chore: o painel passa a dizer que a tela do aluno vem primeiro |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -110,7 +129,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 72 |
+| **Migrations** | 75 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 15 |
 | **Primitivos de UI** | 4 |
