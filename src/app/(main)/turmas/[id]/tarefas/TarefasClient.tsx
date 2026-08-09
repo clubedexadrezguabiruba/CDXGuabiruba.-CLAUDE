@@ -89,12 +89,21 @@ export default function TarefasClient({ classId, className }: TarefasClientProps
     setLoadingReport(null);
   }
 
+  // `class_tasks` não aceita mais escrita direta do browser: o grant de UPDATE
+  // foi revogado e a policy `class_tasks_update_teacher` dropada em
+  // 20260809140000_r1_passo3_liga_desliga_de_tarefa_por_rpc.sql. A RPC aplica a
+  // mesma regra de antes (teacher_id = auth.uid()) e move só a coluna `active` —
+  // a policy não restringia coluna nenhuma.
   async function handleToggleActive(taskId: number, currentActive: boolean) {
     const supabase = createClient();
-    await supabase
-      .from("class_tasks")
-      .update({ active: !currentActive })
-      .eq("id", taskId);
+    const { error } = await supabase.rpc("set_task_active", {
+      p_task_id: taskId,
+      p_active: !currentActive,
+    });
+    if (error) {
+      console.error("Erro ao ligar/desligar tarefa:", error);
+      return;
+    }
     load();
   }
 

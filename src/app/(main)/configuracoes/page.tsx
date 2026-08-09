@@ -5,6 +5,22 @@ import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { soundManager } from "@/lib/sounds/soundManager";
 
+/**
+ * As quatro preferências que a RPC `set_preferencias` aceita — o mesmo
+ * whitelist da assinatura da função no banco. Campo ausente não é escrito.
+ *
+ * `public.users` não aceita mais escrita direta do browser: o grant de UPDATE
+ * foi revogado e a policy `users_update_own` dropada em
+ * 20260809130000_r1_passo2_preferencias_por_rpc.sql. A policy não restringia
+ * coluna, então por ela o aluno gravava o próprio xp, rating e role.
+ */
+type Preferencias = {
+  p_sound_muted?: boolean;
+  p_premove_enabled?: boolean;
+  p_auto_queen?: boolean;
+  p_ranking_visible?: boolean;
+};
+
 interface ToggleProps {
   label: string;
   description: string;
@@ -58,15 +74,13 @@ export default function ConfiguracoesPage() {
     }
   }, [profile]);
 
-  async function updatePreference(field: string, value: boolean) {
+  async function salvarPreferencia(prefs: Preferencias) {
     if (!profile) return;
     setSaving(true);
     try {
       const supabase = createClient();
-      await supabase
-        .from("users")
-        .update({ [field]: value })
-        .eq("id", profile.id);
+      const { error } = await supabase.rpc("set_preferencias", prefs);
+      if (error) console.error("Erro ao salvar preferência:", error);
     } catch (e) {
       console.error("Erro ao salvar preferência:", e);
     } finally {
@@ -77,22 +91,22 @@ export default function ConfiguracoesPage() {
   function handleSoundToggle(enabled: boolean) {
     setSoundEnabled(enabled);
     soundManager.setMuted(!enabled);
-    updatePreference("sound_muted", !enabled);
+    salvarPreferencia({ p_sound_muted: !enabled });
   }
 
   function handlePremoveToggle(enabled: boolean) {
     setPremoveEnabled(enabled);
-    updatePreference("premove_enabled", enabled);
+    salvarPreferencia({ p_premove_enabled: enabled });
   }
 
   function handleAutoQueenToggle(enabled: boolean) {
     setAutoQueen(enabled);
-    updatePreference("auto_queen", enabled);
+    salvarPreferencia({ p_auto_queen: enabled });
   }
 
   function handleRankingToggle(enabled: boolean) {
     setRankingVisible(enabled);
-    updatePreference("ranking_visible", enabled);
+    salvarPreferencia({ p_ranking_visible: enabled });
   }
 
   if (loading) {
