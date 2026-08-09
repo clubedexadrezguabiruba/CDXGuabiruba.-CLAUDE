@@ -41,6 +41,9 @@ anterior.**
 | **2 · RASCUNHO** | ⏳ **a provar** | tudo do AUDITOR, mais **criar e commitar exatamente um** arquivo `*-RASCUNHO.md` |
 | **3 · IMPLEMENTADOR** | ❌ **não existe** | — |
 
+**Qual dos dois pedir:** AUDITOR quando o resultado é **consumido na hora** — a resposta
+entra numa decisão desta semana. RASCUNHO quando é para **estocar trabalho para depois**.
+
 ### Modo AUDITOR
 Snapshot congelado · só leitura · arquivo+linha em toda afirmação · os rótulos
 abaixo · **nenhum arquivo alterado, nenhum commit**.
@@ -56,6 +59,13 @@ briefing, e commitar **só ele**, na branch `codex/*` do worktree próprio.
 referências do `CLAUDE.md` nem na lista de frescor de `scripts/estado.ts`. Vira
 documento de verdade só por promoção do Claude ou do Fable, em commit separado.
 
+**E antes de promover, teste o frescor.** Ler o hash da linha `Base factual`, rodar
+`git diff --name-only <hash>..HEAD` e comparar **só os arquivos citados como evidência**.
+Revalidar apenas as afirmações que dependem do que mudou — **nunca reauditar tudo**.
+*Por quê:* rascunho envelhece por baixo enquanto espera. É a outra ponta da regra 1: ela
+congela a fotografia na abertura, esta confere se a fotografia ainda vale na promoção. Sem
+script — provar à mão em duas ou três promoções antes de pensar em automatizar.
+
 Cabeçalho obrigatório de todo rascunho:
 
 ```
@@ -64,6 +74,18 @@ Base factual: commit <hash>
 Objetivo: <o que este documento adianta>
 Bloqueado por: <o que falta para promover>
 ```
+
+E o rodapé obrigatório — **três blocos, nem um a mais**:
+
+```
+DECISÕES DO DOUG: o que ele precisa escolher para isto andar
+EXIGE BANCO OU RUNTIME: o que nenhum agente offline fecha
+O QUE ISTO NÃO PROVA: os limites do próprio rascunho, ditos por quem o escreveu
+```
+
+*Por quê:* sem rodapé, quem promove relê o documento inteiro para descobrir o que ficou
+pendente. Três e não cinco porque lista longa vira preenchimento — é a regra 6 aplicada ao
+handoff.
 
 ### Modo IMPLEMENTADOR
 Não existe. O modo 2 precisa entregar algumas vezes e ser corrigido antes de
@@ -109,6 +131,19 @@ Regra sem motivo é regra que se racionaliza para fora numa hora apertada.
    Vale para o Claude também, e é a regra que ele mais tende a quebrar.
    **Antes de reportar, confira se o achado já está lá** — repetido gasta a
    rodada.
+10. **Risco alto passa por outro contexto antes de promover.** Auth, RLS,
+    server-authority, concessão de recompensa, migration, privacidade de menor de
+    idade, exposição do repositório público, lançamento, e qualquer decisão cara de
+    reverter. Inventário mecânico e pedido de arte, não. *Por quê:* quem redigiu
+    defende o que escreveu — é o mesmo motivo do **V1** no painel, que aqui deixa de
+    ser tarefa avulsa e vira critério.
+11. **Conferir a árvore antes de delegar.** Antes de abrir a rodada, `git status` no
+    worktree do executor principal. Se os arquivos sujos intersectam o escopo da
+    tarefa, **não delegue ainda**; se não intersectam, declare no briefing que estão
+    fora de escopo. *Por quê:* em 2026-08-07 uma revisão inteira rodou com outra
+    sessão mexendo em sete arquivos do mesmo worktree, `docs/achados.md` entre eles —
+    nada pôde ser registrado até a árvore assentar. A regra 5 impede dois executores
+    na mesma **tarefa**; esta impede delegar sobre trabalho ainda **não commitado**.
 
 ---
 
@@ -313,6 +348,7 @@ Declare o hash do commit auditado no topo da entrega (git rev-parse HEAD).
 
 TAREFA: <<< id da fila + escopo >>>
 FORA DE ESCOPO: <<< o que não tocar >>>
+ÁRVORE DO PRINCIPAL: <<< limpa | sujos: <arquivos>, todos fora deste escopo >>>
 
 COMANDOS: só leitura — rg, Get-Content, ls, git log/show/diff. NÃO rodar teste,
 build, gate, nada de rede, nada que use .env.local, nada que escreva, e nenhum
