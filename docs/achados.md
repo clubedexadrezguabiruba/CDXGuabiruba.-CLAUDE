@@ -46,6 +46,9 @@ asserção de escrita, rodar, e só então decidir se precisa de migration. Depo
 rastrear quem lê essas tabelas para dimensionar o estrago.
 **Achado por:** Codex, tarefa A1, 2026-08-07. Confirmado pelo Claude.
 **Custo estimado:** meia hora até a tela vermelha ou verde.
+**Decisão do Doug, 2026-08-09:** medir é **lote próprio, e vem antes do Lote 3** (o upgrade
+do Next). É **medição, não conserto** — estender o gate e rodar; nenhuma migration sai daí
+sem nova decisão. Sobe de prioridade porque a F2 aproxima dado de aluno real (ver **D4**).
 
 ### R2 — `titles_select_classmate` nunca foi removida, e o gate não a vigia
 **Prova:** `VERSIONADO` — `20260216180200_rls.sql:232` ·
@@ -352,8 +355,14 @@ maior do que o painel declara.
 **Eleva a prioridade do R1.** Aproximar a tela do aluno aproxima dado de aluno real — e o
 R1 é o único 🔴 aberto, cego por desenho enquanto o **G3** não medir escrita.
 
-**Quem decide:** Doug.
 **Trazido ao plano em:** 2026-08-08.
+**Decisão do Doug, 2026-08-09: adotada. A F2 sobe.** A ordem passa a ser **Lote 1 → medir o
+R1 → Lote 3 → F2**. O **Lote 2 fica parado** até o desenho voltar à frente, e a linha A5 da
+fila do Codex espera com ele.
+
+A ressalva acima continua valendo e é a primeira coisa a fazer quando a F2 abrir: **conferir
+a dependência do 2b antes de dimensionar**. O que o painel conta são tarefas da F2 — o traje
+não está nessa conta.
 
 ---
 
