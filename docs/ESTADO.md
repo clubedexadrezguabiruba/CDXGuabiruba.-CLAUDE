@@ -75,9 +75,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 71 |
-| **Árvore** | **10 arquivos sujos** |
-| **Último commit** | af7589e · 2026-08-09 · chore: o painel passa a dizer que a tela do aluno vem primeiro |
+| **Commits à frente de `origin/main`** | 73 |
+| **Árvore** | limpa |
+| **Último commit** | c1d2c4d · 2026-08-09 · fix(gates): as duas réguas que iam provar o R1 passavam por vacuidade |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
