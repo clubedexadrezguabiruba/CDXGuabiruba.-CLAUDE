@@ -22,12 +22,17 @@ Bloco 1d.
 - **2b** — arremate do tronco (2b.0) e o `avatar:garment`, que hoje passa por
   vacuidade (2b.1). Mexe em tronco; o cabelo é cortado pelo `clipPath` da cabeça.
 
-**Na fila do avatar, em ordem:** colar espetado e chanel em `CABELOS` (5 → 7
-modelos) · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
+**A prioridade virou em 2026-08-09 (D4): a tela do aluno vem primeiro.** A ordem
+agora é **Lote 1** (feito) → **medir o R1** → **Lote 3** (Next 16.2.11) → **F2**.
+O Lote 2 e a linha A5 da fila do Codex ficam parados, porque existem para
+destravar desenho. **Antes de dimensionar a F2, conferir se ela depende do 2b**
+(traje) — o que o painel conta são tarefas da F2, não o traje. Quando existir, a
+tela deve consumir `MODELOS_CABELO`/`CABELOS` como fonte, sem hardcodar modelos.
+
+**O avatar espera, e o que sobrou dele está em ordem:** colar espetado e chanel em
+`CABELOS` · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
 **não** será refeita) · rodada de unificação (espetado pela variante `lei`, com
-nova aprovação visual) · a luz, por último (decisão B). A tela do aluno é do
-**Bloco 5/F2**, que está **0 de 16** e tem plano e gate próprios — quando existir,
-ela deve consumir `MODELOS_CABELO`/`CABELOS` como fonte, sem hardcodar modelos.
+nova aprovação visual) · a luz, por último (decisão B).
 
 **Decisões travando trabalho:**
 
@@ -51,9 +56,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 65 |
+| **Commits à frente de `origin/main`** | 70 |
 | **Árvore** | limpa |
-| **Último commit** | 65cb0da · 2026-08-08 · feat(avatar): o cabelo passa a tapar o rosto, e o catálogo fica só com o que foi aprovado |
+| **Último commit** | e1d69a2 · 2026-08-09 · docs(codex): o contrato da oficina ganha as cinco linhas que faltavam |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
