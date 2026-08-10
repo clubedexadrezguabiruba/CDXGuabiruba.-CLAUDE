@@ -24,17 +24,23 @@ Bloco 1d.
 
 **A prioridade virou em 2026-08-09 (D4): a tela do aluno vem primeiro.** A ordem
 era **Lote 1** → **R1** → **Lote 3** → **F2**; os dois primeiros fecharam no mesmo
-dia. **O que resta é: conferir a dependência do 2b → Lote 3 (Next 16.2.11) → F2.**
-O Lote 2 e a linha A5 da fila do Codex ficam parados, porque existem para
+dia, e a conferência do 2b no dia seguinte. **O que resta é: Lote 3 (Next 16.2.11)
+→ F2.** O Lote 2 e a linha A5 da fila do Codex ficam parados, porque existem para
 destravar desenho.
 
-**A conferência do 2b vem antes do Lote 3, e é a mais barata que existe aqui:** se
-a tela do aluno mostra o boneco **vestido**, ela depende do **2b (traje)**, que
-está aberto e cujo pipeline antigo foi declarado morto — *"nenhum traje existe
-ainda, o Soldado é o primeiro"*. As tarefas que o painel conta abaixo são da F2; **o
-traje não está nessa conta.** Meia hora de leitura decide se a F2 é uma fase ou
-duas. Quando a tela existir, ela deve consumir `MODELOS_CABELO`/`CABELOS` como
-fonte, sem hardcodar modelos.
+**A conferência do 2b saiu em 2026-08-10: a F2 NÃO depende do traje.** Quatro das
+cinco telas da F2 são recorte de cabeça (32 e 40 px) e o tronco nem aparece; onde ele
+aparece — só a Companhia, a 56×70 px — já sai vestido, porque o fallback do 5.9 é
+código no repositório (`compositor.ts:255` cai em `TRAJE_BASE.roupa`). A dependência
+declarada aponta ao contrário: o uniforme espera o Bloco 5, não o inverso. **A F2 é
+uma fase, e a conta de tarefas abaixo está certa.** As quatro medidas com linha estão
+na atualização 3 do **D4**, em `docs/achados.md`.
+
+**O que encarece a F2 é outra coisa, e é decisão de arquitetura:** sete das 16 tarefas
+nomeiam arquivos da pilha v2, enquanto o boneco novo se monta por `compor()` — remendar
+e trocar são trabalhos de tamanhos diferentes, e a escolha está sem preço. Registrado
+como **T7**; a lacuna da migration do cabelo, como **T8**. Quando a tela existir, ela
+deve consumir `MODELOS_CABELO`/`CABELOS` como fonte, sem hardcodar modelos.
 
 **O R1 fechou em 2026-08-09** — nenhuma das 30 tabelas de `public` aceita escrita
 direta do navegador, `verify:all` está verde. Três migrations (`20260809120000`,
@@ -42,11 +48,13 @@ direta do navegador, `verify:all` está verde. Três migrations (`20260809120000
 sobrou dele está registrado como **R3** em `docs/achados.md`, e é decisão, não
 trabalho parado.
 
-**Pendência de deploy, não medida:** as migrations do R1 foram aplicadas ao Supabase
-de **produção**; o código das duas telas que dependem delas está nesta branch, 71
-commits à frente da `main` e nunca mesclada. Se houver site no ar servindo a `main`,
-Configurações e o liga/desliga de tarefa estão quebrados em silêncio. **Ninguém
-conferiu se há deploy ativo.**
+**O deploy foi medido em 2026-08-10, e há site no ar servindo a `main`** — sem alunos,
+só o Doug testando. Como as migrations do R1 já estão no Supabase de produção e o
+código das duas telas ficou nesta branch, **Configurações e o liga/desliga de tarefa
+falham no ar agora**, em silêncio porque ninguém está lá. Vira urgente no dia do
+primeiro aluno, e o conserto é mesclar esta branch — decisão, não trabalho parado.
+Registrado como **R4** em `docs/achados.md`, ao lado do **D3** como pré-requisito de
+lançamento.
 
 **O avatar espera, e o que sobrou dele está em ordem:** colar espetado e chanel em
 `CABELOS` · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
@@ -75,9 +83,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 73 |
-| **Árvore** | limpa |
-| **Último commit** | c1d2c4d · 2026-08-09 · fix(gates): as duas réguas que iam provar o R1 passavam por vacuidade |
+| **Commits à frente de `origin/main`** | 74 |
+| **Árvore** | **2 arquivos sujos** |
+| **Último commit** | efba0d1 · 2026-08-09 · chore: recontagem do bloco volátil do painel |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

@@ -68,6 +68,38 @@ e o gate passa a permitir explicitamente. Se não for, dropar e acrescentar à
 lista.
 **Achado por:** Codex, piloto P0, 2026-08-06.
 
+### R4 — a `main` no ar escreve direto em duas tabelas que o R1 já fechou
+**Prova:** `MEDIDO` — 2026-08-10, `git show origin/main` contra as três migrations do
+R1, que já estão aplicadas ao Supabase de produção.
+
+**Exposição hoje: zero alunos.** O Doug confirmou em 2026-08-10 que **há site no ar**
+servindo a `main`, mas só ele testando. Isto está registrado pelo que é, não pela
+urgência que tem hoje.
+
+`origin/main` está em `54d7e8a` (2026-07-31) — o painel mede quantos commits atrás.
+Duas telas de lá ainda fazem `UPDATE` direto:
+
+- `src/app/(main)/configuracoes/page.tsx:67-68` — `.from("users").update({ [field]: value })`
+- `src/app/(main)/turmas/[id]/tarefas/TarefasClient.tsx:95-96` — `.from("class_tasks").update({ active: !currentActive })`
+
+São exatamente as duas escritas que `20260809130000` e `20260809140000` revogaram. O
+R1 mediu `42501 permission denied` para `users` como papel `authenticated`, e a §5 de
+`verify:privileges` mede **zero** vias de escrita em `class_tasks`. As migrations
+viajaram para produção porque **não há banco separado** — é o D3. O código não viajou:
+`set_preferencias` e `set_task_active` só são chamadas nesta branch.
+
+Efeito no ar agora: **salvar qualquer preferência em Configurações falha**, e o
+**liga/desliga de tarefa do professor falha**. Em silêncio, porque ninguém está lá.
+
+**Não é regressão do R1** — é a metade do R1 que não viajou junto. E o conserto não é
+uma linha: é mesclar `avatar/vtracer` na `main`, o que arrasta dezenas de commits de
+avatar, gates e docs. **Decisão do Doug, não trabalho parado.**
+
+**Vira 🔴 com dente no dia do primeiro aluno.** Junta-se ao D3 como **pré-requisito de
+lançamento**: não se recebe aluno com a `main` atrás das migrations que já estão no
+banco dele.
+**Achado por:** Claude, conferência do 2b, 2026-08-10.
+
 ---
 
 ## 🟠 Trava trabalho
@@ -173,6 +205,73 @@ ao matcher, nunca abrir a regex.
 porque a Fase 11 (sons + service worker cacheando exatamente estes caminhos) construiria
 sobre a premissa de que asset público não passa pelo proxy. Revisar depois da medição.
 **Achado por:** Fable, revisão da integração, 2026-08-07.
+
+### T7 — a F2 está sem preço, e o que a encarece não é o traje
+**Prova:** `MEDIDO` — 2026-08-10, na conferência do 2b que o D4 pediu.
+
+O D4 mandava conferir se a F2 dependia do 2b. **Não depende** — a resposta está no
+próprio D4. Mas a conferência achou outra coisa, e essa **move o tamanho da fase**.
+
+Sete das 16 tarefas — T2.3 a T2.9, o bloco "## Render" de
+`docs/avatar/14-backlog-execucao.md:355-361` — nomeiam `constants.ts`,
+`bodyFamilies.ts`, `types.ts`, `renderModes.ts`, `resolvedAvatar.ts` e
+`AvatarDisplay.tsx`. Os seis são da **arquitetura v2**, e os seis existem em
+`src/lib/avatar/`. O boneco novo não mora lá: mora em `src/lib/avatar/estilo/` e se
+monta por `compor()` (`compositor.ts:640`).
+
+Ou seja: as sete tarefas descrevem **remendar a pilha v2**, que monta `<img>` de PNG,
+enquanto o trabalho que a fase existe para fazer talvez seja **trocá-la pelo
+compositor kokeshi**. São trabalhos diferentes, de tamanhos diferentes.
+
+**O backlog sabe, e diz** (`14-backlog-execucao.md:385-387`): *"nada em produção chama
+`compor()` — a única chamada fora de teste é `/dev/avatar-kokeshi`. Fechar essa
+distância é trabalho da F2, e é ele que decide como o cabelo chega à tela."*
+Reconhecido, sim. **Dimensionado, não** — a escolha ponte-ou-troca está dentro da T2.8
+sem uma linha de estimativa, e é o maior desconhecido da fase.
+
+**Trava:** dimensionar a F2 — que é literalmente o que o D4 mandava fazer antes de
+abri-la. A conta de 16 tarefas é contagem de títulos, não de trabalho.
+**O que falta para fechar:** uma decisão de arquitetura. Ou a F2 entrega as cinco telas
+sobre a pilha v2 (mais rápido, e o kokeshi segue preso em `/dev`), ou a F2 **é** a troca
+de pilha (é o que faz o investimento inteiro do avatar chegar a alguém). Escolha, não
+investigação.
+
+**Nota lateral, do mesmo par doc × código:** o backlog diz que o catálogo *"foi de 5
+para 7 em 2026-08-07"* (`14:374-377`) e `ModeloCabelo` tem **5**
+(`src/lib/avatar/estilo/cabelo.ts:93-98`) — o commit `65cb0da` podou o resto. O header
+de `src/lib/avatar/estilo/__tests__/cabelo.test.ts:2` ainda diz "OS SETE CABELOS". A
+instrução do backlog continua certa (ler `MODELOS_CABELO`/`CABELOS`, nunca hardcodar);
+só o número envelheceu.
+**Achado por:** Claude, conferência do 2b, 2026-08-10.
+
+### T8 — a F2 deixa o aluno escolher um cabelo que não tem onde ser guardado
+**Prova:** `MEDIDO` — 2026-08-10, grep em `supabase/migrations/` e leitura da T2.1.
+
+A **T2.10** (`docs/avatar/14-backlog-execucao.md:365`) entrega `criar-personagem` com
+**três escolhas**: tom de pele, **modelo de cabelo** e cor do cabelo. A **T2.1**
+(`14:340-350`), que é a migration da fase, cria `users.avatar_skin` e
+`users.avatar_hair_color` — e **não cria `users.avatar_hair`**.
+
+A coluna não existe hoje: `avatar_hair` tem **zero ocorrências** em
+`supabase/migrations/`. O código já mediu isso e registrou certo, em
+`src/lib/avatar/estilo/cabelo.ts:502-506` — as colunas de avatar hoje são
+`avatar_config`, `avatar_base`, `avatar_url` e `avatar_chosen`. E `tipos.ts:99-100`
+declara a expectativa de **duas** colunas separadas, `avatar_hair` e
+`avatar_hair_color`, justamente para não desmontar um objeto nas duas pontas.
+
+Quem executar a fase na ordem escrita descobre o buraco no meio da migration.
+
+**Junto vem um erro de fato no backlog**, e ele está na nota escrita *para quem
+executar a F2*: `14:379` afirma que *"o default de `users.avatar_hair` continua
+`'curto'` e não mudou com a promoção"*. A coluna não existe, e `curto` não é mais um
+`ModeloCabelo` (`cabelo.ts:93-98`) — foi podado. O próprio `cabelo.ts:499-506` já
+corrige as duas coisas; o backlog não recebeu a correção.
+
+**Trava:** a T2.1. Construir sobre a lista como está produz migration incompleta.
+**O fix, quando a F2 abrir:** acrescentar `users.avatar_hair` à T2.1 com default num
+`ModeloCabelo` vivo — `coque` é quem abre a lista desde a poda (`cabelo.ts:499-500`) —
+e corrigir a linha 379 do backlog.
+**Achado por:** Claude, conferência do 2b, 2026-08-10.
 
 ---
 
@@ -349,6 +448,32 @@ fila do Codex espera com ele.
 A ressalva acima continua valendo e é a primeira coisa a fazer quando a F2 abrir: **conferir
 a dependência do 2b antes de dimensionar**. O que o painel conta são tarefas da F2 — o traje
 não está nessa conta.
+
+*Atualização 3 de 2026-08-10: **a conferência foi feita, e a F2 NÃO depende do 2b.**
+Quatro medidas:*
+
+1. *Quatro das cinco telas da F2 são **recorte de cabeça**, 32 e 40 px — o tronco nem
+   aparece (`docs/avatar/15-plano-ate-pronto.md:995-1001`). Só a Companhia mostra corpo
+   inteiro, e no tamanho `sm`, que é **56×70 px** (`15:959`).*
+2. *Onde o tronco aparece, ele **já sai vestido**, e isso é código no repositório, não
+   promessa: `src/lib/avatar/estilo/compositor.ts:255` cai em `TRAJE_BASE.roupa`, cujo
+   comentário em `src/lib/avatar/palette.ts:127-135` é literalmente "é o fallback do
+   5.9: uniforme ausente cai para isto, nunca para boneco pelado". A cadeia inteira
+   degrada sem erro — `compositor.ts:258`, `:269`, `:296-297`.*
+3. *A dependência declarada aponta **ao contrário**: o Bloco 7b vem "depois do Bloco 5"
+   (`15:1043-1045`), e "a F3b (o uniforme) espera o Bloco 5" (`14:448`). O traje espera
+   a tela.*
+4. *A emenda de sequenciamento **já liberou** os blocos 4, 5 e 6 — que são a F2 inteira
+   — a correr em paralelo (`15:247-251`). O 2b não é citado como travador de nada.*
+
+*Nenhuma das 16 tarefas produz traje; a única que toca a palavra é a T2.9 (`14:361`), e
+ela é o requisito de **não haver** traje. **A F2 é uma fase, de 16 tarefas, e a conta do
+painel está certa.** Dependesse, seriam ~20: mais as quatro do 2b (`15:751-798`, zero
+fechadas) e a T1.2 da F1 (`14:320`) — e a 2b.1 nem é execução, é decidir se as variantes
+por DPR ainda se aplicam (`15:784-787`).*
+
+***O que encarece a F2 é outra coisa, e está no T7**; a lacuna da migration, no **T8**.
+Esta ressalva do D4 fecha aqui.*
 
 ---
 
