@@ -178,103 +178,6 @@ porque a Fase 11 (sons + service worker cacheando exatamente estes caminhos) con
 sobre a premissa de que asset público não passa pelo proxy. Revisar depois da medição.
 **Achado por:** Fable, revisão da integração, 2026-08-07.
 
-### T7 — a F2 está sem preço, e o que a encarece não é o traje
-**Prova:** `MEDIDO` — 2026-08-10, na conferência do 2b que o D4 pediu.
-
-O D4 mandava conferir se a F2 dependia do 2b. **Não depende** — a resposta está no
-próprio D4. Mas a conferência achou outra coisa, e essa **move o tamanho da fase**.
-
-Sete das 16 tarefas — T2.3 a T2.9, o bloco "## Render" de
-`docs/avatar/14-backlog-execucao.md:355-361` — nomeiam `constants.ts`,
-`bodyFamilies.ts`, `types.ts`, `renderModes.ts`, `resolvedAvatar.ts` e
-`AvatarDisplay.tsx`. Os seis são da **arquitetura v2**, e os seis existem em
-`src/lib/avatar/`. O boneco novo não mora lá: mora em `src/lib/avatar/estilo/` e se
-monta por `compor()` (`compositor.ts:640`).
-
-Ou seja: as sete tarefas descrevem **remendar a pilha v2**, que monta `<img>` de PNG,
-enquanto o trabalho que a fase existe para fazer talvez seja **trocá-la pelo
-compositor kokeshi**. São trabalhos diferentes, de tamanhos diferentes.
-
-**O backlog sabe, e diz** (`14-backlog-execucao.md:385-387`): *"nada em produção chama
-`compor()` — a única chamada fora de teste é `/dev/avatar-kokeshi`. Fechar essa
-distância é trabalho da F2, e é ele que decide como o cabelo chega à tela."*
-Reconhecido, sim. **Dimensionado, não** — a escolha ponte-ou-troca está dentro da T2.8
-sem uma linha de estimativa, e é o maior desconhecido da fase.
-
-**Trava:** dimensionar a F2 — que é literalmente o que o D4 mandava fazer antes de
-abri-la. A conta de 16 tarefas é contagem de títulos, não de trabalho.
-**O que falta para fechar:** uma decisão de arquitetura. Ou a F2 entrega as cinco telas
-sobre a pilha v2 (mais rápido, e o kokeshi segue preso em `/dev`), ou a F2 **é** a troca
-de pilha (é o que faz o investimento inteiro do avatar chegar a alguém). Escolha, não
-investigação.
-
-*Atualização 1 de 2026-08-10: **a F2 foi dimensionada.** O Doug mandou medir antes de
-escolher. Seis medidas, todas com arquivo e linha — e a conclusão é que o par
-"remendar × trocar" estava mal formulado.*
-
-***1. A pilha v2 tem 5 slots; o `compor()` tem zero.*** *`resolveAvatar`
-(`resolvedAvatar.ts:129`) resolve `background`, `head`, `pet`, `frame` — mais `outfit`,
-que substitui o corpo. `EstadoAvatar` (`tipos.ts:92-136`) tem seis campos e **nenhum é
-item**: `pele`, `cabelo`, `modeloCabelo`, `traje`, `animado`, `ns` (+ `escala`).
-**Ensinar item ao compositor não está em nenhuma das 16 tarefas.***
-
-***2. 20 dos 44 arquivos de `public/items/` não sobrevivem à troca — 16 itens
-distintos.*** *`outfit` é `dressed_base` (`slotDefinitions.ts:25`): o PNG **é o corpo
-inteiro vestido** e substitui o boneco. `head` é `head_swap`: **é a cabeça inteira**,
-daí o knockout. Os dois foram desenhados nas proporções do boneco v2, e o kokeshi
-desenha corpo e cabeça por código — nenhum dos 10 arquivos de outfit nem dos 10 de head
-assenta nele. **Sobrevivem 24:** os 8 fundos (ficam atrás da figura), os 8 frames (são
-CSS por raridade, `AvatarDisplay.tsx:156-161`, não imagem no stack) e os 8 pets
-(companion fora do `character-root`, `AvatarDisplay.tsx:125`).*
-
-***3. Mas o que se perderia já está quebrado, e essa é a medida que vira o jogo.***
-*Sete dos 8 itens de `head` não têm as variantes `-swap-male/-female` que o
-`assetResolver.ts:52` exige — só a bandana tem, e `resolvedAvatar.ts:181-184` já
-registra que equipar qualquer um dos outros recortava o topo da base sem desenhar nada
-por cima. O ratchet mede o passivo inteiro: **45 itens `sem_boneco`** em
-`scripts/verify/phase8/asset-baseline.json`, de IDs que vão a 77. **Remendar a v2 é
-remendar uma pilha que hoje não renderiza a maioria do próprio catálogo.***
-
-***4. A superfície da troca é pequena: duas chamadas.*** *`AvatarDisplay` só é chamado
-em produção por `PerfilClient.tsx:437,458` e `PublicProfileClient.tsx:50`. Todo o resto
-é `/dev`. **Trocar não é varrer o app.***
-
-***5. Há duas roupas concorrentes, e a F2 aposta numa sem dizer.*** *`Traje`
-(`tipos.ts:43`) é catálogo **em código**: `tinta` (png ou cor chapada) + decoração
-vetorial, clipada no `pathTronco()`. `outfit` é **linha na tabela `items`**, com
-`image_url`. A T2.1 acrescenta `hair` e `back` ao CHECK de `items.slot` — ou seja,
-aposta no modelo de banco, contra o catálogo em código que o compositor usa. **Ninguém
-decidiu qual das duas manda.***
-
-***6. Duas peças que a conta de 16 tarefas não tem.*** *A folha de estilo única (doc
-15, **5.7** — 30 avatares num ranking emitem 30 blocos `<style>` idênticos) e o
-`<AvatarCabeca>` (**6.1**), que é o recorte que **4 das 5 telas usam** e depende do
-`viewBox` de cabeça (**5.11**), não começado.*
-
-***O par certo, então, não é "remendar × trocar":***
-
-- ***Remendar*** *= ressuscitar 45 itens de arte v2 — que é a fila dos Blocos 8/9, não
-  da F2 — e o kokeshi morre em `/dev`.*
-- ***Trocar*** *= 24 dos 44 arquivos entram como estão, 16 itens viram passivo declarado,
-  e duas chamadas mudam. O caro **não é o código**: é arte nova de chapéu e de roupa nas
-  proporções kokeshi.*
-
-***O que continua NÃO medido, dito com todas as letras:*** *quanto custa a arte nova de
-`head` e `outfit`. É desenho, não código, e desenho é a fila do Bloco 8. Esta medida
-dimensionou o **software** da troca; o **acervo** dela segue sem preço.*
-
-***Trava:** continua sendo decisão do Doug — a medida não escolhe por ele, só tira a
-escolha do escuro.*
-**Medido por:** Claude, a pedido do Doug, 2026-08-10.
-
-**Nota lateral, do mesmo par doc × código:** o backlog diz que o catálogo *"foi de 5
-para 7 em 2026-08-07"* (`14:374-377`) e `ModeloCabelo` tem **5**
-(`src/lib/avatar/estilo/cabelo.ts:93-98`) — o commit `65cb0da` podou o resto. O header
-de `src/lib/avatar/estilo/__tests__/cabelo.test.ts:2` ainda diz "OS SETE CABELOS". A
-instrução do backlog continua certa (ler `MODELOS_CABELO`/`CABELOS`, nunca hardcodar);
-só o número envelheceu.
-**Achado por:** Claude, conferência do 2b, 2026-08-10.
-
 ### T8 — a F2 deixa o aluno escolher um cabelo que não tem onde ser guardado
 **Prova:** `MEDIDO` — 2026-08-10, grep em `supabase/migrations/` e leitura da T2.1.
 
@@ -303,6 +206,11 @@ corrige as duas coisas; o backlog não recebeu a correção.
 `ModeloCabelo` vivo — `coque` é quem abre a lista desde a poda (`cabelo.ts:499-500`) —
 e corrigir a linha 379 do backlog.
 **Achado por:** Claude, conferência do 2b, 2026-08-10.
+
+*Atualização de 2026-08-10: **deixou de estar parado — está agendado.** A decisão do
+T7 substituiu a T2.1 pelo **Bloco C** de `docs/avatar/20-troca-de-pilha-plano.md`, que
+cria as três colunas (`avatar_skin`, `avatar_hair`, `avatar_hair_color`) com default
+`coque`. Fecha quando o Bloco C fechar; segue aberto até lá.*
 
 ---
 
@@ -557,6 +465,7 @@ lançamento**, não agora.
 | ✅ | **T2** — o bloco Agora do `ESTADO.md`, único trecho manual de um arquivo gerado e o primeiro que o `CLAUDE.md` manda ler, errava em quatro pontos. Ganhou um quinto ao fechar o R1: seguia mandando **medir** o que já estava consertado | 2026-08-09 | os quatro fechados — a régua da patente passa a dizer **duas** versões e não três (a de 30 morreu na migration seguinte), a branch já tinha sido corrigida em `af7589e`, o doc 13 saiu da lista de decisões abertas por ter fechado por uso, e o ponteiro morto para `.scratch/estilo/BRIEFING-CABELO.md` deu lugar ao runbook 19 e ao `ESTADO-DA-ROTA.md`. Mais o quinto: a ordem agora lê **conferir o 2b → Lote 3 → F2**, e o bloco carrega a pendência de deploy que ninguém mediu. O gate `verify:estado` **não alcança** este bloco por desenho — a trava aqui é humana |
 | ✅ | **2 verdes por vacuidade** achados ao fechar o R1, nas réguas que provariam o próprio conserto | 2026-08-09 | a §3 de `verify:privileges` percorria só as RPCs que a query **achou**, então RPC dropada sumia da régua calada — corrigido, e provado reprovando pelas duas funções que ainda não existiam. E o Gate 6 de `verify:turmas` exigia por nome as 7 policies de escrita que o R1 removeu: viraram **Gate 6b**, que agora exige que continuem **removidas**. Apagar da lista bastaria para passar; não bastaria para medir |
 | ✅ | **R4** — a `main` no ar estava em `54d7e8a` (2026-07-31) e escrevia direto em `users` e `class_tasks`, que as migrations do R1 já haviam fechado **no mesmo banco** — porque não há Supabase separado (D3). As migrations viajaram para produção; o código que as substitui, não. **Configurações e o liga/desliga de tarefa falhavam no ar**, em silêncio, porque só o Doug estava lá | 2026-08-10 | **merge fast-forward, sem conflito possível:** `origin/main` era ancestral de `avatar/vtracer` (76 commits à frente, 0 atrás), medido antes com `git merge-base --is-ancestor`. `git merge --ff-only` levou `54d7e8a` → `8d31bca`, push disparou a Vercel. **Provado no site no ar, não em relatório:** o Doug conferiu as duas telas exatas que o achado nomeava — Configurações salva, liga/desliga de tarefa funciona. O 3º item da conferência (o perfil ainda mostra o avatar da pilha v2) **não é regressão**: `compor()` só é importado por `/dev/avatar-kokeshi`, e trocar a produção é o **T7** |
+| ✅ | **T7** — a F2 estava sem preço, e o que a encarecia não era o traje: 7 das 16 tarefas nomeavam arquivos da pilha v2 enquanto o boneco novo se monta por `compor()`. Remendar e trocar eram trabalhos de tamanhos diferentes, e a escolha estava sem uma linha de estimativa | 2026-08-10 | **fechado por DECISÃO, depois de medido.** A pedido do Doug a troca foi dimensionada primeiro (6 medidas com arquivo e linha), e a medida reformulou a pergunta: `compor()` tem 0 slot de item contra os 5 da v2; 20 dos 44 arquivos não sobrevivem porque `outfit` é corpo inteiro e `head` é cabeça inteira; **mas 7 dos 8 chapéus já não renderizavam** e o ratchet media 45 itens `sem_boneco` — remendar era ressuscitar arte morta. A superfície da troca é de **2 chamadas**. Com isso o Doug decidiu **mais fundo que a pergunta: apagar toda a arte e todos os itens do boneco antigo, sem reaproveitar nada, nem os pets** — o avatar novo tem cabelo como único item vestível. As 4 decisões de produto que vieram junto (baú vira XP, ovos ficam dando XP, cabelo parte livre parte desbloqueável, desbloqueio **por nível** para não travar atrás do T1) e os 6 blocos de execução estão em **`docs/avatar/20-troca-de-pilha-plano.md`**, que é onde o progresso se marca |
 | ✅ | **G6** — `npm run build` vermelho no `prebuild`. **A causa registrada estava ERRADA:** não era manifesto defasado. Era `--check` comparando **bytes crus** através da fronteira LF/CRLF — o gerador escreve `\n`, o `git checkout` desta máquina (`core.autocrlf=true`) devolve `\r\n`, e a comparação reprovava **todo arquivo que o git tivesse tocado** | 2026-08-07 | quebras normalizadas antes de comparar, como `gerar-livro-aberturas.ts:116` já fazia. Provado nos dois sentidos: passa com o arquivo em CRLF, e reprova nomeando o defeito quando um caminho falso é injetado |
 
 O precedente que importa: **todos fecharam com gate ou com prova medida, nunca

@@ -22,11 +22,12 @@ Bloco 1d.
 - **2b** — arremate do tronco (2b.0) e o `avatar:garment`, que hoje passa por
   vacuidade (2b.1). Mexe em tronco; o cabelo é cortado pelo `clipPath` da cabeça.
 
-**A prioridade virou em 2026-08-09 (D4): a tela do aluno vem primeiro.** A ordem
-era **Lote 1** → **R1** → **Lote 3** → **F2**; os dois primeiros fecharam no mesmo
-dia, e a conferência do 2b no dia seguinte. **O que resta é: Lote 3 (Next 16.2.11)
-→ F2.** O Lote 2 e a linha A5 da fila do Codex ficam parados, porque existem para
-destravar desenho.
+**A prioridade virou em 2026-08-09 (D4): a tela do aluno vem primeiro.** A ordem era
+**Lote 1** → **R1** → **Lote 3** → **F2**, e **os três primeiros fecharam** — os dois
+primeiros em 2026-08-09, a conferência do 2b e o Lote 3 (Next **16.2.12**, um degrau
+acima do previsto) em 2026-08-10. **O que resta é a F2, e ela virou a troca de pilha
+descrita abaixo.** O Lote 2 e a linha A5 da fila do Codex ficam parados, porque
+existem para destravar desenho.
 
 **A conferência do 2b saiu em 2026-08-10: a F2 NÃO depende do traje.** Quatro das
 cinco telas da F2 são recorte de cabeça (32 e 40 px) e o tronco nem aparece; onde ele
@@ -36,11 +37,24 @@ declarada aponta ao contrário: o uniforme espera o Bloco 5, não o inverso. **A
 uma fase, e a conta de tarefas abaixo está certa.** As quatro medidas com linha estão
 na atualização 3 do **D4**, em `docs/achados.md`.
 
-**O que encarece a F2 é outra coisa, e é decisão de arquitetura:** sete das 16 tarefas
-nomeiam arquivos da pilha v2, enquanto o boneco novo se monta por `compor()` — remendar
-e trocar são trabalhos de tamanhos diferentes, e a escolha está sem preço. Registrado
-como **T7**; a lacuna da migration do cabelo, como **T8**. Quando a tela existir, ela
-deve consumir `MODELOS_CABELO`/`CABELOS` como fonte, sem hardcodar modelos.
+**A decisão do T7 saiu em 2026-08-10, e é maior que a pergunta que a pediu: a pilha
+v2 vai inteira para o lixo.** Toda a arte e todos os itens do boneco antigo são
+apagados, sem reaproveitar nada — nem os pets. **O avatar novo tem cabelo como único
+item vestível**, e são 5 modelos + a careca = 6 opções. Vieram junto quatro decisões
+de produto: o **baú vira XP puro** (5/10/20/35, a régua da forja que já existe), os
+**ovos e a Chocadeira ficam** sempre dando XP, o cabelo é **parte livre e parte
+desbloqueável**, e o desbloqueio é **por nível** — de propósito, para não travar
+atrás do T1.
+
+**O plano de execução é `docs/avatar/20-troca-de-pilha-plano.md`**, em 6 blocos com
+gate e número medido no fim de cada um. Onde ele divergir dos docs 14 e 15, **ele
+vence** — os dois foram escritos quando a v2 ainda era o caminho. O T8 deixou de
+estar parado: fecha no Bloco C.
+
+⚠️ **A ordem tem armadilha, e é o R4 de novo.** Não há banco separado (D3), então
+toda migration bate em produção na hora. Do **Bloco B** em diante o site no ar fica
+quebrado, porque a `main` ainda chama `equip_item` e lê `user_inventory`. É escolha
+consciente — zero alunos hoje — e a `main` só é atualizada uma vez, no **Bloco F**.
 
 **O R1 fechou em 2026-08-09** — nenhuma das 30 tabelas de `public` aceita escrita
 direta do navegador, `verify:all` está verde. Três migrations (`20260809120000`,
@@ -57,7 +71,8 @@ publicada e esta branch estão no mesmo commit.
 
 **O que o Doug viu e NÃO é regressão:** o perfil no ar ainda mostra o avatar da pilha
 v2. É o esperado — `compor()` só é importado por `/dev/avatar-kokeshi`, e as telas de
-produção seguem em `AvatarDisplay`. Trocar um pelo outro é o **T7** e o Bloco 8.
+produção seguem em `AvatarDisplay`. **Trocar um pelo outro é o que o plano acima
+executa**, e o site no ar segue mostrando o boneco velho até o Bloco F.
 
 **O avatar espera, e o que sobrou dele está em ordem:** colar espetado e chanel em
 `CABELOS` · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
@@ -86,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 3 |
-| **Árvore** | **1 arquivos sujos** |
-| **Último commit** | 96e2a42 · 2026-08-10 · docs(achados): o D5 registra as 19 vulnerabilidades e o que falta medir nelas |
+| **Commits à frente de `origin/main`** | 4 |
+| **Árvore** | **3 arquivos sujos** |
+| **Último commit** | e53680a · 2026-08-10 · docs(achados): o T7 ganha preço — a troca de pilha foi dimensionada |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
