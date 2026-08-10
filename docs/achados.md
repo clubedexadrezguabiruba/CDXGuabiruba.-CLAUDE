@@ -94,7 +94,15 @@ assume a escada do currículo enquanto o banco tem 15.
 intenção, não estado.
 **Quem decide:** Doug. É pedagogia e produto, não investigação técnica.
 
-### T9 — o baú deixou de ser recompensa: 55% dele vai para uma fila que rende 9 XP/dia
+### T9 — ~~o baú deixou de ser recompensa: 55% dele vai para uma fila que rende 9 XP/dia~~ FECHADO
+> ✅ **Fechado em 2026-08-10 pelo E.2**, que era a condição de fechamento escrita
+> no fim deste achado. `20260810180000_e2_bau_paga_xp_direto.sql` aplicada em
+> produção pelo Doug; `verify:chest-pool` de **11 passed / 7 failed** para **18
+> passed / 0 failed**. Medido no banco depois: **fila 0**, 16 grants de
+> `egg_bonus` somando **445 XP** em **5 contas**, e 3 baús de level-up criados
+> pelo próprio `grant_xp` ao subir gente de nível com o XP represado. O corpo
+> abaixo fica como está — é ele que explica por que a decisão foi tomada.
+
 **Prova:** `MEDIDO` — 2026-08-10, **em produção**, depois do F.1. `pg_get_functiondef`
 da `claim_chest` viva + as 24 linhas de `user_chests` e os 5 ovos na fila do
 `teacherdoug001`. Achado pelo Doug, abrindo 5 baús no ar; medido pelo Claude.
@@ -173,12 +181,25 @@ Três decisões acessórias, tomadas junto:
 | a Chocadeira no `/perfil` | **fica na tela, vazia, "em breve"** — a promessa continua visível para o aluno |
 | a escala de XP | **15 / 25 / 40 / 60**, que era a do ovo. Os 5/10/20/35 eram valor de consolação da forja de item repetido, e a §1.1 do doc 20 já registrava que 5 XP por baú é pouco |
 
-E os **13 ovos presos na fila** pagam o `xp_bonus` na própria migration, que a
+E os **ovos presos na fila** pagam o `xp_bonus` na própria migration, que a
 esvazia — os 140 XP do Doug entram em vez de ficarem 15 dias em espera.
+
+⚠️ **Não são 13 — são 16, e não são só do Doug.** Medido no banco vivo em
+2026-08-10, ao escrever a migration do E.2: **16 ovos em voo** (5 `hatching` +
+11 `queued`), **445 XP** presos, em **5 contas** — `suzanfbaron` 5 ovos/135 XP,
+`teacherdoug001` 5/140, `gbitelbrun` 3/75, `pafischersgrott` 2/55,
+`englishwithteacherdoug` 1/40. O 13 era número velho, herdado da contagem do
+Bloco B; o que a migration paga é o medido.
 
 **O achado NÃO fecha aqui**, porque decisão não é conserto: ele fecha quando o
 **E.2** do `docs/avatar/20-troca-de-pilha-plano.md` aplicar a migration e o
 `verify:chest-pool` medir 0 ovos e o XP certo por raridade.
+
+📌 **Como o E.2 foi medido antes de bater em produção:** a migration rodou
+primeiro **a seco**, em transação revertida, com o **gate inteiro rodando dentro
+da mesma transação** — 11/7 antes, 18/0 depois, produção intacta. Sem banco
+separado (D3), é o único jeito de medir "passa depois" sem aplicar. A previsão
+bateu com o mundo número a número depois do apply.
 
 **O que a decisão derruba, e vale registrar:** a saída 4 (*o ovo dá cabelo*) está
 descartada. O seletor do Bloco E segue com **uma** fonte de desbloqueio — o nível de
@@ -314,6 +335,45 @@ cria as três colunas (`avatar_skin`, `avatar_hair`, `avatar_hair_color`) com de
 ---
 
 ## 🟡 Promessa sem lastro
+
+### G10 — a escada de desbloqueio do cabelo foi derivada com a curva errada, e é ~40% mais curta do que o doc diz
+**Prova:** `MEDIDO` — 2026-08-10, `pg_get_functiondef('grant_xp')` no banco vivo
++ `src/lib/gamification/xp.ts:20`. Achado pelo Claude, executando o E.2.
+Registrado e **não consertado**, pela regra 9.
+
+O Bloco C do `docs/avatar/20-troca-de-pilha-plano.md:299` justifica a escada de
+cabelo (`coque` 10 · `moicano` 20 · `chanel` 30) assim:
+
+> Traduzido pela curva viva (`100 × 1,08^(n−1)`, XP consumido) [...] nível 10 ≈
+> **4,2 dias** de aluno dedicado, 20 ≈ **13,8**, 30 ≈ **35**.
+
+**A curva viva não é 1,08 — é 1,05.** `grant_xp` em produção roda
+`round(100 * power(1.05, v_new_level - 1))`, e `XP_GROWTH_FACTOR = 1.05` em
+`src/lib/gamification/xp.ts:20`. Os dois concordam, e é por isso que
+`verify:xp-curve` passa: o gate compara banco × client, e **nenhum dos dois é o
+1,08 do texto**. O 1,08 entrou por uma migration em 16/03, foi revertido por
+acidente em 17/03 e nunca voltou — a história inteira está no cabeçalho do
+próprio `verify-xp-curve.ts:4-13`.
+
+Refeita a conta com a curva que roda, a ~300 XP/dia:
+
+| nível | XP acumulado | dias (medido) | dias (no doc) |
+|---|---|---|---|
+| 10 (`coque`) | 1.104 | **3,7** | 4,2 |
+| 20 (`moicano`) | 3.056 | **10,2** | 13,8 |
+| 30 (`chanel`) | 6.236 | **20,8** | 35 |
+
+**Não é bug de código, e nada em produção está errado.** É a derivação que está,
+e ela sustentou uma decisão de produto: *"escolha consciente: o cabelo é marco
+raro"*. O terceiro degrau custa **três semanas**, não cinco — o marco é
+sensivelmente menos raro do que o Doug aprovou. A migration do Bloco C não
+precisa mudar; o que precisa é o Doug decidir se 3,7/10,2/20,8 ainda é a escada
+que ele quer, agora que são esses os números.
+
+**O que falta para fechar:** o Doug olhar a tabela acima e dizer se a escada
+fica ou muda. Se ficar, corrigir a frase do `20-troca-de-pilha-plano.md:299`, que
+hoje ensina um número que não existe. Conecta com o **T3** — é a mesma doença de
+número que sobrevive à decisão que o invalidou.
 
 ### G1 — Três gates prometidos por nome que não existem
 **Prova:** `LIDO` — `docs/curriculo/02-plano-tecnico-trilha1-v1.md` §7
@@ -614,6 +674,7 @@ lançamento**, não agora.
 | ✅ | **T7** — a F2 estava sem preço, e o que a encarecia não era o traje: 7 das 16 tarefas nomeavam arquivos da pilha v2 enquanto o boneco novo se monta por `compor()`. Remendar e trocar eram trabalhos de tamanhos diferentes, e a escolha estava sem uma linha de estimativa | 2026-08-10 | **fechado por DECISÃO, depois de medido.** A pedido do Doug a troca foi dimensionada primeiro (6 medidas com arquivo e linha), e a medida reformulou a pergunta: `compor()` tem 0 slot de item contra os 5 da v2; 20 dos 44 arquivos não sobrevivem porque `outfit` é corpo inteiro e `head` é cabeça inteira; **mas 7 dos 8 chapéus já não renderizavam** e o ratchet media 45 itens `sem_boneco` — remendar era ressuscitar arte morta. A superfície da troca é de **2 chamadas**. Com isso o Doug decidiu **mais fundo que a pergunta: apagar toda a arte e todos os itens do boneco antigo, sem reaproveitar nada, nem os pets** — o avatar novo tem cabelo como único item vestível. As 4 decisões de produto que vieram junto (baú vira XP, ovos ficam dando XP, cabelo parte livre parte desbloqueável, desbloqueio **por nível** para não travar atrás do T1) e os 6 blocos de execução estão em **`docs/avatar/20-troca-de-pilha-plano.md`**, que é onde o progresso se marca |
 | ✅ | **T8** — a T2.10 entregava `criar-personagem` com três escolhas (pele, **modelo de cabelo**, cor) e a T2.1, que era a migration da fase, criava `avatar_skin` e `avatar_hair_color` e **não criava `avatar_hair`**: zero ocorrências em `supabase/migrations/`. Quem executasse a fase na ordem escrita descobria o buraco no meio da migration | 2026-08-10 | **Bloco C** de `docs/avatar/20-troca-de-pilha-plano.md`: `20260810160000_bloco_c_identidade_do_avatar.sql` cria as três colunas, a tabela `avatar_hair_catalog` com a régua de nível e a RPC `update_avatar_identity`. Gate novo `verify:cabelo-catalogo`, **1 falha → 18 passed**, e o `verify:phase8` foi de 3 gates para 4. **Divergência do plano, deliberada:** o default de `avatar_hair` é `NULL` (careca) e não `coque`, porque a régua semeada pôs `coque` no nível 10 e o aluno nasceria vestindo o que a escada lhe nega |
 | ✅ | **G2** — o gate de assets era um ratchet com 45 itens congelados: `verify:avatar-assets` só reprovava se o número **crescer**, e os 45 itens que não vestiam o boneco seguiam tolerados por desenho — o **bloqueador de lançamento nº 1** do doc 13 | 2026-08-10 | **fechado por deleção do assunto, não por conserto.** O Bloco B apagou os 69 itens, as 3 tabelas e o gate `verify:avatar-assets` junto com o `asset-baseline.json`; o Bloco D apagou os 44 arquivos de `public/items/` e o gerador do manifesto. Não há catálogo para cruzar com o disco. O que vigia agora é a **exigência de ausência** em `verify:avatar-db` (24 passed), que é o truque do Gate 6b: apagar da lista não basta para passar. Quem mede o passivo que sobrou é `verify:design-tokens` — e o dele está no **G9** |
+| ✅ | **T9** — 55% dos baús viravam ovo, e os ovos chocam **em série, 72h cada**: medido em produção, **445 XP presos em 5 contas**, a 9,3 XP/dia contra a calibração de ~300. E a forma era pior que o número — esperava-se 72h pela **mesma moeda** que o baú `common` já entregava na hora, porque sem pet a espera não tem conteúdo | 2026-08-10 | **E.2** de `docs/avatar/20-troca-de-pilha-plano.md`: `20260810180000_e2_bau_paga_xp_direto.sql`. O baú paga **15/25/40/60** na hora em toda raridade; `claim_chest` perde a chamada ao criador de ovo, e `hatch_egg`/`_create_random_pet_egg` ficam **dormentes, não apagadas** — o gate agora cobra que **existam**, porque é por elas que o pet volta no Bloco 8. Gate de **11 passed / 7 failed → 18 passed / 0 failed**; produção depois: fila **0**, 16 grants de `egg_bonus` somando **445 XP** em 5 contas, e 3 baús de level-up criados pelo próprio `grant_xp`. **Medido a seco antes do apply** — a migration rodou em transação revertida com o gate inteiro dentro dela, e a previsão bateu número a número. Dois defeitos caíram nesse ensaio, os dois antes de tocar produção: `user_eggs_check1` exige `hatch_start_at NOT NULL` para `hatched` (os 11 ovos `queued` têm a coluna nula), e o gate ia reprovar por um **comentário** da própria migration citando a função dormente — a lição 3 do Bloco B repetida por um gate novo |
 | ✅ | **G6** — `npm run build` vermelho no `prebuild`. **A causa registrada estava ERRADA:** não era manifesto defasado. Era `--check` comparando **bytes crus** através da fronteira LF/CRLF — o gerador escreve `\n`, o `git checkout` desta máquina (`core.autocrlf=true`) devolve `\r\n`, e a comparação reprovava **todo arquivo que o git tivesse tocado** | 2026-08-07 | quebras normalizadas antes de comparar, como `gerar-livro-aberturas.ts:116` já fazia. Provado nos dois sentidos: passa com o arquivo em CRLF, e reprova nomeando o defeito quando um caminho falso é injetado |
 
 O precedente que importa: **todos fecharam com gate ou com prova medida, nunca

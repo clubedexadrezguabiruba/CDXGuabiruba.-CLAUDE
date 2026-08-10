@@ -498,7 +498,7 @@ recipiente de XP e volta a ser recipiente de pet.** Como pet não existe — foi
 apagado no Bloco B —, nenhum baú cria ovo até haver arte. Daí:
 
 - **E.1** o componente e a folha única — *fechado, abaixo*
-- **E.2** a migration do baú (o T9 em SQL): XP direto **15/25/40/60**, os 13 ovos
+- **E.2** a migration do baú (o T9 em SQL): XP direto **15/25/40/60**, os ovos
   da fila pagos e a fila esvaziada. **Migration própria** — um assunto, uma
   migration
 - **E.3** a migration do avatar: recriar `user_public_profiles` e
@@ -577,6 +577,85 @@ apagado no Bloco B —, nenhum baú cria ovo até haver arte. Daí:
   exprimíveis na API do componente. Colar slug falso nelas é o defeito que a rota
   de arte já pegou uma vez, quando três artes se diziam `"curto"`. A seção dos 30
   passou para o componente — é o caso do ranking, e é onde a folha se prova.
+
+- [x] **E.2 fechado em 2026-08-10 — o baú paga XP direto, e a fila esvaziou.**
+  `20260810180000_e2_bau_paga_xp_direto.sql` aplicada em produção pelo Doug.
+  **Isto fecha o T9.**
+
+  📊 **O número:** o gate foi de **11 passed / 7 failed** para **18 passed / 0
+  failed**. `verify:all` exit 0 · `typecheck` 0 · `lint` 0 erros · **479/479**
+  testes · build verde.
+
+  **Medido em produção depois do apply:** fila **0**, 18 ovos `hatched`, **16
+  grants de `egg_bonus` somando 445 XP** em 5 contas — `teacherdoug001` 140 ·
+  `suzanfbaron` 135 · `gbitelbrun` 75 · `pafischersgrott` 55 ·
+  `englishwithteacherdoug` 40. Zero ovo em estado inválido. E os baús foram de
+  112 para **115**: os 3 a mais são baús de level-up que o próprio `grant_xp`
+  criou ao subir gente de nível com o XP represado — a prova de que o pagamento
+  passou pela autoridade do servidor em vez de um `UPDATE` na mão.
+
+  **A previsão do ensaio a seco bateu com o mundo, número a número** (18/0, 445
+  XP, 16 ovos, fila 0). É o que a bancada de ensaio existe para poder afirmar.
+
+  **Como se mede "passa depois" sem banco separado (D3).** As conferências do
+  gate viraram `conferir(db)`, que recebe o handle de fora; o gate abre a própria
+  transação e o ensaio a seco passa a dele. Sem isso, "passa depois" seria
+  previsão — e previsão sobre migration que bate em produção é o que a Regra de
+  Evidência proíbe. É o mesmo movimento do Bloco C, agora com o gate inteiro
+  dentro do ensaio em vez de duas conferências escolhidas a dedo.
+
+  **O que a migration faz, e o que ela deliberadamente não faz:** `claim_chest`
+  perde a chamada a `_create_random_pet_egg` e paga **15/25/40/60** na hora, em
+  toda raridade. `hatch_egg` e `_create_random_pet_egg` **não são tocadas** —
+  dormentes, e o gate agora **cobra que existam**: hibernar não é morrer, e é por
+  elas que o pet volta no Bloco 8. O `p_source` continua `'item_scrap'` porque
+  trocá-lo obrigaria a recolar o corpo de `grant_xp`, que é exatamente como a
+  curva de XP foi revertida em silêncio por 4 meses.
+
+  **A fila era 16, não 13 — e não era só do Doug.** 5 `hatching` + 11 `queued`,
+  **445 XP** em **5 contas**. O 13 do T9 era número velho. Os 16 são pagos por
+  `grant_xp` de verdade, personificando cada dono dentro da transação, com a
+  mesma chave de idempotência que `hatch_egg` usaria (`egg_bonus_<id>`) — em vez
+  de um `UPDATE users SET xp = xp + …`, que reimplementaria a curva num sexto
+  lugar.
+
+  ⚠️ **O ensaio a seco pagou por si duas vezes, e as duas antes de qualquer apply:**
+
+  1. **`user_eggs_check1` exige `hatch_start_at NOT NULL` para `status =
+     'hatched'`** — e os 11 ovos `queued` têm a coluna nula, porque ovo na fila
+     ainda não começou a chocar. Marcar `hatched` direto derruba a migration
+     inteira. Daí o `COALESCE(hatch_start_at, created_at)`. É a irmã da lição 1
+     do Bloco B, que caiu na constraint vizinha pelo mesmo motivo.
+  2. **O gate ia reprovar por um comentário meu.** A conferência "`claim_chest`
+     não chama mais o criador de ovo" achava o nome no corpo — porque a migration
+     **explica, dentro da função**, que `_create_random_pet_egg` ficou viva de
+     propósito. É a lição 3 do Bloco B repetida por um gate novo, e por isso ele
+     agora tira comentário antes de procurar chamada.
+
+  **Medido antes de escrever, e é o que torna "0 ovos" mecânico em vez de
+  amostral:** `_create_random_pet_egg` é a **única** função que insere em
+  `user_eggs`, `claim_chest` era a **única** que a chamava, `user_eggs` não tem
+  trigger e tem **zero policies de RLS** (com RLS ligado — ninguém insere de
+  fora). Cortar aquela chamada corta a criação de ovo inteira. O gate cobra as
+  quatro coisas, não só as 60 aberturas.
+
+  **A Chocadeira publicada não quebra com a fila vazia — conferido antes, não
+  depois.** `get_eggs` só devolve `hatching`/`queued`, então passa a devolver
+  `[]`; `Chocadeira.tsx:46` e `EggCard.tsx:33` fazem
+  `if (loading || eggCount === 0) return null` na primeira linha. O painel
+  **desaparece**, não estoura. Os dois arquivos são idênticos na `main` e na
+  branch. O que sobra é uma coluna vazia no grid do `/perfil` — cosmético, e é
+  onde o E.4 põe o "em breve".
+
+  **Enquanto a migration não foi aplicada, o `verify:all` ficou vermelho, e isso
+  era o gate funcionando** — o único vermelho foi o `verify:chest-pool`, que mede
+  produção. Vale registrar porque é a forma normal de um gate de banco entre
+  escrever e aplicar: verde antes do apply significaria que ele não olha o banco.
+
+  **Achado registrado e não consertado, pela regra 9:** o **G10** — a escada de
+  desbloqueio de cabelo do Bloco C foi derivada com `1,08`, e a curva viva é
+  `1,05`. Os degraus custam **3,7 / 10,2 / 20,8 dias**, não 4,2 / 13,8 / 35. Não
+  há bug em produção; há uma decisão de produto tomada sobre número errado.
 
 ### Bloco F — publicar
 

@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **8 arquivos sujos** |
-| **Último commit** | 3cfcc47 · 2026-08-10 · docs(achados): T9 — o baú deixou de ser recompensa, medido em produção |
+| **Commits à frente de `origin/main`** | 2 |
+| **Árvore** | **6 arquivos sujos** |
+| **Último commit** | e49cbb3 · 2026-08-10 · feat(avatar): E.1 — o boneco vira componente, e 30 folhas de estilo viram uma |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -152,7 +152,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 78 |
+| **Migrations** | 79 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 14 |
 | **Primitivos de UI** | 4 |
