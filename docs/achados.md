@@ -386,6 +386,36 @@ do banco.
 Não é urgente — os blocos B0–B7 têm zero linhas de código. Mas o plano promete
 verificação que não existe, e quem for construir vai descobrir tarde.
 
+### G11 — `RankingEntry.avatar_base` é um campo obrigatório que a RPC nunca devolveu
+**Prova:** `MEDIDO` — 2026-08-10, `get_ranking_with_position('rating', 3)` chamada
+como `authenticated` contra produção. Achado pelo Claude, executando o E.3.
+Registrado e **não consertado**, pela regra 9.
+
+As chaves reais de uma entrada do ranking são sete:
+
+```
+level, title, user_id, position, public_name, metric_value, avatar_config
+```
+
+`src/types/ranking.ts:5` declara `avatar_base: string` — **não opcional** — em
+`RankingEntry`. Nenhuma das três RPCs de ranking o devolve: a varredura de
+`pg_get_functiondef` mostrou `avatar_base` citado por uma única leitora da matview,
+`get_public_profile`, que o E.3 acabou de reescrever para não citá-lo mais.
+
+**Não há bug em produção**, e é por isso que está aqui e não no vermelho: nada lê
+`entry.avatar_base`. `RankingClient` usa nome, nível, título, métrica e posição. O
+campo é uma promessa de tipo que o servidor nunca cumpriu, e TypeScript não a pega
+porque o retorno da RPC entra por `as RankingData`.
+
+`avatar_config` está no caso oposto: a RPC **devolve**, o tipo declara, e ninguém
+lê — é `'{}'` em 100% dos usuários desde o Bloco B.
+
+**Por que não foi consertado aqui:** os dois campos saem quando as três RPCs de
+ranking forem reescritas para servir o avatar kokeshi, que é o D30 / Bloco 6 do doc
+15 — explicitamente fora do Bloco E (doc 20, §5). Consertar só o tipo agora deixaria
+o `avatar_config` de pé e obrigaria a mexer no mesmo arquivo duas vezes.
+**Quem decide:** Doug.
+
 ### G9 — o baseline de cores cruas tem 234 cores de folga fantasma, em 14 arquivos
 **Prova:** `MEDIDO` — 2026-08-10, `verify:design-tokens -- --update` rodado num
 arquivo de rascunho e comparado chave a chave com `HEAD`. Achado pelo Claude,

@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 2 |
-| **Árvore** | **6 arquivos sujos** |
-| **Último commit** | e49cbb3 · 2026-08-10 · feat(avatar): E.1 — o boneco vira componente, e 30 folhas de estilo viram uma |
+| **Commits à frente de `origin/main`** | 3 |
+| **Árvore** | **9 arquivos sujos** |
+| **Último commit** | b5fe575 · 2026-08-10 · feat(avatar): E.2 — o baú paga na hora, e a fila de 445 XP esvaziou |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -119,9 +119,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **26 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **27 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:perfil-publico` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
 
 ## Frentes
 
@@ -152,7 +152,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 79 |
+| **Migrations** | 81 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 14 |
 | **Primitivos de UI** | 4 |

@@ -657,6 +657,110 @@ apagado no Bloco B —, nenhum baú cria ovo até haver arte. Daí:
   `1,05`. Os degraus custam **3,7 / 10,2 / 20,8 dias**, não 4,2 / 13,8 / 35. Não
   há bug em produção; há uma decisão de produto tomada sobre número errado.
 
+- [x] **E.3 fechado em 2026-08-10 — o perfil público carrega o kokeshi.**
+  `20260810200000_e3_perfil_publico_com_identidade.sql` aplicada em produção pelo
+  Doug.
+
+  📊 **O número:** o gate novo (`verify:perfil-publico`) foi de **16 passed / 13
+  failed** para **29 passed / 0 failed**. `verify:all` exit 0 (27 scripts) ·
+  `typecheck` 0 · `lint` 0 erros · **479/479** testes · `build` verde.
+
+  **O ensaio a seco previu os 29/0 exatos**, dentro de uma transação revertida com
+  a migration aplicada ali dentro — e a produção depois do rollback estava intacta
+  (as 14 colunas de sempre, cobaia em `skin=2 hair=null cor=0`). É a segunda vez
+  seguida, depois do E.2, que a bancada de ensaio acerta número a número. É o que
+  ela existe para poder afirmar.
+
+  **Conferido em produção depois do apply, e não só pelo gate:** matview com **19
+  linhas**, `relacl` **idêntico** ao de antes (`postgres | service_role`), **0**
+  contas com identidade fora do default, `avatar_chosen` ainda em **8** (a
+  migration do F.2 não foi aplicada), e **0** linhas em que a matview divergiu de
+  `users`. O gate roda em rollback, e essa conferência é o que prova que ele não
+  deixou rastro.
+
+  **Duas migrations, porque são dois momentos.**
+  `20260810200000_e3_perfil_publico_com_identidade.sql` é para aplicar agora;
+  `20260810220000_f2_avatar_chosen_zerado.sql` **espera o F.2**. Migration que
+  espera é migration própria, não bloco comentado dentro de outra.
+
+  **A conta de qual coluna legada fica na matview é por coluna, não por época — e
+  a seção 6 do gate é que a fez.** `avatar_config` tem **3 leitoras** vivas
+  (`get_ranking`, `get_ranking_with_position`, `get_class_ranking`) e **fica**:
+  tirá-la obrigaria a recolar o corpo de três RPCs de ranking dentro deste bloco,
+  que é o movimento pelo qual a curva de XP deste projeto foi revertida em silêncio
+  por 4 meses. `avatar_base` tinha **uma** leitora — o próprio
+  `get_public_profile`, que esta migration reescreve —, então depois dela tem
+  **zero**, e **sai**. A conferência se aposenta sozinha: coluna legada só é
+  exigida na view enquanto alguma função a citar, e nada precisa ser editado à mão
+  quando o Bloco 6 reescrever os rankings.
+
+  **A prova do refresh é comportamental, não textual.** Como o papel
+  `authenticated`, o gate grava um cabelo livre por `update_avatar_identity` e
+  exige que `get_public_profile` devolva o cabelo **novo** na mesma hora — medido:
+  careca → `assimetrico`, pele 5, cor 3. Sem o `PERFORM`, o `/perfil` do aluno
+  mostraria o cabelo novo (lê `users` direto) e o `/perfil/[userId]` dos colegas o
+  antigo, até alguém subir de nível. Ler o corpo da função é a anti-regressão
+  barata que fica **ao lado** da prova, nunca no lugar dela.
+
+  **O REVOKE veio junto do CREATE, e o ensaio mediu o par.** O ALTER DEFAULT
+  PRIVILEGES do schema `public` no Supabase concede tudo a `anon` e
+  `authenticated`: matview recriada **nasce legível pelo navegador**, e o que sai
+  por ali é `display_name` CRU e a coluna `ranking_visible` — o opt-out do ranking.
+  O aviso estava escrito em `20260806150000` endereçado a quem recriasse a view.
+  Medido no ensaio: `relacl` **idêntico** antes e depois
+  (`postgres=arwdDxtm | service_role=arwdDxtm`).
+
+  **`get_public_profile` perdeu 3 chaves e ganhou 3.** Saíram `avatar_config`,
+  `avatar_base` e `equipped_items` — os três da pilha v2, sem leitor nenhum em
+  `src/` (o F.1 publicou o Bloco D, e `PublicProfileClient` não toca em nenhum).
+  Entraram `avatar_skin`, `avatar_hair` e `avatar_hair_color`, como **índice e
+  slug**: a tradução para hex acontece uma vez, dentro do `<AvatarKokeshi>` do E.1.
+  `PublicProfileData` foi ajustado junto, e a `EquippedItem` órfã saiu.
+
+  ⚠️ **A pergunta nova deste bloco, e ela foi isolada de propósito no ensaio:**
+  `update_avatar_identity` passa a chamar `REFRESH MATERIALIZED VIEW CONCURRENTLY`
+  — dentro de uma transação, sobre uma matview criada na **mesma** transação. Não
+  era óbvio que funcionasse. Funciona, e foi medido antes do apply em vez de
+  descoberto depois. O `UNIQUE` em `user_id` é condição dele: sem esse índice o
+  refresh recusa, e quem o chama é `grant_xp` a cada level-up — perder o índice na
+  recriação quebraria **toda subida de nível do produto**, não só o avatar. Por
+  isso o gate cobra os 6 índices e a unicidade do primeiro.
+
+  **O `verify:all` ficou vermelho até o apply, e isso era o gate funcionando.** O
+  único vermelho era o `verify:perfil-publico`, que mede produção — verde antes do
+  apply significaria que ele não olha o banco. É a mesma forma registrada no E.2.
+
+  ⚠️ **Depois do apply sobrou um segundo vermelho, e ele é estrutural, não do
+  bloco:** o `verify:no-dup-rpc` cobrou o baseline de definições, porque
+  `CREATE OR REPLACE` numa migration nova soma +1 à contagem de cada função
+  recolada — `get_public_profile` 3→4 e `update_avatar_identity` 1→2. É o mesmo
+  passo que o Bloco A deu. O `--update` foi rodado e **o diff foi conferido antes
+  de aceitar**: exatamente as duas subidas, nenhuma entrada baixada em silêncio. É a
+  ressalva do G9 aplicada ao ratchet vizinho — `--update` que regrava arquivo
+  inteiro precisa de diff lido, não de fé.
+
+  **A migration do F.2, e por que o `WHERE` largo se sustenta na ORDEM.** Medido:
+  **8 de 19 contas** têm `avatar_chosen = true`, todas pela `update_avatar_base` da
+  v2, e as 19 estão no default integral da identidade nova. Não existe no banco
+  marca de *qual* identidade foi escolhida — as duas RPCs escrevem o mesmo booleano
+  —, e o default integral não serve de prova, porque pele 2 + careca + cor 0 é uma
+  escolha legítima. O que sustenta o `UPDATE ... WHERE avatar_chosen = true` é o
+  momento: aplicada na janela do F.2, nenhuma conta pode ter escolhido a identidade
+  nova, porque a tela que a grava está sendo publicada no mesmo push. Ensaiada a
+  seco: **8 true → 0**, e a segunda aplicação não acha linha nenhuma.
+  ⚠️ **Ordem dentro do F.2: push primeiro, apply depois.** O inverso abre uma
+  janela em que o cliente no ar ainda é o do F.1 e o redirecionamento aponta para a
+  `/criar-personagem` **v2** — quem entrar nela escolhe male/female e volta a
+  `avatar_chosen = true`, desfazendo a migration por dentro.
+
+  **Achado registrado e não consertado, pela regra 9:** o **G11** — `RankingEntry`
+  declara `avatar_base: string` obrigatório, e as 7 chaves que a RPC devolve de
+  verdade não o incluem. Sem bug em produção (ninguém lê o campo); sai junto com
+  `avatar_config` quando o Bloco 6 reescrever os rankings.
+
+- [ ] **E.4 — as três telas.** Depende do apply do E.3.
+- [ ] **E.5 — o e2e reescrito.**
+
 ### Bloco F — publicar
 
 Merge na `main`, push, e **conferência manual do Doug no ar** — a prova é a tela
