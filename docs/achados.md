@@ -208,6 +208,65 @@ sobre a pilha v2 (mais rápido, e o kokeshi segue preso em `/dev`), ou a F2 **é
 de pilha (é o que faz o investimento inteiro do avatar chegar a alguém). Escolha, não
 investigação.
 
+*Atualização 1 de 2026-08-10: **a F2 foi dimensionada.** O Doug mandou medir antes de
+escolher. Seis medidas, todas com arquivo e linha — e a conclusão é que o par
+"remendar × trocar" estava mal formulado.*
+
+***1. A pilha v2 tem 5 slots; o `compor()` tem zero.*** *`resolveAvatar`
+(`resolvedAvatar.ts:129`) resolve `background`, `head`, `pet`, `frame` — mais `outfit`,
+que substitui o corpo. `EstadoAvatar` (`tipos.ts:92-136`) tem seis campos e **nenhum é
+item**: `pele`, `cabelo`, `modeloCabelo`, `traje`, `animado`, `ns` (+ `escala`).
+**Ensinar item ao compositor não está em nenhuma das 16 tarefas.***
+
+***2. 20 dos 44 arquivos de `public/items/` não sobrevivem à troca — 16 itens
+distintos.*** *`outfit` é `dressed_base` (`slotDefinitions.ts:25`): o PNG **é o corpo
+inteiro vestido** e substitui o boneco. `head` é `head_swap`: **é a cabeça inteira**,
+daí o knockout. Os dois foram desenhados nas proporções do boneco v2, e o kokeshi
+desenha corpo e cabeça por código — nenhum dos 10 arquivos de outfit nem dos 10 de head
+assenta nele. **Sobrevivem 24:** os 8 fundos (ficam atrás da figura), os 8 frames (são
+CSS por raridade, `AvatarDisplay.tsx:156-161`, não imagem no stack) e os 8 pets
+(companion fora do `character-root`, `AvatarDisplay.tsx:125`).*
+
+***3. Mas o que se perderia já está quebrado, e essa é a medida que vira o jogo.***
+*Sete dos 8 itens de `head` não têm as variantes `-swap-male/-female` que o
+`assetResolver.ts:52` exige — só a bandana tem, e `resolvedAvatar.ts:181-184` já
+registra que equipar qualquer um dos outros recortava o topo da base sem desenhar nada
+por cima. O ratchet mede o passivo inteiro: **45 itens `sem_boneco`** em
+`scripts/verify/phase8/asset-baseline.json`, de IDs que vão a 77. **Remendar a v2 é
+remendar uma pilha que hoje não renderiza a maioria do próprio catálogo.***
+
+***4. A superfície da troca é pequena: duas chamadas.*** *`AvatarDisplay` só é chamado
+em produção por `PerfilClient.tsx:437,458` e `PublicProfileClient.tsx:50`. Todo o resto
+é `/dev`. **Trocar não é varrer o app.***
+
+***5. Há duas roupas concorrentes, e a F2 aposta numa sem dizer.*** *`Traje`
+(`tipos.ts:43`) é catálogo **em código**: `tinta` (png ou cor chapada) + decoração
+vetorial, clipada no `pathTronco()`. `outfit` é **linha na tabela `items`**, com
+`image_url`. A T2.1 acrescenta `hair` e `back` ao CHECK de `items.slot` — ou seja,
+aposta no modelo de banco, contra o catálogo em código que o compositor usa. **Ninguém
+decidiu qual das duas manda.***
+
+***6. Duas peças que a conta de 16 tarefas não tem.*** *A folha de estilo única (doc
+15, **5.7** — 30 avatares num ranking emitem 30 blocos `<style>` idênticos) e o
+`<AvatarCabeca>` (**6.1**), que é o recorte que **4 das 5 telas usam** e depende do
+`viewBox` de cabeça (**5.11**), não começado.*
+
+***O par certo, então, não é "remendar × trocar":***
+
+- ***Remendar*** *= ressuscitar 45 itens de arte v2 — que é a fila dos Blocos 8/9, não
+  da F2 — e o kokeshi morre em `/dev`.*
+- ***Trocar*** *= 24 dos 44 arquivos entram como estão, 16 itens viram passivo declarado,
+  e duas chamadas mudam. O caro **não é o código**: é arte nova de chapéu e de roupa nas
+  proporções kokeshi.*
+
+***O que continua NÃO medido, dito com todas as letras:*** *quanto custa a arte nova de
+`head` e `outfit`. É desenho, não código, e desenho é a fila do Bloco 8. Esta medida
+dimensionou o **software** da troca; o **acervo** dela segue sem preço.*
+
+***Trava:** continua sendo decisão do Doug — a medida não escolhe por ele, só tira a
+escolha do escuro.*
+**Medido por:** Claude, a pedido do Doug, 2026-08-10.
+
 **Nota lateral, do mesmo par doc × código:** o backlog diz que o catálogo *"foi de 5
 para 7 em 2026-08-07"* (`14:374-377`) e `ModeloCabelo` tem **5**
 (`src/lib/avatar/estilo/cabelo.ts:93-98`) — o commit `65cb0da` podou o resto. O header

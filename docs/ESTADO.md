@@ -86,9 +86,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 2 |
+| **Commits à frente de `origin/main`** | 3 |
 | **Árvore** | **1 arquivos sujos** |
-| **Último commit** | d78218b · 2026-08-10 · chore(deps): Next 16.1.6 -> 16.2.12, com eslint-config-next junto |
+| **Último commit** | 96e2a42 · 2026-08-10 · docs(achados): o D5 registra as 19 vulnerabilidades e o que falta medir nelas |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
