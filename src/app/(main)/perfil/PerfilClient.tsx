@@ -2,8 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAchievements } from "@/hooks/useAchievements";
 import Chocadeira from "@/components/avatar/Chocadeira";
+import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
+import EditorDeAparencia, {
+  type Aparencia,
+  type CabeloDoCatalogo,
+} from "@/components/avatar/EditorDeAparencia";
+import Card, { CardTitle } from "@/components/ui/Card";
 import AchievementPanel from "@/components/gamification/AchievementPanel";
 import { xpForLevel } from "@/lib/gamification/xp";
 
@@ -20,10 +27,13 @@ import { xpForLevel } from "@/lib/gamification/xp";
  * banco: não há mais `items`, `user_inventory`, `user_equipped`, `equip_item`
  * nem `unequip_slot`. Sem tabela por baixo, a tela mostrava zeros.
  *
- * A Chocadeira ficou — ovo continua existindo e continua pagando XP.
+ * A Chocadeira ficou — e desde o E.2 ela fica VAZIA, porque nenhum baú cria ovo
+ * até haver pet. É por isso que ela mostra o "em breve" em vez de sumir.
  *
- * Quem devolve avatar a esta tela é o Bloco E, com o `<AvatarKokeshi>` e o
- * seletor de cabelo. Ver docs/avatar/20-troca-de-pilha-plano.md.
+ * O E.4 devolveu o avatar: o `<AvatarKokeshi>` é o palco do cabeçalho, e o
+ * `<EditorDeAparencia>` ocupa a coluna que era do inventário. O RESTO desta tela
+ * continua em Tailwind cru (stone-/amber-) — é dívida anterior ao bloco, e migrá-la
+ * é trabalho à parte. Ver docs/avatar/20-troca-de-pilha-plano.md.
  */
 interface ProfileData {
   userId: string;
@@ -43,6 +53,10 @@ interface ProfileData {
 
 interface PerfilClientProps {
   profile: ProfileData;
+  /** As 3 colunas do Bloco C, como o servidor as gravou. É o palco em repouso. */
+  aparencia: Aparencia;
+  /** `avatar_hair_catalog` inteiro — inclusive o que este aluno ainda não alcança. */
+  catalogoCabelo: CabeloDoCatalogo[];
   botsDefeated: number;
   lessonsCompleted: number;
   puzzlesSolved: number;
@@ -276,12 +290,26 @@ function AchievementPreviewCard({ title, description, icon }: { title: string; d
 
 export default function PerfilClient({
   profile,
+  aparencia,
+  catalogoCabelo,
   botsDefeated,
   lessonsCompleted,
   puzzlesSolved,
 }: PerfilClientProps) {
+  const router = useRouter();
   const { achievements, loading: achievementsLoading } = useAchievements();
   const [showAllAchievements, setShowAllAchievements] = useState(false);
+
+  // O palco do cabeçalho desenha ESTE estado, não o do servidor: mexer numa
+  // amostra tem de aparecer no boneco grande na mesma hora, senão o aluno não
+  // sabe se a escolha pegou. `salvo` guarda o que o servidor confirmou, e a
+  // diferença entre os dois é o que o aviso de "não salvo" mede.
+  const [salvo, setSalvo] = useState<Aparencia>(aparencia);
+  const [emProva, setEmProva] = useState<Aparencia>(aparencia);
+  const naoSalvo =
+    emProva.skin !== salvo.skin ||
+    emProva.hair !== salvo.hair ||
+    emProva.hairColor !== salvo.hairColor;
 
   // --- XP ---
   const xpNeeded = xpForLevel(profile.level);
@@ -364,14 +392,29 @@ export default function PerfilClient({
               {profile.title}
             </span>
 
+            {/* --- O palco ---
+                O boneco voltou no E.4, e voltou desenhando o estado EM PROVA:
+                mexer numa amostra lá embaixo repinta a criança aqui em cima. É o
+                único boneco grande da tela — o editor não tem prévia própria, de
+                propósito, para não existirem dois bonecos disputando o papel de
+                "quem eu sou". */}
+            <div className="mt-3 grid place-items-center">
+              <AvatarKokeshi
+                skin={emProva.skin}
+                hair={emProva.hair}
+                hairColor={emProva.hairColor}
+                altura={168}
+                animado
+                ns="palco"
+                rotulo={`Avatar de ${profile.displayName}`}
+              />
+            </div>
+
             {/* --- Quick stats ---
-                O boneco ficava aqui, no centro, flanqueado por duas colunas de
-                stat que só apareciam no desktop; o mesmo trio se repetia num
-                grid 2×2 no mobile. Sem centro para flanquear, as duas
-                estruturas viraram uma: um grid de 3, igual nas duas larguras.
-                A quarta stat era "Coleção" (`items.length/catalogTotal`) e saiu
-                com o inventário — não há mais catálogo para contar.
-                O Bloco E recompõe o palco em volta do `<AvatarKokeshi>`. */}
+                As duas colunas de stat que flanqueavam o boneco no desktop, e o
+                grid 2×2 que as repetia no mobile, viraram um grid de 3 igual nas
+                duas larguras no Bloco D. Ele ficou: o palco voltou por cima, não
+                no meio. A quarta stat era "Coleção" e saiu com o inventário. */}
             <div className="mt-4 grid w-full max-w-sm grid-cols-3 gap-2">
               <QuickStat icon={<IconRook />} value={profile.puzzleRating.toString()} label="Rating" />
               <QuickStat icon={<IconBolt />} value={profile.puzzleBestStreak > 0 ? profile.puzzleBestStreak.toString() : "—"} label="Sequência" />
@@ -510,11 +553,36 @@ export default function PerfilClient({
             </section>
           </div>
 
-          {/* --- Right Column: Chocadeira ---
+          {/* --- Right Column: Aparência + Chocadeira ---
               "Equipamentos da Campanha" (SlotGrid) e "Personalizar Avatar"
-              (InventoryGrid) saíram com o inventário v2. O seletor de cabelo do
-              Bloco E ocupa este lugar. */}
+              (InventoryGrid) saíram com o inventário v2; o editor de aparência do
+              E.4 ocupa este lugar. A Chocadeira fica abaixo dele, vazia, com o
+              "em breve" — decisão do Doug, não descuido. */}
           <div className="flex flex-col gap-5">
+            <Card className="p-5">
+              <CardTitle>Aparência</CardTitle>
+              <EditorDeAparencia
+                valor={emProva}
+                aoMudar={setEmProva}
+                catalogo={catalogoCabelo}
+                nivel={profile.level}
+                rotuloAcao="Salvar aparência"
+                aoSalvar={() => {
+                  setSalvo(emProva);
+                  // O servidor confirmou; `refresh` traz de volta o que só ele
+                  // sabe — inclusive o nível, que é o que destrava a próxima
+                  // peça. Sem ele, um level-up recente não abriria o cadeado até
+                  // o aluno recarregar a página na mão.
+                  router.refresh();
+                }}
+              />
+              {naoSalvo && (
+                <p className="mt-3 text-xs text-ink/70">
+                  Você está provando um visual novo. Ele só vale depois de salvar.
+                </p>
+              )}
+            </Card>
+
             <Chocadeira />
           </div>
         </div>

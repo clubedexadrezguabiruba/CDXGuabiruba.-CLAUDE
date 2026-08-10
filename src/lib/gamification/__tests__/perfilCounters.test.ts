@@ -11,9 +11,27 @@
  *   Ninguém notou porque nada verificava. É o mesmo padrão da curva de XP: um
  *   número constante no client discordando do banco, em silêncio.
  *
- * O total sempre vem do dado (achievements.length, catalogTotal), nunca de um
- * literal. Mesma abordagem de asserção estática sobre código-fonte usada em
+ * O total sempre vem do dado (achievements.length), nunca de um literal. Mesma
+ * abordagem de asserção estática sobre código-fonte usada em
  * scripts/verify/security/verify-puzzle-authority.ts.
+ *
+ * ---------------------------------------------------------------------------
+ * A SEGUNDA ASSERÇÃO SAIU NO E.4, E O MOTIVO É O QUE ELA VIROU
+ * ---------------------------------------------------------------------------
+ *
+ * Havia aqui um segundo `it`: *"o total da coleção vem do catálogo"*, medido por
+ * `expect(src).toContain("catalogTotal")`. A stat "Coleção" foi apagada no Bloco
+ * D da troca de pilha, junto com `items`, `user_inventory` e o inventário
+ * inteiro (Bloco B) — **não existe mais catálogo para contar**.
+ *
+ * Ela continuou verde por três blocos porque a palavra `catalogTotal` sobreviveu
+ * num COMENTÁRIO que explicava a remoção. O teste não media código nenhum:
+ * media a própria lápide. Só caiu quando o E.4 reescreveu aquele comentário.
+ *
+ * É a vacuidade que este projeto já pagou duas vezes (o "Gate 6b" do R1 nasceu
+ * disso), e a resposta não é recolocar a palavra: é tirar a asserção que não tem
+ * mais sujeito. O que ela protegia — denominador vindo do dado — continua
+ * protegido pelo `it` acima, que vale para QUALQUER contador da tela.
  */
 
 import { describe, it, expect } from "vitest";
@@ -52,11 +70,5 @@ describe("PerfilClient — contadores", () => {
       `Total hardcoded em contador. Use o tamanho do dado ` +
         `(achievements.length, catalogTotal), não um literal:\n${ofensores.join("\n")}`
     ).toEqual([]);
-  });
-
-  it("o total da coleção vem do catálogo, não do inventário do aluno", () => {
-    const src = lerPerfilClient().join("\n");
-    // items.length é quantos o aluno TEM; o denominador precisa ser o catálogo.
-    expect(src).toContain("catalogTotal");
   });
 });

@@ -3,15 +3,24 @@
 import Link from "next/link";
 import type { PublicProfileData } from "@/types/ranking";
 import { xpForLevel } from "@/lib/gamification/xp";
+import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 
 interface Props {
   profile: PublicProfileData;
 }
 
-// O avatar saiu daqui no Bloco D da troca de pilha: o `AvatarDisplay` montava a
-// pilha v2, e desde o Bloco B o `get_public_profile` devolve `equipped_items` como
-// `[]` fixo — o boneco já vinha vazio. Quem devolve avatar a esta tela é o Bloco E,
-// com o `<AvatarKokeshi>`. Ver docs/avatar/20-troca-de-pilha-plano.md.
+/**
+ * O avatar saiu daqui no Bloco D e voltou no E.4.
+ *
+ * Ele não é buscado: as três colunas chegam prontas dentro de `get_public_profile`,
+ * que o E.3 reescreveu para devolver `avatar_skin`/`avatar_hair`/`avatar_hair_color`
+ * no lugar do `equipped_items` fixo em `[]` da pilha v2. Índice e slug, a mesma
+ * língua do banco — a tradução para hex é do `<AvatarKokeshi>`.
+ *
+ * **Sem animação, e de propósito:** este é o perfil de OUTRA pessoa, uma tela de
+ * leitura. Piscar e respirar são para o boneco do próprio aluno, onde o movimento
+ * é a resposta ao que ele acabou de escolher.
+ */
 export default function PublicProfileClient({ profile }: Props) {
   const xpNeeded = xpForLevel(profile.level);
   const xpPercent = Math.min(100, Math.round((profile.xp / xpNeeded) * 100));
@@ -32,8 +41,22 @@ export default function PublicProfileClient({ profile }: Props) {
         ← Voltar ao Quadro de Honra
       </Link>
 
-      {/* Header: Info (o avatar volta no Bloco E) */}
+      {/* Header: avatar + info */}
       <div className="mb-6 flex items-start gap-4 rounded-xl border bg-white p-5 shadow-sm">
+        {/* O marfim atrás do boneco é o mesmo do palco do próprio perfil: o
+            contorno preto do kokeshi precisa de fundo claro para manter a
+            silhueta, e o branco puro do card o deixaria recortado demais. */}
+        <div className="grid shrink-0 place-items-center rounded-lg bg-warm-stone px-2 py-2">
+          <AvatarKokeshi
+            skin={profile.avatar_skin}
+            hair={profile.avatar_hair}
+            hairColor={profile.avatar_hair_color}
+            altura={104}
+            ns="perfil-publico"
+            rotulo={`Avatar de ${profile.public_name}`}
+          />
+        </div>
+
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold text-zinc-900">
             {profile.public_name}

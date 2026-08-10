@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import PerfilClient from "./PerfilClient";
+import type {
+  Aparencia,
+  CabeloDoCatalogo,
+} from "@/components/avatar/EditorDeAparencia";
 
 export interface ProfileData {
   userId: string;
@@ -34,9 +38,17 @@ export default async function PerfilPage() {
   // Buscar dados do perfil
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at")
+    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_hair, avatar_hair_color")
     .eq("id", user.id)
     .single();
+
+  // A régua de desbloqueio vem do banco a cada carga, e não de uma cópia em
+  // `cabelo.ts`: quem decide quem pode usar o quê é o servidor (Regra Inviolável
+  // nº 1). O aluno lê o catálogo INTEIRO, inclusive as linhas que não alcança —
+  // é o que permite mostrar o cadeado com o nível que falta.
+  const { data: catalogoCabelo } = await supabase
+    .from("avatar_hair_catalog")
+    .select("slug, min_level");
 
   const { data: titleData } = await supabase
     .from("user_titles")
@@ -86,9 +98,17 @@ export default async function PerfilPage() {
     rushResistencia: profile?.rush_resistencia_record ?? 0,
   };
 
+  const aparencia: Aparencia = {
+    skin: profile?.avatar_skin ?? 2,
+    hair: profile?.avatar_hair ?? null,
+    hairColor: profile?.avatar_hair_color ?? 0,
+  };
+
   return (
     <PerfilClient
       profile={profileData}
+      aparencia={aparencia}
+      catalogoCabelo={(catalogoCabelo as CabeloDoCatalogo[] | null) ?? []}
       botsDefeated={botsDefeated ?? 0}
       lessonsCompleted={lessonsCompleted ?? 0}
       puzzlesSolved={puzzlesSolved ?? 0}

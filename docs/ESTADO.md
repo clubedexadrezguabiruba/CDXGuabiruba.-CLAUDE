@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 3 |
-| **Árvore** | **9 arquivos sujos** |
-| **Último commit** | b5fe575 · 2026-08-10 · feat(avatar): E.2 — o baú paga na hora, e a fila de 445 XP esvaziou |
+| **Commits à frente de `origin/main`** | 4 |
+| **Árvore** | **10 arquivos sujos** |
+| **Último commit** | 1faa8ff · 2026-08-10 · feat(avatar): E.3 — o perfil público carrega o kokeshi, e o cache refresca sozinho |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

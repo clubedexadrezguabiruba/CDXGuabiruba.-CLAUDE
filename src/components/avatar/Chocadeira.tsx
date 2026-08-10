@@ -4,7 +4,52 @@ import { useState } from "react";
 import { useEggs } from "@/hooks/useEggs";
 import { EGG_HATCH_HOURS } from "@/lib/constants/items";
 import EggHatchingModal from "@/components/gamification/EggHatchingModal";
+import Badge from "@/components/ui/Badge";
+import Card, { CardTitle } from "@/components/ui/Card";
 import type { HatchResult } from "@/types/inventory";
+
+/**
+ * O ESTADO VAZIO — e desde o E.2 ele é o único estado que existe.
+ *
+ * `claim_chest` parou de criar ovo quando o baú passou a pagar XP na hora, e pet
+ * foi apagado no Bloco B. Enquanto não houver arte de bichinho, a fila fica em
+ * zero para sempre.
+ *
+ * **A Chocadeira fica na tela mesmo assim** — decisão do Doug no E.4. Sumir seria
+ * mais limpo e mais errado: o aluno que já viu ovo aqui concluiria que perdeu
+ * alguma coisa, e quem nunca viu não saberia que existe. Vazio com prazo é uma
+ * promessa; ausência é um buraco.
+ *
+ * O texto não promete data porque não há data, e não diz "pet" porque a palavra
+ * ainda não existe em lugar nenhum do produto para a criança.
+ */
+function ChocadeiraVazia() {
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <CardTitle className="mb-0">Chocadeira</CardTitle>
+        <Badge>Em breve</Badge>
+      </div>
+      <div className="flex items-center gap-3">
+        <svg
+          aria-hidden
+          className="h-9 w-9 shrink-0 text-ink/25"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.6}
+        >
+          <path d="M12 3c3.2 0 6 4.6 6 8.4A6 6 0 016 11.4C6 7.6 8.8 3 12 3z" />
+          <path d="M9.5 12.5l1.6 1.6 1.5-2 1.6 1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <p className="text-sm text-ink/70">
+          Nenhum ovo por aqui. Os baús estão pagando XP na hora — os ovos voltam
+          quando os companheiros do Reino chegarem.
+        </p>
+      </div>
+    </Card>
+  );
+}
 
 const CRACK_LINES = [
   [], // crack 0: intacto
@@ -43,7 +88,8 @@ export default function Chocadeira() {
   const [hatchResult, setHatchResult] = useState<HatchResult | null>(null);
   const [hatchError, setHatchError] = useState<string | null>(null);
 
-  if (loading || eggCount === 0) return null;
+  if (loading) return null;
+  if (eggCount === 0) return <ChocadeiraVazia />;
   if (!activeEgg || !activeStage || !activeTimeRemaining) return null;
 
   const crack = activeStage.crack;

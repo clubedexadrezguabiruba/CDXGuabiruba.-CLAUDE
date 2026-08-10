@@ -336,6 +336,58 @@ cria as três colunas (`avatar_skin`, `avatar_hair`, `avatar_hair_color`) com de
 
 ## 🟡 Promessa sem lastro
 
+### G12 — o seletor de cabelo oferece 6 opções e só 4 são reconhecíveis pelo desenho
+**Prova:** `MEDIDO` — 2026-08-10, rasterização das 6 fichas do seletor a 2× no
+chromium, comparação pixel a pixel par a par. Achado pelo Claude, executando o
+E.4. Registrado e **não consertado**, pela regra 9.
+
+O seletor do `<EditorDeAparencia>` desenha o mesmo boneco seis vezes, um por
+modelo. Rasterizadas as fichas (214×300 px = 64.200 px cada) e medida a diferença
+entre cada par:
+
+| par | pixels diferentes | % da ficha |
+|---|---|---|
+| Careca × Moicano | 3.309 | **5,2%** |
+| Coque × Moicano | 4.027 | **6,3%** |
+| Careca × Coque | 4.406 | **6,9%** |
+| os outros 12 pares | 10.865–20.731 | 16,9%–32,3% |
+
+**Careca, Coque e Moicano formam um bloco de quase-duplicatas.** A massa de tinta
+de cabelo é 339 px na careca (só o antialias do contorno), **2.340 no moicano** e
+**3.308 no coque**, contra 10.257 do espetado, 12.923 do chanel e 18.455 do
+assimétrico. O moicano difere da careca por 5,2% — está mais perto de "sem
+cabelo" do que de "com cabelo".
+
+**E as duas leem como outra coisa.** Em loiro, o coque lê como **gorro de tricô
+com pompom** (a faixa cruzando a testa mais a bola no alto) e o moicano como
+**coroa** (crista destacada, têmporas na cor da pele). São duas das seis peças do
+slot *cabelo* ocupando a leitura do slot *chapéu*.
+
+**Não é tamanho, é massa — a subida de 100 px para 150 px não resolveu.** Ela
+resolveu o espetado, o chanel e o assimétrico; o coque e o moicano não têm o que
+crescer. Duas causas somadas:
+
+1. **A peça em si.** Coque e moicano são os dois modelos **paramétricos**
+   (`MODELOS_PARAMETRICOS` em `cabelo.ts:659`), desenhados antes da rota de arte.
+   Os três traçados da arte têm 3× a 8× mais tinta. Conserto = redesenho, e cai
+   no Bloco 8 do doc 15.
+2. **O boneco é de corpo inteiro.** Medido: a cabeça é 39,6% da altura do
+   desenho, e **57% da ficha é o mesmo tronco nas seis**. O recorte de cabeça
+   (`CAIXA_CABECA`, `bordasEm()`, `folha-base.ts:252`) existe medido e **está
+   fora do Bloco E por decisão do Doug** — é o Bloco 6 do doc 15. Com ele, a
+   mesma ficha ampliaria ~1,56×: a crista do moicano iria de 24 px para ~29 px
+   dentro de um card do mesmo tamanho.
+
+**Medido de brinde, e é o único item com cheiro de defeito:** a ponta do moicano
+**encosta no teto do `viewBox`** — 3 px de tinta na linha 0 do SVG, folga zero,
+contra 7 a 23 px de folga nos outros cinco. Hoje não corta nada porque o SVG não
+tem `overflow: hidden` no caminho, mas é a peça que quebra primeiro se algum
+recorte entrar.
+
+**O que falta para fechar:** decisão do Doug sobre a ordem — se o recorte de
+cabeça (Bloco 6) vem antes do redesenho das duas peças (Bloco 8), ou o contrário.
+Nenhum dos dois é trabalho do E.
+
 ### G10 — a escada de desbloqueio do cabelo foi derivada com a curva errada, e é ~40% mais curta do que o doc diz
 **Prova:** `MEDIDO` — 2026-08-10, `pg_get_functiondef('grant_xp')` no banco vivo
 + `src/lib/gamification/xp.ts:20`. Achado pelo Claude, executando o E.2.
@@ -517,6 +569,35 @@ mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em ve
 ---
 
 ## 🔵 Decisão ou divergência
+
+### D7 — o `/perfil` ficou com dois idiomas visuais na mesma tela
+**Prova:** `MEDIDO` — 2026-08-10, `verify:design-tokens` depois do E.4. Achado
+pelo Claude, executando o E.4. Registrado e **não consertado**, pela regra 9.
+
+O E.4 pôs na tela dois blocos escritos na direção A (o palco do `<AvatarKokeshi>`
+e o card "Aparência", ambos em token: `ink`, `gold`, `warm-stone`, `font-heading`)
+**ao lado** dos blocos que continuam em Tailwind cru desde antes da direção
+existir. O gate mede o resto: `PerfilClient.tsx` ainda tem **70 cores cruas**
+(era 83 antes do bloco), quase todas `stone-*` e `amber-*`, e
+`PublicProfileClient.tsx` tem 17, quase todas `zinc-*`.
+
+Na prática, no mesmo scroll, o aluno vê um card de conquistas com gradiente âmbar
+e um card de aparência com fio `ink/10` e ouro pontual. **Âmbar e ouro são
+vizinhos de matiz**, então não briga — mas também não é o mesmo produto.
+
+**Por que não foi consertado aqui:** o ratchet do `verify:design-tokens` aceita
+legado e reprova crescimento, e o E.4 só baixou o número. Migrar a tela inteira
+é ~500 linhas de reescrita visual que nada no Bloco E pediu, dentro de um bloco
+cuja instrução era *"as três telas, e nada além"*. Também não é dívida deste
+bloco: é a mesma dos 54 arquivos que o DESIGN.md nomeia como o débito a pagar.
+
+**Um item concreto, para quem pegar:** o hook do `impeccable` apontou
+`PerfilClient.tsx:461` — o link "Ver perfil público" usa `text-stone-600` com
+`hover:bg-amber-50`. É pré-existente ao E.4 e está dentro do baseline.
+
+**O que falta para fechar:** decisão do Doug sobre quando o `/perfil` entra na
+fila de migração para a direção A — junto do Bloco 6 (que já reescreve rankings e
+navbar) ou como commit próprio.
 
 ### D1 — O ranking de turma ignora `ranking_visible` de propósito
 **Prova:** `VERSIONADO` — `20260316100000_phase10_rankings.sql:232,277-284`

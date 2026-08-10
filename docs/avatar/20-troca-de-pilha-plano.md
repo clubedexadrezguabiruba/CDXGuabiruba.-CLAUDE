@@ -758,7 +758,88 @@ apagado no Bloco B —, nenhum baú cria ovo até haver arte. Daí:
   verdade não o incluem. Sem bug em produção (ninguém lê o campo); sai junto com
   `avatar_config` quando o Bloco 6 reescrever os rankings.
 
-- [ ] **E.4 — as três telas.** Depende do apply do E.3.
+- [x] **E.4 fechado em 2026-08-10 — as três telas servem `compor()`.**
+  `typecheck` 0 · `lint` 0 erros · **478/478** testes · `build` verde ·
+  **`verify:all` exit 0**.
+
+  📊 **O número:** **3 telas com boneco, 0 chamadas de `AvatarDisplay`** — que é
+  o número que o Bloco E prometia. E, de brinde, `verify:design-tokens` foi de
+  **1.154 para 1.083 cores cruas**: `/criar-personagem` foi de 14 para **0**, e
+  o `PerfilClient` de 83 para **70**.
+
+  **Um componente, três telas, e o estado mora na tela.** O
+  `<EditorDeAparencia>` é **controlado**: quem guarda a `Aparencia` é a tela, que
+  também desenha o palco. Foi a única forma de não haver **dois bonecos grandes**
+  no `/perfil` — um "quem eu sou" e um "o que estou provando", sem o aluno saber
+  qual manda. Assim o palco do cabeçalho **é** a prévia, e mexer numa amostra
+  repinta a criança em cima na mesma hora.
+
+  **As seis fichas do seletor são o segundo preview, e saem de graça:** cada uma
+  desenha a MESMA criança com um modelo. Trocar cor de cabelo ou tom de pele
+  repinta as seis de uma vez. É onde o `ns` por instância do E.1 se paga — com um
+  `ns` só, as seis resolveriam para o gradiente da primeira e a troca de pele não
+  apareceria em nenhuma.
+
+  **O que o `/perfil` ganhou além do combinado, e por quê:** o editor oferece
+  **pele também**, não só cabelo. A RPC grava as três colunas de uma vez, sempre;
+  um seletor que mostra duas e escreve três esconde o que faz — e tom de pele
+  escolhido uma vez na vida, sem volta, é porta de mão única para uma criança que
+  errou o toque. Uma fileira de amostras a mais. É a única coisa neste bloco fora
+  do texto do pedido, e sai em uma linha se o Doug quiser.
+
+  **`/criar-personagem` lê o nível REAL, e não presume 1.** A tentação é assumir
+  que quem chega ali acabou de nascer — e ela quebra na migration do F.2, que
+  zera `avatar_chosen` de **8 contas com XP, nível e baú**. Um aluno de nível 20
+  mandado de volta tem direito ao coque e ao moicano.
+
+  **A Chocadeira ficou, vazia, com "em breve"** (decisão do Doug). Ela retornava
+  `null` com fila zero — e desde o E.2 a fila é zero para sempre. Sumir seria
+  mais limpo e mais errado: quem já viu ovo ali concluiria que perdeu alguma
+  coisa, e quem nunca viu não saberia que existe.
+
+  ⚠️ **O laço "construir → ver → criticar" rodou quatro vezes, e as três primeiras
+  acharam defeito meu.** A conferência foi no chromium, numa bancada temporária
+  em `/design-lab/e4` — a vitrine é a única rota que dispensa login, e
+  `/perfil` exige sessão. A bancada foi **apagada** no fim. O que ela pegou, e
+  que leitura de código não pegaria:
+
+  1. **Três colunas em 375px davam ficha de 92px e cabeça de 39px** — o moicano
+     lia como coroa. Duas colunas e boneco de 150px dão cabeça de 59px.
+  2. **`opacity-55` na ficha travada apagava a ARTE junto com o texto.** O cabelo
+     preto do chanel virava cinza e lia como "Grisalho" — que é uma das 8 cores
+     logo abaixo. E o "Nível 30" caía para **1,89:1** de contraste, atenuado duas
+     vezes (`ink/55` dentro de `opacity-55`). Agora travado é **fio tracejado +
+     fundo branco**, com a arte em cor cheia: a peça travada é a que se quer
+     desejar, e mostrá-la desbotada vende o contrário.
+  3. **`sm:grid-cols-3` mede a JANELA, não o contêiner.** Num monitor de 1280 a
+     coluna estreita do perfil recebia 3 colunas de 108px para uma arte de 107px
+     **fixos** — 0,8px de folga. Saiu.
+  4. **Teto em grade não é teto em ficha.** `max-w-md` na grade virava ficha de
+     220px com 56px de branco de cada lado do desenho. Com `max-w-xs` a ficha
+     mede 135–156px em qualquer largura.
+  5. **`fit-content` é a largura do filho mais largo** — e a nota de dica ("A cor
+     entra em cena quando você escolher um cabelo") mandava na seção inteira,
+     abrindo os discos para 47px de vão e desalinhando o cabeçalho em 27px. No
+     estado padrão de quem acabou de chegar. A nota saiu de dentro do `w-fit`.
+
+  Conferido no fim: **0 overflow horizontal** em 375 e 1280, amostras 4+4 em toda
+  largura, passo idêntico entre os dois grupos de cor, ficha de altura uniforme.
+
+  ⚠️ **Um teste caiu, e ele estava vivo por um comentário.**
+  `perfilCounters.test.ts` exigia a string `"catalogTotal"` no `PerfilClient` —
+  mas a stat "Coleção" foi apagada no Bloco D e o catálogo de itens no Bloco B.
+  A asserção passou por três blocos porque a palavra sobrevivia **num comentário
+  que explicava a remoção**: o teste media a própria lápide. Caiu quando o E.4
+  reescreveu o comentário. A resposta não foi recolocar a palavra — foi tirar a
+  asserção sem sujeito. O outro `it` (nenhum total literal em contador) fica, e
+  vale para qualquer contador da tela. **478 testes, não 479, e isso é subtração.**
+
+  **Dois achados registrados e não consertados, pela regra 9:** o **G12** (o
+  seletor oferece 6 cabelos e só 4 são reconhecíveis pelo desenho — coque e
+  moicano têm 3% e 5% da tinta dos traçados e leem como gorro e coroa; medido por
+  rasterização par a par) e o **D7** (o `/perfil` ficou com dois idiomas visuais
+  na mesma tela — 70 cores cruas legadas ao lado dos blocos novos em token).
+
 - [ ] **E.5 — o e2e reescrito.**
 
 ### Bloco F — publicar

@@ -1,122 +1,75 @@
 "use client";
 
+/**
+ * A CRIAÇÃO DO RECRUTA — as três escolhas do avatar kokeshi.
+ *
+ * Substitui a tela do avatar v2, que oferecia macho/fêmea em dois PNGs e gravava
+ * pela `update_avatar_base` (deprecada no Bloco C). Aqui a identidade é
+ * **pele + cabelo + cor**, e quem grava é `update_avatar_identity`.
+ *
+ * O boneco fica em cima e os controles embaixo, em coluna única: em 375px o aluno
+ * vê a criança inteira e o que está escolhendo sem rolar entre uma coisa e a
+ * outra. O palco vive nesta tela e não dentro do editor — ver o docstring de
+ * `EditorDeAparencia`.
+ */
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import FaixaDeComando from "@/components/layout/FaixaDeComando";
+import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
+import EditorDeAparencia, {
+  type Aparencia,
+  type CabeloDoCatalogo,
+} from "@/components/avatar/EditorDeAparencia";
+import Card from "@/components/ui/Card";
 
-type AvatarOption = "male" | "female";
-
-export default function CriarPersonagemClient() {
-  const router = useRouter();
-  const [selected, setSelected] = useState<AvatarOption | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-
-  async function handleConfirm() {
-    if (!selected || saving) return;
-    setSaving(true);
-    setErro(null);
-
-    const supabase = createClient();
-    const { error } = await supabase.rpc("update_avatar_base", {
-      p_base: selected,
-    });
-
-    // O erro precisa aparecer. Antes este bloco só fazia setSaving(false) e
-    // return: o aluno clicava em "Confirmar", nada acontecia, e não havia nem
-    // mensagem nem log — o mesmo defeito que o commit 47fdf2c corrigiu em
-    // equipar/desequipar. Sem isso, um gate de avatar que falha é
-    // indistinguível de um botão que não responde.
-    if (error) {
-      setSaving(false);
-      setErro(
-        `Não foi possível salvar seu avatar. ${error.message} — tente novamente.`
-      );
-      return;
-    }
-
-    router.push("/dashboard");
-  }
-
-  return (
-    <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col items-center justify-center px-4 py-8">
-      <h1 className="mb-2 text-2xl font-bold text-zinc-900">
-        Criação do Recruta
-      </h1>
-      <p className="mb-8 text-center text-sm text-zinc-500">
-        Escolha a aparência base do seu avatar.
-      </p>
-
-      <div className="mb-8 flex gap-6">
-        <AvatarCard
-          label="Masculino"
-          src="/items/base/avatar-base-male.png"
-          isSelected={selected === "male"}
-          onClick={() => setSelected("male")}
-        />
-        <AvatarCard
-          label="Feminino"
-          src="/items/base/avatar-base-female.png"
-          isSelected={selected === "female"}
-          onClick={() => setSelected("female")}
-        />
-      </div>
-
-      <button
-        onClick={handleConfirm}
-        disabled={!selected || saving}
-        className="rounded-lg bg-emerald-600 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {saving ? "Salvando..." : "Confirmar"}
-      </button>
-
-      {erro && (
-        <p
-          role="alert"
-          className="mt-4 max-w-sm rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700"
-        >
-          {erro}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function AvatarCard({
-  label,
-  src,
-  isSelected,
-  onClick,
+export default function CriarPersonagemClient({
+  nivel,
+  inicial,
+  catalogo,
 }: {
-  label: string;
-  src: string;
-  isSelected: boolean;
-  onClick: () => void;
+  nivel: number;
+  inicial: Aparencia;
+  catalogo: CabeloDoCatalogo[];
 }) {
+  const router = useRouter();
+  const [aparencia, setAparencia] = useState<Aparencia>(inicial);
+
   return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition-all ${
-        isSelected
-          ? "border-emerald-500 bg-emerald-50 shadow-md"
-          : "border-zinc-200 bg-white hover:border-zinc-300"
-      }`}
-    >
-      <div className="flex h-56 w-40 items-center justify-center overflow-hidden rounded-lg bg-zinc-50">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={label}
-          className="h-full w-full object-contain"
-        />
+    <div className="min-h-screen bg-warm-ivory font-sans text-ink">
+      <FaixaDeComando
+        supertitulo="Reino das 64 Casas"
+        titulo="Criação do Recruta"
+        saudacao="Monte o seu boneco. Dá para trocar depois, no seu perfil."
+      />
+
+      <div className="mx-auto max-w-2xl px-5 py-6">
+        {/* O palco. Marfim quente atrás do boneco: o contorno preto do kokeshi é
+            arte de avatar e precisa de fundo claro — sobre o navy da faixa ele
+            perderia a silhueta. */}
+        <div className="grid place-items-center rounded-xl border border-ink/10 bg-warm-stone py-5">
+          <AvatarKokeshi
+            skin={aparencia.skin}
+            hair={aparencia.hair}
+            hairColor={aparencia.hairColor}
+            altura={210}
+            animado
+            ns="palco"
+            rotulo="Prévia do seu avatar"
+          />
+        </div>
+
+        <Card className="mt-4 p-5">
+          <EditorDeAparencia
+            valor={aparencia}
+            aoMudar={setAparencia}
+            catalogo={catalogo}
+            nivel={nivel}
+            rotuloAcao="Confirmar"
+            aoSalvar={() => router.push("/dashboard")}
+          />
+        </Card>
       </div>
-      <span
-        className={`text-sm font-medium ${
-          isSelected ? "text-emerald-700" : "text-zinc-600"
-        }`}
-      >
-        {label}
-      </span>
-    </button>
+    </div>
   );
 }
