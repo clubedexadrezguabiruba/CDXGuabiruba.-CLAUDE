@@ -453,10 +453,22 @@ que sumiu. Mais `npm test` e `verify:all`.
 ### Bloco E — o componente novo e as telas
 
 - **`<AvatarKokeshi>`** — extrair da `Boneco()` local de `AvatarKokeshiClient.tsx:28`
-- **`<AvatarCabeca>`** — recorte a partir de `CAIXA_CABECA` / `CABECA_H_EXTERNA`,
-  usando `folha-base.ts:252` como referência medida
+- ~~**`<AvatarCabeca>`**~~ — **saiu do Bloco E em 2026-08-10, por decisão do Doug.**
+  O recorte de cabeça existe para placement pequeno — navbar, os dois rankings,
+  mural —, e a §5 deste plano põe o **D30 inteiro fora do E**: é o Bloco 6 do doc
+  15. Construir aqui deixaria um componente **sem consumidor nenhum** até lá, e sem
+  tela que prove que o recorte lê certo a 56 px. Vai junto com o Bloco 6. Os
+  números continuam medidos e esperando: `CAIXA_CABECA`, `CABECA_H_EXTERNA`,
+  `EIXO_CABECA` e `bordasEm()` em `geometria.ts`, com `folha-base.ts:252` como
+  referência
 - **Folha de estilo única** (doc 15, 5.7): 30 avatares num ranking emitiriam 30
   blocos `<style>` idênticos
+- **A migration das duas pendências herdadas do Bloco C** — recriar
+  `user_public_profiles` e `get_public_profile` com as três colunas novas, chamar
+  `refresh_public_profiles()` dentro da `update_avatar_identity`, e zerar
+  `avatar_chosen` de quem escolheu o avatar v2. O `UPDATE` do `avatar_chosen` tem
+  de chegar **junto** com `/criar-personagem`, nunca antes: zerado sem a tela, o
+  dashboard manda o aluno para uma rota que ainda é a v2
 - Telas: `/criar-personagem` (3 escolhas), `/perfil` (avatar + seletor de cabelo
   com o bloqueado visível e o nível que falta), `/perfil/[userId]`
 - **`design-recruta64` é obrigatória** aqui; `impeccable` para os primitivos
@@ -472,7 +484,25 @@ que sumiu. Mais `npm test` e `verify:all`.
 Merge na `main`, push, e **conferência manual do Doug no ar** — a prova é a tela
 funcionando, como foi no R4.
 
-- [ ] Bloco F
+⚠️ **O F foi partido em dois em 2026-08-10, por decisão do Doug, e a §2 deste
+documento deixou de valer aqui.** A §2 manda atualizar a `main` uma vez só, no F,
+e o motivo escrito era a armadilha de ordem: cliente no ar mais velho que o banco.
+**Esse motivo terminou no Bloco D.** O A.2 fez o cliente parar de esperar item e o
+D tirou o resto — medido por grep, nada na branch chama `equip_item`,
+`unequip_slot`, `user_inventory`, `user_equipped` ou `items`. Pela primeira vez
+desde o Bloco A, o cliente da branch **bate com o banco de produção**.
+
+Manter a `main` parada até o fim do E custaria caro por nada: o que está no ar é o
+pré-Bloco-A, que faz `json.item as Record` seguido de `item.id` em
+`useChests.ts:122` — **abrir baú estoura na tela**, e estouraria por quantas
+sessões o E levar.
+
+- [x] **F.1 — publicar o D, em 2026-08-10.** Fecha o estouro do baú e aceita, de
+  propósito, um perfil **sem boneco nenhum** até o E — espaço vazio, não boneco
+  errado. Fast-forward, como no R4: `origin/main` era ancestral da branch, 0 atrás
+  e 12 à frente, medido com `git merge-base --is-ancestor` antes.
+- [ ] **F.2 — publicar o E**, com o avatar novo nas 3 telas. A conferência manual
+  do Doug no ar continua sendo a prova, e é aqui que ela vale.
 
 ## 5. O que este plano NÃO resolve
 
