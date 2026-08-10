@@ -864,8 +864,33 @@ sessões o E levar.
   propósito, um perfil **sem boneco nenhum** até o E — espaço vazio, não boneco
   errado. Fast-forward, como no R4: `origin/main` era ancestral da branch, 0 atrás
   e 12 à frente, medido com `git merge-base --is-ancestor` antes.
-- [ ] **F.2 — publicar o E**, com o avatar novo nas 3 telas. A conferência manual
-  do Doug no ar continua sendo a prova, e é aqui que ela vale.
+- [x] **F.2 — publicar o E, em 2026-08-10**, com o avatar novo nas 3 telas. A
+  conferência manual do Doug no ar continua sendo a prova, e é aqui que ela vale.
+  Fast-forward outra vez: `origin/main` ancestral, 0 atrás e 5 à frente, medido
+  antes. `8f6483b..9249254`. `verify:all` exit 0 antes e depois.
+
+  **A ordem foi cumprida: push primeiro, apply depois.** Medido em produção nos
+  dois lados do apply, só leitura:
+
+  | | antes | depois |
+  |---|---|---|
+  | `avatar_chosen = true` | 8 | **0** |
+  | `avatar_chosen = false` | 11 | 19 |
+  | `NULL` | 0 | 0 |
+  | default integral | 18 de 19 | 18 de 19 |
+  | `COMMENT` da coluna | ausente | presente |
+
+  As três colunas de identidade **não se mexeram**, que é o que a migration
+  promete: a única conta fora do default integral (pele 7, cabelo espetado)
+  continua com pele 7 e espetado, e só perdeu o `chosen`. Ela reentra na tela de
+  criação com a própria identidade pré-selecionada, por
+  `criar-personagem/page.tsx:42-44`.
+
+  ⚠️ **O "as 19 no default integral" desta §4 e do cabeçalho da migration está
+  vencido — são 18.** Medido na releitura do F.2, registrado como **D8** em
+  `docs/achados.md` e **não consertado**, pela regra 9. Não afeta a aplicação: na
+  janela do F.2 o `WHERE` largo continua correto pelo motivo escrito, que é a
+  ordem, não a heurística.
 
 ## 5. O que este plano NÃO resolve
 
