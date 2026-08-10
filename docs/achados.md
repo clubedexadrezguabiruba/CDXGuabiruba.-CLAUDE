@@ -72,38 +72,6 @@ e o gate passa a permitir explicitamente. Se não for, dropar e acrescentar à
 lista.
 **Achado por:** Codex, piloto P0, 2026-08-06.
 
-### R4 — a `main` no ar escreve direto em duas tabelas que o R1 já fechou
-**Prova:** `MEDIDO` — 2026-08-10, `git show origin/main` contra as três migrations do
-R1, que já estão aplicadas ao Supabase de produção.
-
-**Exposição hoje: zero alunos.** O Doug confirmou em 2026-08-10 que **há site no ar**
-servindo a `main`, mas só ele testando. Isto está registrado pelo que é, não pela
-urgência que tem hoje.
-
-`origin/main` está em `54d7e8a` (2026-07-31) — o painel mede quantos commits atrás.
-Duas telas de lá ainda fazem `UPDATE` direto:
-
-- `src/app/(main)/configuracoes/page.tsx:67-68` — `.from("users").update({ [field]: value })`
-- `src/app/(main)/turmas/[id]/tarefas/TarefasClient.tsx:95-96` — `.from("class_tasks").update({ active: !currentActive })`
-
-São exatamente as duas escritas que `20260809130000` e `20260809140000` revogaram. O
-R1 mediu `42501 permission denied` para `users` como papel `authenticated`, e a §5 de
-`verify:privileges` mede **zero** vias de escrita em `class_tasks`. As migrations
-viajaram para produção porque **não há banco separado** — é o D3. O código não viajou:
-`set_preferencias` e `set_task_active` só são chamadas nesta branch.
-
-Efeito no ar agora: **salvar qualquer preferência em Configurações falha**, e o
-**liga/desliga de tarefa do professor falha**. Em silêncio, porque ninguém está lá.
-
-**Não é regressão do R1** — é a metade do R1 que não viajou junto. E o conserto não é
-uma linha: é mesclar `avatar/vtracer` na `main`, o que arrasta dezenas de commits de
-avatar, gates e docs. **Decisão do Doug, não trabalho parado.**
-
-**Vira 🔴 com dente no dia do primeiro aluno.** Junta-se ao D3 como **pré-requisito de
-lançamento**: não se recebe aluno com a `main` atrás das migrations que já estão no
-banco dele.
-**Achado por:** Claude, conferência do 2b, 2026-08-10.
-
 ---
 
 ## 🟠 Trava trabalho
@@ -495,6 +463,7 @@ Esta ressalva do D4 fecha aqui.*
 | ✅ | **R1** — o navegador escrevia direto em **11 das 30 tabelas** de `public` (o achado original nomeava 2). Três alimentavam concessão de recompensa por `COUNT(*)`, então XP, conquista e patente se compravam forjando o lastro. E `users` era pior que lastro: `users_update_own` não restringia coluna e `authenticated` tinha `UPDATE` nas **26 de 26** — o aluno escrevia o próprio `xp`, `puzzle_rating` e o próprio `role`, que é escalada para professor | 2026-08-09 | **três migrations, um número medido em cada uma.** `20260809120000` dropa 15 policies de escrita nas 9 tabelas que nenhum código de cliente usa (§5: 11→2). `20260809130000` cria `set_preferencias` — 4 booleanos, a assinatura É o whitelist — e faz `REVOKE INSERT, UPDATE, DELETE ON public.users` (§5: 2→1). `20260809140000` cria `set_task_active` e fecha `class_tasks` (§5: **0**). **Rejeitada** a saída de regrantar coluna a coluna: cega o gate, que é o G2 de novo. Provado como o papel `authenticated` de um aluno real, em transação revertida: `UPDATE` de `xp`, `role` e `sound_muted` todos `42501 permission denied`, e as duas RPCs funcionando — inclusive negando a tarefa alheia. `verify:all` verde, 478 testes, build limpo |
 | ✅ | **T2** — o bloco Agora do `ESTADO.md`, único trecho manual de um arquivo gerado e o primeiro que o `CLAUDE.md` manda ler, errava em quatro pontos. Ganhou um quinto ao fechar o R1: seguia mandando **medir** o que já estava consertado | 2026-08-09 | os quatro fechados — a régua da patente passa a dizer **duas** versões e não três (a de 30 morreu na migration seguinte), a branch já tinha sido corrigida em `af7589e`, o doc 13 saiu da lista de decisões abertas por ter fechado por uso, e o ponteiro morto para `.scratch/estilo/BRIEFING-CABELO.md` deu lugar ao runbook 19 e ao `ESTADO-DA-ROTA.md`. Mais o quinto: a ordem agora lê **conferir o 2b → Lote 3 → F2**, e o bloco carrega a pendência de deploy que ninguém mediu. O gate `verify:estado` **não alcança** este bloco por desenho — a trava aqui é humana |
 | ✅ | **2 verdes por vacuidade** achados ao fechar o R1, nas réguas que provariam o próprio conserto | 2026-08-09 | a §3 de `verify:privileges` percorria só as RPCs que a query **achou**, então RPC dropada sumia da régua calada — corrigido, e provado reprovando pelas duas funções que ainda não existiam. E o Gate 6 de `verify:turmas` exigia por nome as 7 policies de escrita que o R1 removeu: viraram **Gate 6b**, que agora exige que continuem **removidas**. Apagar da lista bastaria para passar; não bastaria para medir |
+| ✅ | **R4** — a `main` no ar estava em `54d7e8a` (2026-07-31) e escrevia direto em `users` e `class_tasks`, que as migrations do R1 já haviam fechado **no mesmo banco** — porque não há Supabase separado (D3). As migrations viajaram para produção; o código que as substitui, não. **Configurações e o liga/desliga de tarefa falhavam no ar**, em silêncio, porque só o Doug estava lá | 2026-08-10 | **merge fast-forward, sem conflito possível:** `origin/main` era ancestral de `avatar/vtracer` (76 commits à frente, 0 atrás), medido antes com `git merge-base --is-ancestor`. `git merge --ff-only` levou `54d7e8a` → `8d31bca`, push disparou a Vercel. **Provado no site no ar, não em relatório:** o Doug conferiu as duas telas exatas que o achado nomeava — Configurações salva, liga/desliga de tarefa funciona. O 3º item da conferência (o perfil ainda mostra o avatar da pilha v2) **não é regressão**: `compor()` só é importado por `/dev/avatar-kokeshi`, e trocar a produção é o **T7** |
 | ✅ | **G6** — `npm run build` vermelho no `prebuild`. **A causa registrada estava ERRADA:** não era manifesto defasado. Era `--check` comparando **bytes crus** através da fronteira LF/CRLF — o gerador escreve `\n`, o `git checkout` desta máquina (`core.autocrlf=true`) devolve `\r\n`, e a comparação reprovava **todo arquivo que o git tivesse tocado** | 2026-08-07 | quebras normalizadas antes de comparar, como `gerar-livro-aberturas.ts:116` já fazia. Provado nos dois sentidos: passa com o arquivo em CRLF, e reprova nomeando o defeito quando um caminho falso é injetado |
 
 O precedente que importa: **todos fecharam com gate ou com prova medida, nunca

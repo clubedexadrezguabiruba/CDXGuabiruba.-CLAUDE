@@ -48,13 +48,16 @@ direta do navegador, `verify:all` está verde. Três migrations (`20260809120000
 sobrou dele está registrado como **R3** em `docs/achados.md`, e é decisão, não
 trabalho parado.
 
-**O deploy foi medido em 2026-08-10, e há site no ar servindo a `main`** — sem alunos,
-só o Doug testando. Como as migrations do R1 já estão no Supabase de produção e o
-código das duas telas ficou nesta branch, **Configurações e o liga/desliga de tarefa
-falham no ar agora**, em silêncio porque ninguém está lá. Vira urgente no dia do
-primeiro aluno, e o conserto é mesclar esta branch — decisão, não trabalho parado.
-Registrado como **R4** em `docs/achados.md`, ao lado do **D3** como pré-requisito de
-lançamento.
+**O R4 fechou em 2026-08-10, e o site no ar deixou de estar atrás do próprio banco.**
+A `main` estava em `54d7e8a` (2026-07-31) enquanto as migrations do R1 já rodavam no
+Supabase de produção — e **Configurações e o liga/desliga de tarefa falhavam no ar**.
+O merge saiu fast-forward (`54d7e8a` → `8d31bca`, 76 commits, zero conflito), o push
+disparou a Vercel, e o Doug conferiu as duas telas no ar: **as duas salvam**. A `main`
+publicada e esta branch estão no mesmo commit.
+
+**O que o Doug viu e NÃO é regressão:** o perfil no ar ainda mostra o avatar da pilha
+v2. É o esperado — `compor()` só é importado por `/dev/avatar-kokeshi`, e as telas de
+produção seguem em `AvatarDisplay`. Trocar um pelo outro é o **T7** e o Bloco 8.
 
 **O avatar espera, e o que sobrou dele está em ordem:** colar espetado e chanel em
 `CABELOS` · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
@@ -83,9 +86,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 74 |
+| **Commits à frente de `origin/main`** | 0 |
 | **Árvore** | **2 arquivos sujos** |
-| **Último commit** | efba0d1 · 2026-08-09 · chore: recontagem do bloco volátil do painel |
+| **Último commit** | 8d31bca · 2026-08-10 · docs(achados): o R3 registra que a decisão foi tomada, e foi esperar |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
