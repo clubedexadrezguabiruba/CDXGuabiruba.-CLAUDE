@@ -38,14 +38,21 @@ desde a poda, e por isso é o default da coluna nova.
 
 **Não há banco separado (D3): toda migration bate em produção na hora.** O site no
 ar serve a `main`, que ainda chama `equip_item`, lê `user_inventory` e monta o
-inventário. No instante em que o Bloco B rodar, **o site no ar quebra** — a mesma
-forma exata do R4 que acabou de fechar.
+inventário. Quando o banco muda, **o site no ar quebra** — a mesma forma exata do
+R4 que acabou de fechar.
+
+⚠️ **CORREÇÃO de 2026-08-10, depois de aplicar o Bloco A: a quebra começa no
+Bloco A, não no B.** Este documento dizia "Bloco B" e estava errado. O
+`claim_chest` novo devolve XP em vez de item, e o `useChests.ts:122` da `main`
+publicada faz `json.item as Record` seguido de `item.id` — com `item` ausente,
+**abrir baú no ar estoura na tela**. O erro é do cliente velho contra o banco
+novo, e some no Bloco F.
 
 **Como se lida:** o trabalho fica na branch, as migrations vão sendo aplicadas (e
-batem em produção), e **a `main` só é atualizada uma vez, no Bloco F**. Entre o
-Bloco B e o F o site fica quebrado. Hoje isso é aceitável — zero alunos, só o Doug
-— mas é **escolha consciente, não descuido**. O perfil do Doug perde os itens
-equipados, inclusive o pet.
+batem em produção), e **a `main` só é atualizada uma vez, no Bloco F**. Do Bloco A
+ao F o site fica quebrado. Hoje isso é aceitável — zero alunos, só o Doug — mas é
+**escolha consciente, não descuido**. O perfil do Doug perde os itens equipados,
+inclusive o pet.
 
 ## 3. O que a varredura mediu (2026-08-10)
 
@@ -138,7 +145,31 @@ reais em transação revertida, **zero exceção, XP em todas**. Falha antes, pa
 depois.
 📊 **Número:** 60/60 baús abertos sem erro.
 
-- [ ] Bloco A
+**A regra do baú, e de onde ela saiu.** Medido em 2026-08-10 com o `claim_chest`
+**vivo**, 300 aberturas em transação revertida (`.scratch/medir-taxa-ovo.ts`):
+**55,7%** dos baús já viravam ovo, e a raridade decidia quase sozinha —
+`common` 13,1% · `rare` 97,7% · `epic` 94,1% · `legendary` 88,9%. Daí a regra
+**`common` paga XP na hora, `rare` para cima vira ovo**, que o gate mede em
+**55,0%**. Não é chute: é a taxa de hoje escrita como regra, em vez de emergir
+por acidente de quais itens eram renderáveis.
+
+⚠️ **Ressalva de produto, registrada e não resolvida:** um baú `common` hoje
+entrega um **colecionável** em 87% dos casos e amanhã entrega **5 XP**. Os
+5/10/20/35 eram valor de consolação da forja e viraram o valor principal. É um
+`CASE` na migration, fácil de subir — mas é decisão do Doug, não conserto.
+
+**Estado da execução:**
+
+- [x] **A.1 — banco.** `20260810120000_bloco_a_bau_e_ovo_sem_item.sql` aplicada
+  em produção pelo Doug em 2026-08-10. Gate: **10 passed / 0 failed**, de 7
+  falhas antes. As três funções (`claim_chest`, `_create_random_pet_egg`,
+  `hatch_egg`) não consultam mais `items`
+- [ ] **A.2 — cliente.** `useChests.ts` e `ChestOpeningModal.tsx` ainda esperam
+  um item no retorno. **A partir daqui abrir baú quebra na tela**, no ar e em
+  dev. O modal já tem a fase de XP pronta (fase 5, "+N XP"); o caminho é fazer o
+  baú de XP cair nela em vez de inventar tela nova. `design-recruta64` é
+  obrigatória
+- [ ] Bloco A fechado
 
 ### Bloco B — apagar os itens do banco
 
