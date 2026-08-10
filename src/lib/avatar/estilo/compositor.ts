@@ -120,11 +120,25 @@ import {
 import type { EstadoAvatar, Traje } from "./tipos";
 
 /**
- * O CSS da composição.
+ * O CSS da composição — UMA DECLARAÇÃO, DUAS MONTAGENS.
  *
  * NENHUM COMENTÁRIO AQUI DENTRO. Um `/* ... *​/` dentro de `<style>` já fez o
  * Chromium descartar em silêncio todas as regras seguintes neste projeto, e
  * `conferirSvg` reprova. As explicações moram nos comentários de TypeScript.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE OS CORPOS SÃO CONSTANTES, E NÃO TEXTO ESCRITO DUAS VEZES
+ * ---------------------------------------------------------------------------
+ *
+ * A partir do Bloco E o mesmo CSS sai por dois caminhos: **embutido** no `<svg>`
+ * (o de sempre, que os 11 selos de `parametrico-congelado.ts` medem byte a byte) e
+ * na **folha única** que o produto emite uma vez por página. Escrever as regras
+ * duas vezes é a segunda descrição da mesma coisa — e o congelado vigia só uma
+ * delas, então a divergência sairia calada justamente do lado que ninguém mede.
+ *
+ * Aqui só os CORPOS são compartilhados. O que difere entre os dois caminhos é o
+ * escopo (`.${ns}` × `.kk`), quais regras saem (condicional × união) e o nome dos
+ * `@keyframes` — e essas três diferenças são o assunto de cada montagem.
  *
  * O piscar usa `transform-box: fill-box`, que faz `transform-origin: center`
  * significar o centro da própria forma — assim os dois olhos compartilham UMA
@@ -133,16 +147,69 @@ import type { EstadoAvatar, Traje } from "./tipos";
  * screenshot de gate) o olho fica ABERTO. A folhinha ensinou isso pelo caminho
  * caro — pálpebra que nasce fechada entrega um boneco cego na folha de contato.
  */
+
+/** O traço de silhueta, repetido em quatro corpos. */
+const RISCO_SILHUETA =
+  `stroke:var(--av-linha);stroke-width:var(--av-traco);` +
+  `stroke-linejoin:round;stroke-linecap:round`;
+
+/**
+ * O corpo de cada regra, sem seletor. A chave é a classe que o SVG emite.
+ *
+ * `kk-risco` é sobrancelha e boca. É `stroke` e não `fill` porque as duas são
+ * cápsulas, e uma cápsula é o que `stroke-linecap:round` desenha de graça — sem
+ * path fechado, sem `transform` para inclinar, sem caso especial para a curva do
+ * sorriso. A espessura de cada uma vai no elemento: são duas medidas diferentes
+ * (8,2 e 5,3) e uma classe por medida custaria mais que o atributo.
+ */
+const CORPO_DA_REGRA = {
+  "kk-traco": `fill:none;${RISCO_SILHUETA}`,
+  "kk-cabelo": `fill:var(--av-cabelo)`,
+  "kk-cabelo-m": `fill:var(--av-cabelo-s)`,
+  "kk-cabelo-l": `fill:none;${RISCO_SILHUETA}`,
+  "kk-cabelo-s": `fill:var(--av-cabelo-s);${RISCO_SILHUETA}`,
+  "kk-cabelo-e": `fill:var(--av-cabelo);${RISCO_SILHUETA}`,
+  "kk-pele": `fill:var(--av-pele)`,
+  "kk-pele-s": `fill:var(--av-pele-s)`,
+  "kk-tinta": `fill:var(--av-linha)`,
+  "kk-risco": `fill:none;stroke:var(--av-linha);stroke-linecap:round`,
+  "kk-luz": `fill:#FFFFFF;opacity:.30`,
+  "kk-olho": `transform-box:fill-box;transform-origin:center`,
+} as const;
+
+/** As classes de `CORPO_DA_REGRA`, para o gate de completude da folha. */
+export type ClasseDoAvatar = keyof typeof CORPO_DA_REGRA;
+
+/** Uma regra escopada. `escopo` é a classe do `<svg>` raiz. */
+const regra = (escopo: string, classe: ClasseDoAvatar) =>
+  `.${escopo} .${classe}{${CORPO_DA_REGRA[classe]}}`;
+
+/**
+ * AS TRÊS ANIMAÇÕES, e por que `escopo` e `kf` são parâmetros separados.
+ *
+ * No caminho embutido os dois são o `ns` da instância: cada SVG traz os próprios
+ * `@keyframes`, porque não há onde mais pô-los. Na folha única o escopo passa a ser
+ * a classe-interruptor (`.kk-anima`, presente no `<svg>` só quando animado) e os
+ * keyframes ficam com nome fixo, emitidos uma vez para a página inteira.
+ *
+ * É a diferença entre "estas regras só existem se houver animação" e "estas regras
+ * existem sempre e se aplicam a quem pedir" — a mesma folha serve os 30 do ranking
+ * (parados) e o boneco grande do perfil (animado) sem sair duas vezes.
+ */
+function regrasDeAnimacao(escopo: string, kf: string): string {
+  return (
+    `.${escopo} .kk-respira{animation:${kf}-respira 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
+    `.${escopo} .kk-sombra{animation:${kf}-sombra 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
+    `.${escopo} .kk-olho{animation:${kf}-pisca 5.2s ease-in-out infinite}` +
+    `@keyframes ${kf}-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}` +
+    `@keyframes ${kf}-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}` +
+    `@keyframes ${kf}-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}` +
+    `@media(prefers-reduced-motion:reduce){.${escopo} .kk-respira,.${escopo} .kk-sombra,.${escopo} .kk-olho{animation:none}}`
+  );
+}
+
 function estilo(ns: string, animado: boolean, modelo: CabeloOuModelo | undefined): string {
-  const respiro = animado
-    ? `.${ns} .kk-respira{animation:${ns}-respira 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
-      `.${ns} .kk-sombra{animation:${ns}-sombra 3.5s ease-in-out infinite;transform-origin:${SOMBRA_CHAO.cx}px ${SOMBRA_CHAO.cy}px}` +
-      `.${ns} .kk-olho{animation:${ns}-pisca 5.2s ease-in-out infinite}` +
-      `@keyframes ${ns}-respira{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-4px) scaleY(1.012)}}` +
-      `@keyframes ${ns}-sombra{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}` +
-      `@keyframes ${ns}-pisca{0%,96%,100%{transform:scaleY(1)}97.4%{transform:scaleY(.08)}98.8%{transform:scaleY(1)}}` +
-      `@media(prefers-reduced-motion:reduce){.${ns} .kk-respira,.${ns} .kk-sombra,.${ns} .kk-olho{animation:none}}`
-    : "";
+  const respiro = animado ? regrasDeAnimacao(ns, ns) : "";
 
   // AS REGRAS DO CABELO SÓ SAEM QUANDO HÁ CABELO, como o `respiro`.
   //
@@ -151,6 +218,9 @@ function estilo(ns: string, animado: boolean, modelo: CabeloOuModelo | undefined
   // para pagar uma camada que ela não tem. O mesmo vale para as duas custom
   // properties lá embaixo — e é a mesma razão de `.kk-cabelo-l` só sair quando há
   // arcos declarados, e de as duas famílias emitirem regras diferentes.
+  //
+  // **A folha única não herda essa economia, e é de propósito:** ela sai uma vez
+  // por página e não passa pelo teto de regressão, que mede o SVG da base careca.
   //
   // A camada clara nunca tem contorno (um traço ali riscaria o meio do cabelo) e a
   // extensão sempre tem, porque ela é a borda externa da figura onde passa do
@@ -166,40 +236,84 @@ function estilo(ns: string, animado: boolean, modelo: CabeloOuModelo | undefined
   //    elementos porque passam a ter GEOMETRIA diferente: a massa inteira pintada,
   //    e só os arcos que a arte traça de fato levando linha. Ver `Cabelo.linhas`.
   const c = modelo ? resolverCabelo(modelo) : undefined;
-  const risco =
-    `stroke:var(--av-linha);stroke-width:var(--av-traco);` +
-    `stroke-linejoin:round;stroke-linecap:round`;
   // O arco pode vir da massa OU de uma das formas irmãs, e a regra do traço sai se
   // qualquer uma declarar — senão uma peça cuja única linha está numa forma extra
   // sairia sem contorno nenhum.
   const temArco = Boolean(c?.linhas?.length) || Boolean(c?.formas?.some((f) => f.linhas?.length));
   const cabelo = !c
     ? ""
-    : `.${ns} .kk-cabelo{fill:var(--av-cabelo)}` +
+    : regra(ns, "kk-cabelo") +
       (c.massa
         ? // A peça sobreposta não tem extensão: as formas irmãs são a própria peça,
           // pintadas pela mesma `.kk-cabelo-m`, então `.kk-cabelo-e` não sai.
-          `.${ns} .kk-cabelo-m{fill:var(--av-cabelo-s)}` +
-          (temArco ? `.${ns} .kk-cabelo-l{fill:none;${risco}}` : "")
-        : `.${ns} .kk-cabelo-s{fill:var(--av-cabelo-s);${risco}}` +
-          `.${ns} .kk-cabelo-e{fill:var(--av-cabelo);${risco}}`);
+          regra(ns, "kk-cabelo-m") + (temArco ? regra(ns, "kk-cabelo-l") : "")
+        : regra(ns, "kk-cabelo-s") + regra(ns, "kk-cabelo-e"));
 
   return (
-    `.${ns} .kk-traco{fill:none;stroke:var(--av-linha);stroke-width:var(--av-traco);` +
-    `stroke-linejoin:round;stroke-linecap:round}` +
+    regra(ns, "kk-traco") +
     cabelo +
-    `.${ns} .kk-pele{fill:var(--av-pele)}` +
-    `.${ns} .kk-pele-s{fill:var(--av-pele-s)}` +
-    `.${ns} .kk-tinta{fill:var(--av-linha)}` +
-    // O RISCO: sobrancelha e boca. É `stroke` e não `fill` porque as duas são
-    // cápsulas, e uma cápsula é o que `stroke-linecap:round` desenha de graça — sem
-    // path fechado, sem `transform` para inclinar, sem caso especial para a curva do
-    // sorriso. A espessura de cada uma vai no elemento: são duas medidas diferentes
-    // (8,2 e 5,3) e uma classe por medida custaria mais que o atributo.
-    `.${ns} .kk-risco{fill:none;stroke:var(--av-linha);stroke-linecap:round}` +
-    `.${ns} .kk-luz{fill:#FFFFFF;opacity:.30}` +
-    `.${ns} .kk-olho{transform-box:fill-box;transform-origin:center}` +
+    regra(ns, "kk-pele") +
+    regra(ns, "kk-pele-s") +
+    regra(ns, "kk-tinta") +
+    regra(ns, "kk-risco") +
+    regra(ns, "kk-luz") +
+    regra(ns, "kk-olho") +
     respiro
+  );
+}
+
+/**
+ * A CLASSE DO `<svg>` NO MODO FOLHA ÚNICA — fixa, e é isso que a torna única.
+ *
+ * No modo embutido a raiz leva o `ns` da instância, porque as regras vêm escopadas
+ * por ele. Aqui a raiz leva sempre a mesma classe: é o que permite **uma** folha
+ * servir N bonecos. O `ns` continua existindo e continua obrigatório — ele passou a
+ * ter um papel só, prefixar `id`, e esse papel não some. Ver `compor()`.
+ */
+export const CLASSE_AVATAR = "kk";
+
+/** O interruptor da animação, no lugar da emissão condicional do modo embutido. */
+export const CLASSE_ANIMADO = "kk-anima";
+
+/** O prefixo dos `@keyframes` da folha. Fixo: eles saem uma vez para a página. */
+const KEYFRAMES_DA_FOLHA = "kk";
+
+/**
+ * A FOLHA ÚNICA — o mesmo CSS, emitido uma vez por página em vez de uma por boneco.
+ *
+ * Trinta avatares num ranking emitiriam 30 blocos `<style>` idênticos (doc 15, 5.7).
+ * Aqui a chapa é uma só, e cada `<svg>` carrega apenas as custom properties com a
+ * cor daquele aluno — que é exatamente o contrato que `palette.ts:11-15` já
+ * antecipava.
+ *
+ * **Três diferenças em relação ao embutido, e as três são obrigatórias:**
+ *
+ *  1. **escopo fixo** (`.kk`), senão não haveria o que compartilhar;
+ *  2. **união das duas famílias de cabelo.** É seguro porque elas usam classes
+ *     DISJUNTAS — paramétrica `-s`/`-e`, traçada `-m`/`-l` —, então a união não
+ *     cria regra conflitante, só regra sem elemento correspondente;
+ *  3. **animação sempre presente**, ligada pela classe `.kk-anima` no `<svg>`. Uma
+ *     folha estática não pode ser condicional a um estado que varia por instância.
+ *
+ * Quem a emite é `<AvatarKokeshi>`, e quem garante que ela saia **uma vez** é o
+ * React, que deduplica `<style href precedence>`. Mecanismo, não disciplina.
+ */
+export function folhaAvatar(): string {
+  const e = CLASSE_AVATAR;
+  return (
+    regra(e, "kk-traco") +
+    regra(e, "kk-cabelo") +
+    regra(e, "kk-cabelo-m") +
+    regra(e, "kk-cabelo-l") +
+    regra(e, "kk-cabelo-s") +
+    regra(e, "kk-cabelo-e") +
+    regra(e, "kk-pele") +
+    regra(e, "kk-pele-s") +
+    regra(e, "kk-tinta") +
+    regra(e, "kk-risco") +
+    regra(e, "kk-luz") +
+    regra(e, "kk-olho") +
+    regrasDeAnimacao(CLASSE_ANIMADO, KEYFRAMES_DA_FOLHA)
   );
 }
 
@@ -641,6 +755,25 @@ export function compor(estado: EstadoAvatar): string {
   const { ns, traje, animado = false, modeloCabelo } = estado;
   const pele = estado.pele;
 
+  // ---------------------------------------------------- os dois modos de estilo
+  //
+  // AUSENTE é o modo de sempre, e isso não é cortesia com o legado: é o que os 11
+  // selos de `parametrico-congelado.ts`, o teto de regressão da `folha-base.ts` e
+  // os ~30 chamadores de `scripts/` medem. Uma bandeira que mudasse a saída padrão
+  // moveria todos eles de uma vez, e o movimento não seria sobre o desenho.
+  //
+  // No modo folha, a raiz troca o `ns` pela classe fixa e ganha o interruptor da
+  // animação. O que NÃO muda é o prefixo dos `id`: `${ns}-fe` e `${ns}-fd` são os
+  // gradientes das facetas, e eles carregam o TOM DE PELE daquele boneco. Trinta
+  // avatares com o mesmo `ns` sairiam todos com a pele do primeiro — a colisão do
+  // §8 item 4, agora com consequência visível em vez de silenciosa.
+  const folhaExterna = estado.folhaExterna === true;
+  const classeRaiz = folhaExterna
+    ? animado
+      ? `${CLASSE_AVATAR} ${CLASSE_ANIMADO}`
+      : CLASSE_AVATAR
+    : ns;
+
   // ---------------------------------------------------------- os dois opcionais
   // Os dois são construídos para que AUSENTE signifique "a string de sempre". O
   // `escala === 1` cai no mesmo lugar que o campo ausente de propósito: não há
@@ -687,8 +820,8 @@ export function compor(estado: EstadoAvatar): string {
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX.w} ${VIEWBOX.h}" ` +
-    `class="${ns}" style="${vars}">` +
-    `<style>${estilo(ns, animado, modeloCabelo)}</style>` +
+    `class="${classeRaiz}" style="${vars}">` +
+    (folhaExterna ? "" : `<style>${estilo(ns, animado, modeloCabelo)}</style>`) +
     `<defs>` +
     `<path id="${ns}-p-cabeca" d="${pathCabeca()}"/>` +
     `<path id="${ns}-p-tronco" d="${pathTronco()}"/>` +

@@ -147,6 +147,45 @@ convertidos pelo Bloco B.
 **Quem decide:** Doug. A 1 e a 3 são as que mudam a experiência de verdade, e são
 opostas: uma salva a Chocadeira, a outra a aposenta.
 
+---
+
+✅ **DECIDIDO pelo Doug em 2026-08-10 — e é uma QUINTA saída, não uma das quatro.**
+
+> *"o xp não deve vir dentro do ovo (hoje deve ser lendário e vir um pet). temos que
+> arrumar isso. xp vem direto do baú, como se fosse um item comum."*
+
+**O ovo deixa de ser recipiente de XP e volta a ser recipiente de PET.** O XP passa
+a ser pago pelo próprio baú, na hora, para toda raridade — como um item comum
+sempre foi entregue. A espera some porque o motivo dela some: não se espera 72h por
+uma moeda que já está na mão.
+
+É diferente da saída 3 (*matar o ovo*) num ponto que importa: **o ovo não morre, ele
+hiberna.** A mecânica, a Chocadeira e o modal continuam existindo, esperando a única
+coisa que lhes dava sentido — o pet, que o Bloco B apagou junto com o catálogo v2.
+Quando houver arte de pet (Bloco 8 do doc 15), o ovo volta pelo caminho que já está
+construído, e volta **raro**.
+
+Três decisões acessórias, tomadas junto:
+
+| | decisão |
+|---|---|
+| enquanto não houver pet | **nenhum baú cria ovo.** O lendário paga XP como os outros — recompensa presa atrás de prazo indefinido é o defeito que se está consertando |
+| a Chocadeira no `/perfil` | **fica na tela, vazia, "em breve"** — a promessa continua visível para o aluno |
+| a escala de XP | **15 / 25 / 40 / 60**, que era a do ovo. Os 5/10/20/35 eram valor de consolação da forja de item repetido, e a §1.1 do doc 20 já registrava que 5 XP por baú é pouco |
+
+E os **13 ovos presos na fila** pagam o `xp_bonus` na própria migration, que a
+esvazia — os 140 XP do Doug entram em vez de ficarem 15 dias em espera.
+
+**O achado NÃO fecha aqui**, porque decisão não é conserto: ele fecha quando o
+**E.2** do `docs/avatar/20-troca-de-pilha-plano.md` aplicar a migration e o
+`verify:chest-pool` medir 0 ovos e o XP certo por raridade.
+
+**O que a decisão derruba, e vale registrar:** a saída 4 (*o ovo dá cabelo*) está
+descartada. O seletor do Bloco E segue com **uma** fonte de desbloqueio — o nível de
+XP —, e a régua semeada no Bloco C **não muda**. O **D6** (o card de pet que
+`hatch_egg` nunca preenche) deixa de ser código morto e vira **código à espera**;
+ele passa a fechar junto do pet, não contra ele.
+
 ### T3 — Os documentos do avatar se contradizem sobre decisões **já tomadas**
 **Prova:** `LIDO` — 13 pares, todos com arquivo:linha. Achado por Codex, C1,
 2026-08-07. Cinco conferidos por amostra pelo Claude: cinco confirmados.

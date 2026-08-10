@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 0 |
-| **Árvore** | **2 arquivos sujos** |
-| **Último commit** | 8f6483b · 2026-08-10 · docs(avatar): o F vira dois, e o AvatarCabeca sai do Bloco E |
+| **Commits à frente de `origin/main`** | 1 |
+| **Árvore** | **8 arquivos sujos** |
+| **Último commit** | 3cfcc47 · 2026-08-10 · docs(achados): T9 — o baú deixou de ser recompensa, medido em produção |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -154,7 +154,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 78 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 13 |
+| **Arquivos de teste** | 14 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes

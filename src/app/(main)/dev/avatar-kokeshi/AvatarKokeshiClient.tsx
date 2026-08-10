@@ -12,6 +12,7 @@
 
 import { useState } from "react";
 import { compor } from "@/lib/avatar/estilo/compositor";
+import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { IDS_DA_ARTE, PECAS_DA_ARTE, type IdDaArte } from "@/lib/avatar/estilo/pecas-da-arte";
@@ -25,6 +26,19 @@ const TAMANHOS = [
   { rot: "xl", h: 476 },
 ] as const;
 
+/**
+ * O boneco do LABORATÓRIO, e ele continua existindo depois do `<AvatarKokeshi>`.
+ *
+ * A diferença não é preguiça de migrar: as peças **traçadas da arte** não estão no
+ * catálogo e não têm slug, então elas não são exprimíveis na API do componente, que
+ * fala a língua do banco (`skin`/`hair`/`hairColor`). Colar um slug falso nelas para
+ * caberem é exatamente o defeito que a rota de arte já pegou, quando três artes
+ * diferentes se diziam `"curto"`.
+ *
+ * Ele também compõe no modo EMBUTIDO (`<style>` dentro do SVG), que é o que os gates
+ * medem. Ter os dois caminhos vivos na mesma página é o que faz esta tela continuar
+ * servindo para conferir os dois.
+ */
 function Boneco({
   pele,
   cabelo,
@@ -273,22 +287,33 @@ export default function AvatarKokeshiClient() {
         sentir na hora o custo de 30 animações numa lista.
       */}
       <h2 className="mt-8 font-semibold text-zinc-900">
-        Trinta a 56 px — o caso do ranking
+        Trinta a 56 px — o caso do ranking, pelo <code>&lt;AvatarKokeshi&gt;</code>
       </h2>
       <p className="text-zinc-500">
         Em produção esta lista roda com a animação DESLIGADA. O interruptor acima existe para
         você sentir a diferença, não para ligá-la aqui.
       </p>
+      <p className="text-zinc-500">
+        <b>Esta seção é a única que passa pelo componente do produto</b>, e é por isso que ela
+        é o lugar certo para conferir a <b>folha de estilo única</b>: os 30 bonecos abaixo
+        emitem <b>um</b> bloco <code>&lt;style&gt;</code> entre todos, hoisteado para o{" "}
+        <code>&lt;head&gt;</code> pelo React. Se a folha não chegasse, eles sairiam{" "}
+        <b>pretos</b> — e os de cima, que compõem no modo embutido, continuariam certos. É a
+        comparação que torna a falha visível.
+      </p>
       <div className="mt-2 flex flex-wrap gap-1 rounded-lg p-3" style={{ background: fundo }}>
         {Array.from({ length: 30 }, (_, i) => (
-          <Boneco
+          <AvatarKokeshi
             key={i}
-            pele={PELE[i % PELE.length]}
             // A lista varia pele, cor E modelo: 30 bonecos iguais medem o cache do
             // navegador, não o caso de uso. É a lição 19 da §7c, uma camada acima.
-            cabelo={CABELO[i % CABELO.length]}
-            modelo={MODELOS_CABELO[i % MODELOS_CABELO.length]}
-            h={78}
+            //
+            // E aqui os índices são passados CRUS, como o banco os guarda — é a
+            // tradução do componente sendo exercitada, não contornada.
+            skin={i % PELE.length}
+            hair={MODELOS_CABELO[i % MODELOS_CABELO.length]}
+            hairColor={i % CABELO.length}
+            altura={78}
             animado={animado}
             ns={`kkr-${i}`}
           />

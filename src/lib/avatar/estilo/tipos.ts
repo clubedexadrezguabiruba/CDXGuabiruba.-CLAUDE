@@ -154,4 +154,26 @@ export interface EstadoAvatar {
    * string sai idêntica. Mesmo motivo do campo acima.
    */
   escala?: number;
+  /**
+   * TIRA O `<style>` DE DENTRO DO SVG — o modo do produto (doc 15, 5.7).
+   *
+   * Trinta avatares num ranking emitem hoje 30 blocos `<style>` idênticos, ~1 KB
+   * cada. Com este campo ligado, o SVG sai sem bloco nenhum e passa a depender da
+   * folha única que `folhaAvatar()` produz e `<AvatarKokeshi>` emite uma vez por
+   * página. Cada `<svg>` continua carregando as custom properties, que são a parte
+   * que muda de aluno para aluno.
+   *
+   * **Opcional, e o ausente é o SVG de sempre** — byte a byte. É essa ausência que
+   * mantém os 11 selos de `parametrico-congelado.ts`, o teto de regressão da base
+   * careca e os gates de arte medindo a mesma string que sempre mediram. Ligado, o
+   * SVG muda de bytes **por construção**, e não há selo que faça sentido cobrar
+   * disso: quem responde pela aparência aqui é o congelado do modo embutido e o
+   * `npm run avatar:pose`.
+   *
+   * ⚠️ **Ligado sem a folha na página, o boneco sai preto.** As regras deixam de
+   * existir, os `fill` caem para o valor inicial, e nada acusa — é o modo de falha
+   * nº 2 de `svgContrato.ts`, uma camada acima. Por isso quem liga não é o
+   * chamador solto: é o componente, que emite a folha na mesma respiração.
+   */
+  folhaExterna?: boolean;
 }

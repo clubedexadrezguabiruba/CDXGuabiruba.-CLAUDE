@@ -485,7 +485,98 @@ que sumiu. Mais `npm test` e `verify:all`.
 **bate no Supabase de produção**.
 📊 **Número:** 3 telas servindo `compor()`, 0 chamadas de `AvatarDisplay`.
 
-- [ ] Bloco E
+#### O E foi partido em cinco em 2026-08-10, e a ordem mudou por causa do T9
+
+O Doug pediu o bloco replanejado **a partir da tela do aluno**, e uma revisão em
+Fable derrubou uma premissa: a API do componente falava a língua do laboratório
+(cor hex), não a do banco (índice e slug). Com **oito** consumidores até o fim do
+Bloco 6, cada um reescreveria a mesma tradução.
+
+Junto veio a **decisão do T9** (registrada em `docs/achados.md`), que destravou as
+telas: **o baú paga XP direto, na hora, para toda raridade; o ovo deixa de ser
+recipiente de XP e volta a ser recipiente de pet.** Como pet não existe — foi
+apagado no Bloco B —, nenhum baú cria ovo até haver arte. Daí:
+
+- **E.1** o componente e a folha única — *fechado, abaixo*
+- **E.2** a migration do baú (o T9 em SQL): XP direto **15/25/40/60**, os 13 ovos
+  da fila pagos e a fila esvaziada. **Migration própria** — um assunto, uma
+  migration
+- **E.3** a migration do avatar: recriar `user_public_profiles` e
+  `get_public_profile` com as 3 colunas, `refresh_public_profiles()` dentro da
+  RPC, e o `UPDATE avatar_chosen` — que **só é aplicado na hora do F.2**, junto do
+  push, senão o dashboard vivo manda o aluno para a `/criar-personagem` v2
+- **E.4** as três telas. A **Chocadeira fica na tela, vazia, "em breve"** (decisão
+  do Doug), e o seletor de cabelo segue com **uma** fonte de desbloqueio: o nível.
+  A régua do Bloco C **não muda** — a saída 4 do T9 morreu com a decisão
+- **E.5** o e2e reescrito
+
+- [x] **E.1 fechado em 2026-08-10 — `<AvatarKokeshi>` e a folha de estilo única.**
+  `verify:all` exit 0 · `typecheck` 0 · `lint` 0 erros · **479/479** testes (os
+  454 mais 25 novos) · build verde.
+
+  📊 **O número:** **30 avatares emitem 1 bloco `<style>`, não 30.** Medido em
+  bytes na lista do ranking: **−16 628 B parados (5,0%)** e **−35 468 B animados
+  (10,2%)**. A folha inteira são **1 524 B**, emitidos uma vez; o CSS embutido
+  custava **700 B por boneco**.
+
+  **A folha externa é opt-in, e é isso que mantém os 11 selos.**
+  `parametrico-congelado.ts` congela `bytes` + `sha` + `css` do SVG inteiro, e
+  tirar o `<style>` de dentro dele muda os três **por construção**. Então
+  `compor()` sem o campo novo emite a string de sempre, byte a byte — é o que os
+  gates, a `folha-base.ts`, a `base-oficial.ts` e os ~30 chamadores de `scripts/`
+  medem. `folhaExterna: true` é o modo do produto, e **nenhum selo cobra bytes
+  dele**: seria número congelado sem pergunta atrás. Quem responde pela aparência
+  continua sendo o congelado e o `avatar:pose` (que mediu **210 id emitidos, 210
+  únicos**).
+
+  **Uma declaração, duas montagens.** Os corpos das regras viraram constantes
+  (`CORPO_DA_REGRA` em `compositor.ts`), e `estilo()` e `folhaAvatar()` montam a
+  partir delas. Escrever o CSS duas vezes deixaria o congelado vigiando só um dos
+  lados — a divergência sairia calada justamente do lado que ninguém mede.
+
+  **Três diferenças entre as duas montagens, e as três são obrigatórias:** escopo
+  fixo `.kk` no lugar de `.${ns}`; **união** das duas famílias de cabelo (seguro
+  porque as classes são disjuntas — paramétrica `-s`/`-e`, traçada `-m`/`-l`); e
+  animação sempre presente, ligada pela classe `.kk-anima` no `<svg>`, porque
+  folha estática não pode ser condicional a um estado que varia por instância.
+
+  **O `ns` continua obrigatório, e agora com um papel só: prefixar `id`.** Não é
+  zelo — `${ns}-fe` e `${ns}-fd` são os gradientes das facetas e carregam o **tom
+  de pele** daquele boneco. Trinta avatares com o mesmo `ns` sairiam todos com a
+  pele do primeiro. Está escrito na prop que ele é **por instância, não por
+  aluno**: o seletor do E.4 desenha a mesma criança ~7 vezes.
+
+  **O componente fala a língua do banco** — `skin`/`hair`/`hairColor`, índice e
+  slug como as colunas do Bloco C os guardam, com a tradução para hex acontecendo
+  **uma vez**, dentro dele. E como as três colunas têm `DEFAULT` total, **todo
+  usuário é renderizável** desde que a linha exista: nenhuma tela precisa de
+  estado "ainda não escolheu".
+
+  **Sem `"use client"`**, de propósito: sendo string + `dangerouslySetInnerHTML`,
+  ele serve Server Component (o ranking de 30 sai do servidor sem mandar JS) e
+  Client Component (o seletor, que troca a peça na mão do aluno) pelo mesmo
+  caminho. Quem garante o bloco único é o React, que deduplica
+  `<style href precedence>` — mecanismo, não disciplina: a folha vem grudada em
+  quem a usa, em vez de depender de alguém lembrar de pô-la na página.
+
+  ⚠️ **O gate novo (`folha-unica.test.ts`) tem uma amarra que quase nasceu torta:**
+  a conferência "toda classe emitida tem regra na folha" precisa aceitar regra
+  **atrás do portão `.kk-anima`**. `kk-respira`, `kk-sombra` e `kk-olho` saem
+  SEMPRE nos elementos, e exigir só `.kk ` reprovaria o boneco parado por falso
+  positivo. O achado é da revisão em Fable, antes de o teste existir.
+
+  **A conferência que node não faz foi feita no chromium**, com o CSS do Tailwind
+  do build presente: 30 SVGs, **1 bloco de folha**, `fill` do rosto computado em
+  `rgb(255,226,199)` no primeiro e `rgb(158,98,56)` no último (peles **diferentes**
+  — os gradientes não colidiram), contorno `rgb(0,0,0)` a `12px`, e a animação
+  ligada só no boneco que leva a classe. `/dev/avatar-kokeshi` exige login, então
+  a conferência da página no ar continua sendo do Doug.
+
+  **A página `/dev` mantém a `Boneco()` local**, e não é migração pela metade: as
+  peças **traçadas da arte** não estão no catálogo e não têm slug, então não são
+  exprimíveis na API do componente. Colar slug falso nelas é o defeito que a rota
+  de arte já pegou uma vez, quando três artes se diziam `"curto"`. A seção dos 30
+  passou para o componente — é o caso do ranking, e é onde a folha se prova.
 
 ### Bloco F — publicar
 
