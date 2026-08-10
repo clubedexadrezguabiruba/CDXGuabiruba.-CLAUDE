@@ -599,6 +599,44 @@ bloco: é a mesma dos 54 arquivos que o DESIGN.md nomeia como o débito a pagar.
 fila de migração para a direção A — junto do Bloco 6 (que já reescreve rankings e
 navbar) ou como commit próprio.
 
+### D8 — a migration do F.2 diz "as 19 no default integral", e já são 18
+**Prova:** `MEDIDO` — 2026-08-10, leitura só-leitura de `public.users` no F.2,
+**antes** do apply. Achado pelo Claude, executando o F.2. Registrado e **não
+consertado**, pela regra 9.
+
+O cabeçalho de `20260810220000_f2_avatar_chosen_zerado.sql` e a §4 do doc 20
+apoiam o `WHERE avatar_chosen = true` largo em duas medições feitas mais cedo no
+mesmo dia: **8 de 19** contas com `avatar_chosen = true`, e **as 19** no default
+integral (`avatar_skin = 2`, `avatar_hair IS NULL`, `avatar_hair_color = 0`).
+
+Na releitura do F.2, o primeiro número confere e o segundo não:
+
+```
+avatar_chosen   total 19 · true 8 · false 11 · NULL 0     ← confere
+default integral                18 de 19                  ← eram 19
+fora do default   id 53f4fc3d…  chosen=true  skin=7  hair=espetado  cor=0
+```
+
+Uma conta tem identidade kokeshi de verdade — pele 7, cabelo espetado — e é uma
+das 8 com `chosen = true`. A explicação provável é o próprio Doug conferindo a
+tela do E.4 em `localhost` contra o Supabase de produção, que é o mesmo banco.
+
+**Não muda a decisão de aplicar, e não é perda de dado.** O `UPDATE` toca só
+`avatar_chosen`; `avatar_skin`, `avatar_hair` e `avatar_hair_color` ficam onde
+estão. E `criar-personagem/page.tsx:42-44` pré-carrega a identidade do banco —
+essa conta reentra na tela com pele 7 e espetado **já selecionados**, e sai
+confirmando. O custo real é um clique a mais para uma conta.
+
+**O que fica errado é o texto**, não o banco: dois documentos afirmam "as 19"
+como fato medido, e quem os reler depois vai construir sobre a premissa vencida —
+exatamente o que o `WHERE` largo pede que não aconteça. O parágrafo *"por que
+`WHERE avatar_chosen = true` e não uma condição mais fina"* fica mais fraco: já
+existe uma conta cujo estado de identidade **é** distinguível do default.
+
+**O conserto, se o Doug mandar:** trocar a frase nos dois lugares por "18 de 19,
+mais uma conta de teste com identidade kokeshi real" — texto, não SQL. A
+migration **não** muda: aplicada na janela do F.2, ela continua correta.
+
 ### D1 — O ranking de turma ignora `ranking_visible` de propósito
 **Prova:** `VERSIONADO` — `20260316100000_phase10_rankings.sql:232,277-284`
 

@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 4 |
-| **Árvore** | **10 arquivos sujos** |
-| **Último commit** | 1faa8ff · 2026-08-10 · feat(avatar): E.3 — o perfil público carrega o kokeshi, e o cache refresca sozinho |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **1 arquivos sujos** |
+| **Último commit** | 9249254 · 2026-08-10 · feat(avatar): E.4 — as três telas ganham o boneco, e o seletor mostra o cadeado |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
