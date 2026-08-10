@@ -86,9 +86,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 0 |
-| **Árvore** | **2 arquivos sujos** |
-| **Último commit** | 8d31bca · 2026-08-10 · docs(achados): o R3 registra que a decisão foi tomada, e foi esperar |
+| **Commits à frente de `origin/main`** | 2 |
+| **Árvore** | **1 arquivos sujos** |
+| **Último commit** | d78218b · 2026-08-10 · chore(deps): Next 16.1.6 -> 16.2.12, com eslint-config-next junto |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

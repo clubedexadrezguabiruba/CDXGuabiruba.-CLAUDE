@@ -447,6 +447,40 @@ por DPR ainda se aplicam (`15:784-787`).*
 ***O que encarece a F2 é outra coisa, e está no T7**; a lacuna da migration, no **T8**.
 Esta ressalva do D4 fecha aqui.*
 
+### D5 — `npm audit` acusa 19 vulnerabilidades, e ninguém mediu quais chegam ao ar
+**Prova:** `MEDIDO` — 2026-08-10, `npm audit --json` na árvore do Lote 3.
+
+**Não vem do Lote 3.** A subida do Next 16.1.6 → 16.2.12 não criou nenhuma delas; o
+número já estava lá antes e apareceu porque o `npm install` o imprime. Registrado
+porque ninguém tinha olhado, não porque piorou.
+
+São **19: 2 baixas, 5 moderadas, 11 altas, 1 crítica.** As diretas:
+
+| Pacote | Grau | Onde vive |
+|---|---|---|
+| `vitest` | 🔴 crítica | devDependency — o furo exige o **Vitest UI escutando**, que este projeto não sobe |
+| `sharp` | alta | devDependency — CVEs herdadas do libvips; roda nos scripts de arte, não no servidor |
+| `postcss` | alta | devDependency — XSS no stringify de CSS, superfície de build |
+| `next` | alta | **dependency** — mas o `via` do audit aponta para `postcss` e `sharp`, não para código do Next |
+| `@anthropic-ai/claude-code` | alta | **está em `dependencies`, não em `devDependencies`** — escalada de privilégio local |
+
+**A pergunta que falta responder é uma só: quais destas chegam ao bundle que o
+navegador do aluno baixa, ou ao servidor da Vercel?** Pela leitura acima, nenhuma —
+todas as diretas são ferramenta de build ou de teste. Mas isso é **leitura, não
+medida**, e é exatamente o tipo de conclusão que a Regra de Evidência manda não
+registrar como causa.
+
+**O fato de embalagem que não depende de medição:** `@anthropic-ai/claude-code` está
+em `dependencies` (`package.json:91`). É ferramenta de desenvolvimento e o lugar dela
+é `devDependencies` — de onde está, ela viaja no `npm install --production`. Mover é
+uma linha, mas é mudança de embalagem num repositório público às vésperas de receber
+aluno, então **não vira trabalho sem o Doug mandar**.
+
+**Não subiu a 🔴** porque nada aqui está medido como via até dado de aluno. Junta-se
+ao D3 e à ressalva do repositório público como coisa a resolver **antes do
+lançamento**, não agora.
+**Achado por:** Claude, ao rodar o Lote 3, 2026-08-10.
+
 ---
 
 ## Fechados — ficam aqui como precedente
