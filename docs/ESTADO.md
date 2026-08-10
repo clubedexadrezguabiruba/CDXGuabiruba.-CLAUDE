@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 4 |
-| **Árvore** | **3 arquivos sujos** |
-| **Último commit** | e53680a · 2026-08-10 · docs(achados): o T7 ganha preço — a troca de pilha foi dimensionada |
+| **Commits à frente de `origin/main`** | 6 |
+| **Árvore** | limpa |
+| **Último commit** | 8c7414c · 2026-08-10 · feat(baus): Bloco A.1 — o baú e o ovo param de depender de items |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -155,7 +155,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 75 |
+| **Migrations** | 76 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 15 |
 | **Primitivos de UI** | 4 |
