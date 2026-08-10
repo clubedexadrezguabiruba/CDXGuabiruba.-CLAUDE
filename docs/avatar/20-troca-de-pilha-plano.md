@@ -165,6 +165,14 @@ entrega um **colecionável** em 87% dos casos e amanhã entrega **5 XP**. Os
 5/10/20/35 eram valor de consolação da forja e viraram o valor principal. É um
 `CASE` na migration, fácil de subir — mas é decisão do Doug, não conserto.
 
+⚠️ **A ressalva ganhou uma irmã maior, e essa foi medida em produção:** o **T9** de
+`docs/achados.md` (2026-08-10, depois do F.1). Os outros **55%** — os que viram ovo —
+caem numa fila que choca **em série, 72h por ovo**: 5 baús do Doug = **140 XP presos
+por 15 dias**, 9,3 XP/dia contra a calibração de ~300 XP/dia do `verify:xp-curve`. E
+a forma é pior que o número: espera-se 72h para receber a **mesma moeda** que o
+`common` dá na hora, porque sem pet a espera não tem conteúdo. É o preço da decisão
+da §1.1, e ele não estava precificado. As quatro saídas estão no T9.
+
 **Estado da execução:**
 
 - [x] **A.1 — banco.** `20260810120000_bloco_a_bau_e_ovo_sem_item.sql` aplicada

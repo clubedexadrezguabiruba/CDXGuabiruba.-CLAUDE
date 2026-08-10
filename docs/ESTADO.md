@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 12 |
-| **Árvore** | **1 arquivos sujos** |
-| **Último commit** | a992ed6 · 2026-08-10 · feat(avatar): Bloco D — a pilha v2 sai do código, e o build não era o mapa |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **2 arquivos sujos** |
+| **Último commit** | 8f6483b · 2026-08-10 · docs(avatar): o F vira dois, e o AvatarCabeca sai do Bloco E |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

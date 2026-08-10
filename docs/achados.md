@@ -94,6 +94,59 @@ assume a escada do currículo enquanto o banco tem 15.
 intenção, não estado.
 **Quem decide:** Doug. É pedagogia e produto, não investigação técnica.
 
+### T9 — o baú deixou de ser recompensa: 55% dele vai para uma fila que rende 9 XP/dia
+**Prova:** `MEDIDO` — 2026-08-10, **em produção**, depois do F.1. `pg_get_functiondef`
+da `claim_chest` viva + as 24 linhas de `user_chests` e os 5 ovos na fila do
+`teacherdoug001`. Achado pelo Doug, abrindo 5 baús no ar; medido pelo Claude.
+Registrado e **não consertado**, pela regra 9.
+
+**Não é bug, e não é regressão de bloco nenhum.** É o preço da decisão da §1.1 de
+`docs/avatar/20-troca-de-pilha-plano.md` — *"ovos e Chocadeira **ficam**, sempre
+dando XP, e a UI construída sobrevive"* —, e esse preço não estava na mesa quando a
+decisão foi tomada.
+
+**A regra viva.** `claim_chest` sorteia `random()` uma vez, independente da fonte:
+`legendary` 7% · `epic` 18% · `rare` 30% · `common` 45%. **P(ovo) = 55%**, que é
+exatamente o que o `verify:chest-pool` cobra. Os 5 ovos seguidos do Doug são
+**0,55⁵ = 5,0%** — um em vinte, azar dentro da regra.
+
+**A fila é o achado.** Os ovos chocam **em série**, 72h cada (`EGG_HATCH_HOURS`, e
+`status` só admite um `hatching`). Medido na conta do Doug: 1 chocando + 4 `queued`,
+**140 XP presos por 15 dias** — `rare` 25 · `epic` 40 · `rare` 25 · `rare` 25 ·
+`rare` 25. São **9,3 XP/dia**, contra a calibração de ~300 XP/dia que o
+`verify:xp-curve` cobra: o baú virou **3% de um dia de XP**.
+
+**E a forma é pior que o número:** o aluno espera 72h para receber **a mesma moeda**
+que o baú `common` entrega na hora. Antes o ovo guardava um pet, e o colecionável
+pagava a espera. Sem pet, a espera não tem conteúdo — é atraso puro sobre XP. O baú
+`rare` (30% dos casos) é **estritamente pior** que o `common` em tempo, e melhor só
+em número.
+
+**Efeito estrutural, não medido:** a fila drena 1 ovo a cada 3 dias. Um aluno que
+ganhe mais de um baú por 3 dias — e há 5 fontes: cadastro, level up, missões do dia,
+conquista e ofensiva — **acumula fila sem limite**. Na conta do Doug isso não
+aparece (24 baús em ~6 meses, ~1 por semana), mas ele é um professor testando, não
+um aluno em trilha.
+
+De brinde: o degrau **`common` → 15 XP da escada do ovo ficou inalcançável**, porque
+`common` nunca vira ovo. Os 4 ovos `common` com `xp_bonus = 15` no banco são os
+convertidos pelo Bloco B.
+
+**As quatro saídas, e nenhuma é conserto óbvio:**
+
+1. **Chocar em paralelo** — mata a fila e preserva a Chocadeira e a decisão da §1.1.
+   É a mais barata em decisão e a menos medida em código: a UI hoje desenha *um* ovo
+   e uma fila atrás.
+2. **Baixar as 72h.** Uma constante nos dois lados. Não resolve a forma, só encurta.
+3. **Matar o ovo e pagar o XP na abertura** — resolve a forma inteira e **reverte a
+   §1.1**: a Chocadeira, o `EggCard` e o `EggHatchingModal` perdem assunto. É o
+   vizinho do **D6**, que já registra o card de pet que nunca abre.
+4. **Devolver conteúdo ao ovo** — o ovo passa a dar **cabelo** em vez de XP. Amarra
+   esta frente ao catálogo de arte (Bloco 8 do doc 15), que hoje tem 5 modelos.
+
+**Quem decide:** Doug. A 1 e a 3 são as que mudam a experiência de verdade, e são
+opostas: uma salva a Chocadeira, a outra a aposenta.
+
 ### T3 — Os documentos do avatar se contradizem sobre decisões **já tomadas**
 **Prova:** `LIDO` — 13 pares, todos com arquivo:linha. Achado por Codex, C1,
 2026-08-07. Cinco conferidos por amostra pelo Claude: cinco confirmados.
