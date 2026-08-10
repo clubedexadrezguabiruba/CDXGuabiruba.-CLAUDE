@@ -51,6 +51,10 @@ public.refresh_public_profiles(); END IF;` em `set_preferencias`. É o precedent
 `REFRESH ... CONCURRENTLY` a cada toque do botão custa caro. A segunda pergunta é o
 motivo de isto não ser óbvio o bastante para consertar sem decisão.
 
+**Decisão do Doug, 2026-08-10: continua esperando.** Perguntado com as três saídas na
+mesa (consertar, esperar, medir o custo antes), escolheu esperar. **Não repropor** — o
+próximo a abrir este arquivo já tem a resposta.
+
 ### R2 — `titles_select_classmate` nunca foi removida, e o gate não a vigia
 **Prova:** `VERSIONADO` — `20260216180200_rls.sql:232` ·
 `scripts/verify/phase8/verify-avatar-db.ts:53`
