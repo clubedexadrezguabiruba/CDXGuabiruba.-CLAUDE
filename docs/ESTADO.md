@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **1 arquivos sujos** |
-| **Último commit** | 7082fea · 2026-08-10 · docs(achados): D8 — a migration do F.2 conta 19 no default, e a releitura achou 18 |
+| **Commits à frente de `origin/main`** | 2 |
+| **Árvore** | **3 arquivos sujos** |
+| **Último commit** | bd4222c · 2026-08-10 · docs(avatar): F.2 fechado — o E está no ar, e avatar_chosen foi de 8 para 0 |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

@@ -892,6 +892,28 @@ sessões o E levar.
   janela do F.2 o `WHERE` largo continua correto pelo motivo escrito, que é a
   ordem, não a heurística.
 
+  **A conferência manual do Doug aconteceu, e é o que fecha o F.2.** Duas contas,
+  quatro telas, mais duas medições no banco que a tela não mostra:
+
+  - **A escolha vai ao servidor e volta.** `sirdouglasvieira` (nv. 9) caiu na
+    tela de criação sem clicar em nada, escolheu, e o banco foi de
+    `chosen=false, pele 2, careca, cor 0` para `chosen=true, pele 7, espetado,
+    cor 3` — o mesmo boneco que a tela pintou.
+  - **A matview se atualizou sozinha depois de uma escolha real.** Primeira vez
+    medido: `users` 19 × matview 19, **0 divergências** de identidade, e a
+    escolha nova já estava na cópia. É o refresh que o E.3 pendurou na RPC.
+  - **O cadeado vem do servidor.** Mesma tela, nv. 23 mostra 1 cadeado (chanel,
+    nível 30) e nv. 9 mostra 3 (coque, moicano, chanel) — a régua do
+    `avatar_hair_catalog`, não um número chumbado no cliente.
+  - **O caso do D8 não perdeu nada.** `teacherdoug001`, a única conta com
+    identidade real e `chosen=false`, foi redirecionada para a criação e a tela
+    abriu **com o espetado já marcado**. Confirmou sem reescolher; pele 7 e
+    espetado intactos, `chosen` de volta a true.
+  - **Os dois caminhos do perfil público renderizam**, um aluno vendo o outro.
+
+  `avatar_chosen` no fim: **2 de 19** — as duas contas do teste. As outras 17
+  continuam sendo mandadas para a tela nova, que é o que a migration quis.
+
 ## 5. O que este plano NÃO resolve
 
 - **Arte nova.** Continuam 5 cabelos e 6 opções. Se é pouco para um catálogo de

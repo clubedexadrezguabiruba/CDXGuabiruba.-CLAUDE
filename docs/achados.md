@@ -633,6 +633,11 @@ exatamente o que o `WHERE` largo pede que não aconteça. O parágrafo *"por que
 `WHERE avatar_chosen = true` e não uma condição mais fina"* fica mais fraco: já
 existe uma conta cujo estado de identidade **é** distinguível do default.
 
+**Confirmado na tela, depois do apply:** a `53f4fc3d…` (`teacherdoug001`) foi
+redirecionada para a criação e a tela **abriu com o espetado já marcado**. O Doug
+confirmou sem reescolher; pele 7 e cabelo espetado intactos. O custo previsto —
+um clique — foi o custo real.
+
 **O conserto, se o Doug mandar:** trocar a frase nos dois lugares por "18 de 19,
 mais uma conta de teste com identidade kokeshi real" — texto, não SQL. A
 migration **não** muda: aplicada na janela do F.2, ela continua correta.
