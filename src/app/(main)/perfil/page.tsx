@@ -15,7 +15,6 @@ export interface ProfileData {
   rush3min: number;
   rush5min: number;
   rushResistencia: number;
-  avatarBase: string;
 }
 
 export default async function PerfilPage() {
@@ -35,7 +34,7 @@ export default async function PerfilPage() {
   // Buscar dados do perfil
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, avatar_base, created_at")
+    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at")
     .eq("id", user.id)
     .single();
 
@@ -85,7 +84,6 @@ export default async function PerfilPage() {
     rush3min: profile?.rush_3min_record ?? 0,
     rush5min: profile?.rush_5min_record ?? 0,
     rushResistencia: profile?.rush_resistencia_record ?? 0,
-    avatarBase: profile?.avatar_base ?? "male",
   };
 
   return (

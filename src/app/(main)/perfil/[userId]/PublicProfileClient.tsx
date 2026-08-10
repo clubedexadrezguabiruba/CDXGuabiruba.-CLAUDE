@@ -1,30 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import AvatarDisplay from "@/components/avatar/AvatarDisplay";
-import type { AvatarBase } from "@/components/avatar/AvatarDisplay";
 import type { PublicProfileData } from "@/types/ranking";
-import type { EquippedMap, ItemSlot, ItemRarity } from "@/types/inventory";
 import { xpForLevel } from "@/lib/gamification/xp";
 
 interface Props {
   profile: PublicProfileData;
 }
 
+// O avatar saiu daqui no Bloco D da troca de pilha: o `AvatarDisplay` montava a
+// pilha v2, e desde o Bloco B o `get_public_profile` devolve `equipped_items` como
+// `[]` fixo — o boneco já vinha vazio. Quem devolve avatar a esta tela é o Bloco E,
+// com o `<AvatarKokeshi>`. Ver docs/avatar/20-troca-de-pilha-plano.md.
 export default function PublicProfileClient({ profile }: Props) {
-  // Converter equipped_items do RPC para EquippedMap do AvatarDisplay
-  const equipped: EquippedMap = {};
-  for (const item of profile.equipped_items) {
-    const slot = item.slot as ItemSlot;
-    equipped[slot] = {
-      slot,
-      id: 0,
-      name: item.item_name,
-      rarity: item.rarity as ItemRarity,
-      image_url: item.image_url,
-    };
-  }
-
   const xpNeeded = xpForLevel(profile.level);
   const xpPercent = Math.min(100, Math.round((profile.xp / xpNeeded) * 100));
 
@@ -44,12 +32,8 @@ export default function PublicProfileClient({ profile }: Props) {
         ← Voltar ao Quadro de Honra
       </Link>
 
-      {/* Header: Avatar + Info */}
+      {/* Header: Info (o avatar volta no Bloco E) */}
       <div className="mb-6 flex items-start gap-4 rounded-xl border bg-white p-5 shadow-sm">
-        <div className="shrink-0">
-          <AvatarDisplay equipped={equipped} avatarBase={(profile.avatar_base || "male") as AvatarBase} size="md" />
-        </div>
-
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold text-zinc-900">
             {profile.public_name}

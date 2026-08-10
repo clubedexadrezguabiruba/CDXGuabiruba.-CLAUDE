@@ -1,3 +1,12 @@
+// O que sobrou das constantes de item: raridade e o relógio do ovo.
+//
+// `SLOT_LABELS`, `SLOT_EMOJIS`, `ALL_SLOTS` e `ALL_RARITIES` existiam para o
+// `InventoryGrid` e o `SlotGrid`, que saíram no Bloco D da troca de pilha junto
+// com o resto do avatar v2. Raridade ficou porque baú e ovo continuam falando
+// nela — é o que `EggHatchingModal` pinta.
+//
+// Ver docs/avatar/20-troca-de-pilha-plano.md.
+
 export const RARITY_STYLES: Record<string, { border: string; badge: string; bg: string; glow: string }> = {
   common: {
     border: "border-zinc-300",
@@ -31,25 +40,6 @@ export const RARITY_LABELS: Record<string, string> = {
   epic: "Épico",
   legendary: "Lendário",
 };
-
-export const SLOT_LABELS: Record<string, string> = {
-  head: "Cabeça",
-  outfit: "Roupa",
-  background: "Fundo",
-  frame: "Moldura",
-  pet: "Pet",
-};
-
-export const SLOT_EMOJIS: Record<string, string> = {
-  head: "👑",
-  outfit: "🎽",
-  background: "🏰",
-  frame: "🖼️",
-  pet: "🐾",
-};
-
-export const ALL_SLOTS = ["head", "outfit", "background", "frame", "pet"] as const;
-export const ALL_RARITIES = ["common", "rare", "epic", "legendary"] as const;
 
 // --- Egg Hatching System ---
 

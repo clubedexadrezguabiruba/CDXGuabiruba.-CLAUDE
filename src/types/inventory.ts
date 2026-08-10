@@ -1,29 +1,11 @@
-export type ItemSlot = "head" | "outfit" | "background" | "frame" | "pet";
-export type ItemRarity = "common" | "rare" | "epic" | "legendary";
-
-export interface InventoryItem {
-  id: number;
-  name: string;
-  slot: ItemSlot;
-  rarity: ItemRarity;
-  image_url: string | null;
-  description: string;
-  source: string;
-  obtained_at: string;
-  equipped: boolean;
-}
-
-export interface EquippedItem {
-  slot: ItemSlot;
-  id: number;
-  name: string;
-  rarity: ItemRarity;
-  image_url: string | null;
-}
-
-export type EquippedMap = Partial<Record<ItemSlot, EquippedItem>>;
-
-// --- Egg Hatching System ---
+// O que sobrou do inventário do avatar v2: só o ovo.
+//
+// Os tipos de item (`ItemSlot`, `ItemRarity`, `InventoryItem`, `EquippedItem`,
+// `EquippedMap`) saíram no Bloco D da troca de pilha, junto com as 3 tabelas que
+// o Bloco B apagou do banco. Ovo e baú continuam existindo e continuam falando
+// em raridade — daí `HatchResult.xp_bonus` e o `rarity` dentro de `pet`.
+//
+// Ver docs/avatar/20-troca-de-pilha-plano.md.
 
 export type EggStatus = "hatching" | "queued";
 

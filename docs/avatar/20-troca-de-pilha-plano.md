@@ -106,6 +106,13 @@ bloco que a consome em `check_achievements` nunca executou. É código morto com
 - `InventoryGrid`, `SlotGrid` e `Chocadeira` **não importam nada de
   `src/lib/avatar/`** — dependem só de `@/types/inventory` e `@/lib/constants/items`
 - **48 arquivos** em `public/items/` (44 de item + 4 estruturais em `/items/base/`)
+  — ⚠️ **corrigido em 2026-08-10, no Bloco D: só os 44 morrem.** Os 4 de
+  `/items/base/` são a base do pipeline **kokeshi**, não arte de item:
+  `avatar-base-neutro.svg` é gerado por `npm run avatar:base` e lido do disco por
+  dois testes que ficam (`svgContrato.test.ts:62`, `otimizar-svg.test.ts:25`), por
+  `/dev/avatar-base` e por 5 scripts de arte; `avatar-base-sem-traje.svg` é a base
+  de runtime do uniforme. Os 2 PNGs `male`/`female` são v2, mas `/criar-personagem`
+  ainda os serve até o Bloco E
 
 ### 3.4 O que não existe e o Bloco E precisa criar
 
@@ -334,8 +341,9 @@ mesmos slugs; e gravar cabelo acima do nível é **negado**, provado como o pape
 - Deletar `InventoryGrid.tsx`, `SlotGrid.tsx`, `useInventory.ts`,
   `assetResolver.test.ts`, `renderability.test.ts`
 - **Preservar** `palette.ts` e `svgContrato.ts`
-- Deletar `public/items/` e tirar o check de manifesto do `prebuild` — senão
-  `npm run build` morre antes de compilar
+- Deletar os **44** arquivos de item de `public/items/` — **`public/items/base/`
+  fica** (ver a ressalva na §3.3) — e tirar o check de manifesto do `prebuild`,
+  senão `npm run build` morre antes de compilar
 - `src/types/inventory.ts` e `src/lib/constants/items.ts` encolhem para o que baú
   e ovo ainda usam (raridade)
 
@@ -343,7 +351,104 @@ mesmos slugs; e gravar cabelo acima do nível é **negado**, provado como o pape
 que sumiu. Mais `npm test` e `verify:all`.
 📊 **Número:** ~1.400 linhas e 48 arquivos a menos, build verde.
 
-- [ ] Bloco D
+- [x] **Bloco D fechado em 2026-08-10.** **68 arquivos apagados** (44 de arte +
+  **24 de código**) e **3.114 linhas de código a menos** — mais que o dobro da
+  estimativa de ~1.400, e a §"o que a estimativa não contava" abaixo diz de onde
+  vem a diferença. `build` verde (exit 0, compilou em 10,6s) · `typecheck` 0 ·
+  `lint` 0 erros · **454/454** testes · **`verify:all` exit 0**, 19 gates.
+
+  **Os testes foram de 478 para 454, e isso é subtração, não regressão:** os 24
+  que saíram viviam em `assetResolver.test.ts` e `renderability.test.ts`, que
+  testavam resolução de asset de item. O painel recontou os arquivos de teste de
+  `src/` de 15 para 13.
+
+  #### O que a estimativa de 1.400 linhas não contava
+
+  A §3.3 mediu **1.384 linhas** (os 13 módulos + `AvatarDisplay`) e acertou nisso.
+  O que ficou de fora, e que o build cobrou ou a varredura achou:
+
+  | | linhas | por que não estava na conta |
+  |---|---|---|
+  | `e2e/phase8-avatar.spec.ts` + `helpers/inventory-helpers.ts` | 605 | a §3.3 mediu `src/`, e o e2e não entra em `tsconfig` nenhum — **o build não o vê** |
+  | `renderability.ts` | 104 | contado à parte na §3.3 ("morre com os gates de item"), fora dos 1.384 |
+  | `InventoryGrid` + `SlotGrid` + `useInventory` | 528 | listados no Bloco D, nunca somados |
+  | `scripts/avatar/gen-manifest.ts` + `asset-scan.ts` | 178 | a §3.3 falava de tirar o **check** do prebuild, não de apagar o gerador |
+  | os 2 testes unitários | 191 | idem |
+  | **cirurgia em 7 arquivos que ficam** | **265 − 60** | ver abaixo — não era deleção |
+
+  **O gerador do manifesto foi apagado, não só desligado do `prebuild`.** A entrada
+  dele (`public/items/`) e a saída (`src/lib/avatar/assetManifest.ts`) sumiram as
+  duas; deixá-lo vivo é deixar `npm run avatar:manifest` a um comando de
+  **ressuscitar** o módulo morto. O script saiu do `package.json` junto.
+
+  #### As três coisas que o build não podia cobrar
+
+  1. **`public/items/base/` não é arte de item — é a base do pipeline kokeshi, e
+     apagá-la quebrou 7 testes.** O plano dizia "48 arquivos" e a §3.3 avisava "44
+     de item + 4 estruturais em `/items/base/`"; apagar os 48 derrubou
+     `svgContrato.test.ts:62` e as 6 asserções de `otimizar-svg.test.ts:25`, que
+     leem `avatar-base-neutro.svg` **do disco**. O arquivo é gerado por
+     `npm run avatar:base` e também é servido por `/dev/avatar-base` e por 5
+     scripts de arte; `avatar-base-sem-traje.svg` é a base de runtime do uniforme
+     (`/dev/avatar-uniforme`). Os 4 foram restaurados. **O número certo é 44.**
+     Isto é o `if (assets)` da lição 3: o build compila import, não `readFileSync`.
+  2. **`PerfilClient.tsx` não era import solto — era 211 linhas de cirurgia**
+     (−211/+35). Saíram o palco do boneco nos dois tamanhos, o botão "Trocar
+     aparência" (`update_avatar_base`), o `useInventory` com os handlers de
+     equipar/desequipar e o alerta de erro deles, a seção "Equipamentos da
+     Campanha" (`SlotGrid`), a seção "Personalizar Avatar" (`InventoryGrid`), a
+     stat "Coleção" e o ícone `IconChest` que ficou órfão. **A Chocadeira ficou.**
+     O `avatarBase` deixou de ser buscado no `page.tsx` — era coluna deprecada
+     sendo lida para alimentar componente apagado. E como o boneco era o *centro*
+     de um layout que o flanqueava com duas colunas de stat só no desktop, e
+     repetia o mesmo trio num grid 2×2 só no mobile, as duas estruturas viraram
+     **uma**: um grid de 3, igual nas duas larguras. O Bloco E recompõe o palco.
+  3. **`scripts/estado.ts` media um passivo que o Bloco B já havia apagado.** As
+     linhas 263-272 liam `scripts/verify/phase8/asset-baseline.json` para publicar
+     "Itens que não vestem o boneco", "Itens sem miniatura" e "Arquivos órfãos". O
+     arquivo saiu com o gate `verify:avatar-assets` no Bloco B, e o `if (assets)`
+     vinha **omitindo as três linhas em silêncio**. Bloco morto, removido.
+
+  #### O que o Bloco E herda daqui, de propósito
+
+  - **`/criar-personagem` continua sendo a tela do avatar v2.** Escolhe
+    macho/fêmea, chama a `update_avatar_base` deprecada e mostra os dois PNGs de
+    `/items/base/`. Não foi apagada porque o Bloco E a reescreve com as 3 escolhas
+    novas, e apagar em D para recriar em E é só churn. Hoje ninguém chega lá — o
+    `avatar_chosen` do Doug segue `true` (pendência registrada no Bloco C).
+  - **`src/types/ranking.ts` mantém `equipped_items`, `avatar_config` e
+    `avatar_base`, agora sem nenhum leitor.** Ficaram porque o tipo espelha o que
+    a RPC devolve hoje: `get_public_profile` retorna `'equipped_items', '[]'` fixo
+    desde o Bloco B, e as duas colunas existem deprecadas. Os três campos saem
+    quando o Bloco E recriar a view e a RPC — que é a pendência que ele já herdou.
+  - **`PublicProfileClient` perdeu o avatar do cabeçalho** (−26/+7). Desde o Bloco
+    B o boneco já vinha vazio, porque o laço que montava o `EquippedMap` iterava
+    sobre uma lista vazia.
+
+  #### Dois achados registrados, e um baseline que eu decidi NÃO tocar
+
+  Pela regra 9, os dois foram para `docs/achados.md` e param ali: o **G9** (o
+  ratchet de cores cruas carrega 234 cores de folga fantasma em 14 arquivos) e o
+  **D6** (o `EggHatchingModal` tem um card de pet inteiro que `hatch_egg` nunca
+  vai preencher). Fecharam junto, por terem a condição de fechamento cumprida, o
+  **T8** (pelo Bloco C) e o **G2** (o gate de assets, cujo assunto B e D
+  apagaram).
+
+  ⚠️ **O `--update` do baseline de cores cruas foi medido e revertido.** Ele
+  regrava o arquivo inteiro: apagaria as 4 entradas dos arquivos que este bloco
+  deletou — e **zeraria 10 arquivos que o Bloco D não tocou** (`LessonMap`,
+  `dashboard/page`, `(main)/layout`, `RankingClient` e 6 de gamificação), que já
+  foram migrados para tokens e nunca tiveram o teto baixado. Apertar o ratchet em
+  frente alheia dentro de um diff de 3.100 linhas apagadas esconde o aperto.
+  `verify:design-tokens` passa com o baseline original — 0 violações. O conserto
+  é commit próprio, e está no G9.
+
+  **A lição deste bloco:** *"deixe o build reclamar" funciona para import e só
+  para import.* O build passou **de primeira**, em 10,6s, com 7 testes quebrados
+  esperando — porque `readFileSync` de um PNG apagado não é erro de compilação, e
+  porque o e2e não está em `tsconfig` nenhum. Quem achou os dois foi `npm test` e
+  a varredura de `grep` **antes** de apagar. O mapa de erros do build é um mapa de
+  imports, não de dependências.
 
 ### Bloco E — o componente novo e as telas
 

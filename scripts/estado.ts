@@ -260,16 +260,15 @@ function lerJson(caminho: string): Record<string, unknown> | null {
 export function medirPassivo(): Passivo[] {
   const saida: Passivo[] = [];
 
-  const assets = lerJson("scripts/verify/phase8/asset-baseline.json");
-  if (assets) {
-    const semBoneco = (assets["sem_boneco"] as unknown[] | undefined)?.length ?? 0;
-    const semMini = (assets["sem_miniatura"] as unknown[] | undefined)?.length ?? 0;
-    const orfaos = (assets["arquivos_orfaos"] as unknown[] | undefined)?.length ?? 0;
-    const desde = String(assets["gerado_em"] ?? "—");
-    saida.push({ rotulo: "Itens que não vestem o boneco", valor: String(semBoneco), desde });
-    saida.push({ rotulo: "Itens sem miniatura", valor: String(semMini), desde });
-    if (orfaos) saida.push({ rotulo: "Arquivos órfãos", valor: String(orfaos), desde });
-  }
+  // Aqui se mediam três passivos do catálogo de itens — itens que não vestem o
+  // boneco, itens sem miniatura, arquivos órfãos — a partir de
+  // `scripts/verify/phase8/asset-baseline.json`. O Bloco B apagou os 69 itens e o
+  // gate `verify:avatar-assets` que emitia esse baseline; o Bloco D apagou os 44
+  // arquivos de `public/items/`. Sem catálogo não há passivo de catálogo.
+  //
+  // O `if (assets)` que protegia o bloco já vinha omitindo as três linhas em
+  // silêncio — e um painel que mede o que não existe é exatamente o que o
+  // `docs/ESTADO.md` foi criado para impedir.
 
   const cores = lerJson("scripts/verify/design/cores-cruas-baseline.json");
   if (cores) {

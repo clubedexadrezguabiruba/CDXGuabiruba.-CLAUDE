@@ -2,22 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useInventory } from "@/hooks/useInventory";
 import { useAchievements } from "@/hooks/useAchievements";
-import AvatarDisplay from "@/components/avatar/AvatarDisplay";
-import type { AvatarBase } from "@/components/avatar/AvatarDisplay";
-import SlotGrid from "@/components/avatar/SlotGrid";
-import InventoryGrid from "@/components/avatar/InventoryGrid";
 import Chocadeira from "@/components/avatar/Chocadeira";
 import AchievementPanel from "@/components/gamification/AchievementPanel";
-import type { ItemSlot } from "@/types/inventory";
 import { xpForLevel } from "@/lib/gamification/xp";
-import { createClient } from "@/lib/supabase/client";
 
 /* ================================================================
    Types
    ================================================================ */
 
+/**
+ * O que saiu daqui no Bloco D da troca de pilha, e por quê.
+ *
+ * O boneco (`AvatarDisplay`), o inventário (`InventoryGrid`), os slots
+ * equipados (`SlotGrid`), o hook `useInventory` e o botão "Trocar aparência"
+ * (`update_avatar_base`) montavam a pilha do avatar v2, que o Bloco B apagou do
+ * banco: não há mais `items`, `user_inventory`, `user_equipped`, `equip_item`
+ * nem `unequip_slot`. Sem tabela por baixo, a tela mostrava zeros.
+ *
+ * A Chocadeira ficou — ovo continua existindo e continua pagando XP.
+ *
+ * Quem devolve avatar a esta tela é o Bloco E, com o `<AvatarKokeshi>` e o
+ * seletor de cabelo. Ver docs/avatar/20-troca-de-pilha-plano.md.
+ */
 interface ProfileData {
   userId: string;
   displayName: string;
@@ -32,7 +39,6 @@ interface ProfileData {
   rush3min: number;
   rush5min: number;
   rushResistencia: number;
-  avatarBase: string;
 }
 
 interface PerfilClientProps {
@@ -125,14 +131,6 @@ function IconShield() {
   return (
     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" opacity={0.7}>
       <path d="M12 2l8 4v6c0 5.25-3.4 9.74-8 11-4.6-1.26-8-5.75-8-11V6l8-4zm0 2.18L6 7.08v4.92c0 4.08 2.55 7.59 6 8.83 3.45-1.24 6-4.75 6-8.83V7.08L12 4.18z"/>
-    </svg>
-  );
-}
-
-function IconChest() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" opacity={0.7}>
-      <path d="M20 7H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 8H4v-2h5v-1a1 1 0 012 0v1h2v-1a1 1 0 012 0v1h5v2zM4 11V9h16v2H4zM6 5h12a1 1 0 010 2H6a1 1 0 010-2z"/>
     </svg>
   );
 }
@@ -282,53 +280,8 @@ export default function PerfilClient({
   lessonsCompleted,
   puzzlesSolved,
 }: PerfilClientProps) {
-  const { items, equipped, catalogTotal, loading, equip, unequip } = useInventory();
   const { achievements, loading: achievementsLoading } = useAchievements();
-  const [avatarBase, setAvatarBase] = useState<AvatarBase>(
-    (profile.avatarBase as AvatarBase) || "male"
-  );
-  const [switchingAvatar, setSwitchingAvatar] = useState(false);
   const [showAllAchievements, setShowAllAchievements] = useState(false);
-  const [inventoryError, setInventoryError] = useState<string | null>(null);
-
-  // --- Handlers ---
-  const handleSwitchAvatar = async () => {
-    const newBase: AvatarBase = avatarBase === "male" ? "female" : "male";
-    setSwitchingAvatar(true);
-    const supabase = createClient();
-    const { error } = await supabase.rpc("update_avatar_base", { p_base: newBase });
-    if (!error) setAvatarBase(newBase);
-    setSwitchingAvatar(false);
-  };
-
-  // Antes estes dois handlers eram `catch { /* silencioso */ }`: quando o RPC
-  // falhava, o aluno clicava em Equipar e NADA acontecia — sem mensagem, sem
-  // log. Uma falha ficava indistinguível de sucesso, o que também tornava
-  // qualquer diagnóstico impossível (foi o que escondeu a causa de um teste e2e
-  // por horas). Agora o erro aparece na tela e no console.
-  const handleEquip = async (itemId: number) => {
-    setInventoryError(null);
-    try {
-      await equip(itemId);
-    } catch (e) {
-      console.error("[perfil] equip falhou:", e);
-      setInventoryError(
-        `Não foi possível equipar. ${(e as Error).message ?? "Tente novamente."}`
-      );
-    }
-  };
-
-  const handleUnequip = async (slot: ItemSlot) => {
-    setInventoryError(null);
-    try {
-      await unequip(slot);
-    } catch (e) {
-      console.error("[perfil] unequip falhou:", e);
-      setInventoryError(
-        `Não foi possível desequipar. ${(e as Error).message ?? "Tente novamente."}`
-      );
-    }
-  };
 
   // --- XP ---
   const xpNeeded = xpForLevel(profile.level);
@@ -411,86 +364,18 @@ export default function PerfilClient({
               {profile.title}
             </span>
 
-            {/* --- Avatar stage + flanking quick stats --- */}
-            <div className="mt-2 flex w-full items-center justify-center gap-3 lg:gap-4">
-              {/* Left stats — desktop only */}
-              <div className="hidden flex-col gap-2 lg:flex">
-                <QuickStat icon={<IconRook />} value={profile.puzzleRating.toString()} label="Rating" />
-                <QuickStat icon={<IconBolt />} value={profile.puzzleBestStreak > 0 ? profile.puzzleBestStreak.toString() : "—"} label="Sequência" />
-              </div>
-
-              {/* Avatar stage — overflow visible for future animations */}
-              <div className="relative shrink-0" style={{ minWidth: "fit-content" }}>
-                {loading ? (
-                  <>
-                    <div className="flex items-center justify-center rounded-2xl bg-stone-100 lg:hidden" style={{ width: 200, height: 280 }}>
-                      <span className="text-sm text-stone-400">...</span>
-                    </div>
-                    <div className="hidden items-center justify-center rounded-2xl bg-stone-100 lg:flex" style={{ width: 340, height: 476 }}>
-                      <span className="text-sm text-stone-400">...</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Mobile: size lg (200x280) */}
-                    <div className="relative lg:hidden">
-                      <AvatarDisplay equipped={equipped} avatarBase={avatarBase} size="lg" />
-                      <button
-                        onClick={handleSwitchAvatar}
-                        disabled={switchingAvatar || loading}
-                        title="Trocar aparência"
-                        className="absolute -top-1 -right-1 z-20 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-amber-600 text-white shadow-lg transition-all hover:scale-110 hover:bg-amber-700 disabled:opacity-40"
-                      >
-                        {switchingAvatar ? (
-                          <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                        ) : (
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                    {/* Desktop: size xl (300x420) */}
-                    <div className="relative hidden lg:block">
-                      <AvatarDisplay equipped={equipped} avatarBase={avatarBase} size="xl" />
-                      <button
-                        onClick={handleSwitchAvatar}
-                        disabled={switchingAvatar || loading}
-                        title="Trocar aparência"
-                        className="absolute -top-2 -right-2 z-20 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-amber-600 text-white shadow-lg transition-all hover:scale-110 hover:bg-amber-700 disabled:opacity-40"
-                      >
-                        {switchingAvatar ? (
-                          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                        ) : (
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Right stats — desktop only */}
-              <div className="hidden flex-col gap-2 lg:flex">
-                <QuickStat icon={<IconBot />} value={`${botsDefeated}/10`} label="Bots" />
-                <QuickStat icon={<IconChest />} value={`${items.length}/${catalogTotal}`} label="Coleção" />
-              </div>
-            </div>
-
-            {/* Quick stats — mobile only (grid 2x2 below avatar) */}
-            <div className="mt-4 grid w-full max-w-sm grid-cols-2 gap-2 lg:hidden">
+            {/* --- Quick stats ---
+                O boneco ficava aqui, no centro, flanqueado por duas colunas de
+                stat que só apareciam no desktop; o mesmo trio se repetia num
+                grid 2×2 no mobile. Sem centro para flanquear, as duas
+                estruturas viraram uma: um grid de 3, igual nas duas larguras.
+                A quarta stat era "Coleção" (`items.length/catalogTotal`) e saiu
+                com o inventário — não há mais catálogo para contar.
+                O Bloco E recompõe o palco em volta do `<AvatarKokeshi>`. */}
+            <div className="mt-4 grid w-full max-w-sm grid-cols-3 gap-2">
               <QuickStat icon={<IconRook />} value={profile.puzzleRating.toString()} label="Rating" />
               <QuickStat icon={<IconBolt />} value={profile.puzzleBestStreak > 0 ? profile.puzzleBestStreak.toString() : "—"} label="Sequência" />
               <QuickStat icon={<IconBot />} value={`${botsDefeated}/10`} label="Bots" />
-              <QuickStat icon={<IconChest />} value={`${items.length}/${catalogTotal}`} label="Coleção" />
             </div>
 
             {/* --- XP + metadata (below avatar) --- */}
@@ -625,54 +510,12 @@ export default function PerfilClient({
             </section>
           </div>
 
-          {/* --- Right Column: Equipamentos + Chocadeira + Arsenal --- */}
+          {/* --- Right Column: Chocadeira ---
+              "Equipamentos da Campanha" (SlotGrid) e "Personalizar Avatar"
+              (InventoryGrid) saíram com o inventário v2. O seletor de cabelo do
+              Bloco E ocupa este lugar. */}
           <div className="flex flex-col gap-5">
-            {inventoryError && (
-              <div
-                role="alert"
-                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-              >
-                {inventoryError}
-              </div>
-            )}
-
-            {/* EQUIPAMENTOS */}
-            <CollapsibleSection title="Equipamentos da Campanha">
-              {loading ? (
-                <div className="grid grid-cols-3 gap-2.5">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-24 animate-pulse rounded-xl bg-stone-100" />
-                  ))}
-                </div>
-              ) : (
-                <SlotGrid equipped={equipped} onUnequip={handleUnequip} />
-              )}
-            </CollapsibleSection>
-
-            {/* CHOCADEIRA */}
             <Chocadeira />
-
-            {/* ARSENAL */}
-            <CollapsibleSection
-              title="Personalizar Avatar"
-              badge={!loading ? `${items.length} itens` : undefined}
-              defaultOpen={false}
-              highlight
-            >
-              {loading ? (
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-36 animate-pulse rounded-xl bg-stone-100" />
-                  ))}
-                </div>
-              ) : (
-                <InventoryGrid
-                  items={items}
-                  onEquip={handleEquip}
-                  onUnequip={handleUnequip}
-                />
-              )}
-            </CollapsibleSection>
           </div>
         </div>
       </div>

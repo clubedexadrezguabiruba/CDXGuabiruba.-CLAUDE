@@ -178,8 +178,15 @@ porque a Fase 11 (sons + service worker cacheando exatamente estes caminhos) con
 sobre a premissa de que asset público não passa pelo proxy. Revisar depois da medição.
 **Achado por:** Fable, revisão da integração, 2026-08-07.
 
-### T8 — a F2 deixa o aluno escolher um cabelo que não tem onde ser guardado
+### T8 — ~~a F2 deixa o aluno escolher um cabelo que não tem onde ser guardado~~ FECHADO
 **Prova:** `MEDIDO` — 2026-08-10, grep em `supabase/migrations/` e leitura da T2.1.
+
+> ✅ **Fechado em 2026-08-10 pelo Bloco C**, que era a condição de fechamento escrita
+> abaixo. A linha do resumo está na tabela de Fechados; o corpo fica como estava,
+> porque é ele que explica de onde vinha a divergência. **Uma emenda:** o default de
+> `avatar_hair` ficou **`NULL` (careca)**, não `coque` — a régua semeada pôs `coque`
+> no nível 10, e default não pode ser peça travada. O porquê está na §Bloco C do
+> `docs/avatar/20-troca-de-pilha-plano.md`.
 
 A **T2.10** (`docs/avatar/14-backlog-execucao.md:365`) entrega `criar-personagem` com
 **três escolhas**: tom de pele, **modelo de cabelo** e cor do cabelo. A **T2.1**
@@ -227,15 +234,39 @@ do banco.
 Não é urgente — os blocos B0–B7 têm zero linhas de código. Mas o plano promete
 verificação que não existe, e quem for construir vai descobrir tarde.
 
-### G2 — O gate de assets é um ratchet com 45 itens congelados
-**Prova:** `MEDIDO` — `scripts/verify/phase8/asset-baseline.json`
+### G9 — o baseline de cores cruas tem 234 cores de folga fantasma, em 14 arquivos
+**Prova:** `MEDIDO` — 2026-08-10, `verify:design-tokens -- --update` rodado num
+arquivo de rascunho e comparado chave a chave com `HEAD`. Achado pelo Claude,
+executando o Bloco D. Registrado e **não consertado**, pela regra 9.
 
-O gate `verify:avatar-assets` só reprova se o número **crescer**. Os 45 itens que
-não vestem o boneco seguem tolerados por desenho — e são o **bloqueador de
-lançamento nº 1** declarado no próprio doc 13.
+O ratchet de `scripts/verify/design/cores-cruas-baseline.json` congela um teto por
+arquivo e reprova o crescimento. Medido hoje: o baseline soma **1.331** cores cruas
+em 69 arquivos; o repositório tem **1.097** em 55. A diferença são **14 entradas que
+não correspondem a nada**, e vêm de duas causas distintas:
 
-A marca verde no doc 13 é sobre o gate existir, não sobre o bug estar resolvido.
-Já está escrito lá, para ninguém ler o quadradinho como "resolvido".
+- **4 arquivos deixaram de existir** — `InventoryGrid.tsx` (14), `SlotGrid.tsx` (6),
+  `AvatarDisplay.tsx` (4) e `lib/avatar/frameStyles.ts` (4), apagados no Bloco D.
+- **10 arquivos foram migrados para tokens e o teto nunca foi baixado** —
+  `LessonMap.tsx` (29), `dashboard/page.tsx` (23), `AchievementPanel.tsx` (22),
+  `RankingClient.tsx` (21), `(main)/layout.tsx` (19), `MissionPanel.tsx` (19),
+  `TaskPanel.tsx` (17), `ChestPanel.tsx` (13), `StreakDisplay.tsx` (8) e
+  `XPBar.tsx` (6) medem **zero** hoje e continuam com teto no baseline.
+
+Mais três que baixaram sem ser zerados: `PerfilClient.tsx` 83→70 e
+`ChestOpeningModal.tsx` 26→12 (os dois do Bloco D e do A.2) e
+`GameOverModal.tsx` 30→28.
+
+**Não afeta a força do ratchet** — o teto é por arquivo, então folga em arquivo
+apagado não se gasta em outro, e arquivo novo com cor crua reprova igual. O que
+está errado é o **número que o gate relata** e o que o `ESTADO.md` copia dele: o
+projeto diz carregar 1.331 cores cruas de dívida e carrega 1.097.
+
+**Por que não foi consertado aqui:** `--update` regrava o arquivo inteiro. Rodá-lo
+dentro de um commit de deleção apertaria o ratchet em **10 arquivos que o Bloco D
+não tocou**, escondendo trabalho de outra frente — a migração para tokens — dentro
+de um diff de 2.900 linhas apagadas. O conserto é `npm run verify:design-tokens --
+--update` num commit só dele, que consiga dizer no corpo o que apertou e por quê.
+**Quem decide:** Doug.
 
 ### G8 — a variante `faixa` fura a própria álgebra, e o teto não age na calota
 **Prova:** `MEDIDO` — 2026-08-08, render a 2 px/unidade da `entrada-2`
@@ -315,6 +346,29 @@ também no avatar. **Requisito e código discordam, e a discordância é deliber
 A outra metade deste achado **fechou** em 2026-08-06: a matview era legível por
 `anon` e o opt-out era cortesia da camada de RPC. Revogado e vigiado
 (`81a2723`). Falta decidir se o ranking de turma é exceção legítima.
+**Quem decide:** Doug.
+
+### D6 — o ovo ainda tem uma tela de pet que nunca vai abrir
+**Prova:** `MEDIDO` — 2026-08-10, leitura do `hatch_egg` vivo (Bloco A) contra
+`EggHatchingModal.tsx:42-46,86`. Achado pelo Claude, executando o Bloco D.
+Registrado e **não consertado**, pela regra 9.
+
+O Bloco A fez o ramo de XP ser **o único** em `hatch_egg`, e o Bloco B apagou os
+pets junto com os 69 itens. Mas o cliente continua com o caminho inteiro do pet:
+`HatchResult.pet` (`src/types/inventory.ts`) declara um objeto com `name`,
+`rarity`, `image_url` e `description`; `useEggs.ts:133` o lê do JSON; e
+`EggHatchingModal.tsx:42-46,86` pinta um card com moldura por raridade e o rótulo
+de `RARITY_LABELS`. **O servidor nunca devolve `pet`** — é um `null` fixo, e o
+modal cai sempre no ramo de XP.
+
+Não é bug: nada quebra, nada mente para a criança. É tela morta numa tela viva, e
+`RARITY_STYLES`/`RARITY_LABELS` sobreviveram ao Bloco D em parte por causa dela.
+
+**Por que não foi consertado aqui:** apagar o ramo do pet muda o que o aluno vê ao
+chocar um ovo, e isso é decisão de produto, não deleção. E tem um vizinho: o
+`ChestOpeningModal` também segue **não migrado** para a direção A (`zinc-*`,
+`amber-*` e o `animate-bounce` da linha 79, já registrado no plano 20). Os dois
+modais de recompensa querem uma passada junta, com o `design-recruta64`.
 **Quem decide:** Doug.
 
 ### D2 — Por qual caminho a arte do cabelo volta
@@ -466,6 +520,8 @@ lançamento**, não agora.
 | ✅ | **2 verdes por vacuidade** achados ao fechar o R1, nas réguas que provariam o próprio conserto | 2026-08-09 | a §3 de `verify:privileges` percorria só as RPCs que a query **achou**, então RPC dropada sumia da régua calada — corrigido, e provado reprovando pelas duas funções que ainda não existiam. E o Gate 6 de `verify:turmas` exigia por nome as 7 policies de escrita que o R1 removeu: viraram **Gate 6b**, que agora exige que continuem **removidas**. Apagar da lista bastaria para passar; não bastaria para medir |
 | ✅ | **R4** — a `main` no ar estava em `54d7e8a` (2026-07-31) e escrevia direto em `users` e `class_tasks`, que as migrations do R1 já haviam fechado **no mesmo banco** — porque não há Supabase separado (D3). As migrations viajaram para produção; o código que as substitui, não. **Configurações e o liga/desliga de tarefa falhavam no ar**, em silêncio, porque só o Doug estava lá | 2026-08-10 | **merge fast-forward, sem conflito possível:** `origin/main` era ancestral de `avatar/vtracer` (76 commits à frente, 0 atrás), medido antes com `git merge-base --is-ancestor`. `git merge --ff-only` levou `54d7e8a` → `8d31bca`, push disparou a Vercel. **Provado no site no ar, não em relatório:** o Doug conferiu as duas telas exatas que o achado nomeava — Configurações salva, liga/desliga de tarefa funciona. O 3º item da conferência (o perfil ainda mostra o avatar da pilha v2) **não é regressão**: `compor()` só é importado por `/dev/avatar-kokeshi`, e trocar a produção é o **T7** |
 | ✅ | **T7** — a F2 estava sem preço, e o que a encarecia não era o traje: 7 das 16 tarefas nomeavam arquivos da pilha v2 enquanto o boneco novo se monta por `compor()`. Remendar e trocar eram trabalhos de tamanhos diferentes, e a escolha estava sem uma linha de estimativa | 2026-08-10 | **fechado por DECISÃO, depois de medido.** A pedido do Doug a troca foi dimensionada primeiro (6 medidas com arquivo e linha), e a medida reformulou a pergunta: `compor()` tem 0 slot de item contra os 5 da v2; 20 dos 44 arquivos não sobrevivem porque `outfit` é corpo inteiro e `head` é cabeça inteira; **mas 7 dos 8 chapéus já não renderizavam** e o ratchet media 45 itens `sem_boneco` — remendar era ressuscitar arte morta. A superfície da troca é de **2 chamadas**. Com isso o Doug decidiu **mais fundo que a pergunta: apagar toda a arte e todos os itens do boneco antigo, sem reaproveitar nada, nem os pets** — o avatar novo tem cabelo como único item vestível. As 4 decisões de produto que vieram junto (baú vira XP, ovos ficam dando XP, cabelo parte livre parte desbloqueável, desbloqueio **por nível** para não travar atrás do T1) e os 6 blocos de execução estão em **`docs/avatar/20-troca-de-pilha-plano.md`**, que é onde o progresso se marca |
+| ✅ | **T8** — a T2.10 entregava `criar-personagem` com três escolhas (pele, **modelo de cabelo**, cor) e a T2.1, que era a migration da fase, criava `avatar_skin` e `avatar_hair_color` e **não criava `avatar_hair`**: zero ocorrências em `supabase/migrations/`. Quem executasse a fase na ordem escrita descobria o buraco no meio da migration | 2026-08-10 | **Bloco C** de `docs/avatar/20-troca-de-pilha-plano.md`: `20260810160000_bloco_c_identidade_do_avatar.sql` cria as três colunas, a tabela `avatar_hair_catalog` com a régua de nível e a RPC `update_avatar_identity`. Gate novo `verify:cabelo-catalogo`, **1 falha → 18 passed**, e o `verify:phase8` foi de 3 gates para 4. **Divergência do plano, deliberada:** o default de `avatar_hair` é `NULL` (careca) e não `coque`, porque a régua semeada pôs `coque` no nível 10 e o aluno nasceria vestindo o que a escada lhe nega |
+| ✅ | **G2** — o gate de assets era um ratchet com 45 itens congelados: `verify:avatar-assets` só reprovava se o número **crescer**, e os 45 itens que não vestiam o boneco seguiam tolerados por desenho — o **bloqueador de lançamento nº 1** do doc 13 | 2026-08-10 | **fechado por deleção do assunto, não por conserto.** O Bloco B apagou os 69 itens, as 3 tabelas e o gate `verify:avatar-assets` junto com o `asset-baseline.json`; o Bloco D apagou os 44 arquivos de `public/items/` e o gerador do manifesto. Não há catálogo para cruzar com o disco. O que vigia agora é a **exigência de ausência** em `verify:avatar-db` (24 passed), que é o truque do Gate 6b: apagar da lista não basta para passar. Quem mede o passivo que sobrou é `verify:design-tokens` — e o dele está no **G9** |
 | ✅ | **G6** — `npm run build` vermelho no `prebuild`. **A causa registrada estava ERRADA:** não era manifesto defasado. Era `--check` comparando **bytes crus** através da fronteira LF/CRLF — o gerador escreve `\n`, o `git checkout` desta máquina (`core.autocrlf=true`) devolve `\r\n`, e a comparação reprovava **todo arquivo que o git tivesse tocado** | 2026-08-07 | quebras normalizadas antes de comparar, como `gerar-livro-aberturas.ts:116` já fazia. Provado nos dois sentidos: passa com o arquivo em CRLF, e reprova nomeando o defeito quando um caminho falso é injetado |
 
 O precedente que importa: **todos fecharam com gate ou com prova medida, nunca

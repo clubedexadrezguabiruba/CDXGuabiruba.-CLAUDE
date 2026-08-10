@@ -8,10 +8,9 @@
   },
   "scripts": {
     "dev": "next dev",
-    "avatar:manifest": "tsx scripts/avatar/gen-manifest.ts",
     "avatar:base": "tsx scripts/avatar/gerar-base-recolorivel.ts",
     "avatar:garment": "tsx scripts/avatar/gerar-uniforme.ts",
-    "prebuild": "tsx scripts/avatar/gen-manifest.ts --check && tsx scripts/chess/gerar-livro-aberturas.ts --check",
+    "prebuild": "tsx scripts/chess/gerar-livro-aberturas.ts --check",
     "estado": "tsx scripts/estado.ts",
     "build": "next build",
     "start": "next start",

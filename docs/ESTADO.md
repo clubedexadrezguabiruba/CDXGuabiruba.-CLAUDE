@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 10 |
-| **Árvore** | **4 arquivos sujos** |
-| **Último commit** | 3d83058 · 2026-08-10 · feat(avatar): Bloco B — o catálogo de itens do avatar v2 foi apagado |
+| **Commits à frente de `origin/main`** | 11 |
+| **Árvore** | **78 arquivos sujos** |
+| **Último commit** | 7c62f3f · 2026-08-10 · feat(avatar): Bloco C — a identidade do avatar nasce no banco |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -154,7 +154,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 78 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 15 |
+| **Arquivos de teste** | 13 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes
