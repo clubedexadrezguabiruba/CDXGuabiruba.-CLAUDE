@@ -181,7 +181,8 @@ async function main() {
       "puzzle_attempt",
       "complete_lesson_step",
       "claim_chest",
-      "equip_item",
+      // `equip_item` saiu no Bloco B (2026-08-10), dropada com as tabelas de
+      // item. A ausência dela é exigida por verify:avatar-db.
       "get_ranking",
       "start_rush",
       "end_rush",

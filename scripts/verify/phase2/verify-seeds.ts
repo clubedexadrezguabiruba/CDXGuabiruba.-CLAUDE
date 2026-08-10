@@ -80,24 +80,10 @@ async function main() {
   }
 
   // --- Items ---
-  const { data: items, error: e3 } = await sb.from("items").select("slot, rarity, name");
-  if (e3) {
-    console.log(`\n[FAIL] Items: ${e3.message}`);
-    hasError = true;
-  } else {
-    console.log(`\n[PASS] Items: ${items!.length} registros`);
-    const bySlot: Record<string, Record<string, number>> = {};
-    for (const i of items!) {
-      if (!bySlot[i.slot]) bySlot[i.slot] = {};
-      bySlot[i.slot][i.rarity] = (bySlot[i.slot][i.rarity] || 0) + 1;
-    }
-    for (const [slot, rarities] of Object.entries(bySlot)) {
-      const detail = Object.entries(rarities)
-        .map(([r, c]) => `${r}:${c}`)
-        .join(", ");
-      console.log(`   ${slot}: ${detail}`);
-    }
-  }
+  // A conferência do catálogo de itens saiu no Bloco B (2026-08-10): a tabela
+  // `items` foi apagada com o avatar v2 inteiro
+  // (docs/avatar/20-troca-de-pilha-plano.md). Quem vigia que ela NÃO volte é o
+  // verify:avatar-db, que exige a ausência — não some conferência, ela inverte.
 
   // --- RLS check ---
   console.log("\n=== STATUS RLS ===");

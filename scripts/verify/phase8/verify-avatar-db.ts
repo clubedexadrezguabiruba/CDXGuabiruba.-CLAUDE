@@ -1,30 +1,37 @@
 /**
- * GATE: banco do subsistema avatar / cosméticos / baús (T0.15–T0.17)
+ * GATE: banco do subsistema avatar / baús / patentes
  *
- * A fase 8 nunca teve gate. As três coisas que este script trava:
+ * O QUE MUDOU NO BLOCO B (2026-08-10)
+ * -----------------------------------
+ * As quatro primeiras seções deste gate mediam o catálogo de itens: RPCs de
+ * equipar, CHECK de slots, UNIQUE e FK de inventário, e policies de vazamento
+ * entre colegas. **As três tabelas foram apagadas** — o Doug decidiu que o
+ * avatar novo é novo (docs/avatar/20-troca-de-pilha-plano.md).
  *
- *  1. ESTRUTURA (T0.15) — RPCs presentes, CHECK de slots, UNIQUE que sustenta
- *     a idempotência. Sem o UNIQUE de `user_inventory` a detecção de
- *     duplicata do `claim_chest` (que lê `FOUND` depois do ON CONFLICT)
- *     deixa de funcionar e a criança recebe o mesmo item várias vezes sem
- *     virar XP.
+ * Apagar as conferências junto seria o erro que o R1 já cometeu uma vez: um
+ * gate que some é um gate que passa por vacuidade. Elas foram INVERTIDAS, no
+ * mesmo truque do "Gate 6b" — o que antes era exigido por nome agora é
+ * **exigido ausente**. Uma migration futura que recrie `items` ou `equip_item`
+ * reprova aqui, em vez de ressuscitar a pilha v2 em silêncio.
  *
- *  2. VAZAMENTO (T0.16) — as policies `inventory_select_classmate` e
- *     `equipped_select_classmate` deixavam qualquer aluno ler o inventário
- *     dos colegas de turma. Foram dropadas nas migrations 20260318100000 e
- *     20260320200000. Nada impedia alguém de recriá-las; agora impede.
- *
- *  3. PATENTES (T0.17) — a régua vive em `title_tiers`, não mais num array
- *     dentro de `complete_lesson_step`. Três coisas travadas aqui:
- *
+ * O QUE ESTE GATE TRAVA HOJE
+ * --------------------------
+ *  1. AUSÊNCIA (Bloco B) — as 3 tabelas de item, as 3 RPCs de item e as 4
+ *     colunas de FK não voltaram.
+ *  2. O QUE SOBREVIVEU — as RPCs de baú e ovo continuam de pé, e o baú não
+ *     depende de item (isso quem prova a fundo é o verify:chest-pool).
+ *  3. PATENTES (T0.17) — a régua vive em `title_tiers`. Três coisas travadas:
  *     (a) todo usuário tem linha em `user_titles`. Foi a ausência dessa linha
  *         — e não a régua — que fez o `teacherdoug001` concluir a trilha
- *         inteira em 2026-07-29 e continuar "Aprendiz": o UPDATE antigo
- *         casava zero linhas e não reclamava.
- *     (b) a reconciliação está em dia: ninguém abaixo da patente que a
- *         contagem de aulas concluídas já lhe dá.
- *     (c) patente com uniforme atrelado é patente alcançável. É o que impede
- *         mandar desenhar uniforme para marco que o conteúdo não alcança.
+ *         inteira em 2026-07-29 e continuar "Aprendiz": o UPDATE antigo casava
+ *         zero linhas e não reclamava.
+ *     (b) a reconciliação está em dia.
+ *     (c) `complete_lesson_step` continua chamando `recompute_user_title`.
+ *
+ *     A conferência (e), "uniforme só para patente alcançável", saiu no Bloco B
+ *     junto com a coluna `title_tiers.outfit_item_id`. Ela impedia gastar arte
+ *     em marco inalcançável; quando o uniforme voltar, por outro caminho, ela
+ *     precisa voltar com ele.
  *
  * Uso: npm run verify:avatar-db
  */
@@ -32,25 +39,28 @@
 import postgres from "postgres";
 import { getDbUrl } from "../db-url";
 
-/** Slots que o subsistema reconhece hoje. A F2 acrescenta `hair` e `back`. */
-// `hand` saiu em 2026-07-31 pela D-E do doc 15 — o boneco kokeshi não tem mãos.
-const SLOTS_ESPERADOS = ["background", "frame", "head", "outfit", "pet"];
+/** Apagadas no Bloco B. Se qualquer uma voltar, a pilha v2 está ressuscitando. */
+const TABELAS_PROIBIDAS = ["items", "user_inventory", "user_equipped"];
 
-const RARIDADES_ESPERADAS = ["common", "epic", "legendary", "rare"];
+/** Idem, para as funções do inventário. */
+const RPCS_PROIBIDAS = ["equip_item", "unequip_slot", "_create_specific_pet_egg"];
 
-const RPCS_ESPERADOS = [
+/** Colunas de FK que apontavam para `items` em tabelas que sobreviveram. */
+const COLUNAS_PROIBIDAS: [string, string][] = [
+  ["user_chests", "item_id"],
+  ["user_eggs", "pet_item_id"],
+  ["achievements", "reward_item_id"],
+  ["title_tiers", "outfit_item_id"],
+];
+
+/** O que sobrou de pé e precisa continuar existindo. */
+const RPCS_ESPERADAS = [
   "claim_chest",
-  "equip_item",
-  "unequip_slot",
   "update_avatar_base",
   "get_eggs",
   "hatch_egg",
   "_create_random_pet_egg",
-  "_create_specific_pet_egg",
 ];
-
-/** Policies que vazavam dados entre colegas de turma. Não podem voltar. */
-const POLICIES_PROIBIDAS = ["inventory_select_classmate", "equipped_select_classmate"];
 
 let passed = 0;
 let failed = 0;
@@ -70,145 +80,142 @@ async function main() {
   const sql = postgres(getDbUrl(), { connect_timeout: 30 });
 
   console.log("========================================");
-  console.log("GATE: banco do avatar (fase 8)");
+  console.log("GATE: banco do avatar");
   console.log("========================================");
 
   try {
-    // --- 1. RPCs presentes ---
-    console.log("\n1. RPCs do subsistema");
+    // --- 1. O que o Bloco B apagou não voltou ---
+    console.log("\n1. A pilha v2 não ressuscitou");
 
-    const fns = await sql<{ proname: string; def: string }[]>`
+    for (const tabela of TABELAS_PROIBIDAS) {
+      const [{ existe }] = await sql<{ existe: boolean }[]>`
+        select to_regclass(${"public." + tabela}) is not null as existe`;
+      if (existe) {
+        nok(
+          `tabela ${tabela} existe de novo`,
+          "foi apagada no Bloco B; recriá-la traz de volta o catálogo do avatar v2",
+        );
+      } else {
+        ok(`tabela ${tabela} ausente (correto)`);
+      }
+    }
+
+    const fnsProibidas = await sql<{ proname: string }[]>`
+      select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname='public' and p.prokind='f' and p.proname = any(${RPCS_PROIBIDAS})`;
+    const voltaram = new Set(fnsProibidas.map((f) => f.proname));
+    for (const nome of RPCS_PROIBIDAS) {
+      if (voltaram.has(nome)) {
+        nok(`RPC ${nome} existe de novo`, "foi dropada no Bloco B junto com as tabelas de item");
+      } else {
+        ok(`RPC ${nome} ausente (correto)`);
+      }
+    }
+
+    const colunas = await sql<{ table_name: string; column_name: string }[]>`
+      select table_name, column_name from information_schema.columns
+      where table_schema='public'`;
+    const temColuna = new Set(colunas.map((c) => `${c.table_name}.${c.column_name}`));
+    for (const [tabela, coluna] of COLUNAS_PROIBIDAS) {
+      if (temColuna.has(`${tabela}.${coluna}`)) {
+        nok(
+          `coluna ${tabela}.${coluna} existe de novo`,
+          "era FK para items; foi dropada no Bloco B",
+        );
+      } else {
+        ok(`coluna ${tabela}.${coluna} ausente (correto)`);
+      }
+    }
+
+    // Nenhuma função pode citar as colunas apagadas. Esta conferência nasceu de
+    // um erro real: a primeira versão do Bloco B dropou `user_chests.item_id` e
+    // `user_eggs.pet_item_id` deixando `claim_chest` e `_create_random_pet_egg`
+    // ainda referenciando as duas. Não quebra no `apply` — plpgsql não valida
+    // corpo contra esquema — quebra em runtime, na hora em que uma criança abre
+    // um baú. É o tipo de falha que só um gate acha.
+    const todasFns = await sql<{ proname: string; def: string }[]>`
       select p.proname, pg_get_functiondef(p.oid) as def
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname='public' and p.prokind='f' and p.proname = any(${RPCS_ESPERADOS})`;
+      where n.nspname='public' and p.prokind='f'`;
 
-    const presentes = new Map(fns.map((f) => [f.proname, f.def]));
-    for (const nome of RPCS_ESPERADOS) {
-      if (presentes.has(nome)) ok(`${nome} existe`);
-      else nok(`${nome} não existe`, "RPC do subsistema de avatar sumiu do banco");
-    }
-
-    // --- 2. CHECK constraints ---
-    console.log("\n2. CHECK de slots e raridades");
-
-    const checks = await sql<{ tabela: string; conname: string; def: string }[]>`
-      select rel.relname as tabela, con.conname, pg_get_constraintdef(con.oid) as def
-      from pg_constraint con
-      join pg_class rel on rel.oid = con.conrelid
-      join pg_namespace n on n.oid = rel.relnamespace
-      where n.nspname='public' and con.contype='c'
-        and rel.relname in ('items','user_equipped')`;
-
-    function valoresDoCheck(tabela: string, coluna: string): string[] | null {
-      const c = checks.find((x) => x.tabela === tabela && x.def.includes(`(${coluna} = ANY`));
-      if (!c) return null;
-      return [...c.def.matchAll(/'([^']+)'::text/g)].map((m) => m[1]).sort();
-    }
-
-    for (const [tabela, coluna, esperado] of [
-      ["items", "slot", SLOTS_ESPERADOS],
-      ["user_equipped", "slot", SLOTS_ESPERADOS],
-      ["items", "rarity", RARIDADES_ESPERADAS],
-    ] as const) {
-      const atual = valoresDoCheck(tabela, coluna);
-      if (!atual) {
-        nok(`${tabela}.${coluna} sem CHECK`, `qualquer texto entraria em ${coluna}`);
-      } else if (JSON.stringify(atual) !== JSON.stringify([...esperado].sort())) {
-        nok(
-          `${tabela}.${coluna}: CHECK diferente do esperado`,
-          `banco: [${atual.join(", ")}] | esperado: [${[...esperado].sort().join(", ")}]`,
-        );
-      } else {
-        ok(`${tabela}.${coluna}: CHECK com ${atual.length} valores`);
-      }
-    }
-
-    // A lista hard-coded dentro de unequip_slot é uma segunda cópia do CHECK.
-    // Duas cópias divergem em silêncio — na F2, quando `hair` e `back` entrarem,
-    // esquecer uma delas deixa o slot novo impossível de desequipar.
-    const defUnequip = presentes.get("unequip_slot");
-    if (defUnequip) {
-      const naFuncao = [...defUnequip.matchAll(/'([a-z_]+)'/g)]
-        .map((m) => m[1])
-        .filter((s) => SLOTS_ESPERADOS.includes(s) || ["hair", "back"].includes(s));
-      const distintos = [...new Set(naFuncao)].sort();
-      if (JSON.stringify(distintos) !== JSON.stringify([...SLOTS_ESPERADOS].sort())) {
-        nok(
-          "unequip_slot valida uma lista de slots diferente do CHECK",
-          `função: [${distintos.join(", ")}] | CHECK: [${[...SLOTS_ESPERADOS].sort().join(", ")}]`,
-        );
-      } else {
-        ok("unequip_slot valida exatamente os slots do CHECK");
-      }
-    }
-
-    // --- 3. UNIQUE e FK ---
-    console.log("\n3. UNIQUE e FK que sustentam a idempotência");
-
-    const cons = await sql<{ tabela: string; conname: string; def: string; tipo: string }[]>`
-      select rel.relname as tabela, con.conname, pg_get_constraintdef(con.oid) as def, con.contype as tipo
-      from pg_constraint con
-      join pg_class rel on rel.oid = con.conrelid
-      join pg_namespace n on n.oid = rel.relnamespace
-      where n.nspname='public' and con.contype in ('u','f')
-        and rel.relname in ('user_inventory','user_equipped','user_chests')`;
-
-    const esperados: [string, string, string][] = [
-      ["user_inventory", "UNIQUE (user_id, item_id)", "sem ele o ON CONFLICT do claim_chest não detecta duplicata"],
-      ["user_equipped", "UNIQUE (user_id, slot)", "sem ele o mesmo slot acumula itens em vez de substituir"],
-      ["user_chests", "UNIQUE (user_id, source_type, source_id)", "sem ele o mesmo evento gera baús repetidos"],
-      ["user_inventory", "FOREIGN KEY (item_id) REFERENCES items(id)", "inventário poderia apontar para item inexistente"],
-      ["user_equipped", "FOREIGN KEY (item_id) REFERENCES items(id)", "equipado poderia apontar para item inexistente"],
+    const COLUNAS_MORTAS = [
+      /\bitem_id\b/,
+      /\bpet_item_id\b/,
+      /\breward_item_id\b/,
+      /\boutfit_item_id\b/,
     ];
 
-    for (const [tabela, trecho, porque] of esperados) {
-      const achou = cons.some((c) => c.tabela === tabela && c.def.startsWith(trecho));
-      if (achou) ok(`${tabela}: ${trecho}`);
-      else nok(`${tabela} sem ${trecho}`, porque);
+    /**
+     * Comentário não executa, e as próprias migrations do Bloco B explicam nos
+     * comentários QUAIS colunas saíram — citando os nomes. Sem esta limpeza o
+     * gate reprova por causa da documentação do conserto, que foi o que
+     * aconteceu na primeira rodada.
+     */
+    const semComentarios = (def: string) =>
+      def
+        .replace(/\/\*[\s\S]*?\*\//g, " ")
+        .replace(/--[^\n]*/g, " ");
+
+    const citando = todasFns.filter((f) =>
+      COLUNAS_MORTAS.some((re) => re.test(semComentarios(f.def))),
+    );
+
+    if (citando.length > 0) {
+      nok(
+        `${citando.length} função(ões) ainda citam colunas que o Bloco B apagou`,
+        `${citando.map((f) => f.proname).join(", ")} — quebram em runtime, não no apply`,
+      );
+    } else {
+      ok("nenhuma função cita as colunas apagadas");
     }
 
-    // --- 4. Policies de vazamento (T0.16) ---
-    console.log("\n4. Policies que vazavam inventário entre colegas");
+    // --- 2. O que sobreviveu continua de pé ---
+    console.log("\n2. Baús e ovos continuam existindo");
+
+    const fns = await sql<{ proname: string }[]>`
+      select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname='public' and p.prokind='f' and p.proname = any(${RPCS_ESPERADAS})`;
+    const presentes = new Set(fns.map((f) => f.proname));
+    for (const nome of RPCS_ESPERADAS) {
+      if (presentes.has(nome)) ok(`${nome} existe`);
+      else nok(`${nome} não existe`, "RPC que o Bloco B devia ter preservado sumiu do banco");
+    }
+
+    // O UNIQUE de user_chests sustenta a idempotência da concessão de baú, e
+    // sobreviveu ao Bloco B porque não tinha nada a ver com item.
+    const cons = await sql<{ tabela: string; def: string }[]>`
+      select rel.relname as tabela, pg_get_constraintdef(con.oid) as def
+      from pg_constraint con
+      join pg_class rel on rel.oid = con.conrelid
+      join pg_namespace n on n.oid = rel.relnamespace
+      where n.nspname='public' and con.contype='u' and rel.relname='user_chests'`;
+
+    if (cons.some((c) => c.def.startsWith("UNIQUE (user_id, source_type, source_id)"))) {
+      ok("user_chests: UNIQUE (user_id, source_type, source_id)");
+    } else {
+      nok(
+        "user_chests sem UNIQUE (user_id, source_type, source_id)",
+        "sem ele o mesmo evento gera baús repetidos",
+      );
+    }
 
     const policies = await sql<{ tablename: string; policyname: string }[]>`
       select tablename, policyname from pg_policies where schemaname='public'`;
-
-    const nomes = new Set(policies.map((p) => p.policyname));
-    for (const proibida of POLICIES_PROIBIDAS) {
-      if (nomes.has(proibida)) {
-        nok(
-          `policy "${proibida}" existe`,
-          "deixa aluno ler o inventário de colegas de turma; foi dropada e não pode voltar",
-        );
-      } else {
-        ok(`policy "${proibida}" ausente (correto)`);
-      }
+    if (policies.some((p) => p.tablename === "user_chests" && p.policyname === "user_chests_select_own")) {
+      ok('policy "user_chests_select_own" presente');
+    } else {
+      nok('policy "user_chests_select_own" ausente', "o aluno não veria os próprios baús");
     }
 
-    // Contrapartida: as policies próprias precisam existir, senão o aluno
-    // não vê nem o próprio inventário.
-    for (const [tabela, policy] of [
-      ["user_inventory", "inventory_select_own"],
-      ["user_equipped", "equipped_select_own"],
-      ["user_chests", "user_chests_select_own"],
-    ] as const) {
-      if (policies.some((p) => p.tablename === tabela && p.policyname === policy)) {
-        ok(`policy "${policy}" presente`);
-      } else {
-        nok(`policy "${policy}" ausente`, `o aluno não conseguiria ler o próprio ${tabela}`);
-      }
-    }
-
-    // --- 5. Patentes (T0.17) ---
-    console.log("\n5. Patentes: régua, reconciliação e alcance");
+    // --- 3. Patentes (T0.17) ---
+    console.log("\n3. Patentes: régua e reconciliação");
 
     const [{ existe }] = await sql<{ existe: boolean }[]>`
       select to_regclass('public.title_tiers') is not null as existe`;
 
     const tiers = existe
-      ? await sql<
-          { tier: number; title: string; level_name: string | null; lessons_required: number; outfit_item_id: string | null }[]
-        >`select tier, title, level_name, lessons_required, outfit_item_id
+      ? await sql<{ tier: number; title: string; level_name: string | null; lessons_required: number }[]>`
+          select tier, title, level_name, lessons_required
           from title_tiers order by tier`
       : [];
 
@@ -303,26 +310,13 @@ async function main() {
         ok("nenhum usuário abaixo da patente que a contagem de aulas lhe dá");
       }
 
-      // (e) Uniforme só para patente alcançável. É o gate que impede gastar
-      //     arte em marco que o conteúdo não alcança.
       const [{ total }] = await sql<{ total: number }[]>`select count(*)::int as total from lessons`;
       const alcancaveis = tiers.filter((t) => t.lessons_required <= total);
-      const mortos = tiers.filter((t) => t.outfit_item_id !== null && t.lessons_required > total);
-
-      if (mortos.length > 0) {
-        nok(
-          `${mortos.length} patente(s) com uniforme atrelado e inalcançável`,
-          `${mortos.map((t) => `${t.title} (${t.lessons_required} aulas)`).join(", ")} — ` +
-            `o banco tem ${total} aulas; esse uniforme nunca seria vestido`,
-        );
-      } else {
-        ok(`nenhum uniforme atrelado a patente inalcançável`);
-      }
-
       console.log(
         `  [INFO] ${alcancaveis.length} de ${tiers.length} patentes alcançáveis com ${total} aulas no banco ` +
           `(${alcancaveis.map((t) => t.title).join(", ")}).\n` +
-          "         As demais esperam conteúdo — desenhar uniforme para elas é arte morta.",
+          "         A trava de 'uniforme só para patente alcançável' saiu com a coluna\n" +
+          "         title_tiers.outfit_item_id no Bloco B, e precisa voltar com o uniforme.",
       );
     }
   } finally {

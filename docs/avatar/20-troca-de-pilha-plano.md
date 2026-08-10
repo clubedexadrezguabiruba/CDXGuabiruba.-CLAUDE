@@ -208,10 +208,51 @@ Na ordem do `remover_slot_hand`:
 e das 2 RPCs — o truque do "Gate 6b" do R1, para não passar por vacuidade.
 📊 **Número:** 3 tabelas a menos, 0 itens, `verify:all` verde.
 
-⚠️ **Ponto de não-retorno.** Antes de rodar, `pg_dump` das 3 tabelas guardado
-fora do repositório.
+- [x] **Bloco B fechado em 2026-08-10.** `verify:avatar-db` de **11 falhas → 24
+  passed / 0 failed**; `verify:all` exit 0; 478/478 testes; build verde.
+  Apagados: **69 itens, 73 linhas de inventário, 16 equipados, 3 tabelas, 3
+  RPCs e 4 colunas de FK**. Conferido no banco depois: as 3 tabelas ausentes,
+  `avatar_config` vazio em 100% dos usuários, **XP e nível intactos**.
 
-- [ ] Bloco B
+  **Resguardo** (não há `pg_dump` nesta máquina — foi por consulta, em JSON):
+  `~/Desktop/recruta64-BACKUP-itens-avatar-v2-2026-08-10.json`.
+
+  **Os 13 ovos viraram ovos de XP de verdade**, com o bônus da própria raridade,
+  e ganharam a constraint `user_eggs_xp_positivo` — "todo ovo é ovo de XP" virou
+  mecanismo, não disciplina.
+
+  ⚠️ **Três lições, e as três custaram uma falha cada:**
+
+  1. **A primeira tentativa falhou** em `user_eggs_check`, que exige
+     `(pet IS NOT NULL AND xp = 0) OR (pet IS NULL AND xp > 0)`. Anular o pet
+     deixando o bônus em zero cria o terceiro estado proibido. O conserto não
+     foi lutar com a constraint: foi ver que **os `UPDATE`s eram inúteis** —
+     anular coluna que vai ser dropada não faz nada, e o `DROP COLUMN` leva a
+     constraint junto.
+  2. **Duas funções minhas do Bloco A citavam colunas que iam sumir**
+     (`claim_chest` lia `user_chests.item_id`; `_create_random_pet_egg` inseria
+     em `pet_item_id`). **plpgsql não valida corpo contra esquema**: não
+     quebraria no `apply`, quebraria em runtime na hora de uma criança abrir um
+     baú. Achado por varredura de `pg_get_functiondef` — e virou conferência
+     permanente no `verify:avatar-db`.
+  3. Essa conferência nasceu **larga demais** e reprovou pelos próprios
+     comentários das migrations, que citam os nomes das colunas para explicar a
+     remoção. Agora ela tira comentário antes de procurar.
+
+  **Gates que mudaram junto:** `verify:avatar-assets` foi **apagado** — o
+  assunto dele (o catálogo no banco × `public/items/`) deixou de existir, e
+  quem vigia agora é a exigência de ausência. Também ajustados `verify:seeds`,
+  `validate-phase2` e `verify:privileges`, que morreriam com as tabelas.
+
+  **Medido de brinde, e fecha uma pendência do T1:** `title_tiers` tem **8
+  patentes** com marcos `0 → 15 → 30 → 45 → 60 → 75 → 90 → 105` — é a régua de
+  **15 aulas por nível** que está viva em produção. O painel pedia essa medida
+  ("migration prova intenção, não estado"); a escolha entre ela e as fronteiras
+  de trilha segue sendo do Doug.
+
+  **Perdido de propósito:** a conferência "uniforme só para patente alcançável"
+  saiu com a coluna `title_tiers.outfit_item_id`. Ela impedia gastar arte em
+  marco inalcançável, e **precisa voltar quando o uniforme voltar**.
 
 ### Bloco C — as colunas do avatar novo
 

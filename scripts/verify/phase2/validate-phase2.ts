@@ -82,9 +82,9 @@ async function main() {
     "user_achievements",
     "daily_missions",
     "daily_chests",
-    "items",
-    "user_inventory",
-    "user_equipped",
+    // `items`, `user_inventory` e `user_equipped` saíram no Bloco B
+    // (2026-08-10) — o avatar v2 inteiro foi apagado. A ausência delas é
+    // exigida por verify:avatar-db.
     "user_streaks",
     "user_titles",
     "puzzle_revanche_queue",
@@ -123,21 +123,7 @@ async function main() {
     nok("Achievements seed", `Esperado 17, encontrado ${achs?.length}`);
   else ok(`Achievements seed: ${achs.length} conquistas`);
 
-  const { data: items, error: itemsErr } = await supabase.from("items").select("id");
-  if (itemsErr) nok("Items seed", itemsErr.message);
-  else if (!items || items.length < 40)
-    nok("Items seed", `Esperado >=40 (catálogo tem 77), encontrado ${items?.length}`);
-  else ok(`Items seed: ${items.length} itens`);
-
-  const { data: itemSlots } = await supabase.from("items").select("slot");
-  if (itemSlots) {
-    const bySlot: Record<string, number> = {};
-    for (const i of itemSlots) bySlot[i.slot] = (bySlot[i.slot] || 0) + 1;
-    const slots = Object.entries(bySlot)
-      .map(([s, c]) => `${s}:${c}`)
-      .join(", ");
-    ok(`Items por slot: ${slots}`);
-  }
+  // As duas conferências do seed de itens saíram no Bloco B junto com a tabela.
 
   // --- 3. RPCs ---
   console.log("\n3. RPCs (2.14-2.16)");
@@ -180,7 +166,8 @@ async function main() {
     else nok(`RLS ${table}`, `Retornou ${data?.length} rows sem auth!`);
   }
 
-  const catalogTables = ["puzzles", "bots", "items", "achievements", "lessons"];
+  // `items` saiu daqui no Bloco B, com a tabela.
+  const catalogTables = ["puzzles", "bots", "achievements", "lessons"];
   for (const table of catalogTables) {
     const { data, error } = await anonClient.from(table).select("*").limit(1);
     if (error && error.message.includes("permission"))
