@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 6 |
-| **Árvore** | limpa |
-| **Último commit** | 8c7414c · 2026-08-10 · feat(baus): Bloco A.1 — o baú e o ovo param de depender de items |
+| **Commits à frente de `origin/main`** | 7 |
+| **Árvore** | **7 arquivos sujos** |
+| **Último commit** | 3c042bb · 2026-08-10 · chore: recontagem do painel depois do Bloco A.1 |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -147,7 +147,7 @@ _Conta tarefas numeradas (`**T0.1**`), que é a régua do próprio doc 14. Conta
 | Itens sem miniatura | **30** | 2026-07-29 |
 | Arquivos órfãos | **1** | 2026-07-29 |
 | Cores cruas — teto tolerado | **1331 em 69 arquivos** | ratchet |
-| RPCs redefinidas mais de uma vez | **51 (pior: puzzle_attempt, 12×)** | ratchet |
+| RPCs redefinidas mais de uma vez | **53 (pior: puzzle_attempt, 12×)** | ratchet |
 
 _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 

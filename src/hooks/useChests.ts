@@ -10,22 +10,28 @@ export interface PendingChest {
   granted_at: string;
 }
 
-export interface ClaimedItem {
-  id: number;
-  name: string;
-  slot: string;
-  rarity: string;
-  image_url: string | null;
-  description: string;
-}
-
+/**
+ * O QUE UM BAÚ DEVOLVE DESDE O BLOCO A (2026-08-10).
+ *
+ * Não devolve mais item: o catálogo do avatar v2 está sendo apagado
+ * (docs/avatar/20-troca-de-pilha-plano.md), e `claim_chest` parou de consultar
+ * `items` justamente para não travar quando ele esvaziar.
+ *
+ * São dois desfechos, e a raridade decide qual — a regra saiu de medir o
+ * `claim_chest` antigo 300 vezes, não de escolha:
+ *
+ *   common            → `isXp`, paga na hora
+ *   rare/epic/legend. → `isEgg`, vira ovo de 72h
+ */
 export interface ClaimResult {
-  item: ClaimedItem;
   rarity: string;
   alreadyClaimed: boolean;
-  scrapped: boolean;
-  scrappedXp: number;
+  /** Ovo criado — a recompensa chega ao chocar, não agora. */
   isEgg: boolean;
+  /** XP pago na hora, já concedido pelo servidor antes desta linha existir. */
+  isXp: boolean;
+  /** Quanto de XP, quando `isXp`. Zero nos outros casos. */
+  xp: number;
 }
 
 const supabase = createBrowserClient(
@@ -80,26 +86,15 @@ export function useChests() {
 
       const json = data as Record<string, unknown>;
 
-      // already_claimed — remove da lista e retorna sem travar
+      const rarity = (json.rarity as string) ?? "common";
+
+      // already_claimed — remove da lista e retorna sem travar. O ChestPanel
+      // sai antes de abrir o modal neste caso, então não há o que exibir.
       if (json.already_claimed) {
         requestAnimationFrame(() =>
           setChests((prev) => prev.filter((c) => c.id !== chestId)),
         );
-        return {
-          item: {
-            id: (json.item_id as number) ?? 0,
-            name: "",
-            slot: "",
-            rarity: (json.rarity as string) ?? "common",
-            image_url: null,
-            description: "",
-          },
-          rarity: (json.rarity as string) ?? "common",
-          alreadyClaimed: true,
-          scrapped: false,
-          scrappedXp: 0,
-          isEgg: false,
-        };
+        return { rarity, alreadyClaimed: true, isEgg: false, isXp: false, xp: 0 };
       }
 
       // sucesso — remove da lista local
@@ -107,33 +102,16 @@ export function useChests() {
         setChests((prev) => prev.filter((c) => c.id !== chestId)),
       );
 
-      // Ovo: retorno sem dados do pet
       if (json.is_egg) {
-        return {
-          item: { id: 0, name: "", slot: "pet", rarity: "common", image_url: null, description: "" },
-          rarity: "common",
-          alreadyClaimed: false,
-          scrapped: false,
-          scrappedXp: 0,
-          isEgg: true,
-        };
+        return { rarity, alreadyClaimed: false, isEgg: true, isXp: false, xp: 0 };
       }
 
-      const item = json.item as Record<string, unknown>;
       return {
-        item: {
-          id: item.id as number,
-          name: item.name as string,
-          slot: item.slot as string,
-          rarity: item.rarity as string,
-          image_url: (item.image_url as string) ?? null,
-          description: (item.description as string) ?? "",
-        },
-        rarity: json.rarity as string,
+        rarity,
         alreadyClaimed: false,
-        scrapped: (json.scrapped as boolean) ?? false,
-        scrappedXp: (json.scrapped_xp as number) ?? 0,
         isEgg: false,
+        isXp: true,
+        xp: (json.scrapped_xp as number) ?? 0,
       };
     },
     [],

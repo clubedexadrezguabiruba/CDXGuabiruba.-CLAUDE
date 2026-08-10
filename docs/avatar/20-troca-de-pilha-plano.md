@@ -164,12 +164,26 @@ entrega um **colecionável** em 87% dos casos e amanhã entrega **5 XP**. Os
   em produção pelo Doug em 2026-08-10. Gate: **10 passed / 0 failed**, de 7
   falhas antes. As três funções (`claim_chest`, `_create_random_pet_egg`,
   `hatch_egg`) não consultam mais `items`
-- [ ] **A.2 — cliente.** `useChests.ts` e `ChestOpeningModal.tsx` ainda esperam
-  um item no retorno. **A partir daqui abrir baú quebra na tela**, no ar e em
-  dev. O modal já tem a fase de XP pronta (fase 5, "+N XP"); o caminho é fazer o
-  baú de XP cair nela em vez de inventar tela nova. `design-recruta64` é
-  obrigatória
-- [ ] Bloco A fechado
+- [x] **A.2 — cliente.** `useChests.ts`, `ChestPanel.tsx` e
+  `ChestOpeningModal.tsx` pararam de esperar item. O modal foi de 5 fases para
+  **3**, e de 317 para 137 linhas: saíram o card do item, o despedaçamento e a
+  fase 5. Sobraram dois desfechos — **ovo** ou **XP**. O tipo `ClaimedItem`
+  morreu junto, e as três keyframes da forja (`item-shake`, `item-shatter`,
+  `fragment-fly`) saíram de `globals.css` por ficarem órfãs.
+
+  *O despedaçamento **não** foi trocado por outra animação, de propósito: ele
+  animava um equipamento concreto se quebrando, e sem o equipamento seria
+  movimento sem referente. A regra da direção A é que recompensa é reação a
+  fato — e o XP já foi concedido pelo servidor antes de a tela existir.*
+
+  *O modal segue **não migrado** para a direção A (ainda tem `zinc-*`/`amber-*`).
+  Não se acrescentou cor crua nova; migrá-lo é trabalho à parte.*
+
+- [x] **Bloco A fechado.** `typecheck` 0 · `lint` 0 erros · `npm test`
+  **478/478** · `build` verde (Next 16.2.12, 21,8s) · **`verify:all` exit 0**.
+  O `rpc-baseline.json` subiu +1 em `claim_chest`, `_create_random_pet_egg` e
+  `hatch_egg` — e de brinde registrou `set_preferencias` e `set_task_active`,
+  que estavam fora do baseline desde o R1.
 
 ### Bloco B — apagar os itens do banco
 
