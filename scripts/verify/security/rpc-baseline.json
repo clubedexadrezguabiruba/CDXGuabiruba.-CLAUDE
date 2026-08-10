@@ -51,5 +51,6 @@
   "update_avatar_base": 1,
   "recompute_user_title": 1,
   "set_preferencias": 1,
-  "set_task_active": 1
+  "set_task_active": 1,
+  "update_avatar_identity": 1
 }

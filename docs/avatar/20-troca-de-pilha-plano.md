@@ -269,7 +269,64 @@ mesmos slugs; e gravar cabelo acima do nível é **negado**, provado como o pape
 `authenticated`.
 📊 **Número:** 5 slugs batendo dos dois lados, 1 negação medida.
 
-- [ ] Bloco C
+- [x] **Bloco C fechado em 2026-08-10.** `20260810160000_bloco_c_identidade_do_avatar.sql`
+  aplicada em produção pelo Doug. Gate novo: **1 falha → 18 passed / 0 failed**.
+  `verify:all` exit 0 · `typecheck` 0 · `lint` 0 erros · **478/478** testes ·
+  build verde. O `verify:phase8` passou de 3 gates para 4.
+
+  **A régua semeada** (decisão do Doug, 2026-08-10): desbloqueio por nível de XP,
+  na escada longa.
+
+  | | livres na criação | travados |
+  |---|---|---|
+  | | careca · `espetado` · `assimetrico` | `coque` 10 · `moicano` 20 · `chanel` 30 |
+
+  Traduzido pela curva viva (`100 × 1,08^(n−1)`, XP consumido) e pela calibração
+  de ~300 XP/dia que o `verify:xp-curve` cobra: nível 10 ≈ **4,2 dias** de aluno
+  dedicado, 20 ≈ **13,8**, 30 ≈ **35**. Escolha consciente: o cabelo é marco
+  raro. Com 5 modelos só, o terceiro degrau pode nunca ser visto por aluno
+  casual — a resposta a isso é arte nova (Bloco 8 do doc 15), não escada curta.
+
+  **Duas divergências deste plano, e as duas estão escritas na migration:**
+
+  1. **O default de `avatar_hair` é `NULL` (careca), não `coque`.** A §Bloco C
+     pedia `coque` de quando ele abria a lista e se presumia livre; a decisão o
+     pôs no nível 10. Default não pode ser peça travada — o aluno nasceria
+     vestindo o que a régua lhe nega, e a primeira gravação legítima o
+     **rebaixaria**. `NULL` é o único valor que nenhuma escada alcança.
+  2. **`avatar_skin` e `avatar_hair_color` guardam índice, não hex.** Guardar
+     `#E9B183` criaria uma segunda cópia da paleta de `palette.ts`, e duas
+     descrições da mesma coisa divergem sempre. O gate cobra que a faixa do
+     `CHECK` tenha exatamente o tamanho da paleta do código. Preço declarado:
+     reordenar `PELE`/`CABELO` muda a aparência de quem já escolheu — com 5
+     contas isso é barato hoje; quando não for, as listas são append-only.
+
+  **A careca não é linha do catálogo**, e isso é o desenho, não uma exceção: ela
+  é `avatar_hair IS NULL`. Daí caem de graça duas coisas — é livre por
+  construção, sem `min_level` a comparar; e as duas listas podem ser comparadas
+  byte a byte sem exceção escrita à mão dos dois lados. O gate **cobra
+  ativamente** que `'careca'` não apareça no banco.
+
+  ⚠️ **Duas pendências que o Bloco E herda, e nenhuma é acidente:**
+
+  - **A view materializada `user_public_profiles` não carrega as três colunas
+    novas**, e a RPC não chama `refresh_public_profiles()`. Recriá-la aqui
+    custaria uma varredura por troca de cabelo sem mudar um byte do que ela
+    devolve. Quem a recria é o Bloco E, que terá tela de perfil público para
+    servir.
+  - **`avatar_chosen` continua `true` para quem escolheu o avatar v2** (é o caso
+    do Doug). A RPC nova marca `true`, mas ninguém escolheu a identidade nova
+    ainda. Zerar agora mandaria o dashboard para uma `/criar-personagem` que só
+    existe no Bloco E — então o `UPDATE` vai na migration de lá, junto da tela
+    que o torna verdadeiro.
+
+  **A lição deste bloco, e ela custou zero porque foi medida antes:** a migration
+  rodou primeiro **a seco**, dentro de uma transação revertida, junto com as
+  conferências mais frágeis do próprio gate. Foi assim que se descobriu que o
+  Postgres **normaliza `BETWEEN 0 AND 7`** para `((x >= 0) AND (x <= 7))` — o
+  regex que o gate usava para ler o `CHECK` nunca casaria, e ele teria reprovado
+  por defeito próprio **depois** do apply. As três lições do Bloco B eram sobre
+  descobrir tarde; esta é sobre o ensaio que faz descobrir cedo.
 
 ### Bloco D — apagar a pilha v2 do código
 

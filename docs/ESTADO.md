@@ -101,9 +101,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 9 |
-| **Árvore** | **11 arquivos sujos** |
-| **Último commit** | a26e540 · 2026-08-10 · docs(avatar): registra o animate-bounce do modal como dívida de migração |
+| **Commits à frente de `origin/main`** | 10 |
+| **Árvore** | **4 arquivos sujos** |
+| **Último commit** | 3d83058 · 2026-08-10 · feat(avatar): Bloco B — o catálogo de itens do avatar v2 foi apagado |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -119,9 +119,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **25 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **26 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
 
 ## Frentes
 
@@ -144,7 +144,7 @@ _Conta tarefas numeradas (`**T0.1**`), que é a régua do próprio doc 14. Conta
 | o quê | quanto | congelado desde |
 |---|---|---|
 | Cores cruas — teto tolerado | **1331 em 69 arquivos** | ratchet |
-| RPCs redefinidas mais de uma vez | **53 (pior: puzzle_attempt, 12×)** | ratchet |
+| RPCs redefinidas mais de uma vez | **54 (pior: puzzle_attempt, 12×)** | ratchet |
 
 _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
@@ -152,7 +152,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 77 |
+| **Migrations** | 78 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 15 |
 | **Primitivos de UI** | 4 |
