@@ -179,6 +179,12 @@ entrega um **colecionável** em 87% dos casos e amanhã entrega **5 XP**. Os
   *O modal segue **não migrado** para a direção A (ainda tem `zinc-*`/`amber-*`).
   Não se acrescentou cor crua nova; migrá-lo é trabalho à parte.*
 
+  *Achado do hook do `impeccable`, **registrado e não consertado** (regra 9): a
+  fase 1 usa `animate-bounce` (`ChestOpeningModal.tsx:79`), e bounce/elástico lê
+  datado — a direção A pede desaceleração suave (ease-out-quart/quint/expo). **A
+  linha é pré-existente**, não veio deste bloco. Entra na lista de quem migrar o
+  modal, junto com as cores cruas.*
+
 - [x] **Bloco A fechado.** `typecheck` 0 · `lint` 0 erros · `npm test`
   **478/478** · `build` verde (Next 16.2.12, 21,8s) · **`verify:all` exit 0**.
   O `rpc-baseline.json` subiu +1 em `claim_chest`, `_create_random_pet_egg` e
