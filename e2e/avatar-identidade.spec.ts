@@ -408,9 +408,37 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
     expect(nome.length, "o boneco anunciou 'Avatar de ' sem nome nenhum").toBeGreaterThan(0);
     await expect(page.locator("h1", { hasText: nome })).toBeVisible();
 
-    // Um boneco, uma folha: a mesma prova do teste 1, agora num Server Component —
-    // esta tela não manda JS de avatar nenhum ao celular do aluno.
-    await expect(page.locator("svg.kk")).toHaveCount(1);
+    /**
+     * DOIS BONECOS, UMA FOLHA — e esta asserção mudou no Bloco 6, por um motivo
+     * que vale registrar.
+     *
+     * Ela exigia `toHaveCount(1)`: a tela tinha UM boneco, o do colega. O Bloco 6
+     * pôs o avatar do próprio aluno na navbar, e o `<AvatarCabeca>` de lá é o
+     * segundo — a contagem virou 2 e o teste reprovou. **Não era defeito do
+     * produto: era a asserção envelhecendo junto com a mudança que ela deveria
+     * proteger**, e ela só apareceu porque o e2e rodou.
+     *
+     * Trocar o 1 por 2 seria o conserto preguiçoso, e ele perde o que a asserção
+     * queria dizer. O que ela quer é *"N bonecos, UM bloco de estilo"* — e agora a
+     * prova é mais forte que antes: os dois bonecos vêm de **componentes
+     * diferentes** (`<AvatarKokeshi>` no corpo da página, `<AvatarCabeca>` na
+     * navbar), e um `href` divergente entre eles emitiria duas folhas. Aqui é o
+     * React 19 deduplicando de verdade, num chromium, entre dois arquivos.
+     */
+    await expect(page.locator("nav svg.kk"), "o boneco da navbar").toHaveCount(1);
+    const bonecos = await page.locator("svg.kk").count();
+    expect(bonecos, "esperava o da navbar mais o do perfil do colega").toBe(2);
+
+    const blocosDeFolha = await page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll("style")).filter((s) =>
+          (s.textContent ?? "").includes("kk-respira"),
+        ).length,
+    );
+    expect(
+      blocosDeFolha,
+      "os dois componentes de avatar têm de compartilhar o href da folha",
+    ).toBe(1);
   });
 
   // ==========================================================================
