@@ -87,10 +87,41 @@ avatar da pilha v2, porque `compor()` só era importado por `/dev/avatar-kokeshi
 Hoje `AvatarDisplay` não existe e as três telas servem `compor()` pelo
 `<AvatarKokeshi>` — 0 chamadas do componente velho, medido.
 
-**O avatar espera, e o que sobrou dele está em ordem:** colar espetado e chanel em
-`CABELOS` · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
-**não** será refeita) · rodada de unificação (espetado pela variante `lei`, com
-nova aprovação visual) · a luz, por último (decisão B).
+✅ **A rota de arte não tem mais ponta solta — as quatro morreram.** Colagem do
+espetado e do chanel em `CABELOS`: **feita** em 2026-08-07 (`068303b`). Reentrada da
+`entrada-2`: **superada** — ela entrou pela variante `fiel` em 2026-08-08, sem
+retoque. Rodada de unificação: **cancelada** pelo Doug em 2026-08-07 (achado T5,
+fechado). E **a luz (Passo 8) está MORTA desde 2026-08-11**, por decisão final dele —
+não é adiamento: o passo deixa de existir, e com ele a régua que nunca foi escrita.
+
+✅ **A V1 DO AVATAR NAS TELAS SAIU EM 2026-08-11 — o boneco aparece onde a criança
+aparece.** Eram 3 telas (as de perfil) e são **8**: entraram navbar, Quadro de Honra
+do dashboard, ranking global, ranking de turma e mural. Fecha o **D30** / Bloco 6 do
+doc 15 e as tarefas T2.11–T2.15. O catálogo continua em **5 cabelos** e os cadeados
+de nível 10/20/30 ficam como estão — as duas por decisão do Doug.
+
+O que a V1 trouxe: `<AvatarCabeca>`, o recorte de cabeça que **só muda o `viewBox`**
+(a cabeça a 32 px sai de 13,2 para **19,2 px**), a migration
+`20260811140000_bloco6_identidade_nas_listas.sql` (as 3 RPCs de ranking param de
+servir o `avatar_config` morto, e nasce a `get_class_feed` para o mural), o gate
+`verify:identidade-nas-listas`, a trava `recorte-cabeca.test.ts` e 2 testes e2e
+novos. **Fecha o achado G11**; abre o **D12**.
+
+✅ **O espaço da cabeça foi DECIDIDO em 2026-08-11: opção B — o canvas cresce para
+cima** (`viewBox` vira `0 −80 500 780`). Decisão do Doug com a bancada na mesa, e a
+recomendação era outra ("nada agora"): a bancada mostrou que o T1.5 envelheceu — ele
+mediu 39 unidades de folga em **2026-08-03, três dias antes** de `ESCALA_PADRAO`
+virar 0,92, que já comprou **111 unidades** de teto, e hoje o corte é de **1,0
+unidade** na ponta do moicano (0,046 px a 32 px). O que continua verdadeiro é o
+resto, e é o que a decisão compra: o teto **livre** acima do cabelo mais alto é
+**zero**, então chapéu e acessório não têm onde existir. **Não repropor.**
+
+⏭️ **A frente B ainda não começou, e é a próxima do avatar depois da arte.** Ela
+mexe em `VIEWBOX` (22 arquivos citam a proporção ou a altura), re-congela a
+`folha-base` e o `asset-baseline`, e pede conferência de `verify:pose`,
+`avatar:fidelidade` e `arte:escala`. O `RECORTE_CABECA` acompanha sozinho — é
+derivado. Custo declarado: **boneco 11% menor a 32 px** e o fim do 5:7. O T1.5 fica
+aberto até ela rodar.
 
 **Decisões travando trabalho: nenhuma.** A última caiu em 2026-08-11 —
 
@@ -118,9 +149,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 0 |
-| **Árvore** | **9 arquivos sujos** |
-| **Último commit** | 037c990 · 2026-08-11 · perf(dashboard): as três consultas saem juntas, o level desce do servidor, e o howler só carrega para tocar |
+| **Commits à frente de `origin/main`** | 1 |
+| **Árvore** | **23 arquivos sujos** |
+| **Último commit** | b2565d0 · 2026-08-11 · feat(patente): a patente vem de concluir uma trilha, e agora é o gate que cobra |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -136,15 +167,15 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **27 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **28 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:perfil-publico` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
 
 ## Frentes
 
 | frente | fechadas | detalhe em |
 |---|---|---|
-| Backlog do avatar | **25 de 67** (37%) | `docs/avatar/14-backlog-execucao.md` |
+| Backlog do avatar | **30 de 67** (45%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
 | Catálogo de cabelo | **5 de 10** no mínimo (faltam **5**) | `docs/avatar/19-rota-de-arte-runbook.md` |
 
@@ -152,7 +183,7 @@ Backlog do avatar, fase a fase:
 
 | F0 | F1 | F2 | F3 | F4 | F5 |
 |---|---|---|---|---|---|
-| 19/23 | 2/6 | 0/16 | 3/5 | 1/11 | 0/6 |
+| 19/23 | 2/6 | 5/16 | 3/5 | 1/11 | 0/6 |
 
 _Conta tarefas numeradas (`**T0.1**`), que é a régua do próprio doc 14. Contar todos os checkboxes dá um número maior porque inclui as linhas de gate._
 
@@ -161,7 +192,7 @@ _Conta tarefas numeradas (`**T0.1**`), que é a régua do próprio doc 14. Conta
 | o quê | quanto | congelado desde |
 |---|---|---|
 | Cores cruas — teto tolerado | **1331 em 69 arquivos** | ratchet |
-| RPCs redefinidas mais de uma vez | **54 (pior: puzzle_attempt, 12×)** | ratchet |
+| RPCs redefinidas mais de uma vez | **55 (pior: puzzle_attempt, 12×)** | ratchet |
 
 _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
@@ -169,7 +200,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 82 |
+| **Migrations** | 83 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 16 |
 | **Primitivos de UI** | 4 |
@@ -182,11 +213,11 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 | `CLAUDE.md` | 2026-08-10 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
-| `docs/avatar/14-backlog-execucao.md` | 2026-08-08 |
-| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-08 |
+| `docs/avatar/14-backlog-execucao.md` | 2026-08-11 |
+| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-11 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
-| `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-06 |
-| `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-05 |
+| `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-11 |
+| `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-11 |
 
 _Doc parado há semanas e ainda citado como fonte é candidato a `_superado/`._
 <!-- VOLATIL:fim -->

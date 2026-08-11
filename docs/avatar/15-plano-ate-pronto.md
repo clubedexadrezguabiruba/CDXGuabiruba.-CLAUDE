@@ -1006,26 +1006,49 @@ regressão contra o `asset-baseline.json`** · avatar antigo degrada sem erro ·
 
 ---
 
-## Bloco 6 — F2 alcance: o D30
+## Bloco 6 — F2 alcance: o D30 ✅ **FEITO em 2026-08-11**
 
 *É aqui que o investimento inteiro passa a motivar alguém.*
 
-| tela | vira | custo |
+| tela | vira | estado |
 |---|---|---|
-| navbar | cabeça, 32 px | UI (hoje mostra iniciais) |
-| ranking geral | cabeça + moldura, 40 px | **só UI** — `get_ranking` já devolve `avatar_config` |
-| ranking de turma | cabeça + moldura | UI + conferir RPC |
-| mural | cabeça, 32 px | UI + incluir no feed |
-| Companhia | corpo inteiro (`sm`) | UI + conferir RPC |
+| navbar | cabeça, 32 px | ✅ — e o convite para quem não escolheu mora aqui |
+| Quadro de Honra (dashboard) | cabeça, 32 px | ✅ — **é a tela seguinte ao Confirmar**, e não estava nesta tabela |
+| ranking geral | cabeça, 40 px | ✅ |
+| ranking de turma | cabeça, 40 px | ✅ |
+| mural | cabeça, 32 px, ao lado do emoji | ✅ — precisou de `get_class_feed`, RPC nova |
+| Companhia | corpo inteiro (`sm`) | ⏳ **fora da V1**, por escopo (T2.16) |
 
-- **6.1** Um componente `<AvatarCabeca>` reutilizável, para as quatro telas que
-  usam o recorte quadrado.
-- **6.2** A moldura de raridade no ranking. **É o melhor retorno do plano
-  inteiro:** CSS puro, custo de arte zero, e é onde raridade vira status social.
-- **6.3** Opt-out de ranking respeitado também no avatar (LGPD).
+⚠️ **A coluna "custo" desta tabela dizia `só UI — get_ranking já devolve
+avatar_config`, e isso deixou de ser verdade no Bloco B.** `avatar_config` é o
+cache de itens da pilha v2, e os 69 itens foram apagados: ele é `'{}'` em 100% dos
+usuários. As três RPCs de ranking foram reescritas em
+`20260811140000_bloco6_identidade_nas_listas.sql` para servir
+`avatar_skin`/`avatar_hair`/`avatar_hair_color`.
 
-🔒 **Gate e2e:** o avatar aparece no ranking · 12 alunos com configurações
-diferentes saem **diferentes** · nenhum salto de layout ao carregar.
+- **6.1** ✅ `<AvatarCabeca>` + `src/lib/avatar/estilo/recorte.ts`. Mesmo
+  `compor()`, mesma folha, **só o `viewBox` muda** — e a janela é derivada das
+  constantes de `geometria.ts`, então ela acompanha sozinha o dia em que o espaço
+  da cabeça mudar. Cabeça a 32 px: **13,2 → 19,2 px**.
+- **6.2** ⛔ **MORTA.** A moldura de raridade era "o melhor retorno do plano
+  inteiro" quando havia 69 itens com raridade. O Bloco B os apagou, o avatar novo
+  tem **cabelo como único vestível**, e cabelo não tem raridade — tem nível
+  mínimo. **Não há o que moldurar.**
+- **6.3** ✅ **já estava satisfeito, e com uma ressalva medida.**
+  `get_ranking_with_position` e `get_ranking` filtram `ranking_visible = true` no
+  `WHERE`. **`get_class_ranking` NÃO filtra** — e isso é deliberado desde
+  `20260316100000_phase10_rankings.sql:232` (*"turma sempre vê todos os
+  membros"*), registrado como **achado D1**, que segue esperando decisão do Doug.
+  A migration do Bloco 6 **não mexeu nisso**: decidir o D1 dentro de uma mudança
+  de avatar seria mudar o produto de lado.
+
+🔒 **Gate e2e:** ✅ dois testes novos em `e2e/avatar-identidade.spec.ts` — o boneco
+na navbar e no Quadro de Honra com **uma** folha de estilo; e o ranking com
+bonecos **diferentes** (contando valores distintos de `--av-pele` no DOM, que é o
+modo de falha da colisão de `ns`) e sem salto de layout (medido no mecanismo:
+caixa com largura/altura explícitas e `line-height: 0`). O "12 alunos" da versão
+anterior virou "pelo menos 2 identidades distintas": 12 contas de teste em
+produção por rodada é caro, e duas já provam o que a asserção quer provar.
 
 ---
 

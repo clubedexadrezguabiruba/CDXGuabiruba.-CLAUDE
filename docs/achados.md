@@ -611,10 +611,26 @@ do banco.
 Não é urgente — os blocos B0–B7 têm zero linhas de código. Mas o plano promete
 verificação que não existe, e quem for construir vai descobrir tarde.
 
-### G11 — `RankingEntry.avatar_base` é um campo obrigatório que a RPC nunca devolveu
+### ~~G11 — `RankingEntry.avatar_base` é um campo obrigatório que a RPC nunca devolveu~~ ✅ **FECHADO em 2026-08-11**
 **Prova:** `MEDIDO` — 2026-08-10, `get_ranking_with_position('rating', 3)` chamada
 como `authenticated` contra produção. Achado pelo Claude, executando o E.3.
-Registrado e **não consertado**, pela regra 9.
+
+**Fechado pelo Bloco 6 (a V1 do avatar nas telas), como previsto no último
+parágrafo deste achado.** `src/types/ranking.ts` perdeu `avatar_base` **e**
+`avatar_config`, e ganhou as três colunas da identidade kokeshi; a migration
+`20260811140000_bloco6_identidade_nas_listas.sql` fez as três RPCs devolverem
+exatamente essas três. O gate novo `verify:identidade-nas-listas` chama as três de
+verdade e reprova se qualquer uma voltar a devolver um dos dois campos mortos — ou
+seja, o tipo e a RPC agora têm quem os compare.
+
+`avatar_config` continua existindo em `users` e na matview, **sem nenhuma função
+que o leia** — a conferência 6 do `verify:perfil-publico` passou a dizer isso
+sozinha, e ele pode cair numa migration futura sem decisão nova.
+
+---
+
+<details>
+<summary>O registro original</summary>
 
 As chaves reais de uma entrada do ranking são sete:
 
@@ -640,6 +656,8 @@ ranking forem reescritas para servir o avatar kokeshi, que é o D30 / Bloco 6 do
 15 — explicitamente fora do Bloco E (doc 20, §5). Consertar só o tipo agora deixaria
 o `avatar_config` de pé e obrigaria a mexer no mesmo arquivo duas vezes.
 **Quem decide:** Doug.
+
+</details>
 
 ### G9 — o baseline de cores cruas tem 234 cores de folga fantasma, em 14 arquivos
 **Prova:** `MEDIDO` — 2026-08-10, `verify:design-tokens -- --update` rodado num
@@ -742,6 +760,57 @@ mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em ve
 ---
 
 ## 🔵 Decisão ou divergência
+
+### D13 — o produto não tem favicon, e toda aba do navegador sai sem ícone
+**Prova:** `MEDIDO` — 2026-08-11, `GET http://localhost:3000/favicon.ico 404 (Not
+Found)` no console do Doug, mais varredura do repositório. Achado pelo Doug,
+olhando o Console ao conferir o Bloco 6. Registrado e **não consertado**, pela
+regra 9.
+
+Não existe `public/favicon.ico`, nem `src/app/icon.*`, nem `apple-icon.*` — as
+três convenções que o Next.js 16 reconhece. O navegador pede o arquivo em toda
+visita e leva 404.
+
+**Não é bug de código, e acontece em produção também** — não é artefato do modo de
+desenvolvimento. O efeito é cosmético: a aba do Recruta 64 sai com o ícone genérico
+de página, ao lado de abas que têm marca.
+
+**Por que não foi consertado na hora:** porque não é um arquivo, é uma **decisão de
+marca**. O produto tem uma direção visual fechada ("Continuidade": navy `#0F1A2E`,
+ouro `#C9A84C`, marfim, Cinzel nos títulos) e um elenco de arte próprio — o boneco
+kokeshi, as 6 patentes. Qual deles vira o ícone de 32 px é escolha, e um ícone
+posto às pressas vira o ícone definitivo por inércia.
+
+**O que ele custa quando for feito:** um arquivo em `src/app/icon.png` (o Next
+gera as variantes). O trabalho é o desenho, não a instalação — e a 32 px valem as
+mesmas regras da folha de contato do Bloco 6: silhueta que separa, nada de detalhe
+de 1 px.
+
+**Quem decide:** Doug — e o lugar natural é o pacote de acabamento antes do
+lançamento (fase 12), junto do PWA (fase 11), que **também** vai exigir ícone.
+
+### D12 — o `useUser` ainda busca duas colunas mortas em toda tela do produto
+**Prova:** `MEDIDO` — 2026-08-11, `grep` em `src/` ao fechar o Bloco 6. Achado
+pelo Claude. Registrado e **não consertado**, pela regra 9.
+
+`src/hooks/useUser.ts:54` pede 20 colunas de `public.users`, e duas delas são da
+pilha v2: **`avatar_config`** e **`avatar_base`**. O tipo do hook as declara
+(`useUser.ts:22-23`). **Nenhum arquivo de `src/` lê qualquer uma das duas** — a
+varredura devolve só as próprias declarações.
+
+`avatar_config` é `'{}'` em 100% dos usuários desde o Bloco B (os 69 itens foram
+apagados). `avatar_base` era o caminho do PNG do boneco antigo, e `AvatarDisplay`
+não existe mais desde o F.2.
+
+**Não é bug**: são dois campos a mais num `select` que já traz 20, e o hook roda
+no dashboard, no perfil e em Configurações. É dívida de limpeza, e ela ficou
+**mais barata** agora: com o Bloco 6, as três RPCs de ranking pararam de citar
+`avatar_config`, e a conferência 6 do `verify:perfil-publico` já registra que a
+coluna pode cair da matview. Tirar as duas do hook é o passo que falta para a
+coluna poder cair de `users` também.
+
+**O que NÃO está medido:** se alguma tela lê `avatar_url`, a terceira coluna da
+mesma família. **Quem decide:** Doug.
 
 ### D11 — as duas patentes do topo não têm cor, e três documentos discordam de quantas são
 **Prova:** `MEDIDO` — 2026-08-11, contra produção, ao fechar o **T1**. Achado

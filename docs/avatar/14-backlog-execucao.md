@@ -268,6 +268,47 @@ Bloqueia todo o resto da arte.
       7 418 bytes e em todo asset já assado).
       → **A esteira agora existe** (T1.6): as duas re-traçam por `avatar:tracar` +
       `avatar:fidelidade` depois do piloto aprovado. Continua sem correção aplicada.
+      → 🔬 **A BANCADA RODOU EM 2026-08-11, E O DIAGNÓSTICO ACIMA ESTÁ VELHO.**
+      Ele foi medido em **2026-08-03 — três dias antes** de `ESCALA_PADRAO` virar
+      **0,92** (2026-08-06), que existe justamente para comprar teto e já comprou
+      **111 unidades** acima da coroa. Remedido no Chromium, opção a opção, no quadro
+      de produção de hoje:
+
+      | opção | topo da tinta | cortado |
+      |---|---|---|
+      | careca | 111,0 | — |
+      | chanel | 73,0 | — |
+      | assimetrico | 69,0 | — |
+      | coque | 37,0 | — (as "34 unidades perdidas" não existem mais) |
+      | espetado | 32,0 | — |
+      | **moicano** | **−1,0** | **1,0 u** |
+
+      **O corte de hoje é de 1,0 unidade na ponta da crista do moicano** — o bico é
+      desenhado em `y −76` interno e o meio-traço de 6 põe 1 unidade fora. A 32 px
+      isso é **0,046 px**. Cinco das seis opções não são cortadas. A leitura da folha
+      de contato confirma: os bicos aparecem separados e contáveis; o que os achata é
+      a resolução, não o quadro.
+      → **O que continua verdadeiro, e é a pergunta real:** o teto **livre** acima do
+      cabelo mais alto é **zero**. Não há espaço para chapéu nem acessório. As três
+      saídas foram medidas e estão na Parada 3 do plano da V1
+      (`.scratch/estilo/espaco-da-cabeca.mts` e `folha-espaco-cabeca.mts`):
+      **A** re-traçar as peças pela régua (não cria espaço) · **B** canvas
+      `0 −80 500 780` (+79 u livres, **mata o 5:7**, −11% de cabeça a 32 px) ·
+      **C** figura a 0,85 (+51 u livres, 5:7 preservado, −8% de cabeça, o traço afina
+      de 11,0 para 10,2).
+      → ✅ **DECIDIDO em 2026-08-11 pelo Doug: opção B — o canvas cresce para cima.**
+      Com a bancada na mesa, olhando a folha de contato e o raio-X, e com o custo
+      declarado. **A recomendação era "nada agora"** (o corte real é 0,046 px a 32 px,
+      e B/C cobram tamanho de boneco hoje por um chapéu que ainda não existe); ele
+      escolheu B assim mesmo, e a decisão é dele. **Não repropor.**
+      → **A execução é frente própria e NÃO entra na V1 de 2026-08-11** — o plano
+      daquela V1 diz isso com todas as letras. O que ela vai custar, medido:
+      `VIEWBOX` deixa de ser 500×700 e **22 arquivos** citam a proporção ou a altura;
+      a `folha-base` congelada (19 formas / 7.418 bytes) e o `asset-baseline`
+      re-congelam; `verify:pose`, `avatar:fidelidade` e `arte:escala` medem no
+      sistema interno e precisam de conferência; e `RECORTE_CABECA` **acompanha
+      sozinho**, porque é derivado — é a única parte que não custa nada.
+      **T1.5 continua aberto até a frente B rodar.**
 - [ ] **T1.6** 🤖 **O cabelo deixa de ser desenhado e passa a ser traçado da arte**
       → pipeline pronto em 2026-08-03, **piloto aguardando o olho** (item (f)).
       `Cabelo` ganhou `massa` e `clara` — laços FECHADOS em `{t, y}` —, e é o fechamento
@@ -396,12 +437,37 @@ Bloqueia todo o resto da arte.
 > **3. Quando a F2 tocar UI:** a skill `design-recruta64` é **obrigatória**, e o
 > `npm run test:e2e` entra no gate — rodado com intenção, porque ele bate no
 > Supabase de **produção** e cria usuários reais.
-- [ ] **T2.11** 🤖 `viewBox` de cabeça para uso como foto de perfil
-- [ ] **T2.12** 🤖 **D30** — avatar na **navbar** (32 px, cabeça)
-- [ ] **T2.13** 🤖 **D30** — avatar no **ranking geral** + moldura de raridade *(dados já chegam: `get_ranking` devolve `avatar_config`)*
-- [ ] **T2.14** 🤖 **D30** — avatar no **ranking de turma**
-- [ ] **T2.15** 🤖 **D30** — avatar no **mural**
+- [x] **T2.11** 🤖 `viewBox` de cabeça para uso como foto de perfil
+      → **FEITO em 2026-08-11.** `<AvatarCabeca>` + `src/lib/avatar/estilo/recorte.ts`.
+      Mesmo `compor()`, mesma folha, **só o `viewBox` muda** — a janela é derivada de
+      `CAIXA_CABECA`, `EIXO_CABECA` e `ESCALA_PADRAO`, e não tem número próprio.
+      Quadrada, 482,1 unidades de lado, ancorada no topo do quadro. A cabeça a 32 px
+      sai de **13,2 px para 19,2 px**. A trava é `recorte-cabeca.test.ts`: rasteriza
+      as 6 opções **no Chromium** e reprova se um pixel escapar — provado com dente
+      (folga 80 → 66 reprova o `assimetrico`)
+- [x] **T2.12** 🤖 **D30** — avatar na **navbar** (32 px, cabeça)
+      → **FEITO em 2026-08-11.** O comentário `{/* Avatar placeholder */}` saiu do
+      código. Quem não tem `avatar_chosen` vê o boneco padrão com link para
+      `/criar-personagem` — o convite mora aqui em vez de virar `redirect` em toda rota
+- [x] **T2.13** 🤖 **D30** — avatar no **ranking geral** (40 px) e no **Quadro de Honra** do dashboard (32 px)
+      → **FEITO em 2026-08-11.** A nota antiga desta linha (*"dados já chegam:
+      `get_ranking` devolve `avatar_config`"*) estava errada desde o Bloco B: o
+      `avatar_config` é `'{}'` em 100% dos usuários desde que os 69 itens foram
+      apagados. Quem passou a entregar identidade é a migration
+      `20260811140000_bloco6_identidade_nas_listas.sql`.
+      **A moldura de raridade NÃO entra** — ver 6.2 do doc 15: raridade morreu com os
+      itens, e não há o que moldurar
+- [x] **T2.14** 🤖 **D30** — avatar no **ranking de turma** (40 px)
+      → **FEITO em 2026-08-11**, pela mesma migration
+- [x] **T2.15** 🤖 **D30** — avatar no **mural** (32 px, ao lado do emoji)
+      → **FEITO em 2026-08-11.** Precisou de RPC nova: o mural lia `class_feed` direto
+      do navegador e **não tinha como chegar à identidade** (`users` tem RLS, a matview
+      teve o `SELECT` revogado de `authenticated`). `get_class_feed` junta `users` —
+      fresco, e não o retrato que `emit_class_feed` grava em `event_data`
 - [ ] **T2.16** 🤖 **D30** — avatar na **Companhia** (lista de membros)
+      → **FORA da V1 de 2026-08-11, por escopo.** As cinco telas daquele plano são
+      navbar, Quadro de Honra, os dois rankings e o mural; a Companhia é corpo inteiro
+      e depende de conferir `get_class_members`, que não foi tocada
 - [ ] 🔒 **Gate:** `npm run build` · e2e 149/149 · `verify:all` inteiro · gate de assets 100% · avatar antigo degrada sem erro · nenhum código per-gender restante
 
 ---
@@ -586,10 +652,43 @@ mão.
 `PEDIDO-GEMINI.md` exige. É onde o espetado morreu (T5), e é a diferença entre uma
 rodada e três.
 
-**A luz (Passo 8) segue não iniciada** — decisão B. Separável e cortável, e depende
-de uma régua que **não existe**: a arte tem três tons de ciano e a paleta do render
-tem **dois**. Uma mancha de brilho de 12,4% da cúpula devolve 6 pixels, e nenhuma
-das 21 asserções toca nisso.
+🆕 ⛔ **CRITÉRIO NOVO PARA APROVAR ARTE DE CABELO, desde 2026-08-11: a silhueta tem
+de SEPARAR DAS OUTRAS a 32 px.**
+
+Ele nasceu de uma medição do Bloco 6, e não de gosto. A folha de contato do recorte
+de cabeça foi lida peça a peça nos três tamanhos reais, e a 32 px — que é a navbar e
+o mural — o catálogo de hoje se divide assim:
+
+| lê na hora | vira par indistinguível |
+|---|---|
+| careca · espetado · chanel | **coque ≈ moicano** (os dois viram "um caroço escuro no topo") |
+| | **chanel ≈ assimetrico** (a assimetria é ~2 px de diferença entre um lado e o outro) |
+
+Ou seja: **6 opções no catálogo, 4 legíveis onde o aluno mais vê o boneco.** O que
+separa a 32 px é a **largura da silhueta** e a **massa**, não detalhe interno — a
+crista do moicano, que é o traço que define a peça, é justamente o que some
+primeiro (só volta a ser crista a partir de 40 px).
+
+**A consequência prática para a frente dos 5 cabelos novos:** desenhar 10 peças sem
+esta régua entrega um catálogo que o aluno lê como 6. Toda peça nova entra na folha
+de contato **antes** de ser aprovada, e a pergunta é *"a 32 px, dá para dizer qual é
+sem ler o rótulo?"*. A folha se gera com `.scratch/estilo/folha-recorte.mts`.
+
+⚠️ **E ela se gera no CHROMIUM, nunca no `sharp`** — pela terceira vez registrado
+neste repositório: o librsvg não resolve `var(--av-*)`, e o boneco sai com rosto
+preto e traço de 1 unidade em vez de 12. Uma folha feita com `sharp` reprova arte
+boa e aprova arte ruim.
+
+⛔ **A luz (Passo 8) está MORTA em 2026-08-11, por decisão final do Doug.** Não é
+adiamento e não volta à fila: o passo deixa de existir. Era a decisão B ("por
+último"), e o motivo de ela nunca ter começado continua sendo o melhor argumento
+para matá-la — depende de uma régua que **não existe**: a arte tem três tons de ciano
+e a paleta do render tem **dois**. Uma mancha de brilho de 12,4% da cúpula devolve 6
+pixels, e nenhuma das 21 asserções toca nisso. Sem régua, o Passo 8 só poderia fechar
+por opinião.
+
+**Com ela, a rota de arte fica com zero pontas soltas:** colagem feita em 2026-08-07,
+reentrada da `entrada-2` superada em 2026-08-08, unificação cancelada no T5.
 
 ---
 
@@ -621,11 +720,11 @@ das 21 asserções toca nisso.
 |---|---|---|---|
 | F0 | 23 | **19** | T0.12 e T0.14 delegadas e decididas |
 | F1 | 6 | **2** | T1.3 (crítica da arte), T1.6 (decisão (f) do traço) |
-| F2 | 16 | **0** | não |
+| F2 | 16 | **5** | não |
 | F3 | 5 | **3** | não |
 | F4 | 11 | **1** | T4.5, T4.7, T4.8 (refino) |
 | F5 | 6 | **0** | T5.5 (medir no celular) |
-| **total** | **67** | **25 (37%)** | **8 pontos** |
+| **total** | **67** | **30 (45%)** | **8 pontos** |
 
 > **A F1 subiu de 4 para 5 tarefas em 2026-08-03**, e o total de 65 para 66: a
 > **T1.5** (moicano e coque guilhotinados pelo `viewBox`) é achado da rodada de
