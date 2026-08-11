@@ -332,6 +332,61 @@ T7 substituiu a T2.1 pelo **Bloco C** de `docs/avatar/20-troca-de-pilha-plano.md
 cria as três colunas (`avatar_skin`, `avatar_hair`, `avatar_hair_color`) com default
 `coque`. Fecha quando o Bloco C fechar; segue aberto até lá.*
 
+### T10 — 28 páginas de servidor esperam uma consulta de cada vez; `Promise.all` e `React.cache()` não aparecem nenhuma vez no servidor
+**Prova:** `MEDIDO` — 2026-08-10, varredura da `vercel-react-best-practices` sobre
+`src/`. `grep` de `Promise.all` em `src/`: **4 ocorrências, todas em componente de
+cliente** (`AlunoRelatorioClient.tsx:58`, `RelatorioClient.tsx:53`,
+`ActivityToasts.tsx:175`, `rush/page.tsx:113`). `grep` de `cache(` de `react` e de
+`unstable_cache`: **zero**. Achado pelo Claude; registrado e **não consertado**.
+
+Toda página de servidor deste projeto tem a mesma forma: uma fila de `await
+supabase…`, cada um esperando o anterior terminar, mesmo quando nenhum depende do
+outro. É a regra `async-parallel` da skill, e o desenho é sistêmico — 28 arquivos.
+
+Os dois piores, medidos linha a linha:
+
+| Arquivo | Idas seriais | Quantas dependem da anterior |
+|---|---|---|
+| [perfil/page.tsx](src/app/(main)/perfil/page.tsx#L28-L83) | 8 | 1 (só o `getUser`) |
+| [dashboard/page.tsx](src/app/(main)/dashboard/page.tsx#L35-L67) | 4 | 1 (só o `getUser`) |
+
+No `/perfil`, as linhas 39, 49, 53, 59, 66, 72 e 79 só precisam de `user.id` — que
+já existe desde a linha 28. São **sete viagens em fila para o mesmo banco** quando
+uma rodada de sete em paralelo dava o mesmo resultado. O `/dashboard` repete em
+menor escala: linhas 41, 56 e 64 são independentes entre si.
+
+**A segunda metade é pior que a primeira.** [(main)/layout.tsx](src/app/(main)/layout.tsx#L13-L35)
+faz `auth.getUser()` + `users` + `user_titles` — e o `dashboard/page.tsx` faz
+**exatamente as mesmas três** de novo. Layout e page rodam em paralelo, então não é
+cascata: é consulta duplicada. `React.cache()` resolveria com uma linha por função,
+e é a regra `server-cache-react`. Como o layout é o de **todas** as rotas de
+`(main)`, a duplicata acontece em toda página autenticada que também lê `users` —
+`/perfil`, `/puzzles`, `/turmas`, `/dev/*`.
+
+**Nenhum gate olha para isto**, e é por isso que está aqui e não no backlog: a
+próxima página nova vai nascer com a mesma forma, porque é a forma que o
+repositório inteiro ensina.
+
+**O conserto, se o Doug mandar:** é mecânico e sem decisão de arquitetura —
+`const [a, b, c] = await Promise.all([...])` nas 28 páginas, e um
+`src/lib/supabase/sessao.ts` com `getUsuarioAtual = cache(...)` para matar a
+duplicata layout×page. Dá para fatiar por rota e medir uma de cada vez.
+
+**O que NÃO está medido:** quanto tempo cada ida custa contra o Supabase de
+produção. A economia é certa em número de viagens (de 8 para 2 no `/perfil`); em
+milissegundos, não medi.
+**Achado por:** Claude, varredura da `vercel-react-best-practices`, 2026-08-10.
+
+*Atualização de 2026-08-10 — **1 página de 28 fechada; o achado segue aberto.** O
+Doug mandou consertar o `/dashboard` como piloto, e só ele. As três consultas agora
+saem num `Promise.all` (4 idas viraram 2), com guarda em
+`src/app/(main)/dashboard/__tests__/dashboard-cascata.test.ts`: o teste prende as
+respostas e exige que as três tenham partido antes de qualquer uma chegar — em
+fila ele reprova com `expected [ 'users' ] to deeply equal [ 'users',
+'user_titles', 'rpc:ranking' ]`. **O que continua igual:** as outras 27 páginas,
+com o `/perfil` (8 em fila) na frente, e a duplicata layout×page — `React.cache()`
+segue com zero ocorrências no repositório.*
+
 ---
 
 ## 🟡 Promessa sem lastro
@@ -889,6 +944,143 @@ aluno, então **não vira trabalho sem o Doug mandar**.
 ao D3 e à ressalva do repositório público como coisa a resolver **antes do
 lançamento**, não agora.
 **Achado por:** Claude, ao rodar o Lote 3, 2026-08-10.
+
+### D9 — o primeiro load vai de 503 KB a 892 KB de JS, `next/dynamic` não aparece uma vez, e o chessground entra três vezes
+**Prova:** `MEDIDO` — 2026-08-10, `npm run build` real (Next 16.2.12, Turbopack,
+exit 0) e leitura de `.next/diagnostics/route-bundle-stats.json`. Achado pelo
+Claude; registrado e **não consertado**.
+
+Números do build, JS não comprimido do primeiro load, por rota:
+
+| Rota | First-load JS |
+|---|---|
+| `/bots/[id]` | 892 KB |
+| `/puzzles/rush` | 837 KB |
+| `/aulas/[id]` | 835 KB |
+| `/dashboard` | 806 KB |
+| `/login` | 711 KB |
+| `/_not-found` (o piso) | 503 KB |
+
+**503 KB estão em 8 chunks que TODAS as 34 rotas carregam** — React + runtime do
+Next, dos quais 222 KB e 134 KB em dois chunks só. Esse piso não é nosso e não se
+mexe. O que é nosso é o que vem por cima, e ele tem três buracos medidos:
+
+1. **O chessground entra três vezes.** Três chunks distintos de **65.194 bytes cada**
+   contêm a string `chessground`: um serve `/puzzles/{rush,revanche,rating,categorias/[tema]}`,
+   outro serve só `/bots/[id]`, o terceiro serve `/aulas/[id]` e `/aulas/review/[trail]`.
+   Um aluno que passe por puzzle, bot e aula **baixa a mesma biblioteca três vezes**.
+   A causa é que [PuzzleBoard](src/components/chess/PuzzleBoard.tsx#L5),
+   [BotBoard](src/components/chess/BotBoard.tsx#L5) e
+   [LessonBoard](src/components/chess/LessonBoard.tsx#L5) importam `Chessground` de
+   forma estática, cada um na sua árvore, e nenhum divide um ancestral comum.
+2. **O howler viaja em 11 rotas** num chunk de 36 KB — entre elas `/dashboard`,
+   `/turmas/[id]` e `/configuracoes`, que não tocam som nenhum até um toast disparar.
+   Chega por [soundManager.ts:1](src/lib/sounds/soundManager.ts#L1), que faz
+   `import { Howl } from "howler"` no topo do módulo; quem o puxa para o dashboard
+   são o `ActivityToasts` e o `TaskCompletionToast`. É a regra `bundle-conditional`.
+3. **`next/dynamic` tem zero ocorrências em `src/`.** Nenhum componente pesado é
+   carregado sob demanda — nem os três tabuleiros, nem o
+   [compositor do avatar](src/lib/avatar/estilo/compositor.ts) (47 KB de fonte, ao
+   lado de `geometria.ts` com 68 KB e `cabelo.ts` com 67 KB).
+
+**O que está limpo:** não há nenhum `index.ts` de barril em `src/` — a regra
+`bundle-barrel-imports`, que costuma ser a pior das duas, não se aplica aqui.
+
+**Por que é 🔵 e não 🟠:** ninguém está parado, e o conserto tem decisão dentro.
+Dividir o tabuleiro em `next/dynamic` troca bytes por um estado de carregamento na
+tela — e isso é assunto da `design-recruta64`, não meu. O mesmo para o howler: dá
+para adiar com `await import("howler")` no primeiro `play()`, ao custo de o
+primeiro som sair com atraso.
+
+**O conserto, se o Doug mandar** — em ordem de bytes por unidade de risco:
+`import("howler")` preguiçoso no `soundManager.play()` (36 KB × 11 rotas, risco
+quase nulo) · `next/dynamic` nos três tabuleiros (~130 KB de duplicata, precisa de
+skeleton) · gate de tamanho lendo o próprio `route-bundle-stats.json`, para o número
+parar de crescer sem ninguém ver.
+
+**O que NÃO está medido:** nada disto é o tamanho comprimido que o aluno baixa de
+fato — `route-bundle-stats.json` dá bytes crus. O ganho real na rede é menor, e o
+ganho em tempo de parse/execução no celular é maior que a razão dos bytes sugere.
+**Achado por:** Claude, varredura da `vercel-react-best-practices`, 2026-08-10.
+
+*Atualização de 2026-08-10 — **o item 2 (howler) fechou; 1 e 3 seguem abertos.** O
+`soundManager` passou a carregar o howler por `import("howler")` dentro do
+`init()`, e o `import` do topo virou `import type`, que não emite código. Medido em
+build novo: o chunk saiu do primeiro load das **11 rotas**, −35 KB em dez delas e
+−36 KB em `/dashboard` e `/bots/[id]`. `/dashboard` foi de 806 para 770 KB;
+`/bots/[id]`, de 892 para 856. Guarda em
+`src/lib/sounds/__tests__/soundManager-preguicoso.test.ts` — antes do conserto ele
+reprova com `expected true to be false`, porque importar o gerenciador já bastava
+para avaliar a biblioteca. **O que continua igual:** o chessground nos três chunks
+de 65.194 bytes, o `next/dynamic` ainda com zero ocorrências, e o piso de 503 KB.*
+
+### D10 — o dashboard busca no cliente, em seis requisições depois da hidratação, o que o servidor já tinha na mão
+**Prova:** `MEDIDO` — 2026-08-10, leitura de
+[dashboard/page.tsx](src/app/(main)/dashboard/page.tsx) e dos 6 hooks que ele monta,
+mais o `route-bundle-stats.json` do build. Achado pelo Claude; registrado e **não
+consertado**.
+
+O `/dashboard` renderiza no servidor e entrega HTML. Depois que o navegador hidrata,
+o `<DailyPanel>` e o `<TaskPanel>` abrem **seis requisições novas**, cada uma no seu
+`useEffect`, nenhuma coordenada com as outras:
+
+| Hook | Chamada | Onde |
+|---|---|---|
+| `useMissions` | `rpc check_daily_missions` | [useMissions.ts:51](src/hooks/useMissions.ts#L51) |
+| `useUser` | `auth.getUser()` **e depois** `users` (20 colunas) | [useUser.ts:47-57](src/hooks/useUser.ts#L47-L57) |
+| `useChests` | `user_chests` | [useChests.ts:43](src/hooks/useChests.ts#L43) |
+| `useEggs` | `rpc get_eggs` | [useEggs.ts:55](src/hooks/useEggs.ts#L55) |
+| `useAchievements` | `rpc get_achievements` | [useAchievements.ts:35](src/hooks/useAchievements.ts#L35) |
+| `useMyTasks` | `rpc check_my_tasks` | [useMyTasks.ts:27](src/hooks/useMyTasks.ts#L27) |
+
+Duas coisas se somam aí:
+
+**O `useUser` é uma cascata dentro de outra.** Ele espera `auth.getUser()` — que é
+ida à rede, não leitura local — para só então buscar `users`. Dessas 20 colunas o
+`<DailyPanel>` usa **uma**: `profile.level`, na linha 57. E o servidor já leu `level`
+na linha 41 da própria página, para a `FaixaDeComando`. São duas viagens do celular
+do aluno para buscar um número que já estava no HTML.
+
+**O preço em bytes é o `@supabase` no bundle.** O chunk de **200 KB** que contém
+`@supabase` está no first-load de **21 das 34 rotas**, e o `/dashboard` é uma delas —
+303 KB dos 806 KB dele estão fora do piso compartilhado, e 200 desses 303 são este
+chunk. Ele está ali porque os hooks acima chamam `createBrowserClient` no cliente.
+
+**A decisão que isto pede, e é por isso que é 🔵:** os painéis do dashboard podem
+virar Server Components com os dados descendo por prop (`server-serialization`), ou
+podem continuar no cliente com deduplicação — a skill sugere SWR
+(`client-swr-dedup`), o que significa **dependência nova**, e isso é escolha do Doug,
+não minha. O caminho barato do meio, sem trocar arquitetura nem adicionar pacote: o
+`<DailyPanel>` já recebe `title` por prop do servidor; receber `level` do mesmo jeito
+apaga o `useUser` inteiro da tela.
+
+**Vale notar o que já foi feito certo:** o comentário da
+[linha 39](src/app/(main)/dashboard/page.tsx#L39) mostra que o XP já foi subido para
+o servidor exatamente por este motivo. Este achado é o resto do mesmo caminho.
+
+**O que NÃO está medido:** quanto as seis requisições atrasam o dashboard num 4G
+real. Contei requisições e bytes de bundle, não milissegundos na tela do aluno.
+**Achado por:** Claude, varredura da `vercel-react-best-practices`, 2026-08-10.
+
+*Atualização de 2026-08-10 — **o `useUser` saiu do dashboard; as outras quatro
+requisições seguem.** O `level` agora desce por prop do servidor, e com ele foram
+embora as duas idas em fila do `useUser` (`auth.getUser()` + o `SELECT` de 20
+colunas). Seis requisições viraram quatro. Guarda no mesmo
+`dashboard-cascata.test.ts`, segundo teste.*
+
+*Um efeito colateral que valeu por si: a trava do `<ActivityToasts>` era
+`profile && !profileLoading`, e ela não estava ali por causa do perfil — era o
+atraso do `useUser` segurando o toast até as missões chegarem, por acidente. Se
+montasse antes, o silenciamento de primeiro mount não achava missão nenhuma para
+silenciar e missão velha voltava a pipocar. A trava agora é `!loading` do
+`useMissions`, que é a condição de verdade. **Não repropor trocar por `!!profile`:**
+o que importa ali são as missões, não o perfil.*
+
+*O que continua igual: o chunk de 200 KB do `@supabase` segue no primeiro load de
+21 rotas — ele entra pelo `ActivityToasts`, que chama `createClient()` direto
+(linha 82) para achar o `userId` do localStorage, e pelos hooks de baú, ovo,
+insígnia e tarefa. Tirá-lo do `/dashboard` é a decisão grande (painéis viram Server
+Component, ou entra SWR) e **continua não tomada**.*
 
 ---
 
