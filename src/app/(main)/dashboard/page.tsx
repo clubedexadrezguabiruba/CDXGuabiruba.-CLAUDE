@@ -38,11 +38,31 @@ export default async function DashboardPage() {
 
   // Avatar + XP na mesma ida: o XP subiu para a faixa de comando, e buscá-lo
   // aqui evita o segundo round-trip que o XPBar fazia pelo useUser no client.
-  const { data: perfil } = await supabase
-    .from("users")
-    .select("avatar_chosen, xp, level, display_name, name")
-    .eq("id", data.user.id)
-    .single();
+  //
+  // AS TRÊS SAEM JUNTAS, e não em fila. Nenhuma depende do resultado da outra —
+  // todas precisam só de `data.user.id`, que já existe desde a linha acima.
+  // Enfileiradas eram três idas ao banco esperando uma à outra; ver T10 em
+  // docs/achados.md. O `redirect` de avatar continua DEPOIS: quem cai nele é o
+  // aluno de primeira visita, e pagar o ranking nesse caso é mais barato do que
+  // segurar as outras duas esperando a resposta do perfil.
+  const [
+    { data: perfil },
+    { data: titleData },
+    { data: ranking, error: rankingError },
+  ] = await Promise.all([
+    supabase
+      .from("users")
+      .select("avatar_chosen, xp, level, display_name, name")
+      .eq("id", data.user.id)
+      .single(),
+    supabase
+      .from("user_titles")
+      .select("current_title")
+      .eq("user_id", data.user.id)
+      .single(),
+    // Ranking top 5 para preview (nomes já mascarados pela RPC)
+    supabase.rpc("get_ranking_with_position", { p_type: "rating", p_limit: 5 }),
+  ]);
 
   if (perfil && !perfil.avatar_chosen) {
     redirect("/criar-personagem");
@@ -52,19 +72,8 @@ export default async function DashboardPage() {
     .trim()
     .split(" ")[0];
 
-  // Buscar título do aluno
-  const { data: titleData } = await supabase
-    .from("user_titles")
-    .select("current_title")
-    .eq("user_id", data.user.id)
-    .single();
   const title = titleData?.current_title ?? "Aprendiz";
 
-  // Ranking top 5 para preview (nomes já mascarados pela RPC)
-  const { data: ranking, error: rankingError } = await supabase.rpc(
-    "get_ranking_with_position",
-    { p_type: "rating", p_limit: 5 }
-  );
   const response = ranking as RankingResponse | null;
   const entries: RankingEntry[] = response?.entries ?? [];
 
@@ -101,7 +110,7 @@ export default async function DashboardPage() {
         </nav>
 
         {/* Blocos client-side: missões, streak, baús, insígnias */}
-        <DailyPanel title={title} />
+        <DailyPanel title={title} level={perfil?.level ?? 1} />
 
         {/* Tarefas da companhia (só aparece se aluno tem tarefas) */}
         <TaskPanel />

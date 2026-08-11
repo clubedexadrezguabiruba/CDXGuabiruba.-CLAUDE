@@ -114,9 +114,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 0 |
+| **Commits à frente de `origin/main`** | 1 |
 | **Árvore** | **7 arquivos sujos** |
-| **Último commit** | 3ba2dc4 · 2026-08-10 · docs(avatar): F.2 provado na tela — a matview refrescou sozinha e o D8 não perdeu nada |
+| **Último commit** | 2e73f41 · 2026-08-10 · chore(skills): a react-best-practices da Vercel entra vendorizada, e sem o compilado de 108 KB |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -167,7 +167,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 81 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 14 |
+| **Arquivos de teste** | 16 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes
@@ -175,7 +175,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-07 |
+| `CLAUDE.md` | 2026-08-10 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-08 |
