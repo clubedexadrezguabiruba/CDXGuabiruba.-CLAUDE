@@ -87,8 +87,19 @@ test.describe("fluxo autenticado", () => {
     // deriva display_name da parte antes do @ por LGPD
     // (20260216180500_auth_trigger.sql:19-32). Assertar o email completo
     // aqui era expectativa obsoleta.
+    //
+    // `exact: true`, e não `.first()`. Desde 2026-08-03 (c0404ed, "o
+    // Quartel-General entra na direção A") o dashboard também SAÚDA pelo nome —
+    // "Bom te ver de volta, {nome}." —, então o match por substring passou a
+    // achar DOIS elementos e a violar o modo estrito. O `<span>` da navbar tem
+    // exatamente o nome; o `<p>` da saudação o tem dentro de uma frase, e só o
+    // primeiro é o que esta linha quer provar.
+    //
+    // `.first()` também passaria, e passaria calado no dia em que a navbar
+    // parasse de mostrar o nome — bastaria a saudação existir. Ficou quebrada uma
+    // semana sem ninguém ver porque a suíte já estava morta (ver o G13).
     const displayName = TEST_EMAIL.split("@")[0];
-    await expect(page.getByText(displayName)).toBeVisible();
+    await expect(page.getByText(displayName, { exact: true })).toBeVisible();
 
     // Email completo não deve aparecer na UI
     await expect(page.getByText(TEST_EMAIL)).toHaveCount(0);

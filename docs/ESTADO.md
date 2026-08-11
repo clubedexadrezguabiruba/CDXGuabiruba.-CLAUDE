@@ -51,10 +51,23 @@ gate e número medido no fim de cada um. Onde ele divergir dos docs 14 e 15, **e
 vence** — os dois foram escritos quando a v2 ainda era o caminho. O T8 deixou de
 estar parado: fecha no Bloco C.
 
-⚠️ **A ordem tem armadilha, e é o R4 de novo.** Não há banco separado (D3), então
-toda migration bate em produção na hora. Do **Bloco B** em diante o site no ar fica
-quebrado, porque a `main` ainda chama `equip_item` e lê `user_inventory`. É escolha
-consciente — zero alunos hoje — e a `main` só é atualizada uma vez, no **Bloco F**.
+✅ **A TROCA DE PILHA TERMINOU EM 2026-08-10.** O plano do doc 20 está **inteiro
+fechado**: A, B, C, D, E.1–E.5, F.1 e F.2. O avatar kokeshi está **no ar**, nas três
+telas (`/criar-personagem`, `/perfil`, `/perfil/[userId]`), com a identidade em
+`avatar_skin`/`avatar_hair`/`avatar_hair_color` e o desbloqueio de cabelo decidido
+pelo servidor. O Doug conferiu na tela: a escolha vai ao servidor e volta, a matview
+se refresca sozinha, e o cadeado vem do `avatar_hair_catalog`.
+
+O **E.5** fechou por último — a suíte e2e reescrita para a pilha nova
+(`avatar-identidade.spec.ts` **4/4**, `auth.spec.ts` **3/3**). Ela estava morta desde
+o Bloco D, e nenhum gate acusou: virou o **G13**.
+
+⚠️ **A armadilha de ordem que este plano carregou não vale mais, e o registro fica
+como precedente.** Não há banco separado (D3), então toda migration bate em produção
+na hora — do Bloco B ao F.1 o site no ar ficou quebrado de propósito (zero alunos
+hoje). A `main` foi atualizada em duas janelas, F.1 e F.2, e não numa só como o plano
+previa: o motivo original terminou no Bloco D, quando o cliente voltou a bater com o
+banco.
 
 **O R1 fechou em 2026-08-09** — nenhuma das 30 tabelas de `public` aceita escrita
 direta do navegador, `verify:all` está verde. Três migrations (`20260809120000`,
@@ -69,10 +82,10 @@ O merge saiu fast-forward (`54d7e8a` → `8d31bca`, 76 commits, zero conflito), 
 disparou a Vercel, e o Doug conferiu as duas telas no ar: **as duas salvam**. A `main`
 publicada e esta branch estão no mesmo commit.
 
-**O que o Doug viu e NÃO é regressão:** o perfil no ar ainda mostra o avatar da pilha
-v2. É o esperado — `compor()` só é importado por `/dev/avatar-kokeshi`, e as telas de
-produção seguem em `AvatarDisplay`. **Trocar um pelo outro é o que o plano acima
-executa**, e o site no ar segue mostrando o boneco velho até o Bloco F.
+**O boneco velho saiu do ar no F.2.** Até o Bloco D o perfil publicado mostrava o
+avatar da pilha v2, porque `compor()` só era importado por `/dev/avatar-kokeshi`.
+Hoje `AvatarDisplay` não existe e as três telas servem `compor()` pelo
+`<AvatarKokeshi>` — 0 chamadas do componente velho, medido.
 
 **O avatar espera, e o que sobrou dele está em ordem:** colar espetado e chanel em
 `CABELOS` · reentrada da `entrada-2` quando o retoque do Doug chegar (ajuste fino,
@@ -101,9 +114,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 2 |
-| **Árvore** | **3 arquivos sujos** |
-| **Último commit** | bd4222c · 2026-08-10 · docs(avatar): F.2 fechado — o E está no ar, e avatar_chosen foi de 8 para 0 |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **7 arquivos sujos** |
+| **Último commit** | 3ba2dc4 · 2026-08-10 · docs(avatar): F.2 provado na tela — a matview refrescou sozinha e o D8 não perdeu nada |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

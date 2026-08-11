@@ -336,6 +336,88 @@ cria as três colunas (`avatar_skin`, `avatar_hair`, `avatar_hair_color`) com de
 
 ## 🟡 Promessa sem lastro
 
+### G14 — o e2e roda contra qualquer app que esteja na porta 3000, e reporta como falha desta
+**Prova:** `MEDIDO` — 2026-08-10, run real do E.5. `playwright.config.ts:88-93`
+(`reuseExistingServer: true` + `baseURL` fixo em `http://localhost:3000`). Achado
+pelo Claude, executando o E.5. Registrado e **não consertado**, pela regra 9.
+
+**Aconteceu, custou 10,5 minutos e uma causa errada.** Havia um `next dev` de
+**outro projeto** do Doug escutando na 3000 —
+`Documents/ChatGPT/laboratório de finais`. O Playwright viu a porta ocupada,
+reusou, e rodou a suíte inteira contra o app errado. Medido no servidor vivo:
+
+| rota | resposta | por quê |
+|---|---|---|
+| `/` | 200, 45 KB, `<title>Laboratório de Finais</title>` | a home do OUTRO app |
+| `/login` | **404** | rota que lá não existe |
+| `/dashboard` | **404** | idem — e por isso "sem redirect de auth" |
+
+**O modo de falha é o pior possível: ele imita defeito de código.** As seis
+falhas foram `page.fill: waiting for locator('input[type="email"]')` e
+`toHaveURL(/\/login/) recebeu /dashboard` — que se leem, palavra por palavra,
+como "a tela de login quebrou" e "o proxy de auth parou de redirecionar". Duas
+frases sobre código que não foi executado nenhuma vez.
+
+**O único teste verde foi o único que não abre navegador** (a recusa da RPC, por
+`fetch` direto no Supabase). É o que separou ambiente de código, e foi por acaso —
+não há nada na suíte que faça essa separação de propósito.
+
+**O precedente já estava escrito, e não bastou.** O `playwright.config.ts` já
+avisa em comentário que "quando muitos testes estouram o tempo, a causa costuma
+ser a máquina" e manda reiniciar o dev server. O aviso trata do servidor CERTO
+lento; este caso é o servidor ERRADO respondendo rápido, e o comentário não cobre.
+
+**O que falta para fechar:** decisão do Doug entre três, e nenhuma é trabalho de
+bloco de avatar:
+1. **`reuseExistingServer: false`** — o mais simples; o Playwright sempre sobe o
+   seu. Custa: falha se a porta estiver ocupada, o que é exatamente o aviso que
+   faltou, e obriga a esperar o boot a cada run;
+2. **porta própria** para o e2e (`3100`, por exemplo), no `baseURL` e no
+   `webServer.port` — some a colisão com qualquer outro projeto;
+3. **conferência de identidade no `globalSetup`** — bater em `/` e exigir a marca
+   do Recruta 64 antes do primeiro teste, falhando com "há OUTRO app na 3000" em
+   vez de 149 timeouts. É a única que diz a verdade na primeira linha.
+
+### G13 — a suíte e2e pode morrer inteira sem nenhum gate ficar vermelho
+**Prova:** `MEDIDO` — 2026-08-10, `tsconfig.json:34-40` + `package.json` (`lint`
+= `eslint src/`) + `.github/workflows/ci.yml`. Achado pelo Claude, executando o
+E.5. Registrado e **não consertado**, pela regra 9.
+
+**O caso é desta sessão, e não é hipótese.** O Bloco D apagou a tela do avatar v2.
+`e2e/helpers/auth-helpers.ts` continuou dirigindo aquela tela — clicando num
+`<img alt="Masculino">` e esperando um "Confirmar" que nasce `disabled` —, e é o
+helper por onde passa **todo** login de usuário novo (`avatar_chosen` nasce
+`false`, então a conta nova sempre cai no gate). Ou seja: **6 specs mortos**, e
+entre o Bloco D e o E.5 nada avisou. Nesse intervalo o repositório fechou o F.1 e
+o F.2 — dois pushes para produção — com `verify:all` exit 0, 478 testes verdes e
+`build` verde.
+
+**As três coberturas param antes do `e2e/`, cada uma por um motivo diferente:**
+
+| | escopo | por quê |
+|---|---|---|
+| `npm run typecheck` | `src/**` + `.next/types/**` | `tsconfig.json:34-40`, por omissão |
+| `npm run lint` | `eslint src/` | por omissão |
+| CI | tudo menos o e2e | **de propósito** — o e2e bate em produção |
+
+São **16 arquivos e 6.001 linhas** sem uma linha de conferência estática. Rodar
+`tsc` neles à mão funciona (feito no E.5: 0 erros, com `--lib dom.iterable`), o
+que mostra que não há impedimento técnico — só ninguém roda.
+
+⚠️ **E o remédio óbvio não cobre o buraco.** `tsc` e `eslint` no `e2e/` **não
+teriam pego este caso**: `page.getByAltText("Masculino")` é código tipado
+corretamente que aponta para um DOM que não existe mais. O que morre aqui morre
+por fora do tipo. Uma conferência que pegaria é do gênero do
+`verify:no-dup-rpc` — grep do vocabulário morto (`equip_item`, `update_avatar_base`,
+`user_inventory`) sobre `e2e/`, com a ressalva que o E.4 já pagou uma vez: a
+palavra sobrevive em COMENTÁRIO, e um gate que não os descarta mede a lápide em
+vez do código (foi assim que `perfilCounters.test.ts` passou por três blocos).
+
+**O que falta para fechar:** decisão do Doug sobre qual das duas — cobertura
+estática (barata, pega o erro de digitação e a assinatura mudada) ou gate de
+vocabulário morto (pega o caso real acima, e precisa tirar comentário antes de
+procurar). Não são excludentes, e nenhuma das duas é trabalho do Bloco E.
+
 ### G12 — o seletor de cabelo oferece 6 opções e só 4 são reconhecíveis pelo desenho
 **Prova:** `MEDIDO` — 2026-08-10, rasterização das 6 fichas do seletor a 2× no
 chromium, comparação pixel a pixel par a par. Achado pelo Claude, executando o

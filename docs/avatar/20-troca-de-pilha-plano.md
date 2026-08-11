@@ -840,7 +840,108 @@ apagado no Bloco B —, nenhum baú cria ovo até haver arte. Daí:
   rasterização par a par) e o **D7** (o `/perfil` ficou com dois idiomas visuais
   na mesma tela — 70 cores cruas legadas ao lado dos blocos novos em token).
 
-- [ ] **E.5 — o e2e reescrito.**
+- [x] **E.5 fechado em 2026-08-10 — o e2e reescrito, e rodado pelo Doug.**
+
+  📊 **O número:** `avatar-identidade.spec.ts` **4/4 em 36,5 s** e `auth.spec.ts`
+  **3/3 em 12,9 s**. `typecheck` 0 · `lint` 0 erros · **478/478** testes ·
+  `build` verde · `verify:all` exit 0 · **`tsc` à mão sobre os três arquivos do
+  e2e: 0 erros** (o `tsconfig.json` inclui só `src/**`, então `npm run typecheck`
+  não olha para `e2e/` — é o G13).
+
+  **O run é do Doug, e isso é estrutural.** `.claude/settings.json` nega
+  `npm run test:e2e` e `npx playwright test`: a suíte bate no Supabase de
+  **produção** e cria usuários reais. Escrever é meu; disparar é dele.
+
+  ⚠️ **O achado que abriu o bloco não era do teste de avatar — era da suíte
+  inteira.** `settleAfterLogin` dirigia a tela v2: clicava num
+  `<img alt="Masculino">` e esperava um "Confirmar" que nascia `disabled`. Como
+  `avatar_chosen` nasce `false`, **toda** conta nova da suíte cai no gate — então
+  os **6 specs** que criam usuário (`auth`, `puzzles`, `premove`, `bots-analysis`,
+  `bots-ui-audit`, `dev-avatar`, mais `turmas` e `phase9-teacher` pelos helpers)
+  estavam mortos desde o Bloco D. É a repetição exata do que o docstring do próprio
+  helper já registrava sobre março de 2026, e virou o **G13**: nenhum gate fica
+  vermelho quando o e2e morre.
+
+  **A prova de hidratação teve de mudar de sinal, e o motivo é bom.** Na tela v2
+  "Confirmar" nascia `disabled={!selected || saving}`, e esperá-lo habilitar
+  provava que o clique no card tinha registrado. A tela nova **não tem estado
+  inválido** — os defaults do banco (pele 2, careca, cor 0) são escolha legítima,
+  e o botão só desliga enquanto salva. Sem sinal, um clique anterior à hidratação
+  some sem rastro. O sinal novo é `aria-pressed` numa amostra de pele: clicar em
+  "Tom 1" e exigir que ela vire `true` prova que o React está vivo **naquela
+  árvore**, e o botão de confirmar é filho da mesma. Um probe, não um retry às
+  cegas.
+
+  **O spec novo (`e2e/avatar-identidade.spec.ts`) sucede o `phase8-avatar.spec.ts`,
+  apagado no Bloco D.** O que ele herda é o assunto — a Regra Inviolável nº 1 —,
+  não o objeto: de `equip_item` para `update_avatar_identity`. Quatro testes, e
+  cada um mede o que só o navegador responde:
+
+  1. **a criação grava as três colunas** — o cadeado desenhado é comparado
+     **nível a nível** com `avatar_hair_catalog` (listas ordenadas, não contagem:
+     dois cabelos no mesmo nível passariam por uma busca ficha a ficha), e o par
+     nome↔índice de pele e cor é conferido dos dois lados — clica pelo NOME que o
+     aluno lê, confere pelo ÍNDICE que o banco guarda;
+  2. **o cadeado é do servidor** — a RPC é chamada com o token do aluno (nunca
+     `service_role`, que passaria por cima da RLS e deixaria `auth.uid()` nulo)
+     pedindo o cabelo travado. É o caminho de quem edita o DOM para habilitar a
+     ficha. Exige a recusa **e** que ela não deixe meia gravação;
+  3. **subir de nível abre o cadeado** — mesmo código, nível diferente, escrito
+     direto na tabela. Se a régua estivesse chumbada no cliente, o cadeado ficaria;
+  4. **o `/perfil/[userId]` renderiza** — a RPC do E.3 perdeu 3 chaves e ganhou 3,
+     e uma tela lendo chave velha só quebra aqui. O nome é mascarado por
+     `mask_display_name`, então o teste não o adivinha: exige que o boneco anuncie
+     o **mesmo** nome que o cabeçalho mostra.
+
+  **A folha única foi medida junto do teste 1, e não em teste próprio, de
+  propósito:** aquela tela já tem 7 bonecos (o palco + as 6 fichas) e cada login
+  contra produção custa dez segundos. `kk-respira` é regra da folha e de mais
+  nada — no modo `folhaExterna` o `compor()` não emite `<style>` dentro do `<svg>`
+  (conferido: 1 524 bytes, 0 `<style>` embutido) —, então todo bloco que contém a
+  string É a folha. É o número do E.1 saindo do chromium de verdade, com o React 19
+  deduplicando `<style href precedence>`, em vez de node medindo string.
+
+  **Cada teste declara a própria premissa em vez de herdar do anterior.** O nível
+  do aluno é escrito antes de cada um dos dois que dependem dele. Um arquivo em
+  que a ordem dos testes é a premissa quebra no dia em que alguém rodar `--grep`.
+
+  ⚠️ **Quatro rodadas vermelhas até o verde, e NENHUMA acusou código de produto.**
+  Vale escrito porque as três primeiras se leem, palavra por palavra, como defeito
+  do app — e nenhuma era:
+
+  1. **Outro app na porta 3000.** 10,5 min de vermelho contra o
+     `Laboratório de Finais`, que o `reuseExistingServer: true` reusou. As falhas
+     diziam "a tela de login quebrou" e "o proxy parou de redirecionar" sobre
+     código que não rodou uma vez. Virou o **G14**;
+  2. **`getByRole("alert")` casando o overlay de dev do Next.** O Playwright
+     atravessa shadow DOM, e o overlay põe um `alert` VAZIO em toda página — o
+     `.or()` resolvia na hora e o helper morria com a mensagem em branco,
+     acusando o próprio detector. Corrigido com `filter({ hasText: /\S/ })`:
+     alerta sem texto não tem o que reportar, e a régua não depende da cópia do
+     produto nem da tag do overlay;
+  3. **Uma cópia de UI que mudou há uma semana.** `auth.spec.ts:91` casava o nome
+     por substring, e desde **2026-08-03** (c0404ed, "o Quartel-General entra na
+     direção A") o dashboard também SAÚDA pelo nome — dois elementos, violação de
+     modo estrito. É o **G13 se materializando pela segunda vez na mesma noite**:
+     quebrada por sete dias, invisível porque a suíte já estava morta. Resolvido
+     com `exact: true`, e não com `.first()` — o `.first()` passaria calado no dia
+     em que a navbar parasse de mostrar o nome.
+
+  **O sinal que separou ambiente de código foi acidental, e é o que o G14 pede
+  para deixar de ser.** Na primeira rodada o único teste verde foi o único que não
+  abre navegador (a recusa da RPC, por `fetch` direto). Foi ele que provou que
+  Supabase, credenciais e catálogo estavam de pé enquanto tudo o mais mentia.
+
+  **Como rodar:**
+
+  ```
+  npm run test:e2e -- e2e/avatar-identidade.spec.ts --reporter=line
+  npm run test:e2e -- e2e/auth.spec.ts --reporter=line
+  ```
+
+  O primeiro prova o avatar; o segundo prova o **helper**, num spec que não é de
+  avatar — que é onde o estrago do Bloco D estava. Antes de rodar, confira que a
+  3000 é deste projeto: `/login` tem de devolver 200 com `<title>Recruta 64</title>`. Depois deles, a suíte inteira.
 
 ### Bloco F — publicar
 
