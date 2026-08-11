@@ -55,6 +55,22 @@
 > **Régua de patentes:** `title_tiers.lessons_required` passa de `tier * 15` para o
 > acumulado real — **0 · 26 · 47 · 66 · 84 · 101 · 115 · 126**. É `UPDATE` em dados,
 > nunca edição de função.
+>
+> ✅ **Decisão oficial do Doug, 2026-08-11 — e o "quando" importa.** O princípio
+> ficou: *a patente vem de concluir uma trilha*. O achado **T1** fechou com uma
+> medição que muda a leitura desta linha: `tier * 15` **já era** a fronteira de
+> trilha, porque `recruta` tem 15 aulas e `soldado` tem 15. Não havia duas réguas
+> concorrendo — havia a mesma régua, escrita contra dois conteúdos diferentes.
+>
+> Por isso o `UPDATE` acima **não foi aplicado ainda, e é de propósito**: com as
+> 30 aulas de hoje, o marco 26 cairia no meio da trilha `soldado`, que é o
+> defeito que a régua por trilha existe para evitar. Ele entra no **B0.5**, na
+> mesma migration que trouxer as 26 aulas da T1.
+>
+> **O que garante que não seja esquecido:** `title_tiers.trail` (migration
+> `20260811120000`) amarra cada patente à trilha que ela fecha, e a conferência
+> (e) do `verify:avatar-db` mede o acumulado real em `lessons`. No dia em que a
+> T1 virar 26 aulas sem o `UPDATE`, o gate reprova nomeando o tier.
 
 > **Sobre os dois rótulos que não coincidem:** completar a T6 veste a patente
 > **Grão-Mestre** (`title_tiers`, tier 6), mas a trilha 7 se chama **Mestre** — o slug

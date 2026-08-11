@@ -92,14 +92,18 @@ Hoje `AvatarDisplay` não existe e as três telas servem `compor()` pelo
 **não** será refeita) · rodada de unificação (espetado pela variante `lei`, com
 nova aprovação visual) · a luz, por último (decisão B).
 
-**Decisões travando trabalho:**
+**Decisões travando trabalho: nenhuma.** A última caiu em 2026-08-11 —
 
-- **Régua da patente — duas versões vivas, não três** (achado **T1**). O histórico
-  versionado e o doc 15 §3 **concordam em 15 aulas** por nível; o currículo quer as
-  fronteiras de trilha (26·47·66·84·101·115·126). A versão de 30 morreu duas horas
-  depois de nascer, na migration seguinte. Trava o Bloco 7b e o B0.5 do currículo.
-  Nenhum script resolve isto — é escolha, e é do Doug. **Falta medir**
-  `title_tiers.lessons_required` no banco: migration prova intenção, não estado.
+- ~~**Régua da patente — duas versões vivas, não três** (achado **T1**)~~
+  ✅ **DECIDIDO em 2026-08-11: a patente vem de concluir uma trilha.** Medido no
+  banco antes de decidir: `tier * 15` **já era** a fronteira de trilha, porque
+  `recruta` tem 15 aulas e `soldado` tem 15. Não eram duas réguas — era a mesma,
+  escrita contra dois conteúdos. **Nenhum marco mudou**, e nenhum dos 2 alunos
+  promovidos mudou de patente. O que mudou é que o princípio virou dado
+  (`title_tiers.trail`) e trava de gate (conferência (e) do `verify:avatar-db`,
+  que mede o acumulado real em `lessons`). **Destrava o Bloco 7b e o B0.5** — e o
+  B0.5 passa a se cobrar sozinho: subir as 26 aulas da T1 sem o `UPDATE` deixa o
+  `verify:all` vermelho.
 
 **Pendências grandes fora do avatar:** fase 11 (PWA — não existe manifest nem
 service worker) e fase 12 (lançamento). Fase 6C (extras) segue aberta.
@@ -114,9 +118,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **7 arquivos sujos** |
-| **Último commit** | 2e73f41 · 2026-08-10 · chore(skills): a react-best-practices da Vercel entra vendorizada, e sem o compilado de 108 KB |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **9 arquivos sujos** |
+| **Último commit** | 037c990 · 2026-08-11 · perf(dashboard): as três consultas saem juntas, o level desce do servidor, e o howler só carrega para tocar |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -165,7 +169,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 81 |
+| **Migrations** | 82 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 16 |
 | **Primitivos de UI** | 4 |

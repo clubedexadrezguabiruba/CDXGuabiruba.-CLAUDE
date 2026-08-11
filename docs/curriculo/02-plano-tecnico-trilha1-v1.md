@@ -876,9 +876,18 @@ O resto é `npm test`. **Sem gate por formato.**
   deveria estar ajudando a decidir.
 - **B0.4** Formato do arquivo de autoria por aula (§5.1) + script de validação
   por motor e precômputo de gabaritos.
-- **B0.5** Régua da patente: executar a decisão já tomada no currículo
-  (`title_tiers.lessons_required` → 0·26·47·66·84·101·115·126) — é a única
-  compatível com uma T1 de 26 aulas. *(Veto em uma linha se quiser outra.)*
+- **B0.5** Régua da patente: `title_tiers.lessons_required` → 0·26·47·66·84·101·115·126.
+  ✅ **Decidido pelo Doug em 2026-08-11 — não há mais veto a dar.** O princípio é
+  *a patente vem de concluir uma trilha*, e 26·47·… é o que ele significa com a
+  T1 de 26 aulas. O achado **T1** fechou nesse dia.
+  **Só que este `UPDATE` não é o começo do B0.5 — é a última linha dele.** Com as
+  30 aulas de hoje o marco 26 cairia no meio da trilha `soldado`; ele entra na
+  mesma migration que trouxer as 26 aulas da T1, nunca antes.
+  **E não depende mais de memória:** `title_tiers.trail` já amarra cada patente à
+  trilha que ela fecha (migration `20260811120000`), e a conferência (e) do
+  `verify:avatar-db` mede o acumulado real em `lessons`. **Subir as 26 aulas sem
+  o `UPDATE` deixa o `verify:all` vermelho**, nomeando o tier e o número que
+  faltou. O B0.5 se cobra sozinho.
 - **B0.6** Ensinar `scripts/estado.ts` a contar os blocos deste doc (mesma
   convenção de tarefa numerada do doc 14 do avatar).
 

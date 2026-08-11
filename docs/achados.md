@@ -76,23 +76,59 @@ lista.
 
 ## 🟠 Trava trabalho
 
-### T1 — A régua da patente: por trilha, ou por dose fixa?
-**Prova:** `VERSIONADO` — `20260729140000_patente_marcos_15_aulas.sql:31`
+### T1 — ~~A régua da patente: por trilha, ou por dose fixa?~~ FECHADO
+> ✅ **Decidido pelo Doug em 2026-08-11: a patente vem de concluir uma trilha.**
+> Fechado no mesmo dia, porque a medição mostrou que a decisão **não exige mudar
+> número nenhum** — só amarrar o princípio. `title_tiers.trail` +
+> `verify:avatar-db` (e), migration `20260811120000_t1_patente_por_trilha.sql`.
+> Gate de **24 passed / 1 failed** para **27 passed / 0 failed**. O corpo abaixo
+> fica como está — é ele que explica por que a pergunta existia.
+
+**A medição que virou a pergunta do avesso** (`MEDIDO` — 2026-08-11, contra
+produção, leitura pura):
+
+`title_tiers.lessons_required` é `tier * 15`, 8 tiers, Lenda em 105. E as trilhas
+do banco são `recruta` (15 aulas) e `soldado` (15). Ou seja: **os marcos 15 e 30
+já são as fronteiras das duas trilhas.** A régua viva já obedecia ao princípio —
+15 nunca foi uma alternativa a "por trilha", era a consequência dele com o
+conteúdo de hoje. As duas opções da pergunta original eram a mesma opção, vista
+de dois anos diferentes.
+
+Trocar agora para o acumulado do currículo colocaria o marco 26 no **meio** da
+trilha `soldado` (aulas 16 a 30): o aluno terminaria a trilha inteira sem ganhar
+nada e ganharia a patente onze aulas antes, sem nada na tela para explicar. É o
+defeito que a decisão existe para evitar.
+
+**O estado dos alunos, medido:** 19 contas; **2** cruzaram o tier 1
+(`aulas-sol+1785163858599` com 22 aulas, `teacherdoug001` com 15); ninguém chegou
+ao tier 2. Nenhuma muda de patente com a decisão — e não mudaria nem sob a régua
+do currículo, porque a marca d'água de `recompute_user_title` nunca rebaixa.
+
+**O que a decisão trocou de lugar:** o número deixou de ser digitado e passou a
+ser conferido. `title_tiers.trail` diz qual trilha cada patente fecha, e o gate
+mede o acumulado em `lessons` contra `lessons_required`. Quando a T1 crescer para
+26 aulas, o gate reprova até o `UPDATE` acompanhar — **o B0.5 do currículo deixou
+de depender de alguém lembrar.**
+
+**E isso foi medido, não prometido.** Simulando a T1 já com 26 aulas contra o
+banco real (`.scratch/t1-simula-26.ts`, leitura pura), a conferência (e) reprova
+os dois marcos com a linha inteira: *"Soldado fecha a trilha `recruta`; o
+acumulado até ela é 26 aulas, e o marco está em 15"* — e o `Aspirante` junto, em
+41 contra 30.
+
+**O corpo original da pergunta**, preservado:
 
 > A patente acompanha cada **trilha** curricular, com marcos irregulares
 > 26·47·66·84·101·115·126 — ou é progressão **gamificada independente**, a cada
 > 15 aulas?
 
-Não são três versões vivas, como o `ESTADO.md` diz. São duas: o histórico
+Não são três versões vivas, como o `ESTADO.md` dizia. São duas: o histórico
 versionado e o doc 15 §3 **concordam em 15**; o currículo quer as fronteiras de
 trilha. A versão de 30 morreu duas horas depois de nascer, na migration
 seguinte.
 
-**Trava:** o Bloco 7b do avatar (uniforme por patente) e o B0.5 do currículo, que
-assume a escada do currículo enquanto o banco tem 15.
-**Falta ainda:** medir `title_tiers.lessons_required` no banco. Migration prova
-intenção, não estado.
-**Quem decide:** Doug. É pedagogia e produto, não investigação técnica.
+**Travava:** o Bloco 7b do avatar (uniforme por patente) e o B0.5 do currículo.
+Os dois estão destravados.
 
 ### T9 — ~~o baú deixou de ser recompensa: 55% dele vai para uma fila que rende 9 XP/dia~~ FECHADO
 > ✅ **Fechado em 2026-08-10 pelo E.2**, que era a condição de fechamento escrita
@@ -707,6 +743,31 @@ mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em ve
 
 ## 🔵 Decisão ou divergência
 
+### D11 — as duas patentes do topo não têm cor, e três documentos discordam de quantas são
+**Prova:** `MEDIDO` — 2026-08-11, contra produção, ao fechar o **T1**. Achado
+pelo Claude. Registrado e **não consertado**, pela regra 9.
+
+O banco tem **8 tiers** e termina em `Grão-Mestre` (6) e `Lenda` (7). A paleta
+travada por `verify:paleta-patentes` — `scripts/avatar/patentes.ts` — tem **6
+patentes** e termina em **`Mestre`**. Nenhum dos dois nomes do topo do banco
+existe na paleta.
+
+O `Badge` (`src/components/ui/Badge.tsx:45`) faz `PATENTES.find(...)` e cai em
+`undefined` sem quebrar: a pílula sai sem o ponto de cor. **Não é bug em
+produção** — ninguém passou do tier 1, e o `Aprendiz` já usa esse caminho de
+propósito. É dívida que vence quando alguém chegar lá.
+
+**Três documentos, três respostas:** o doc 15 afirma que *"o tier 7 (Lenda) saiu
+da escada"* (`15:1060`) e o banco discorda; o doc 17 desenha 6 patentes; a
+migration insere 8. O currículo já resolveu **metade** disso: a §3 (`01:59-62`)
+registra que a T6 veste `Grão-Mestre` e a trilha 7 se chama `mestre`, e que os
+dois rótulos são dados reais — para ninguém "corrigir" um pelo outro. O que
+sobra sem dono é a **paleta**, que não conhece nenhum dos dois.
+
+**O que falta para fechar:** decidir se a escada tem 7 patentes ou 8, e dar cor
+às que faltarem em `scripts/avatar/patentes.ts`. É decisão de arte e de produto,
+e mexe no orçamento de uniformes do Bloco 7b.
+
 ### D7 — o `/perfil` ficou com dois idiomas visuais na mesma tela
 **Prova:** `MEDIDO` — 2026-08-10, `verify:design-tokens` depois do E.4. Achado
 pelo Claude, executando o E.4. Registrado e **não consertado**, pela regra 9.
@@ -1088,6 +1149,7 @@ Component, ou entra SWR) e **continua não tomada**.*
 
 | # | Achado | Fechado em | Como |
 |---|---|---|---|
+| ✅ | **T1** — a régua da patente: por trilha, ou por dose fixa de 15 aulas? Travava o Bloco 7b do avatar e o B0.5 do currículo | 2026-08-11 | **fechado por decisão + medição, sem mudar marco nenhum.** Medido contra produção: `tier * 15` já *era* a fronteira de trilha (`recruta`=15, `soldado`=30) — as duas opções eram a mesma, vistas de anos diferentes. O Doug decidiu **"a patente vem de concluir uma trilha"**, e o princípio virou dado (`title_tiers.trail`, migration `20260811120000`) e trava (conferência (e) do `verify:avatar-db`, que mede o acumulado em `lessons`). Gate de 24/1 para 26/0. Nenhum dos 2 alunos promovidos mudou de patente |
 | ✅ | `user_public_profiles` era MATERIALIZED VIEW legível por `anon` e `authenticated`, com `display_name` cru e `ranking_visible` dentro — o opt-out era cortesia da camada de RPC | 2026-08-06 | gate estendido (§4 de `verify:privileges`), reprovou, migration `20260806150000` aplicada, gate passou. `81a2723` |
 | ✅ | Doc 13 inerte, 92 itens e zero marcados desde que nasceu | 2026-08-06 | passou a ser usado: 2 comprovados, e a linha do opt-out virou conserto medido. `260e657`, `ed393ad` |
 | ✅ | `CLAUDE.md` e o currículo §13 afirmavam que o plano técnico da T1 não existia | 2026-08-06 | corrigido; `scripts/estado.ts` passou a vigiar o doc 02. `f6b97f8` |

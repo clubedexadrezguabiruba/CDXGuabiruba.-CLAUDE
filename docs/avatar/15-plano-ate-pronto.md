@@ -102,6 +102,24 @@ Sem uma definição, "polido" não fecha nunca. Proponho estas seis:
 
 ## D-A — A régua da patente ✅ **DECIDIDA em 2026-07-29**
 
+> ⚠️ **EMENDA de 2026-08-11 — o princípio é a trilha; 15 é consequência, não
+> régua.** Esta seção descreve "15 aulas" como se fosse a definição, e a §3 do
+> currículo pede o acumulado real (26·47·66·84·101·115·126). A pergunta virou o
+> achado **T1**, e a medição contra produção mostrou que **as duas eram a mesma
+> coisa**: `recruta` tem 15 aulas e `soldado` tem 15, então os marcos 15 e 30
+> **já são** as fronteiras das duas trilhas.
+>
+> **Decisão do Doug, 2026-08-11: a patente vem de concluir uma trilha.** O
+> número deixa de ser digitado e passa a ser medido — `title_tiers.trail` diz
+> qual trilha cada patente fecha (migration `20260811120000`), e a conferência
+> **(e)** do `verify:avatar-db` compara `lessons_required` com o acumulado real
+> de `lessons`. **Nada muda hoje.** Quando a T1 crescer para 26 aulas, o gate
+> reprova até o `UPDATE` acompanhar.
+>
+> Leia a tabela abaixo assim: os tiers 1 e 2 são medidos e conferidos; **os
+> tiers 3 a 7 são placeholder** de trilha que ainda não tem uma única aula, e o
+> gate não os cobra até ela ter.
+
 **Decisão do usuário:** a patente vem de concluir uma **trilha de nível**, e cada
 nível são **15 aulas**. Os níveis usam a nomenclatura do método holandês
 (Stappenmethode): **Passo 1** a **Passo 7**.

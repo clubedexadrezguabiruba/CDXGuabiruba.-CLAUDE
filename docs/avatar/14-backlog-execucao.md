@@ -15,12 +15,19 @@
 >
 > **Decisões que mudaram depois do doc 12:**
 > - ~~**D25 revertida:** as trilhas vão crescer para 7, então a patente volta a
->   ser por **trilha completa**.~~ **Revogado em 2026-07-29.** A patente passou a
->   ser por **trilha de nível de 30 aulas**, e a régua virou dado
->   (`title_tiers`). Ver F3a. O motivo: o levantamento contra produção mostrou
->   que o defeito não era a régua nem a premissa não verificada — era um
->   `UPDATE` sem `UPSERT` que perdia a concessão em silêncio para quem não
->   tinha linha em `user_titles`.
+>   ser por **trilha completa**.~~ **Revogado em 2026-07-29**, e **restabelecido
+>   em 2026-08-11**: a patente vem de concluir uma trilha, ponto. O que o
+>   2026-07-29 revogou foi o *método* — a régua virou dado (`title_tiers`) em
+>   vez de contar trilhas dentro da função. O motivo: o levantamento contra
+>   produção mostrou que o defeito não era a régua nem a premissa não
+>   verificada — era um `UPDATE` sem `UPSERT` que perdia a concessão em silêncio
+>   para quem não tinha linha em `user_titles`.
+>   **O marco de 15 aulas nunca foi outra régua:** `recruta` tem 15 aulas e
+>   `soldado` tem 15, então 15 e 30 já *são* as fronteiras das trilhas. Desde
+>   2026-08-11 isso é dado (`title_tiers.trail`) e trava de gate, não
+>   coincidência. Ver F3a e o **T1** em `docs/achados.md`.
+>   *(A linha dizia "trilha de nível de 30 aulas" — número de uma migration que
+>   viveu duas horas em 2026-07-29 e foi substituída por 15 na seguinte.)*
 > - **Arte:** eu gero a primeira passada dos 45 assets em SVG; você refina.
 > - **Sem piloto** antes do redesenho — decisão do usuário, registrada.
 
@@ -425,6 +432,17 @@ uma trilha de nível, e cada nível são **15 aulas**. Os níveis usam a
 nomenclatura do método holandês (Stappenmethode): **Passo 1** a **Passo 7**.
 Mudar marco ou acrescentar patente é `UPDATE`/`INSERT` em `title_tiers`, nunca
 editar função.
+
+> ⚠️ **EMENDA de 2026-08-11 (achado T1 fechado):** o princípio é **a trilha**; as
+> 15 aulas são a consequência dele com o conteúdo de hoje, não uma régua
+> paralela. `recruta` tem 15 aulas e `soldado` tem 15 — os marcos 15 e 30 **já
+> são** as fronteiras das duas trilhas.
+>
+> Desde a migration `20260811120000`, `title_tiers.trail` diz qual trilha cada
+> patente fecha, e a conferência **(e)** do `verify:avatar-db` mede o acumulado
+> em `lessons` contra `lessons_required`. **Os tiers 3 a 7 da tabela abaixo são
+> placeholder** — trilha sem aula não tem fronteira para medir, e o gate não os
+> cobra até ela ter. Eles mudam no B0.5 do currículo, junto com o conteúdo.
 
 | tier | patente | nível | aulas |
 |---|---|---|---|

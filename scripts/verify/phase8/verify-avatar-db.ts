@@ -20,18 +20,23 @@
  *     colunas de FK não voltaram.
  *  2. O QUE SOBREVIVEU — as RPCs de baú e ovo continuam de pé, e o baú não
  *     depende de item (isso quem prova a fundo é o verify:chest-pool).
- *  3. PATENTES (T0.17) — a régua vive em `title_tiers`. Três coisas travadas:
- *     (a) todo usuário tem linha em `user_titles`. Foi a ausência dessa linha
+ *  3. PATENTES (T0.17) — a régua vive em `title_tiers`. Cinco coisas travadas:
+ *     (a) a régua é uma escada: tier contíguo e marco crescente.
+ *     (b) `complete_lesson_step` continua chamando `recompute_user_title`.
+ *     (c) todo usuário tem linha em `user_titles`. Foi a ausência dessa linha
  *         — e não a régua — que fez o `teacherdoug001` concluir a trilha
  *         inteira em 2026-07-29 e continuar "Aprendiz": o UPDATE antigo casava
  *         zero linhas e não reclamava.
- *     (b) a reconciliação está em dia.
- *     (c) `complete_lesson_step` continua chamando `recompute_user_title`.
+ *     (d) a reconciliação está em dia.
+ *     (e) **o princípio**: a patente vem de concluir uma TRILHA, e o marco em
+ *         `lessons_required` é a contagem acumulada de aulas até a trilha que
+ *         aquela patente fecha — medida em `lessons`, não digitada. Decisão do
+ *         Doug em 2026-08-11, que fechou o achado T1.
  *
- *     A conferência (e), "uniforme só para patente alcançável", saiu no Bloco B
- *     junto com a coluna `title_tiers.outfit_item_id`. Ela impedia gastar arte
- *     em marco inalcançável; quando o uniforme voltar, por outro caminho, ela
- *     precisa voltar com ele.
+ *     A antiga conferência do uniforme ("uniforme só para patente alcançável")
+ *     saiu no Bloco B junto com a coluna `title_tiers.outfit_item_id`. Ela
+ *     impedia gastar arte em marco inalcançável; quando o uniforme voltar, por
+ *     outro caminho, ela precisa voltar com ele.
  *
  * Uso: npm run verify:avatar-db
  */
@@ -310,14 +315,132 @@ async function main() {
         ok("nenhum usuário abaixo da patente que a contagem de aulas lhe dá");
       }
 
-      const [{ total }] = await sql<{ total: number }[]>`select count(*)::int as total from lessons`;
-      const alcancaveis = tiers.filter((t) => t.lessons_required <= total);
-      console.log(
-        `  [INFO] ${alcancaveis.length} de ${tiers.length} patentes alcançáveis com ${total} aulas no banco ` +
-          `(${alcancaveis.map((t) => t.title).join(", ")}).\n` +
-          "         A trava de 'uniforme só para patente alcançável' saiu com a coluna\n" +
-          "         title_tiers.outfit_item_id no Bloco B, e precisa voltar com o uniforme.",
-      );
+      // (e) O PRINCÍPIO: a patente vem de concluir uma TRILHA.
+      //
+      //     Decisão do Doug em 2026-08-11, que fechou o achado T1. Até então a
+      //     relação entre patente e trilha era coincidência posicional — o
+      //     marco 15 batia com o fim da `recruta` porque alguém digitou 15, não
+      //     porque algo conferisse. A migration 20260811120000 fez a relação
+      //     virar coluna (`title_tiers.trail`); aqui ela vira trava.
+      //
+      //     O que isto impede, concretamente: o currículo vai trocar a T1 de 15
+      //     para 26 aulas. No dia em que essas aulas entrarem sem o UPDATE em
+      //     `lessons_required`, o marco cai no meio da trilha seguinte e a
+      //     promoção deixa de coincidir com terminar alguma coisa. É o B0.5 do
+      //     plano técnico deixando de depender de alguém lembrar.
+      const [{ temTrail }] = await sql<{ temTrail: boolean }[]>`
+        select exists (
+          select 1 from information_schema.columns
+          where table_schema='public' and table_name='title_tiers' and column_name='trail'
+        ) as "temTrail"`;
+
+      if (!temTrail) {
+        nok(
+          "title_tiers não tem a coluna trail",
+          "a patente vem de concluir uma trilha (decisão de 2026-08-11), mas nada amarra tier a trilha — " +
+            "aplicar supabase/migrations/20260811120000_t1_patente_por_trilha.sql",
+        );
+      } else {
+        // O acumulado é dirigido pelo próprio `tier`: nenhuma lista de trilhas
+        // copiada aqui dentro. Código carregando premissa sobre o conteúdo é a
+        // doença que criou o T1.
+        const escada = await sql<
+          {
+            tier: number;
+            title: string;
+            trail: string | null;
+            lessons_required: number;
+            aulas_da_trilha: number;
+            acumulado: number;
+          }[]
+        >`
+          select t.tier, t.title, t.trail, t.lessons_required,
+                 (select count(*)::int from lessons l where l.trail = t.trail) as aulas_da_trilha,
+                 (select count(*)::int from lessons l
+                    join title_tiers t2 on t2.trail = l.trail
+                   where t2.tier <= t.tier) as acumulado
+          from title_tiers t
+          order by t.tier`;
+
+        const semTrilha = escada.filter((t) => t.tier > 0 && !t.trail);
+        const baseComTrilha = escada.filter((t) => t.tier === 0 && t.trail);
+        const duplicadas = escada
+          .filter((t) => t.trail)
+          .filter((t, i, arr) => arr.findIndex((o) => o.trail === t.trail) !== i);
+
+        if (semTrilha.length > 0) {
+          nok(
+            `${semTrilha.length} patente(s) sem trilha`,
+            `${semTrilha.map((t) => t.title).join(", ")} — patente que ninguém sabe como se ganha`,
+          );
+        } else if (baseComTrilha.length > 0) {
+          nok("o tier 0 tem trilha", "a base não fecha trilha nenhuma; todo aluno começa nela");
+        } else if (duplicadas.length > 0) {
+          nok(
+            "duas patentes fecham a mesma trilha",
+            duplicadas.map((t) => `${t.title} → ${t.trail}`).join(", "),
+          );
+        } else {
+          ok("toda patente fecha exatamente uma trilha");
+        }
+
+        // Conteúdo sem patente: uma trilha nova em `lessons` que nenhum tier
+        // fecha. O aluno terminaria a trilha e não ganharia nada.
+        const orfas = await sql<{ trail: string; aulas: number }[]>`
+          select l.trail, count(*)::int as aulas
+          from lessons l
+          where not exists (select 1 from title_tiers t where t.trail = l.trail)
+          group by l.trail order by l.trail`;
+
+        if (orfas.length > 0) {
+          nok(
+            `${orfas.length} trilha(s) em lessons sem patente correspondente`,
+            `${orfas.map((o) => `${o.trail} (${o.aulas} aulas)`).join(", ")} — ` +
+              "terminar essas trilhas não promove ninguém",
+          );
+        } else {
+          ok("toda trilha com aula no banco tem patente que a fecha");
+        }
+
+        // O coração da trava: o marco é a contagem acumulada, medida.
+        const comConteudo = escada.filter((t) => t.tier > 0 && t.aulas_da_trilha > 0);
+        const fora = comConteudo.filter((t) => t.lessons_required !== t.acumulado);
+
+        if (comConteudo.length === 0) {
+          nok(
+            "nenhuma trilha do banco tem aula",
+            "sem conteúdo não há como medir se o marco é fronteira de trilha",
+          );
+        } else if (fora.length > 0) {
+          nok(
+            `${fora.length} marco(s) não caem na fronteira da trilha`,
+            fora
+              .map(
+                (t) =>
+                  `${t.title} fecha a trilha "${t.trail}"; o acumulado até ela é ${t.acumulado} aulas, ` +
+                  `e o marco está em ${t.lessons_required}`,
+              )
+              .join(" | ") +
+              " — a promoção deixou de coincidir com terminar uma trilha (ver B0.5 do plano técnico do currículo)",
+          );
+        } else {
+          ok(
+            "marcos batem com as fronteiras de trilha: " +
+              comConteudo.map((t) => `${t.title}=${t.lessons_required} (${t.trail})`).join(", "),
+          );
+        }
+
+        const semConteudo = escada.filter((t) => t.tier > 0 && t.aulas_da_trilha === 0);
+        console.log(
+          `  [INFO] ${comConteudo.length} de ${escada.length - 1} patentes alcançáveis; as outras ` +
+            `${semConteudo.length} esperam conteúdo (${semConteudo.map((t) => `${t.title}/${t.trail}`).join(", ") || "nenhuma"}).\n` +
+            "         O marco delas é placeholder e não é conferido — trilha sem aula não tem\n" +
+            "         fronteira para medir. Ele passa a ser cobrado no dia em que a trilha ganhar\n" +
+            "         a primeira aula.\n" +
+            "         A trava de 'uniforme só para patente alcançável' saiu com a coluna\n" +
+            "         title_tiers.outfit_item_id no Bloco B, e precisa voltar com o uniforme.",
+        );
+      }
     }
   } finally {
     await sql.end();
