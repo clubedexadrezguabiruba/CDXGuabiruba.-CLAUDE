@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useClassFeed } from "@/hooks/useClassFeed";
+import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
 import type { FeedEvent, FeedEventType } from "@/types/class";
 
 interface MuralClientProps {
@@ -110,7 +111,22 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
                 className={`rounded-xl border p-4 shadow-sm ${config.color}`}
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl">{config.icon}</span>
+                  {/* O emoji diz O QUE houve; o boneco diz QUEM foi. Os dois
+                      juntos, e nenhum no lugar do outro — trocar o emoji pelo
+                      avatar apagaria o tipo do evento, que é a única coisa que a
+                      cor do cartão também carrega (e cor sozinha não basta). */}
+                  <span className="text-2xl" aria-hidden>
+                    {config.icon}
+                  </span>
+                  <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                    <AvatarCabeca
+                      skin={event.avatar_skin}
+                      hair={event.avatar_hair}
+                      hairColor={event.avatar_hair_color}
+                      lado={32}
+                      ns={`mu-${event.id}`}
+                    />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{formatEvent(event)}</p>
                     <p className="mt-0.5 text-xs opacity-60">

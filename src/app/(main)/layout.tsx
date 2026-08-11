@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
+import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
 
 export default async function MainLayout({
   children,
@@ -17,13 +18,25 @@ export default async function MainLayout({
     display_name: string | null;
     level: number;
     role: string;
+    avatar_skin: number;
+    avatar_hair: string | null;
+    avatar_hair_color: number;
+    avatar_chosen: boolean;
   } | null = null;
   let title: string = "Aprendiz";
 
   if (user) {
+    // As três colunas da identidade entram no SELECT que já existia — a consulta
+    // continua sendo UMA. Elas têm DEFAULT total no banco (skin 2, hair NULL,
+    // hairColor 0), então todo usuário é renderizável desde que a linha exista:
+    // não há estado "ainda não escolheu" a tratar aqui, e por isso não há prop de
+    // fallback no componente. `avatar_chosen` vem junto por outro motivo — é o
+    // convite, não o desenho.
     const { data } = await supabase
       .from("users")
-      .select("display_name, level, role")
+      .select(
+        "display_name, level, role, avatar_skin, avatar_hair, avatar_hair_color, avatar_chosen",
+      )
       .eq("id", user.id)
       .single();
     profile = data;
@@ -40,12 +53,31 @@ export default async function MainLayout({
 
   const displayName = profile?.display_name || user?.email || "Usuário";
   const level = profile?.level ?? 1;
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+
+  /**
+   * O boneco da navbar — e o convite para quem nunca o montou.
+   *
+   * Só `/dashboard` exige `avatar_chosen` (`dashboard/page.tsx:67-69`). Um aluno
+   * que caia direto em `/perfil` por link aparece com o boneco padrão sem nunca
+   * ter passado pela criação, e espalhar o `redirect` por todas as rotas seria
+   * pagar uma consulta a mais em cada uma para tapar um buraco de link.
+   *
+   * Agora que o boneco está na navbar, a navbar é o lugar certo do convite: quem
+   * não escolheu vê o boneco padrão, que é um boneco legítimo, com um link para
+   * `/criar-personagem`. Quem já escolheu não vê link nenhum — o avatar ali é
+   * identidade, não navegação, e um link a mais na barra é ruído.
+   */
+  const boneco = profile ? (
+    // Sem `rotulo`: o nome do aluno está escrito ao lado, e anunciar "avatar" de
+    // novo é ruído, não acessibilidade.
+    <AvatarCabeca
+      skin={profile.avatar_skin}
+      hair={profile.avatar_hair}
+      hairColor={profile.avatar_hair_color}
+      lado={32}
+      ns="nav"
+    />
+  ) : null;
 
   return (
     <div className="overflow-x-hidden">
@@ -53,10 +85,28 @@ export default async function MainLayout({
         <nav className="border-b border-ink/10 bg-warm-ivory">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-1 px-4 py-2">
             <div className="flex min-w-0 items-center gap-3">
-              {/* Avatar placeholder */}
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-deep-navy text-xs font-bold text-white">
-                {initials}
-              </div>
+              {/*
+                O boneco do aluno, 32 px — no lugar do círculo de iniciais.
+
+                `rounded-lg` e NÃO `rounded-full`, e isso é medido: o recorte é
+                quadrado, e um círculo inscrito nele tem só 46 unidades de largura
+                na altura em que o moicano começa (contra as 335 que a crista
+                ocupa). O círculo comeria o topo de todo cabelo alto. `rounded-lg`
+                também é o raio padrão do DESIGN.md.
+              */}
+              {profile?.avatar_chosen === false ? (
+                <Link
+                  href="/criar-personagem"
+                  className="inline-flex shrink-0 overflow-hidden rounded-lg ring-2 ring-gold/70 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-warm-ivory"
+                >
+                  {boneco}
+                  <span className="sr-only">Monte seu personagem</span>
+                </Link>
+              ) : (
+                <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                  {boneco}
+                </span>
+              )}
               <div className="min-w-0 text-sm">
                 <span className="block max-w-30 truncate font-medium sm:max-w-none">
                   {displayName}

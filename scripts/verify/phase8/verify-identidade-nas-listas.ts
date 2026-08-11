@@ -1,0 +1,417 @@
+/**
+ * GATE DA IDENTIDADE NAS LISTAS — o contrato do Bloco 6.
+ *
+ * O QUE ELE EXISTE PARA IMPEDIR
+ * -----------------------------
+ * O aluno monta o boneco e ele **some** na tela seguinte. A metade de baixo dessa
+ * falha é uma RPC que não devolve a identidade — e nenhuma das formas dela quebra
+ * nada visível do lado do banco:
+ *
+ *  1. **A RPC devolve o campo morto.** `avatar_config` é o cache de itens da pilha
+ *     v2, cujos 69 itens o Bloco B apagou. Uma RPC que ainda o serve não erra: ela
+ *     entrega `{}` para sempre, e a tela desenha o círculo de iniciais achando que
+ *     o aluno não tem avatar.
+ *
+ *  2. **Uma irmã fica para trás.** São TRÊS RPCs de ranking lendo a mesma matview.
+ *     Trocar duas e esquecer a terceira é a divergência silenciosa que o cabeçalho
+ *     de `verify-no-duplicate-rpc.ts` documenta ter custado quatro meses de curva
+ *     de XP errada.
+ *
+ *  3. **O mural fica de fora.** Ele é a única das cinco telas que não tinha RPC
+ *     nenhuma: lia `class_feed` direto do navegador. `get_class_feed` é nova, e
+ *     função nova nasce **executável por PUBLIC** no Postgres — o mesmo descuido
+ *     que a migration 20260806150000 pegou na matview.
+ *
+ *  4. **A autorização se perde na cópia.** `get_class_feed` foi moldada em
+ *     `get_class_ranking` e é `SECURITY DEFINER`: ela passa por cima da RLS de
+ *     `class_feed` E da de `users`. Se a checagem de pertencimento não estiver
+ *     lá, qualquer aluno logado lê o mural — e o nome — de qualquer turma.
+ *
+ * AS QUATRO CONFERÊNCIAS
+ * ----------------------
+ *  1. As três RPCs de ranking, CHAMADAS de verdade, devolvem as três colunas da
+ *     identidade e nenhuma das duas mortas. Chamar em vez de ler o corpo é o que
+ *     pega a lição 2 do Bloco B: plpgsql não valida corpo contra esquema.
+ *  2. `get_class_feed` existe, e devolve as três colunas mais `display_name`,
+ *     `event_data` e `created_at` — as sete chaves que `MuralClient` lê.
+ *  3. O privilégio de `get_class_feed`: `anon` NÃO executa, `authenticated` executa.
+ *  4. A autorização, MEDIDA por comportamento: personificar um usuário que **não**
+ *     é da turma e exigir que a chamada seja recusada. É a única prova que não
+ *     depende de eu acreditar no corpo da função.
+ *
+ * COMO ELE NÃO SUJA A PRODUÇÃO
+ * ----------------------------
+ * Igual ao `verify:perfil-publico`: tudo dentro de UMA transação que termina em
+ * ROLLBACK, personificando usuários existentes por `set_config('request.jwt.claims')`
+ * — que é de onde `auth.uid()` lê. Nada é escrito; as conferências são só leitura.
+ *
+ * `conferir(db)` recebe o handle de fora para que o ensaio a seco de uma migration
+ * possa rodá-la dentro da mesma transação em que a migration foi aplicada. Sem
+ * banco separado (achado D3), é o único jeito de medir "passa depois" sem aplicar
+ * em produção.
+ *
+ * Uso: npm run verify:identidade-nas-listas
+ */
+
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+import postgres from "postgres";
+import type { Sql } from "postgres";
+import { getDbUrl } from "../db-url";
+
+/** As três colunas da identidade kokeshi (Bloco C). */
+const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_hair", "avatar_hair_color"] as const;
+
+/** O que as RPCs de ranking deixaram de devolver no Bloco 6 — os dois da pilha v2. */
+const CHAVES_MORTAS = ["avatar_config", "avatar_base"] as const;
+
+/** O que `MuralClient` lê de cada linha do feed, além da identidade. */
+const CHAVES_DO_MURAL = [
+  "id",
+  "class_id",
+  "user_id",
+  "event_type",
+  "event_data",
+  "created_at",
+  "display_name",
+] as const;
+
+/**
+ * Roda algo que PODE lançar, sem perder a transação.
+ *
+ * Exceção dentro de uma transação a aborta inteira: sem savepoint, a primeira
+ * conferência que falha faz todas as seguintes falharem por "current transaction
+ * is aborted" — e o relatório culparia o lugar errado.
+ */
+async function tentar(db: Sql, marca: string, fn: () => Promise<unknown>): Promise<string | null> {
+  await db.unsafe(`savepoint ${marca}`);
+  try {
+    await fn();
+    await db.unsafe(`release savepoint ${marca}`);
+    return null;
+  } catch (e) {
+    await db.unsafe(`rollback to savepoint ${marca}`);
+    return e instanceof Error ? e.message : String(e);
+  }
+}
+
+/** Personifica um usuário — é de onde `auth.uid()` lê dentro das RPCs. */
+async function comoUsuario(db: Sql, userId: string): Promise<void> {
+  await db`select set_config('request.jwt.claims', ${JSON.stringify({
+    sub: userId,
+    role: "authenticated",
+  })}, true)`;
+}
+
+export interface Relatorio {
+  passed: number;
+  failed: number;
+}
+
+export async function conferir(db: Sql): Promise<Relatorio> {
+  let passed = 0;
+  let failed = 0;
+
+  const ok = (msg: string) => {
+    console.log(`  [PASS] ${msg}`);
+    passed++;
+  };
+  const nok = (msg: string, detalhe: string) => {
+    console.log(`  [FAIL] ${msg}`);
+    console.log(`         ${detalhe}`);
+    failed++;
+  };
+  const info = (msg: string) => console.log(`  [INFO] ${msg}`);
+
+  const [cobaia] = await db<{ id: string; email: string; role: string }[]>`
+    select id, email, role from public.users
+    where role in ('aluno','professor')
+    order by created_at limit 1`;
+
+  if (!cobaia) {
+    nok(
+      "nenhum aluno ou professor no banco",
+      "as RPCs de ranking leem da matview, que filtra por role — sem linha não há o que medir",
+    );
+    return { passed, failed };
+  }
+  info(`cobaia: ${cobaia.email} (${cobaia.role})`);
+
+  // --- 1. As três RPCs de ranking, chamadas de verdade -----------------------
+  console.log("\n1. As RPCs de ranking devolvem a identidade nova e nada da v2");
+
+  await comoUsuario(db, cobaia.id);
+
+  /** Devolve a primeira linha de uma resposta de ranking, seja qual for a forma. */
+  const primeiraEntrada = (payload: unknown): Record<string, unknown> | null => {
+    if (Array.isArray(payload)) return (payload[0] as Record<string, unknown>) ?? null;
+    if (payload && typeof payload === "object") {
+      const entries = (payload as { entries?: unknown }).entries;
+      if (Array.isArray(entries)) return (entries[0] as Record<string, unknown>) ?? null;
+    }
+    return null;
+  };
+
+  const rankings: { rotulo: string; run: () => Promise<{ r: unknown }[]> }[] = [
+    {
+      rotulo: "get_ranking_with_position('rating', 5)",
+      run: () => db<{ r: unknown }[]>`select public.get_ranking_with_position('rating', 5) as r`,
+    },
+    {
+      rotulo: "get_ranking('rating', 5)",
+      run: () => db<{ r: unknown }[]>`select public.get_ranking('rating', 5) as r`,
+    },
+  ];
+
+  // get_class_ranking exige turma e personifica quem é membro dela: uma recusa por
+  // autorização não diria nada sobre coluna, que é o que esta seção mede.
+  const [turma] = await db<{ class_id: string; user_id: string }[]>`
+    select class_id, user_id from public.class_members limit 1`;
+
+  if (turma) {
+    rankings.push({
+      rotulo: `get_class_ranking(turma ${turma.class_id}, 'rating', 5)`,
+      run: async () => {
+        await comoUsuario(db, turma.user_id);
+        return db<{ r: unknown }[]>`select public.get_class_ranking(${turma.class_id}::bigint, 'rating', 5) as r`;
+      },
+    });
+  } else {
+    info("nenhuma turma com membro no banco — get_class_ranking não pôde ser medida");
+  }
+
+  let n = 0;
+  for (const { rotulo, run } of rankings) {
+    let payload: unknown = null;
+    const erro = await tentar(db, `sp_rank_${n++}`, async () => {
+      const [linha] = await run();
+      payload = linha.r;
+    });
+
+    if (erro !== null) {
+      nok(
+        `${rotulo} quebrou`,
+        erro +
+          " — coluna que a matview não tem, lida por uma função que ninguém recompilou (lição 2 do Bloco B)",
+      );
+      continue;
+    }
+
+    const entrada = primeiraEntrada(payload);
+    if (!entrada) {
+      // Ranking vazio não é falha de contrato — mas também não prova nada, e um
+      // gate que passa por vacuidade é pior que gate nenhum.
+      nok(
+        `${rotulo} devolveu lista vazia`,
+        "sem nenhuma entrada não há chave para conferir; a conferência passaria por vacuidade",
+      );
+      continue;
+    }
+
+    for (const chave of COLUNAS_IDENTIDADE) {
+      if (chave in entrada) ok(`${rotulo} devolve '${chave}'`);
+      else
+        nok(
+          `${rotulo} não devolve '${chave}'`,
+          "é o que a lista passa ao <AvatarCabeca>; sem a chave a tela cai no círculo de iniciais",
+        );
+    }
+
+    for (const chave of CHAVES_MORTAS) {
+      if (chave in entrada)
+        nok(
+          `${rotulo} ainda devolve '${chave}'`,
+          "campo da pilha v2 sem leitor nenhum em src/ — devolvê-lo é prometer dado que o Bloco B apagou",
+        );
+      else ok(`${rotulo} não devolve mais '${chave}'`);
+    }
+
+    const skin = entrada["avatar_skin"];
+    const cor = entrada["avatar_hair_color"];
+    if (typeof skin === "number" && typeof cor === "number") {
+      ok(`${rotulo}: pele e cor viajam como número (${skin} / ${cor}), não hex`);
+    } else {
+      nok(
+        `${rotulo}: pele/cor não são número (${JSON.stringify(skin)} / ${JSON.stringify(cor)})`,
+        "as colunas guardam índice de paleta; hex aqui é uma segunda cópia de palette.ts",
+      );
+    }
+  }
+
+  // --- 2. get_class_feed devolve o que o mural lê ---------------------------
+  console.log("\n2. get_class_feed devolve a identidade e as chaves do mural");
+
+  const [existeFeed] = await db<{ existe: boolean }[]>`
+    select exists(
+      select 1 from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
+      where ns.nspname = 'public' and p.proname = 'get_class_feed'
+    ) as existe`;
+
+  if (!existeFeed.existe) {
+    nok(
+      "get_class_feed não existe",
+      "sem ela o mural não tem caminho até a identidade: users tem RLS e a matview teve o SELECT revogado de authenticated (20260806150000)",
+    );
+  } else if (!turma) {
+    info("nenhuma turma com membro no banco — get_class_feed não pôde ser chamada");
+  } else {
+    await comoUsuario(db, turma.user_id);
+
+    let feed: unknown = null;
+    const erroFeed = await tentar(db, "sp_feed", async () => {
+      const [linha] = await db<{ r: unknown }[]>`
+        select public.get_class_feed(${turma.class_id}::bigint, 50) as r`;
+      feed = linha.r;
+    });
+
+    if (erroFeed !== null) {
+      nok(`get_class_feed(turma ${turma.class_id}) quebrou para um MEMBRO`, erroFeed);
+    } else {
+      ok(`get_class_feed executou para um membro da turma ${turma.class_id}`);
+
+      const linhas = Array.isArray(feed) ? (feed as Record<string, unknown>[]) : [];
+      if (linhas.length === 0) {
+        // O mural pode estar legitimamente vazio numa turma nova. Aqui a forma se
+        // confere pelo tipo de retorno da função, que é o que resta de mensurável.
+        info(
+          `o mural da turma ${turma.class_id} está vazio — as chaves não puderam ser conferidas nesta turma`,
+        );
+        const [{ existe: temEvento }] = await db<{ existe: boolean }[]>`
+          select exists(select 1 from public.class_feed) as existe`;
+        if (temEvento) {
+          nok(
+            "há eventos em class_feed, mas nenhum na turma medida",
+            "a conferência das chaves passaria por vacuidade; escolher uma turma COM evento é o conserto",
+          );
+        } else {
+          info("class_feed está vazia no banco inteiro — nada a conferir, e nada a esconder");
+        }
+      } else {
+        const linha = linhas[0]!;
+        for (const chave of [...CHAVES_DO_MURAL, ...COLUNAS_IDENTIDADE]) {
+          if (chave in linha) ok(`get_class_feed devolve '${chave}'`);
+          else
+            nok(
+              `get_class_feed não devolve '${chave}'`,
+              "MuralClient lê essa chave de cada evento (src/app/(main)/turmas/[id]/mural/MuralClient.tsx)",
+            );
+        }
+      }
+    }
+  }
+
+  // --- 3. O privilégio: função nova nasce executável por PUBLIC -------------
+  console.log("\n3. O privilégio de get_class_feed");
+
+  if (existeFeed.existe) {
+    const esperado: [string, boolean, string][] = [
+      [
+        "anon",
+        false,
+        "a chave anon viaja no pacote do navegador; a função é SECURITY DEFINER e passa por cima da RLS de class_feed e de users",
+      ],
+      ["authenticated", true, "é o papel de todo aluno logado — sem isto o mural não abre para ninguém"],
+    ];
+
+    for (const [papel, devePoder, porque] of esperado) {
+      const [{ pode }] = await db<{ pode: boolean }[]>`
+        select has_function_privilege(${papel}, 'public.get_class_feed(bigint, integer)', 'EXECUTE') as pode`;
+      if (pode === devePoder) {
+        ok(`${papel} ${devePoder ? "executa" : "NÃO executa"} get_class_feed`);
+      } else {
+        nok(
+          `${papel} ${pode ? "EXECUTA" : "não executa"} get_class_feed, e não deveria`,
+          porque +
+            (pode ? " — o REVOKE de PUBLIC tem de vir junto do CREATE: função nova nasce liberada" : ""),
+        );
+      }
+    }
+  }
+
+  // --- 4. A autorização, medida por comportamento --------------------------
+  console.log("\n4. Quem não é da turma é recusado (SECURITY DEFINER sem RLS embaixo)");
+
+  if (!existeFeed.existe || !turma) {
+    info("sem get_class_feed ou sem turma — a autorização não pôde ser medida");
+  } else {
+    const [forasteiro] = await db<{ id: string; email: string }[]>`
+      select u.id, u.email from public.users u
+      where u.role in ('aluno','professor')
+        and not exists (
+          select 1 from public.class_members cm
+          where cm.class_id = ${turma.class_id}::bigint and cm.user_id = u.id)
+        and not exists (
+          select 1 from public.classes c
+          where c.id = ${turma.class_id}::bigint and c.teacher_id = u.id)
+      limit 1`;
+
+    if (!forasteiro) {
+      info(
+        `todo usuário do banco pertence à turma ${turma.class_id} — não há forasteiro para medir a recusa`,
+      );
+    } else {
+      await comoUsuario(db, forasteiro.id);
+      const erroForasteiro = await tentar(
+        db,
+        "sp_forasteiro",
+        () => db`select public.get_class_feed(${turma.class_id}::bigint, 5)`,
+      );
+
+      if (erroForasteiro === null) {
+        nok(
+          `${forasteiro.email} NÃO é da turma ${turma.class_id} e mesmo assim leu o mural dela`,
+          "a checagem de pertencimento é a única defesa: SECURITY DEFINER ignora a RLS de class_feed e a de users",
+        );
+      } else {
+        ok(`quem não é da turma é recusado ("${erroForasteiro.split("\n")[0]}")`);
+      }
+    }
+  }
+
+  await db`reset role`;
+  return { passed, failed };
+}
+
+class Rollback extends Error {}
+
+async function main() {
+  const sql = postgres(getDbUrl(), { connect_timeout: 30 });
+
+  console.log("========================================");
+  console.log("GATE: a identidade chega às listas (Bloco 6)");
+  console.log("========================================");
+
+  let rel: Relatorio = { passed: 0, failed: 0 };
+
+  try {
+    try {
+      await sql.begin(async (tx) => {
+        rel = await conferir(tx as unknown as Sql);
+        throw new Rollback();
+      });
+    } catch (e) {
+      if (!(e instanceof Rollback)) throw e;
+    }
+  } finally {
+    await sql.end();
+  }
+
+  console.log("\n========================================");
+  console.log(`RESULTADO: ${rel.passed} passed | ${rel.failed} failed`);
+  console.log("========================================");
+  if (rel.failed > 0) process.exit(1);
+  console.log("\nGate da identidade nas listas: OK");
+}
+
+// `conferir` é importada pelo ensaio a seco; sem esta guarda, importar o módulo
+// dispararia o gate inteiro como efeito colateral.
+const executadoDireto =
+  process.argv[1] !== undefined &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (executadoDireto) {
+  main().catch((e) => {
+    console.error("Erro no gate:", e.message);
+    process.exit(1);
+  });
+}

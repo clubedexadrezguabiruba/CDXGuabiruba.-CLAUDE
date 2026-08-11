@@ -99,7 +99,15 @@ export interface TaskProgress {
   just_completed: boolean;
 }
 
-/** class_feed JOIN users — SELECT explícito no hook */
+/**
+ * Uma linha do mural, como `get_class_feed` a devolve.
+ *
+ * Até o Bloco 6 isto era `class_feed` lido direto do navegador, e o nome vinha de
+ * `event_data.display_name` — um retrato do dia do evento, gravado por
+ * `emit_class_feed`. A identidade do avatar não tinha como chegar aqui: `users`
+ * tem RLS e a matview teve o SELECT revogado de `authenticated`. Hoje quem serve é
+ * a RPC, que junta `users` e devolve o nome **fresco** junto das três colunas.
+ */
 export interface FeedEvent {
   id: number;
   class_id: number;
@@ -107,6 +115,9 @@ export interface FeedEvent {
   event_type: FeedEventType;
   event_data: Record<string, unknown>;
   created_at: string;
-  // JOIN users (SELECT explícito)
   display_name: string | null;
+  /** A identidade kokeshi. `avatar_hair` NULL é a careca. */
+  avatar_skin: number;
+  avatar_hair: string | null;
+  avatar_hair_color: number;
 }

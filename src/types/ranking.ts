@@ -1,8 +1,21 @@
 export interface RankingEntry {
   user_id: string;
   public_name: string;
-  avatar_config: Record<string, unknown>;
-  avatar_base: string;
+  /**
+   * A identidade do avatar kokeshi, como as RPCs de ranking a devolvem desde o
+   * Bloco 6 (`20260811140000_bloco6_identidade_nas_listas.sql`): índice de paleta
+   * e slug, a mesma língua das colunas do Bloco C e a mesma que `<AvatarCabeca>`
+   * recebe. `avatar_hair` NULL é a careca — ausência de peça, não dado faltando.
+   *
+   * Saíram junto `avatar_config` (o cache de itens da pilha v2, cujos 69 itens o
+   * Bloco B apagou) e `avatar_base`. **`avatar_base` fecha o achado G11**: ele
+   * estava declarado aqui como campo obrigatório e **nenhuma** das três RPCs
+   * jamais o devolveu — todo `entry.avatar_base` do produto teria sido
+   * `undefined` num campo que o tipo prometia `string`.
+   */
+  avatar_skin: number;
+  avatar_hair: string | null;
+  avatar_hair_color: number;
   level: number;
   metric_value: number;
   title: string;

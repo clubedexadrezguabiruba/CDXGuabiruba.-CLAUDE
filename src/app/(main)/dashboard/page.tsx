@@ -5,6 +5,7 @@ import DailyPanel from "@/components/gamification/DailyPanel";
 import TaskPanel from "@/components/gamification/TaskPanel";
 import FaixaDeComando from "@/components/layout/FaixaDeComando";
 import Card, { CardTitle } from "@/components/ui/Card";
+import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
 import { xpForLevel } from "@/lib/gamification/xp";
 
 const ATALHOS = [
@@ -16,6 +17,10 @@ const ATALHOS = [
 interface RankingEntry {
   user_id: string;
   public_name: string;
+  /** A identidade kokeshi, desde o Bloco 6. `avatar_hair` NULL é a careca. */
+  avatar_skin: number;
+  avatar_hair: string | null;
+  avatar_hair_color: number;
   level: number;
   metric_value: number;
   title: string;
@@ -148,6 +153,19 @@ export default async function DashboardPage() {
                     {entry.position <= 3
                       ? MEDAL[entry.position - 1]
                       : entry.position}
+                  </span>
+                  {/* É a tela seguinte ao Confirmar de /criar-personagem: aqui o
+                      boneco que a criança acabou de montar aparece ao lado do
+                      nome dela. `animado` fica desligado — cinco bonecos numa
+                      lista pagariam cinco animações por nada. */}
+                  <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                    <AvatarCabeca
+                      skin={entry.avatar_skin}
+                      hair={entry.avatar_hair}
+                      hairColor={entry.avatar_hair_color}
+                      lado={32}
+                      ns={`qh-${entry.user_id}`}
+                    />
                   </span>
                   <Link
                     href={`/perfil/${entry.user_id}`}

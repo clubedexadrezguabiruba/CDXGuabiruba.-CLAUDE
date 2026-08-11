@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import FaixaDeComando from "@/components/layout/FaixaDeComando";
+import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
 import { useRanking } from "@/hooks/useRanking";
 import type { RankingData, RankingType } from "@/types/ranking";
 
@@ -100,12 +101,6 @@ export default function RankingClient({ initialData, userId }: Props) {
             <tbody>
               {entries.map((entry) => {
                 const isMe = entry.user_id === userId;
-                const initials = entry.public_name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2);
 
                 return (
                   <tr
@@ -124,8 +119,18 @@ export default function RankingClient({ initialData, userId }: Props) {
                         href={`/perfil/${entry.user_id}`}
                         className="flex items-center gap-2 rounded underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                       >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-deep-navy text-xs font-bold text-white">
-                          {initials}
+                        {/* O lugar mais social do produto é onde o trabalho da
+                            criança mais precisa aparecer. 40 px, `animado`
+                            desligado: 30 bonecos animados numa lista pagam 30
+                            animações por nada. */}
+                        <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                          <AvatarCabeca
+                            skin={entry.avatar_skin}
+                            hair={entry.avatar_hair}
+                            hairColor={entry.avatar_hair_color}
+                            lado={40}
+                            ns={`rk-${entry.user_id}`}
+                          />
                         </span>
                         <span className="block max-w-40 truncate sm:max-w-none">
                           {entry.public_name}

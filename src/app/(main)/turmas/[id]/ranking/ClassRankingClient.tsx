@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
 import type { RankingEntry, RankingType } from "@/types/ranking";
 
 const TABS: { key: RankingType; label: string }[] = [
@@ -136,12 +137,6 @@ export default function ClassRankingClient({
             <tbody>
               {entries.map((entry) => {
                 const isMe = entry.user_id === userId;
-                const initials = entry.public_name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2);
 
                 return (
                   <tr
@@ -160,8 +155,16 @@ export default function ClassRankingClient({
                         href={`/perfil/${entry.user_id}`}
                         className="flex items-center gap-2 hover:underline"
                       >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-white">
-                          {initials}
+                        {/* 40 px, como o ranking global — as duas listas são a
+                            mesma leitura e não têm por que discordar de tamanho. */}
+                        <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                          <AvatarCabeca
+                            skin={entry.avatar_skin}
+                            hair={entry.avatar_hair}
+                            hairColor={entry.avatar_hair_color}
+                            lado={40}
+                            ns={`cr-${entry.user_id}`}
+                          />
                         </span>
                         <span className="truncate">{entry.public_name}</span>
                         {entry.is_teacher && (

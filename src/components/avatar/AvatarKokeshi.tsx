@@ -50,13 +50,18 @@ import { VIEWBOX } from "@/lib/avatar/estilo/geometria";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 
 /** A folha é constante: gerada uma vez no módulo, não a cada render. */
-const FOLHA = folhaAvatar();
+export const FOLHA = folhaAvatar();
 
 /**
  * O `href` é a chave de deduplicação do React. **Mudá-lo é emitir uma folha nova**,
  * então ele é constante e não deriva de nada.
+ *
+ * Exportado porque `<AvatarCabeca>` desenha o MESMO SVG por outra janela e tem de
+ * usar a MESMA chave: uma navbar com o recorte e um `/perfil` com o corpo inteiro
+ * na mesma página emitiriam duas folhas idênticas se as chaves diferissem — e a
+ * segunda folha é exatamente o que o `folha-unica.test.ts` existe para impedir.
  */
-const HREF_DA_FOLHA = "avatar-kokeshi";
+export const HREF_DA_FOLHA = "avatar-kokeshi";
 
 export interface AvatarKokeshiProps {
   /** `users.avatar_skin` — índice em `PELE`. Fora da faixa cai no default do banco. */
@@ -112,6 +117,34 @@ function modeloDe(hair: string | null): ModeloCabelo | undefined {
   return (MODELOS_CABELO as string[]).includes(hair) ? (hair as ModeloCabelo) : undefined;
 }
 
+/**
+ * A LÍNGUA DO BANCO VIRANDO SVG — a tradução que o topo deste arquivo promete que
+ * mora em UM lugar.
+ *
+ * Exportada no Bloco 6 porque nasceu o segundo consumidor: `<AvatarCabeca>`
+ * desenha o **mesmo** boneco por outra janela. Se ele refizesse índice→cor,
+ * `null`→careca e texto→slug, passariam a existir duas traduções do mesmo dado —
+ * e a que divergisse mostraria a criança errada na navbar.
+ */
+export function svgDoAluno({
+  skin,
+  hair,
+  hairColor,
+  animado = false,
+  ns,
+}: Pick<AvatarKokeshiProps, "skin" | "hair" | "hairColor" | "ns"> & {
+  animado?: boolean;
+}): string {
+  return compor({
+    pele: corDe(PELE, skin, 2),
+    cabelo: corDe(CABELO, hairColor, 0),
+    modeloCabelo: modeloDe(hair),
+    animado,
+    ns,
+    folhaExterna: true,
+  });
+}
+
 export function AvatarKokeshi({
   skin,
   hair,
@@ -121,19 +154,14 @@ export function AvatarKokeshi({
   ns,
   rotulo,
 }: AvatarKokeshiProps) {
-  const modelo = modeloDe(hair);
   // A largura DERIVA da altura pelo `viewBox`. Um segundo número aqui seria a
   // segunda descrição da mesma proporção, e é assim que boneco esticado nasce.
   const largura = Math.round((altura * VIEWBOX.w) / VIEWBOX.h);
 
-  const svg = compor({
-    pele: corDe(PELE, skin, 2),
-    cabelo: corDe(CABELO, hairColor, 0),
-    modeloCabelo: modelo,
-    animado,
-    ns,
-    folhaExterna: true,
-  }).replace("<svg ", `<svg width="${largura}" height="${altura}" `);
+  const svg = svgDoAluno({ skin, hair, hairColor, animado, ns }).replace(
+    "<svg ",
+    `<svg width="${largura}" height="${altura}" `,
+  );
 
   return (
     <>

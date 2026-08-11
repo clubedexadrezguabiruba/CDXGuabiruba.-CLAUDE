@@ -21,27 +21,22 @@ export function useClassFeed(classId: number): UseClassFeedResult {
     const supabase = createClient();
 
     try {
-      const { data, error: qErr } = await supabase
-        .from("class_feed")
-        .select("id, class_id, user_id, event_type, event_data, created_at")
-        .eq("class_id", classId)
-        .order("created_at", { ascending: false })
-        .limit(50);
+      // A RPC, e não a tabela — desde o Bloco 6.
+      //
+      // Ler `class_feed` direto do navegador funcionava para o texto do evento e
+      // NÃO tinha como chegar à identidade do avatar: `users` tem RLS e a matview
+      // teve o SELECT revogado de `authenticated` (20260806150000). A RPC junta as
+      // duas coisas com a mesma checagem de pertencimento de `get_class_ranking`,
+      // e devolve o `display_name` FRESCO — o de `event_data` é um retrato do dia
+      // do evento e não acompanha troca de nome.
+      const { data, error: qErr } = await supabase.rpc("get_class_feed", {
+        p_class_id: classId,
+        p_limit: 50,
+      });
 
       if (qErr) throw new Error(qErr.message);
 
-      const mapped: FeedEvent[] = (data ?? []).map((row) => {
-        const ed = row.event_data as Record<string, unknown>;
-        return {
-          id: row.id,
-          class_id: row.class_id,
-          user_id: row.user_id,
-          event_type: row.event_type,
-          event_data: ed,
-          created_at: row.created_at,
-          display_name: (ed.display_name as string) ?? null,
-        };
-      });
+      const mapped = (data as FeedEvent[] | null) ?? [];
 
       requestAnimationFrame(() => {
         setEvents(mapped);

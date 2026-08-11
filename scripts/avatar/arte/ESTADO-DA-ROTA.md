@@ -2236,11 +2236,11 @@ compartilhada (o refino mora lá): não é "pipeline velho", não apagar.
 | 6 | **A amarra da base de edição virou disciplina** (`escala: 1` explícito). `arte:escala` é o que sobra guardando | risco declarado |
 | ~~7~~ | ~~`npm run estado`~~ — **rodado**, `docs/ESTADO.md` recontado (123 linhas, bloco "Agora" preservado). `verify:estado`: **0 violações** | fechado |
 | 8 | **Nada foi commitado.** A rota está no índice (`git add`), não commitada | Doug |
-| 9 | **Papel `luz` sem correspondente no render de 2 tons; `tresTons` sempre parte em três.** O Bloco 10 subiu o preço disto e **o Bloco 11 subiu de novo**: na rodada 1 a mancha de brilho (20–25% da cúpula) virava um filete de 3–5 px; na rodada 2 ela é **7,9% da peça e 12,4% da cúpula, e o render devolve 6 pixels**. A paleta do render tem exatamente **dois** tons de ciano — não existe terceiro. **Nenhuma das 21 asserções toca nisso.** É a régua que falta | eu |
+| ~~9~~ | ~~**Papel `luz` sem correspondente no render de 2 tons; `tresTons` sempre parte em três.** O Bloco 10 subiu o preço disto e **o Bloco 11 subiu de novo**: na rodada 1 a mancha de brilho (20–25% da cúpula) virava um filete de 3–5 px; na rodada 2 ela é **7,9% da peça e 12,4% da cúpula, e o render devolve 6 pixels**. A paleta do render tem exatamente **dois** tons de ciano — não existe terceiro. **Nenhuma das 21 asserções toca nisso.** É a régua que falta~~ — **FECHADO POR DECISÃO em 2026-08-11: a luz morreu.** A régua deixa de ser pendência porque o Passo 8 deixa de existir. Ver a seção "⛔ A LUZ MORRE" no fim deste arquivo | fechado |
 | ~~10~~ | ~~**O chanel novo foi MEDIDO e NÃO aprovado** (Bloco 10)~~ — **a rodada 2 rodou (Bloco 11).** Cinco dos seis defeitos de desenho caíram; o sexto (cabelo sobre a roupa) não se moveu, e o Doug decidiu que **ele fica** — ver item 12. Sobram três defeitos NOVOS de rota (slivers de fundo, rebordo de sombra, traço interno descartado) e a franja alta | parcial |
 | ~~12~~ | ~~**A MECHA SOBRE O TRONCO FICA**~~ — **feito no Bloco 12.** O tronco saiu da extração; descartado 4 776 → **21 px**, borda amputada 7,2% → **0,0%**, perímetro de preto 95,2% → **100,0%**. As pontas voltaram inteiras e o entalhe caiu de 42 px para 7–8 | fechado |
 | ~~14~~ | ~~**O ESPETADO FOI APROVADO CONTRA UMA PEÇA QUE NÃO EXISTE MAIS**~~ — **decidido: CONGELAR** (decisão C acima). O espetado não passa pelo caminho novo e a aprovação do Bloco 9 vale para o literal de hoje (3 806 bytes, com a mecha recuperada). O preço é duas famílias de peça traçada convivendo | fechado |
-| 15 | **A TINTA NÃO É TRANSCRITA — e são três defeitos que viraram um.** A forma vai bem (IoU 89,4%, contorno 100%); a tinta não vai. **Luz:** arte 6,17% em 3 manchas, render **55 px de serrilha**. **Sombra:** a arte tem 3 massas medidas, o render devolve sombreamento **sistêmico** do compositor abraçando o traço — não é a sombra da arte. **Traço interno:** descartado por construção — `Cabelo.linhas` são arcos DO LAÇO DA MASSA, e traço que corre por dentro da peça não tem onde morar no tipo. **PLANO ESCRITO** — ver o bloco no topo desta seção. **Duas correções ao que eu havia dito:** o anel **não** custa o dobro dos pontos (a borda externa já é o laço da massa, e o stroke de hoje já re-emite o laço inteiro — fica ~neutro, equilíbrio em N′ ≈ 30 a ~34 bytes por comando `C`); e o furo **não some, muda de lado** — passa a ser do ciano, e ali é barato. **FEITO no Bloco 13, Passos 1–6:** o traço interno voltou (866 px em 4 formas, contra 0 px da ordem invertida), o preto passou de IoU 34,4% / 1,21× para **68,8% / 0,81×** (fiel) ou **66,1% / 0,98×** (lei). **A luz (Passo 8) NÃO entrou** — fica depois da parada, e o item 9 continua aberto | parcial |
+| 15 | **A TINTA NÃO É TRANSCRITA — e são três defeitos que viraram um.** A forma vai bem (IoU 89,4%, contorno 100%); a tinta não vai. **Luz:** arte 6,17% em 3 manchas, render **55 px de serrilha**. **Sombra:** a arte tem 3 massas medidas, o render devolve sombreamento **sistêmico** do compositor abraçando o traço — não é a sombra da arte. **Traço interno:** descartado por construção — `Cabelo.linhas` são arcos DO LAÇO DA MASSA, e traço que corre por dentro da peça não tem onde morar no tipo. **PLANO ESCRITO** — ver o bloco no topo desta seção. **Duas correções ao que eu havia dito:** o anel **não** custa o dobro dos pontos (a borda externa já é o laço da massa, e o stroke de hoje já re-emite o laço inteiro — fica ~neutro, equilíbrio em N′ ≈ 30 a ~34 bytes por comando `C`); e o furo **não some, muda de lado** — passa a ser do ciano, e ali é barato. **FEITO no Bloco 13, Passos 1–6:** o traço interno voltou (866 px em 4 formas, contra 0 px da ordem invertida), o preto passou de IoU 34,4% / 1,21× para **68,8% / 0,81×** (fiel) ou **66,1% / 0,98×** (lei). **A luz (Passo 8) NÃO entrou** — e em 2026-08-11 ela **morreu**: o item 9 fechou por decisão, não por conserto | parcial |
 | 16 | **A franja é 96,3% de todo o déficit** (2 301 de 2 390 px), e no render ela está **torta**: a arte tem base nivelada (y=278 constante em 57 colunas), o render tem rampa de 10 px. Testa nua 10 px constantes → 15–25 px. **O Bloco 13 subiu MUITO o preço disto:** enquanto o contorno era um `stroke` de 12 u centrado, ele pintava preto de y 263 a 275 e **encobria** a franja curta; com o preto transcrito, a barra preta da franja da arte (328 × 13 px) **simplesmente não aparece** em nenhuma das duas variantes. É o item que reprova as duas antes de qualquer escolha entre elas. **FECHADO no Bloco 14:** a causa era `escolherN` medir a corda enquanto o compositor desenha spline — numa reta a corda erra zero e a decimação não põe ponto. `refinarPelaSpline` levou o desvio de 22,7 u a 3,3 u e a banda da franja bate com a da arte coluna a coluna | fechado |
 | ~~19~~ | ~~**A CLARA VAZA PARA CIMA DA BANDA PRETA**~~ — **FECHADO no Bloco 14.** Em pixel ela já estava dentro; vazava por decimação. `conterAClara` contra a componente do núcleo que mais a contém: **−3,32 u → +0,26 u** | fechado |
 | ~~20~~ | ~~**A escolha entre `fiel` e `lei`**~~ — **decidido: `fiel`**, pelo Doug, olhando `/dev/avatar-kokeshi` em 2026-08-07. Ela preserva a modulação de peso da artista; a `lei` achata as duas laterais em 13–16 px e devolve a aparência de espessura fixa que a transcrição veio matar | fechado |
@@ -2954,3 +2954,43 @@ Os selos das peças que ficaram **não se moveram um byte**. Foram de 15 para 11
 | `npm test` | **478 passando** (eram 496 com 7 peças — menos peças, menos iterações) |
 | `npm run verify:estado` | 0 violações · painel em **5 de 10** |
 | `arte:pecas --check` | confere caractere a caractere |
+
+---
+
+## ⛔ A LUZ MORRE — 2026-08-11
+
+Decisão do Doug, na revisão do plano da V1 do avatar nas telas. **Não é adiamento:
+o Passo 8 deixa de existir.**
+
+> Sem luz para cabelos — decisão FINAL.
+
+### Por que ela morre em vez de esperar
+
+Ela nunca teve chão. A arte tem **três** tons de ciano; a paleta do render tem
+**dois** — não existe terceiro. Medido na rodada 2 do chanel: a mancha de brilho é
+**7,9% da peça e 12,4% da cúpula**, e o render devolve **6 pixels**. E **nenhuma das
+21 asserções toca nisso**: sem régua, o Passo 8 só poderia fechar por opinião.
+
+Escrever a régua primeiro era o caminho honesto, e ele custa uma frente inteira para
+uma peça que o boneco não pede a 32, 40 ou 56 px — que são os tamanhos onde o avatar
+de fato aparece.
+
+### O que isto fecha
+
+| # | pendência | como fechou |
+|---|---|---|
+| 9 | a régua da luz (papel `luz` sem correspondente no render de 2 tons) | **por decisão** — não há mais o que medir |
+| 15 | "a luz (Passo 8) NÃO entrou" | deixa de ser parcial por este motivo |
+
+**A rota de arte fica com ZERO pontas soltas.** As outras três já tinham morrido:
+colagem do espetado e do chanel **feita** em 2026-08-07 (`068303b`), reentrada da
+`entrada-2` **superada** em 2026-08-08 (entrou pela `fiel`, sem retoque), rodada de
+unificação **cancelada** em 2026-08-07 (achado T5, fechado).
+
+### Onde a decisão foi escrita
+
+`docs/ESTADO.md` (bloco AGORA — a lista de pontas zera) ·
+`docs/avatar/14-backlog-execucao.md` ("o que sobra vivo") · aqui.
+
+**Não se mexeu em código:** nenhuma linha de `pecas-da-arte.ts`, `cabelo.ts` ou do
+compositor depende do Passo 8 — ele nunca começou.

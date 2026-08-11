@@ -28,6 +28,24 @@ import { loginAndSettle } from "./helpers/auth-helpers";
  *  4. **o `/perfil/[userId]` renderiza** com a RPC que o E.3 reescreveu. Ela perdeu
  *     3 chaves e ganhou 3; uma tela que lesse a chave velha só quebra aqui.
  *
+ * O **Bloco 6** acrescentou dois testes, e eles medem o que o doc 15 §6 cobra das
+ * cinco telas novas:
+ *
+ *  5. **o boneco aparece na navbar e no Quadro de Honra** — e as duas telas,
+ *     servidas por componentes diferentes (`<AvatarCabeca>` e `<AvatarKokeshi>`
+ *     compartilham a folha), ainda emitem UM bloco de estilo;
+ *  6. **alunos com identidades diferentes saem diferentes no ranking, e sem salto
+ *     de layout.** O primeiro é o modo de falha da colisão de `ns` — 30 bonecos
+ *     com a pele do primeiro — e nenhum gate de SQL o enxerga: a RPC pode devolver
+ *     as três colunas certas e a tela desenhar todas iguais. O segundo é medido no
+ *     MECANISMO (caixa com largura/altura explícitas e `line-height: 0`), porque
+ *     cronometrar o salto seria um teste instável.
+ *
+ * ⚠️ Os dois só passam **depois** da migration do Bloco 6: sem as três colunas nas
+ * RPCs, `avatar_skin` chega `undefined` em toda linha, o componente cai no default
+ * do banco, e os 30 bonecos saem idênticos — que é exatamente o que o teste 6
+ * reprova.
+ *
  * Bate no Supabase de PRODUÇÃO como toda esta suíte: cria e apaga usuários reais.
  * Rodar com intenção, nunca em CI.
  */
@@ -393,5 +411,124 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
     // Um boneco, uma folha: a mesma prova do teste 1, agora num Server Component —
     // esta tela não manda JS de avatar nenhum ao celular do aluno.
     await expect(page.locator("svg.kk")).toHaveCount(1);
+  });
+
+  // ==========================================================================
+  // O BLOCO 6 — o boneco aparece onde a criança aparece
+  //
+  // O doc 15 §6 cobra três coisas destas telas, e nenhuma delas o SQL responde:
+  // o avatar aparece no ranking · alunos com configurações diferentes saem
+  // DIFERENTES · nenhum salto de layout ao carregar.
+  // ==========================================================================
+
+  test("a navbar e o Quadro de Honra mostram o boneco do aluno", async ({ page }) => {
+    await loginAndSettle(page, EMAIL_ALUNO, SENHA);
+    await page.goto("/dashboard");
+    await expect(page.locator("h1", { hasText: "Quartel-General" })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    // A navbar era um círculo com duas letras, e o comentário `{/* Avatar
+    // placeholder */}` estava no código desde sempre. Ancorar no `<nav>` é o que
+    // separa este boneco dos do Quadro de Honra logo abaixo.
+    await expect(page.locator("nav svg.kk")).toHaveCount(1);
+
+    // O Quadro de Honra não tinha nem iniciais. Um boneco por linha do top 5, e
+    // o aluno logado está entre eles (ele existe e é visível no ranking).
+    const noQuadro = page.locator("ol svg.kk");
+    await expect(noQuadro.first()).toBeVisible({ timeout: 20_000 });
+    expect(await noQuadro.count(), "o Quadro de Honra não desenhou boneco nenhum").toBeGreaterThan(0);
+
+    // Navbar + lista, e ainda assim UMA folha. É o mecanismo do E.1 atravessando
+    // dois componentes diferentes: `<AvatarCabeca>` reusa o `href` de
+    // `<AvatarKokeshi>` justamente para isto.
+    const blocosDeFolha = await page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll("style")).filter((s) =>
+          (s.textContent ?? "").includes("kk-respira"),
+        ).length,
+    );
+    expect(blocosDeFolha, "navbar + Quadro de Honra deveriam emitir 1 folha").toBe(1);
+  });
+
+  test("o ranking mostra bonecos DIFERENTES, sem salto de layout", async ({ page }) => {
+    // A premissa é declarada: os dois alunos precisam de identidades distintas,
+    // senão "saem diferentes" passaria por vacuidade. O colega recebe pele e cor
+    // diferentes das do aluno, pela RPC e com o token dele — que é o caminho do
+    // produto, e o que refresca a matview de onde o ranking lê.
+    const eu = await lerIdentidade(idAluno);
+    const tokenColega = await entrarComSenha(EMAIL_COLEGA, SENHA);
+    const peleDoColega = eu.avatar_skin === 0 ? 7 : 0;
+    const corDoColega = eu.avatar_hair_color === 1 ? 6 : 1;
+    const { status } = await chamarRpcComoAluno(tokenColega, "update_avatar_identity", {
+      p_skin: peleDoColega,
+      p_hair: null,
+      p_hair_color: corDoColega,
+    });
+    expect(status, "não consegui dar identidade própria ao colega").toBeLessThan(400);
+
+    await loginAndSettle(page, EMAIL_ALUNO, SENHA);
+    await page.goto("/ranking");
+    await expect(page.locator("h1", { hasText: "Quadro de Honra" })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    // --- o avatar aparece ---------------------------------------------------
+    const naTabela = page.locator("table svg.kk");
+    await expect(naTabela.first()).toBeVisible({ timeout: 20_000 });
+    expect(
+      await naTabela.count(),
+      "o ranking desenhou menos de 2 bonecos — sem dois não dá para provar que saem diferentes",
+    ).toBeGreaterThanOrEqual(2);
+
+    // --- e eles são DIFERENTES ---------------------------------------------
+    //
+    // O tom de pele viaja como custom property no `style` do `<svg>` (`--av-pele`),
+    // que é o mecanismo do recolorir. Contar quantos valores distintos existem é a
+    // prova direta de que a RPC está entregando identidade POR ALUNO — e não a do
+    // primeiro, repetida, que é exatamente o modo de falha da colisão de `ns`.
+    const peles = await naTabela.evaluateAll((svgs) =>
+      svgs.map((s) => (s as SVGElement).style.getPropertyValue("--av-pele").trim()),
+    );
+    expect(
+      new Set(peles).size,
+      `os ${peles.length} bonecos do ranking têm todos a mesma pele (${peles[0]}) — a lista está desenhando a identidade de um aluno só`,
+    ).toBeGreaterThan(1);
+
+    // --- nenhum salto de layout --------------------------------------------
+    //
+    // O mecanismo é a caixa com largura e altura EXPLÍCITAS mais `line-height: 0`
+    // (`AvatarCabeca.tsx`): sem os dois, a linha mede uma altura antes de pintar e
+    // outra depois. Medir o "salto" cronometrando o carregamento seria um teste
+    // instável; medir o mecanismo é medir a causa.
+    const caixas = await naTabela.evaluateAll((svgs) =>
+      svgs.map((s) => {
+        const r = s.getBoundingClientRect();
+        const pai = s.parentElement as HTMLElement;
+        return {
+          w: Math.round(r.width),
+          h: Math.round(r.height),
+          paiW: pai.style.width,
+          paiH: pai.style.height,
+          lh: pai.style.lineHeight,
+        };
+      }),
+    );
+    for (const c of caixas) {
+      expect(c.w, "o recorte é quadrado: largura e altura têm de bater").toBe(c.h);
+      expect(c.h, "o ranking pede 40 px").toBe(40);
+      expect(c.paiW, "a caixa do avatar tem de levar largura explícita").toBe("40px");
+      expect(c.paiH, "a caixa do avatar tem de levar altura explícita").toBe("40px");
+      expect(c.lh, "sem line-height 0 o SVG inline arrasta um vão de baseline").toBe("0");
+    }
+
+    // E a folha continua saindo uma vez, agora com a lista inteira na página.
+    const blocosDeFolha = await page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll("style")).filter((s) =>
+          (s.textContent ?? "").includes("kk-respira"),
+        ).length,
+    );
+    expect(blocosDeFolha, `${caixas.length} bonecos no ranking deveriam emitir 1 folha`).toBe(1);
   });
 });
