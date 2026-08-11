@@ -118,6 +118,7 @@ pelo gatilho abaixo, antes de começar, sem esperar o usuário pedir.**
 | Referência de arte nova, ou qualquer número de `geometria.ts` que precise sair de medição | `avatar-regua` |
 | Detalhe de movimento, transição, o que faz a interface "sentir" bem | `emil-design-eng` |
 | Antes de mexer em auth, RLS, RPC de recompensa, ou qualquer coisa que o repositório público exponha | `security-review` |
+| Escrever ou revisar busca de dados (`page.tsx` com `await`, hook de fetch), import pesado, ou qualquer suspeita de lentidão — **exceto a família `js-`**, que não vale aqui | `vercel-react-best-practices` (vendorizada da Vercel, MIT; leia `rules/<nome>.md`, nunca tudo) |
 
 O usuário digita `/prototype` e `/review-animations` quando quiser — as duas têm
 `disable-model-invocation` e **nunca** disparam sozinhas. Se o caso pedir uma
