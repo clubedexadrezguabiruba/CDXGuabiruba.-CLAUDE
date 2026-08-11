@@ -123,6 +123,37 @@ mexe em `VIEWBOX` (22 arquivos citam a proporção ou a altura), re-congela a
 derivado. Custo declarado: **boneco 11% menor a 32 px** e o fim do 5:7. O T1.5 fica
 aberto até ela rodar.
 
+🗺️ **O PLANO DOS OUTROS SLOTS SAIU EM 2026-08-11: `docs/avatar/21-slots-do-avatar-plano.md`.**
+Traje, chapéu, rosto (óculos/bigode/barba), fundo e pet, em **9 blocos com gate**.
+Onde ele divergir dos docs 14, 15, 16 e 18, **ele vence** — os quatro foram escritos
+na era v2. Não revoga o doc 17 (paleta medida) nem o doc 19 (rota de arte).
+
+**Ele reverte parte da T7, e a reversão é datada.** O Doug respondeu o que falhou
+na v2: **a arte era do boneco velho** — a mecânica de baú e raridade nunca foi o
+problema, ela ficou órfã de corpo. Então **raridade e baú de peça voltam**, com
+quatro travas nascidas da lição: arte por demanda (**~32 peças**, não 39), peça sem
+arte **não pode ser semeada** (vira gate, não disciplina), pool de baú só estético
+(**uniforme nunca sai de baú**), e a moldura de raridade (6.2) **continua morta** até
+o Doug decidir. **O `verify:avatar-db` não afrouxa** — os nomes da v2 seguem
+proibidos, os nomes novos são outros, e o gate **ganha** a trava que o próprio
+cabeçalho dele pede de volta (traje só para patente alcançável).
+
+As decisões de produto do dia: pet por **ovo + Chocadeira** (a mecânica que hibernou
+de propósito); traje **por demanda** — 3 Aprendiz + 4 Soldado + 4 Aspirante, e as
+outras patentes quando a trilha delas tiver conteúdo; **o XP vira prêmio comum do
+baú**, sorteado como um item igual aos outros; **óculos sem haste, lente livre**
+(o que dissolve a falta da `saliencia`); **editor em abas** de guarda-roupa; e o
+card mostra **a peça, nunca o boneco vestido com ela** — cabeça para cabelo/chapéu/
+rosto, tronco para roupa. A arquitetura escolhida é **1 catálogo + 1 guarda-roupa**
+(não 5 tabelas, não a `items` da v2), porque é o baú que atravessa os slots.
+
+⏳ **O Bloco 0 rodou pela metade e é o que trava tudo.** O merge da V1 na `main`
+saiu fast-forward (`037c990` → `661c833`, 4 commits, 26 arquivos, zero conflito),
+mas **o push ficou pendente: a máquina estava sem rede** (`Could not resolve host`,
+confirmado por `ping` e `curl`). A `main` local está 4 commits à frente de
+`origin/main`; enquanto o push não sair, **produção continua atrás do próprio
+banco** — a forma exata do R4. Nada mais começa antes dele.
+
 **Decisões travando trabalho: nenhuma.** A última caiu em 2026-08-11 —
 
 - ~~**Régua da patente — duas versões vivas, não três** (achado **T1**)~~
@@ -149,9 +180,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **23 arquivos sujos** |
-| **Último commit** | b2565d0 · 2026-08-11 · feat(patente): a patente vem de concluir uma trilha, e agora é o gate que cobra |
+| **Commits à frente de `origin/main`** | 4 |
+| **Árvore** | **2 arquivos sujos** |
+| **Último commit** | 661c833 · 2026-08-11 · test(avatar): o e2e do perfil público contava um boneco, e agora são dois — de componentes diferentes |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
