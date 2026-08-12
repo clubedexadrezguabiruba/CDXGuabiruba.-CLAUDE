@@ -83,6 +83,34 @@ export interface Traje {
 }
 
 /**
+ * O que uma peça que fica POR CIMA do boneco declara — chapéu e rosto.
+ *
+ * Repare que é a mesma forma de `Traje.extensoes` menos o `atras`, e não é
+ * economia de digitação: as duas são o mesmo conceito. A peça **excede** a
+ * silhueta em vez de compartilhar fronteira com ela, então tem forma própria — o
+ * que é lícito exatamente porque ela não precisa registrar com nada. Uma lente
+ * pode ser maior que o rosto (decisão do Doug, doc 21 §2c) e um chapéu pode
+ * passar da cabeça; nenhum dos dois é cortado por clip nenhum.
+ *
+ * **O contorno continua sendo do compositor.** `d` é preenchimento, não traço —
+ * quem emite a borda preta é `sobrepor()`, na mesma passada e com a mesma
+ * espessura de todo o resto. É o que impede uma peça de chegar com traço de 1 px
+ * ao lado de um boneco de traço 12.
+ *
+ * A cor é **assada no desenho** (`cor`, hex literal), e isso é a emenda à D27:
+ * só pele e cabelo recolorem. O escopo `camada` de custom properties está vazio
+ * em `palette.ts:281`, e mexer nele esbarra na trava de `svgContrato.ts`.
+ */
+export interface PecaSobreposta {
+  /** Slug do catálogo — a mesma chave que o banco guarda em `avatar_catalogo`. */
+  id: string;
+  /** Nome que o aluno lê. */
+  nome: string;
+  /** As formas, de trás para a frente. Preenchimento; o traço é do compositor. */
+  formas: { d: string; cor: string }[];
+}
+
+/**
  * O estado do boneco no momento de compor. Tudo que NÃO é forma.
  *
  * `pele` e `cabelo` são hex porque recolorem por `var()` — são os dois únicos
@@ -108,6 +136,21 @@ export interface EstadoAvatar {
    */
   modeloCabelo?: CabeloOuModelo;
   traje?: Traje;
+  /**
+   * As duas peças que ficam POR CIMA da cabeça — rosto (óculos, bigode, barba) e
+   * chapéu.
+   *
+   * **Opcionais como `modeloCabelo`, e pelo mesmo motivo exato.** Ausentes,
+   * `compor()` não emite camada nenhuma e o SVG sai byte a byte igual ao de
+   * hoje — é isso que mantém o teto de regressão da `folha-base` sendo teto de
+   * regressão e não de folga, e os 11 selos de `parametrico-congelado.ts` de pé.
+   *
+   * As duas ficam FORA de todo clip, que é o mecanismo já provado do cabelo
+   * traçado. Fundo e pet **não estão aqui de propósito**: eles não tocam a
+   * geometria do boneco e são componentes irmãos, fora do SVG (doc 21 §3.4).
+   */
+  rosto?: PecaSobreposta;
+  chapeu?: PecaSobreposta;
   /**
    * Liga o piscar e o respiro. Desligado no ranking, onde 30 bonecos numa lista
    * pagariam 30 animações por nada — a `flag` já existe no render por isso

@@ -38,6 +38,19 @@
  *     impedia gastar arte em marco inalcançável; quando o uniforme voltar, por
  *     outro caminho, ela precisa voltar com ele.
  *
+ *     **O caminho de volta foi construído no Bloco 1 do doc 21** (a tabela é
+ *     `avatar_catalogo`, e o marco é `min_tier`), mas a trava **não entra aqui
+ *     ainda**: com zero trajes semeados ela passaria por vacuidade, que é
+ *     exatamente o defeito que ela existe para não ter. Ela chega junto com o
+ *     primeiro traje, no Bloco 2. A dívida segue anotada, agora com endereço.
+ *
+ *  4. OS SLOTS (Bloco 1 do doc 21) — as duas tabelas do guarda-roupa existem, e
+ *     **ninguém está vestindo peça a que não tem direito**. A FK garante que o
+ *     slug existe; ela não sabe nada sobre marco nem sobre guarda-roupa. Um
+ *     `min_level` corrigido para cima amanhã deixa quem já equipou vestindo o
+ *     que a régua passou a negar — e nada acusa, porque `equipar_peca` só é
+ *     consultada na hora de gravar.
+ *
  * Uso: npm run verify:avatar-db
  */
 
@@ -65,6 +78,8 @@ const RPCS_ESPERADAS = [
   "get_eggs",
   "hatch_egg",
   "_create_random_pet_egg",
+  // Bloco 1 do doc 21: a única via de escrita das 5 colunas de equipar.
+  "equipar_peca",
 ];
 
 let passed = 0;
@@ -439,6 +454,91 @@ async function main() {
             "         a primeira aula.\n" +
             "         A trava de 'uniforme só para patente alcançável' saiu com a coluna\n" +
             "         title_tiers.outfit_item_id no Bloco B, e precisa voltar com o uniforme.",
+        );
+      }
+    }
+
+    // --- 4. Os slots do guarda-roupa (Bloco 1 do doc 21) ---
+    console.log("\n4. Slots: as tabelas existem e ninguém veste o que não pode");
+
+    const [{ temCatalogo }] = await sql<{ temCatalogo: boolean }[]>`
+      select to_regclass('public.avatar_catalogo') is not null as "temCatalogo"`;
+    const [{ temGuardaRoupa }] = await sql<{ temGuardaRoupa: boolean }[]>`
+      select to_regclass('public.avatar_guarda_roupa') is not null as "temGuardaRoupa"`;
+
+    if (!temCatalogo || !temGuardaRoupa) {
+      nok(
+        "as tabelas do guarda-roupa não existem",
+        "aplicar supabase/migrations/20260811160000_bloco1_fundacao_dos_slots.sql — quem confere o " +
+          "conteúdo delas é npm run verify:catalogo-slots",
+      );
+    } else {
+      ok("avatar_catalogo e avatar_guarda_roupa existem");
+
+      // O direito é conferido por `equipar_peca` NA HORA DE GRAVAR, e mais
+      // nunca. Isso deixa uma janela silenciosa: subir o `min_level` de uma peça
+      // (ou tirar uma linha do guarda-roupa) não desveste ninguém. A FK não
+      // enxerga isso — ela só sabe que o slug existe.
+      //
+      // O `replace(coluna,'avatar_','')` é o que amarra coluna a slot sem lista
+      // copiada aqui dentro: código carregando premissa sobre o conteúdo é a
+      // doença que criou o T1.
+      const indevidos = await sql<
+        { display_name: string; coluna: string; slug: string; motivo: string }[]
+      >`
+        with equipado as (
+          select u.id, u.display_name, u.level, v.coluna, v.slug
+          from public.users u
+          cross join lateral (values
+            ('avatar_traje',  u.avatar_traje),
+            ('avatar_chapeu', u.avatar_chapeu),
+            ('avatar_rosto',  u.avatar_rosto),
+            ('avatar_fundo',  u.avatar_fundo),
+            ('avatar_pet',    u.avatar_pet)
+          ) as v(coluna, slug)
+          where v.slug is not null
+        ),
+        julgado as (
+          select e.display_name, e.coluna, e.slug,
+                 case
+                   when c.slug is null
+                     then 'slug que não está no catálogo'
+                   when c.slot <> replace(e.coluna, 'avatar_', '')
+                     then 'peça do slot ' || c.slot || ' gravada na coluna ' || e.coluna
+                   when c.origem = 'marco_nivel' and e.level < c.min_level
+                     then 'exige nível ' || c.min_level || ', e o aluno está no ' || e.level
+                   when c.origem = 'marco_patente'
+                        and coalesce(t.achieved_tier, 0) < c.min_tier
+                     then 'exige patente ' || c.min_tier || ', e o aluno está na ' ||
+                          coalesce(t.achieved_tier, 0)
+                   when c.origem = 'bau' and not exists (
+                          select 1 from public.avatar_guarda_roupa g
+                          where g.user_id = e.id and g.slug = e.slug)
+                     then 'peça de baú sem linha no guarda-roupa'
+                 end as motivo
+          from equipado e
+          left join public.avatar_catalogo c on c.slug = e.slug
+          left join public.user_titles t on t.user_id = e.id
+        )
+        select * from julgado where motivo is not null`;
+
+      const [{ n: equipadas }] = await sql<{ n: number }[]>`
+        select count(*)::int as n from public.users
+        where avatar_traje is not null or avatar_chapeu is not null
+           or avatar_rosto is not null or avatar_fundo is not null
+           or avatar_pet   is not null`;
+
+      if (indevidos.length > 0) {
+        nok(
+          `${indevidos.length} peça(s) equipada(s) sem direito`,
+          indevidos
+            .map((i) => `${i.display_name} · ${i.coluna}=${i.slug}: ${i.motivo}`)
+            .join(" | ") +
+            " — equipar_peca confere na gravação e nunca mais; mudar a régua depois não desveste ninguém",
+        );
+      } else {
+        ok(
+          `nenhuma peça equipada sem direito (${equipadas} usuário(s) com alguma peça vestida)`,
         );
       }
     }

@@ -331,7 +331,7 @@ desenhados custa redesenho (doc 15, Bloco 8).
 Cada bloco termina com **gate verde e número medido**. Nenhum começa antes de o
 anterior fechar.
 
-### Bloco 0 — Publicar a V1 ⏳
+### Bloco 0 — Publicar a V1 ✅
 
 Merge `avatar/vtracer` → `main` (fast-forward) + push; a Vercel publica sozinha.
 
@@ -341,13 +341,11 @@ próprio banco e duas telas falhavam no ar sem ninguém notar.
 
 **Parada:** `main` e branch no mesmo commit; o Doug confere duas telas no ar.
 
-> **Estado em 2026-08-11:** o merge saiu fast-forward (`037c990` → `661c833`,
-> 4 commits, 26 arquivos, zero conflito). **O push ficou pendente: a máquina
-> está sem rede** (`Could not resolve host: github.com`, confirmado por `ping` e
-> `curl`). A `main` local está 4 commits à frente de `origin/main` e o push é o
-> único passo que falta. **Nada mais começa antes dele.**
+> **FECHADO em 2026-08-11.** O merge saiu fast-forward (`037c990` → `661c833`,
+> 4 commits, 26 arquivos, zero conflito) e o push saiu quando a rede voltou.
+> `origin/main` em `661c833`, publicado pela Vercel.
 
-### Bloco 1 — A fundação
+### Bloco 1 — A fundação ✅
 
 Uma migration, um gate novo, e o encanamento — **zero mudança visual**.
 
@@ -368,6 +366,49 @@ Uma migration, um gate novo, e o encanamento — **zero mudança visual**.
 slot, equipar sem direito, slug inexistente), no padrão de negação de
 `verify-cabelo-catalogo.ts:302-364`; `avatar:folha-base` nos números
 congelados, byte a byte.
+
+> **FECHADO em 2026-08-11, com a parada cumprida e uma recusa a mais.**
+>
+> | o quê | número medido |
+> |---|---|
+> | `verify:all` | verde — **19 entradas / 29 scripts** (era 28) |
+> | `verify:catalogo-slots` (novo) | **35 passed / 0 failed** |
+> | `verify:avatar-db` | 27/2 → **30/0** (entram `equipar_peca` e as 2 tabelas) |
+> | recusas medidas | **4**: outro slot · sem direito por nível · slug inexistente · peça de baú sem linha no guarda-roupa |
+> | `avatar:folha-base` | **19 formas / 7 468 bytes** — igual ao congelado |
+> | suíte | **497 testes / 29 arquivos**, com `pecas-de-elenco.test.ts` novo |
+>
+> **Medido ANTES de aplicar**, em ensaio a seco (transação → migration → gates →
+> `ROLLBACK`, o método do Bloco C / E.2 / Bloco 6): o gate novo foi de **2 falhas
+> a 35 verdes**, e `verify:perfil-publico` (**28/0**) e
+> `verify:identidade-nas-listas` (**32/0**) rodaram verdes **na mesma transação**
+> — a prova de que recolar a matview e as 5 funções não quebrou o que estava no
+> ar. Nada sobreviveu ao `ROLLBACK`.
+>
+> **Duas decisões tomadas na execução, e as duas ficam registradas:**
+>
+> 1. **A trava "traje só para patente alcançável" NÃO entrou no
+>    `verify:avatar-db`.** Com zero trajes semeados ela passaria por vacuidade,
+>    que é o defeito que ela existe para não ter. Ela vem no **Bloco 2**, junto
+>    com o primeiro traje. O necrológio de `verify-avatar-db.ts:36-39` foi
+>    reescrito para apontar o endereço, em vez de só lamentar a falta.
+> 2. **A ordem das camadas de cabeça ficou declarada em `compor()`:** cabelo →
+>    rosto → chapéu. Óculos POR CIMA do cabelo porque, sem haste, a peça que a
+>    criança desbloqueou não pode depender de qual franja está por baixo; chapéu
+>    por último porque ele disputa o crânio e vence. A regra fina
+>    (`escondeCabelo`) continua sendo decisão obrigatória do **Bloco 7** — este
+>    bloco só garantiu o lugar.
+>
+> **O `rpc-baseline.json` subiu de propósito:** +1 em `get_ranking`,
+> `get_ranking_with_position`, `get_public_profile`, `get_class_ranking` e
+> `get_class_feed`; mais `equipar_peca: 1`, que é nova. As quatro de lista usam
+> `EXECUTE format(...)` com SQL dinâmico e não há helper a extrair — é o mesmo
+> dilema que o Bloco 6 encarou e resolveu do mesmo jeito.
+>
+> **Duas constraints de banco nasceram como trava de produto**, e não estavam
+> escritas neste plano: `avatar_catalogo_traje_nao_e_de_bau` (a trava nº 3 da
+> §1.3 vira CHECK em vez de disciplina) e `avatar_catalogo_origem_coerente` (o
+> que não é da origem é `NULL`).
 
 ### Bloco 2 — Traje por patente
 

@@ -469,6 +469,60 @@ bloco de avatar:
    do Recruta 64 antes do primeiro teste, falhando com "há OUTRO app na 3000" em
    vez de 149 timeouts. É a única que diz a verdade na primeira linha.
 
+**ATUALIZAÇÃO 1 — aconteceu de novo em 2026-08-11, no fim do Bloco 1 dos slots, e
+desta vez com número que SEPARA ambiente de código.** A suíte inteira devolveu
+**17 falhas e 11 instáveis**, a maioria em `settleAfterLogin` não achando nem
+"Criação do Recruta" nem "Quartel-General". Lido como código, isso diz "o login
+quebrou" — exatamente o modo de falha que este achado descreve.
+
+O discriminante custou **1 minuto**: porta 3000 esvaziada, servidor novo, e só o
+spec que era verde:
+
+| | resultado |
+|---|---|
+| suíte inteira, servidor herdado | 17 falhas · **11 instáveis** |
+| `e2e/auth.spec.ts` sozinho, servidor limpo | **3/3 em 18,7 s** |
+| o teste que estourava 20 s (`login exibe dashboard`) | **7,0 s** |
+
+**As 11 instáveis eram a pista, e vale escrever porque é generalizável:** teste
+que passa no retry não é regressão. Regressão de código é determinística — ela
+não melhora na segunda tentativa. Um run com muitos "flaky" é uma afirmação sobre
+a máquina, não sobre o commit.
+
+**O que foi eliminado antes de culpar o ambiente**, para o registro não virar
+desculpa: o app medido de pé com a migration aplicada (`/login` 200 com
+`<title>Recruta 64</title>`; `/dashboard`, `/aulas` e `/puzzles` em 307 para
+`/login?next=…`); e **zero** referência em `src/` a qualquer coluna ou RPC do
+Bloco 1 — o `useUser` lê lista explícita de colunas (`useUser.ts:53-55`), à qual
+coluna nova é invisível.
+
+**A saída nº 3 subiu de "a melhor" para "a única que teria evitado as duas
+vezes".** A nº 1 e a nº 2 protegem contra o app ERRADO na porta; nenhuma das duas
+protege contra o app CERTO degradado, que foi o caso agora. Um `globalSetup` que
+exija marca **e** tempo de resposta cobre os dois. Continua sendo decisão do Doug.
+
+### G15 — três specs do e2e estão quebrados no próprio teste, e escondem o resto
+**Prova:** `MEDIDO` — 2026-08-11, run completo. Achado pelo Claude, executando o
+Bloco 1 dos slots. Registrado e **não consertado**, pela regra 9.
+
+Três falham por defeito do teste, não do produto — nenhuma migration ou mudança
+de código as causa, e as três continuariam vermelhas num run perfeito:
+
+| spec | falha | o que é |
+|---|---|---|
+| `turmas-complete.spec.ts:337` | `strict mode violation`: `text=Bots` casa o link da navbar **e** o `<h2>Bots derrotados (0)</h2>` | seletor por texto solto numa página que ganhou navbar |
+| `phase9-teacher.spec.ts:86` | idem: o nome da turma casa um `<strong>` e um `<h3>` | idem |
+| `bots-analysis.spec.ts:246` | espera `/\/bots\//` e recebe `http://localhost:3000/bots` | o clique no card não navegou, ou a rota mudou de forma |
+
+**Por que isto importa mais do que parece:** com três vermelhos permanentes, o
+run nunca fecha verde — e um run que nunca fecha verde deixa de ser sinal.
+Ninguém consegue distinguir "quebrei alguma coisa" de "é aquilo de sempre", que
+é a condição em que o G13 nasceu.
+
+**O que falta para fechar:** trocar os dois `text=` por `getByRole` com nome
+exato, e medir o que a terceira faz de verdade antes de mexer nela. Não é
+trabalho de bloco de avatar.
+
 ### G13 — a suíte e2e pode morrer inteira sem nenhum gate ficar vermelho
 **Prova:** `MEDIDO` — 2026-08-10, `tsconfig.json:34-40` + `package.json` (`lint`
 = `eslint src/`) + `.github/workflows/ci.yml`. Achado pelo Claude, executando o

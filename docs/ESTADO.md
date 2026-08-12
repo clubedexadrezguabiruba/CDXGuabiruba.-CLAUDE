@@ -147,12 +147,42 @@ card mostra **a peça, nunca o boneco vestido com ela** — cabeça para cabelo/
 rosto, tronco para roupa. A arquitetura escolhida é **1 catálogo + 1 guarda-roupa**
 (não 5 tabelas, não a `items` da v2), porque é o baú que atravessa os slots.
 
-⏳ **O Bloco 0 rodou pela metade e é o que trava tudo.** O merge da V1 na `main`
-saiu fast-forward (`037c990` → `661c833`, 4 commits, 26 arquivos, zero conflito),
-mas **o push ficou pendente: a máquina estava sem rede** (`Could not resolve host`,
-confirmado por `ping` e `curl`). A `main` local está 4 commits à frente de
-`origin/main`; enquanto o push não sair, **produção continua atrás do próprio
-banco** — a forma exata do R4. Nada mais começa antes dele.
+✅ **O Bloco 0 fechou: a V1 está no ar.** O merge saiu fast-forward (`037c990` →
+`661c833`, 4 commits, 26 arquivos, zero conflito) e o push saiu quando a rede
+voltou. `origin/main` está em `661c833` e a Vercel publicou.
+
+✅ **O BLOCO 1 DO DOC 21 FECHOU EM 2026-08-11 — a fundação do guarda-roupa, com
+ZERO mudança visual.** Uma migration
+(`20260811160000_bloco1_fundacao_dos_slots.sql`), um gate novo
+(`verify:catalogo-slots`, **35 conferências**) e o encanamento do código. O
+`verify:all` está verde e a **`folha-base` saiu nos números congelados byte a
+byte: 19 formas / 7 468 bytes** — o boneco não se mexeu.
+
+O que ela criou: `avatar_catalogo` + `avatar_guarda_roupa` (arquitetura B —
+1 catálogo + 1 guarda-roupa), as 5 colunas de equipar em `users`, a RPC
+`equipar_peca` (`SECURITY DEFINER`, valida slot · existência · pertencimento ao
+slot · direito), e a matview mais 5 funções recoladas **numa rodada só** —
+`get_public_profile` serve as 5 peças, as 3 de ranking e `get_class_feed` servem
+**chapéu e rosto**, que são o que o recorte de cabeça mostra. No código:
+`PecaSobreposta`, `EstadoAvatar.chapeu?`/`.rosto?`, `src/lib/avatar/catalogo.ts`
+e as props dos dois componentes.
+
+**Medido antes de aplicar**, num ensaio a seco (transação → migration → gates →
+`ROLLBACK`): o gate novo foi de **2 falhas a 35 verdes**, e `verify:perfil-publico`
+(28) e `verify:identidade-nas-listas` (32) continuaram verdes **dentro da mesma
+transação** — que é a prova de que recolar a matview e as 5 funções não quebrou o
+que já estava no ar. **4 recusas medidas**, não 3: outro slot, sem direito por
+nível, slug inexistente, e peça de baú sem linha no guarda-roupa.
+
+O `rpc-baseline.json` **subiu de propósito**: +1 em `get_ranking`,
+`get_ranking_with_position`, `get_public_profile`, `get_class_ranking` e
+`get_class_feed` — as quatro de lista usam `EXECUTE format(...)` e não há helper a
+extrair, o mesmo dilema do Bloco 6 — mais `equipar_peca: 1`, que é nova.
+
+**A trava "traje só para patente alcançável" NÃO entrou** (a dívida de
+`verify-avatar-db.ts:36-39`): com zero trajes semeados ela passaria por vacuidade.
+Ela chega junto com o primeiro traje, no Bloco 2. O necrológio dela no gate agora
+tem endereço.
 
 **Decisões travando trabalho: nenhuma.** A última caiu em 2026-08-11 —
 
@@ -180,9 +210,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 4 |
-| **Árvore** | **2 arquivos sujos** |
-| **Último commit** | 661c833 · 2026-08-11 · test(avatar): o e2e do perfil público contava um boneco, e agora são dois — de componentes diferentes |
+| **Commits à frente de `origin/main`** | 1 |
+| **Árvore** | **15 arquivos sujos** |
+| **Último commit** | a35b3e8 · 2026-08-11 · docs(avatar): o plano dos outros slots — a raridade volta porque quem tinha morrido era a arte |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -198,9 +228,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **28 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **29 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
 
 ## Frentes
 
@@ -223,7 +253,7 @@ _Conta tarefas numeradas (`**T0.1**`), que é a régua do próprio doc 14. Conta
 | o quê | quanto | congelado desde |
 |---|---|---|
 | Cores cruas — teto tolerado | **1331 em 69 arquivos** | ratchet |
-| RPCs redefinidas mais de uma vez | **55 (pior: puzzle_attempt, 12×)** | ratchet |
+| RPCs redefinidas mais de uma vez | **56 (pior: puzzle_attempt, 12×)** | ratchet |
 
 _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
@@ -231,9 +261,9 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 83 |
+| **Migrations** | 84 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 16 |
+| **Arquivos de teste** | 17 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes

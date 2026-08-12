@@ -54,13 +54,19 @@ export function AvatarCabeca({
   skin,
   hair,
   hairColor,
+  chapeu,
+  rosto,
   lado,
   animado = false,
   ns,
   rotulo,
 }: AvatarCabecaProps) {
+  // Chapéu e rosto vêm junto porque são exatamente as duas peças que o recorte de
+  // cabeça mostra — é por isso que as RPCs de ranking servem essas duas e não as
+  // cinco (doc 21 §7, Bloco 1). Traje não aparece aqui, fundo e pet nem existem
+  // dentro do SVG.
   const svg = recortarNaCabeca(
-    svgDoAluno({ skin, hair, hairColor, animado, ns }),
+    svgDoAluno({ skin, hair, hairColor, chapeu, rosto, animado, ns }),
     RECORTE_CABECA,
   ).replace("<svg ", `<svg width="${lado}" height="${lado}" `);
 

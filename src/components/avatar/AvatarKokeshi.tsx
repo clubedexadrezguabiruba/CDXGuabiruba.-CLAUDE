@@ -44,6 +44,7 @@
  * cabelo do perfil, que troca a peça na mão do aluno) pelo mesmo caminho.
  */
 
+import { pecaDeCabeca } from "@/lib/avatar/catalogo";
 import { compor, folhaAvatar } from "@/lib/avatar/estilo/compositor";
 import { MODELOS_CABELO, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { VIEWBOX } from "@/lib/avatar/estilo/geometria";
@@ -70,6 +71,19 @@ export interface AvatarKokeshiProps {
   hair: string | null;
   /** `users.avatar_hair_color` — índice em `CABELO`. */
   hairColor: number;
+  /**
+   * `users.avatar_chapeu` e `users.avatar_rosto` — slugs de `avatar_catalogo`.
+   *
+   * **Opcionais, e ausentes o boneco é o de hoje.** São as duas únicas peças do
+   * guarda-roupa que entram no SVG pela cabeça; traje é tinta no tronco, e fundo
+   * e pet são componentes irmãos, fora daqui (doc 21 §3.4).
+   *
+   * Slug que o código ainda não desenha degrada para ausência — ver `pecaDeCabeca`.
+   * Enquanto os dois catálogos estiverem vazios (até os Blocos 5 e 7), passar
+   * qualquer coisa aqui não muda um byte do que sai.
+   */
+  chapeu?: string | null;
+  rosto?: string | null;
   /** Altura em px. A largura sai do `viewBox`, nunca de um segundo número. */
   altura: number;
   /**
@@ -130,15 +144,24 @@ export function svgDoAluno({
   skin,
   hair,
   hairColor,
+  chapeu,
+  rosto,
   animado = false,
   ns,
-}: Pick<AvatarKokeshiProps, "skin" | "hair" | "hairColor" | "ns"> & {
+}: Pick<
+  AvatarKokeshiProps,
+  "skin" | "hair" | "hairColor" | "chapeu" | "rosto" | "ns"
+> & {
   animado?: boolean;
 }): string {
   return compor({
     pele: corDe(PELE, skin, 2),
     cabelo: corDe(CABELO, hairColor, 0),
     modeloCabelo: modeloDe(hair),
+    // Ausentes (o caso de hoje, e o de todo slot ainda sem arte), `compor()` não
+    // emite camada nenhuma e a string sai idêntica à de antes do Bloco 1.
+    chapeu: pecaDeCabeca("chapeu", chapeu),
+    rosto: pecaDeCabeca("rosto", rosto),
     animado,
     ns,
     folhaExterna: true,
@@ -149,6 +172,8 @@ export function AvatarKokeshi({
   skin,
   hair,
   hairColor,
+  chapeu,
+  rosto,
   altura,
   animado = false,
   ns,
@@ -158,7 +183,7 @@ export function AvatarKokeshi({
   // segunda descrição da mesma proporção, e é assim que boneco esticado nasce.
   const largura = Math.round((altura * VIEWBOX.w) / VIEWBOX.h);
 
-  const svg = svgDoAluno({ skin, hair, hairColor, animado, ns }).replace(
+  const svg = svgDoAluno({ skin, hair, hairColor, chapeu, rosto, animado, ns }).replace(
     "<svg ",
     `<svg width="${largura}" height="${altura}" `,
   );

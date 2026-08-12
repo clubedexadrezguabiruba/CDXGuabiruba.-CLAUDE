@@ -117,7 +117,7 @@ import {
   pathSombraQueixoTronco,
   pathTronco,
 } from "./geometria";
-import type { EstadoAvatar, Traje } from "./tipos";
+import type { EstadoAvatar, PecaSobreposta, Traje } from "./tipos";
 
 /**
  * O CSS da composição — UMA DECLARAÇÃO, DUAS MONTAGENS.
@@ -574,6 +574,30 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
   );
 }
 
+/**
+ * As PEÇAS DE CIMA — chapéu e rosto (óculos, bigode, barba).
+ *
+ * Duas passadas da mesma lista, exatamente como `extensoes()` faz com a capa do
+ * traje: primeiro todos os preenchimentos, depois todos os traços. Fazer as duas
+ * forma a forma deixaria o traço de uma peça por baixo do preenchimento da
+ * seguinte — e é justamente onde duas formas se encostam que a borda tem de ler.
+ *
+ * **O traço é do compositor, não da peça** (`kk-traco`, a mesma classe do crânio
+ * e do tronco). Uma peça que trouxesse o próprio traço chegaria com espessura
+ * própria, e o boneco ganharia uma borda de 1 px ao lado de outra de 12.
+ *
+ * AUSENTE devolve string vazia — sem `<g>` vazio, sem nada. É a condição para o
+ * SVG de hoje continuar saindo byte a byte, e o teste `pecas-de-elenco.test.ts`
+ * cobra as duas pontas: ausente não muda um byte, presente aparece.
+ */
+function sobrepor(peca: PecaSobreposta | undefined): string {
+  if (!peca?.formas.length) return "";
+  return (
+    peca.formas.map((f) => `<path d="${attr(f.d)}" fill="${f.cor}"/>`).join("") +
+    peca.formas.map((f) => `<path class="kk-traco" d="${attr(f.d)}"/>`).join("")
+  );
+}
+
 /** Um olho. Cápsula vertical, com o `rx` fazendo as pontas semicirculares. */
 function olho(cx: number, cy: number): string {
   return (
@@ -929,6 +953,21 @@ export function compor(estado: EstadoAvatar): string {
     // depois do `<use ... class="kk-traco"/>` da cabeça para o traço do crânio sumir
     // por oclusão. Depois das feições é **ainda mais tarde** — a oclusão continua.
     sobreposta +
+    // ROSTO E CHAPÉU ENTRAM DEPOIS DO CABELO, e a ordem é decisão declarada.
+    //
+    // Óculos por cima do cabelo: sem haste (decisão do Doug, doc 21 §2c) não há o
+    // que apoiar, e a lente é livre para exceder o rosto. Posta ANTES do cabelo,
+    // uma franja tapava a peça que a criança desbloqueou — hoje isso não
+    // aconteceria (a massa de `chanel`, `espetado` e `curto` mede 0 px sobre a
+    // sobrancelha), mas a peça que aparece é a que ela escolheu, e essa ordem não
+    // depende de qual cabelo está por baixo.
+    //
+    // Chapéu por último porque ele disputa o crânio e vence: é o que "esconde o
+    // cabelo" quer dizer. A regra fina — mostra tudo, esconde a franja, esconde
+    // tudo — mora no ITEM e não aqui (`escondeCabelo`), e é decisão obrigatória
+    // ANTES do primeiro chapéu, no Bloco 7. Este arquivo só garante o lugar.
+    sobrepor(estado.rosto) +
+    sobrepor(estado.chapeu) +
     extensoes(traje, false) +
     `</g>` +
     fecha +
