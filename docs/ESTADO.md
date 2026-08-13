@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 0 |
-| **Árvore** | **7 arquivos sujos** |
-| **Último commit** | 8709bb0 · 2026-08-13 · docs(avatar): o Doug aprovou as duas peças na folha — e o pescoço do gambesão virou G20 |
+| **Commits à frente de `origin/main`** | 1 |
+| **Árvore** | **14 arquivos sujos** |
+| **Último commit** | ba9453a · 2026-08-13 · fix(avatar): o G20 fecha — o gambesão perde o pescoço que nunca teve, e a rota ganha a quarta saída |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -285,7 +285,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 87 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 17 |
+| **Arquivos de teste** | 19 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes

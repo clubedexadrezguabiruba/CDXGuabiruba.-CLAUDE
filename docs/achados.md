@@ -76,6 +76,36 @@ lista.
 
 ## 🟠 Trava trabalho
 
+### G21 — o perfil público mostra todo aluno de macacão: o traje não chega lá, e não tem por onde chegar
+**Prova:** `MEDIDO` — 2026-08-13, rastreando quem desenha o boneco inteiro, ao
+fechar a dívida do `useUser`. Achado pelo Claude. Registrado e **não consertado**,
+pela regra 9.
+
+`src/app/(main)/perfil/[userId]/PublicProfileClient.tsx:55` monta o
+`<AvatarKokeshi>` com `skin`, `hair` e `hairColor` — **e mais nada**. Sem a prop
+`traje`, o componente cai no macacão de treino. O aluno que equipou a Farda ou
+ganhou o Gambesão se vê vestido no próprio `/perfil` e **aparece pelado para os
+colegas**, que é justamente o lugar onde a peça teria público.
+
+**E não é uma prop esquecida.** A tela lê a matview `user_public_profiles`, e a
+definição vigente (`20260813120000_b2_moldura_estrutural.sql:75-77`) expõe
+`avatar_skin`, `avatar_hair` e `avatar_hair_color`. **`avatar_traje` não está lá.**
+O dado não existe do lado de fora — o conserto é migration, não uma linha de JSX.
+
+**Por que isso é 🟠 e não cosmético:** o B5 e o B6 fecharam declarando o traje no
+ar, e o `verify:catalogo-slots` concorda — ele compara código × banco, não código ×
+tela. A premissa "peça de slot chega a todo lugar que desenha o boneco" está errada
+e é sobre ela que os blocos de chapéu, fundo e pet vão construir. Cada slot novo
+repete o furo, e a matview precisa de uma coluna nova por slot.
+
+**O conserto, se o Doug mandar:** migration que recria a matview com `u.avatar_traje`
+(e o refresh), o campo no tipo da tela, a prop no componente. O `verify:perfil-publico`
+tem 36 conferências e nenhuma olha para slot — a de nº 37 seria a régua.
+
+**O que NÃO está medido:** se o `RankingEntry` e as listas de turma têm o mesmo
+furo. Elas usam `<AvatarCabeca>`, que é só cabeça e não desenha traje — então
+provavelmente não —, mas isso eu deduzi da assinatura do componente, não medi.
+
 ### G19 — ~~o Gate −1 mede o registro na faixa que a diretriz do transbordo manda invadir~~ ✅ FECHADO
 
 > **CONSERTADO em 2026-08-13**, na abertura do Bloco B4 — e ele deixou de ter
@@ -1113,6 +1143,34 @@ mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em ve
 ---
 
 ## 🔵 Decisão ou divergência
+
+### D14 — `arte:trajes` imprime, ao fim de toda rodada, que o catálogo está vazio — e ele não está
+**Prova:** `MEDIDO` — 2026-08-13, ao mudar o endereço do PNG de traje. Achado pelo
+Claude. Registrado e **não consertado**, pela regra 9.
+
+`scripts/avatar/arte/trajes.ts:187` fecha toda geração com:
+
+> *"A peça ainda NÃO está no catálogo: `CATALOGO.traje` continua vazio até a seed
+> do banco entrar junto (`verify:catalogo-slots` compara os dois)."*
+
+A frase era verdadeira quando foi escrita. **Deixou de ser no B5**, em 2026-08-13:
+`CATALOGO.traje` é `Object.keys(TRAJES_DA_ARTE)` (`catalogo.ts:69`), ou seja, é
+**derivado do próprio arquivo que este script acaba de escrever** — ele nunca mais
+poderá estar vazio depois de uma geração bem-sucedida. E a seed entrou na migration
+`20260813140000_b5_vitrine_do_traje.sql`; o `verify:catalogo-slots` mede os dois
+lados e devolve *"slot traje: 2 slug(s) iguais dos dois lados"*.
+
+**A gravidade é 🔵 e não 🟡 porque nenhuma régua mente** — o gate citado na própria
+frase está verde e correto. Quem mente é o texto, para a pessoa que está lendo o
+terminal: ele manda desconfiar de um passo que já fechou, e é exatamente o tipo de
+instrução velha que faz alguém "consertar" o que está certo.
+
+**O conserto, se o Doug mandar:** trocar a frase por uma que diga o que passou a
+ser verdade — que a peça entra no catálogo no ato, e que o que ainda falta é a seed
+**da peça nova** quando houver uma. Duas linhas, num arquivo, sem gate novo.
+
+**O que NÃO está medido:** se há outras mensagens da esteira de arte na mesma
+situação. Eu vi esta porque ela imprimiu na minha frente; não varri as outras.
 
 ### D13 — o produto não tem favicon, e toda aba do navegador sai sem ícone
 **Prova:** `MEDIDO` — 2026-08-11, `GET http://localhost:3000/favicon.ico 404 (Not

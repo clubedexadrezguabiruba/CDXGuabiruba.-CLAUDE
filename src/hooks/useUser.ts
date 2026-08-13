@@ -21,6 +21,22 @@ export interface UserProfile {
   auto_queen: boolean;
   avatar_config: Record<string, unknown>;
   avatar_base: string;
+  /**
+   * `users.avatar_traje` — slug de `avatar_catalogo`, ou `null`.
+   *
+   * `null` **não** é "sem dado": é o macacão de treino, a ausência de peça, e é o
+   * estado de todo aluno que ainda não abriu um baú nem equipou a Farda.
+   *
+   * Nenhuma tela lê isto hoje: as três que desenham o boneco inteiro — `/perfil`,
+   * `/criar-personagem` e o `EditorDeAparencia` — recebem o slug por prop do
+   * Server Component, que é o caminho certo (menos uma ida ao banco depois da
+   * hidratação). Ele está aqui porque este hook é o retrato do aluno no cliente, e
+   * a coluna existir no banco e faltar no retrato foi justamente a dívida que o
+   * doc 21 registrou. Os outros quatro slots — `avatar_chapeu`, `avatar_rosto`,
+   * `avatar_fundo`, `avatar_pet` — existem na mesma tabela desde a migration
+   * `20260811160000` e entram aqui nos blocos que lhes derem arte.
+   */
+  avatar_traje: string | null;
   rush_3min_record: number;
   rush_5min_record: number;
   rush_resistencia_record: number;
@@ -51,7 +67,7 @@ export function useUser(): UseUserResult {
         const { data } = await supabase
           .from("users")
           .select(
-            "id, email, name, display_name, role, xp, level, puzzle_rating, puzzle_rd, puzzle_streak, puzzle_best_streak, sound_muted, premove_enabled, auto_queen, avatar_config, avatar_base, rush_3min_record, rush_5min_record, rush_resistencia_record, ranking_visible"
+            "id, email, name, display_name, role, xp, level, puzzle_rating, puzzle_rd, puzzle_streak, puzzle_best_streak, sound_muted, premove_enabled, auto_queen, avatar_config, avatar_base, avatar_traje, rush_3min_record, rush_5min_record, rush_resistencia_record, ranking_visible"
           )
           .eq("id", user.id)
           .single();

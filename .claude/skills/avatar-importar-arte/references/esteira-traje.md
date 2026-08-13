@@ -210,13 +210,32 @@ Peça nova não pode mover o que já está congelado:
 O catálogo e o banco **andam juntos**: `verify:catalogo-slots` compara os conjuntos
 de slugs slot a slot, nos dois sentidos. Promover exige, na mesma passada:
 
-1. `TRAJES` em `src/lib/avatar/catalogo.ts` + `CATALOGO.traje` derivado de
-   `Object.keys()`;
-2. a seed no banco — a migration `20260812120000` semeia **9 slugs** e precisa ser
-   reescrita para semear só os que têm arte;
-3. **`AvatarKokeshi` não tem prop `traje`** — sem isso nenhuma tela do produto
-   desenha a peça. Falta `trajeDe(slug)` e o repasse em `svgDoAluno`;
-4. `useUser` não lê `avatar_traje`;
-5. o teste que **não existe**: o análogo de `pecas-de-elenco.test.ts` para traje —
-   *ausente = byte a byte igual*;
-6. o PNG sai de `public/dev/traje/` (ignorado pelo git) para o endereço definitivo.
+1. ~~`TRAJES` em `src/lib/avatar/catalogo.ts` + `CATALOGO.traje` derivado de
+   `Object.keys()`~~ ✅ **fechado no B5** — `catalogo.ts:69`;
+2. ~~a seed no banco — a migration `20260812120000` semeia **9 slugs** e precisa ser
+   reescrita para semear só os que têm arte~~ ✅ **fechado no B5** —
+   `20260813140000_b5_vitrine_do_traje.sql` semeia 2, e `verify:catalogo-slots`
+   confirma *"slot traje: 2 slug(s) iguais dos dois lados"*;
+3. ~~**`AvatarKokeshi` não tem prop `traje`**~~ ✅ **fechado no B5** — `trajeDe()` e o
+   repasse em `svgDoAluno`; o `/perfil`, o `/criar-personagem`, o
+   `EditorDeAparencia` e o `ChestOpeningModal` passam a peça;
+4. ~~`useUser` não lê `avatar_traje`~~ ✅ **fechado em 2026-08-13**. Nenhuma tela
+   consome ainda — as três que desenham o boneco inteiro recebem o slug por prop do
+   Server Component, que é o caminho certo. Os outros quatro slots existem na mesma
+   tabela e entram quando tiverem arte;
+5. ~~o teste que não existe: o análogo de `pecas-de-elenco.test.ts` para traje~~
+   ✅ **fechado em 2026-08-13** — `estilo/__tests__/traje-de-elenco.test.ts`, 9
+   asserções. Ele carrega o que o análogo do chapéu não tem: a supressão da sombra
+   do queixo e do plano lateral é **do campo `tinta.png` declarado, não do arquivo
+   existindo**, e é isso que fez o endereço errado virar boneco sem volume em
+   silêncio. **A âncora do "ausente não muda nada" é a contagem de formas
+   congelada (19 sem traje / 17 com arte)**, medida por dois programas de fora —
+   `avatar:folha-base` e `arte:folha-traje`. A primeira versão comparava
+   `compor()` com `compor()` e uma mutação provou que ela não podia falhar;
+6. ~~o PNG sai de `public/dev/traje/` (ignorado pelo git) para o endereço
+   definitivo~~ ✅ **fechado em 2026-08-13**. O endereço é **`public/items/traje/`**,
+   e os PNGs são **versionados**, pelo precedente do livro de aberturas
+   (`public/chess/`, 875 KB gerados e commitados). `PASTA_TRAJE` já escreve lá, e
+   `src/lib/avatar/__tests__/pngDaPecaNoDeploy.test.ts` cobra peça a peça: existe no
+   disco, é rastreada pelo git (**rastreado = vai no deploy**), e não mora em
+   `public/dev/`. **Depois de `arte:trajes`, `git add` o PNG.**

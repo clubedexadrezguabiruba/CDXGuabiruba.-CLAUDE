@@ -832,9 +832,42 @@ aparece" (roda o Doug).
 > mesmo número para posições diferentes — corre sobre o traço da peça, e declara
 > empate se o 2º colocado ficar a menos de 2%.
 >
-> **O que a promoção ainda deve** está na §7 da referência da skill: `TRAJES` no
-> catálogo, a seed reescrita, a prop `traje` no `AvatarKokeshi`, o `useUser`, o
-> teste de ausência byte a byte, e o PNG saindo de `public/dev/`.
+> **O que a promoção ainda deve** está na §7 da referência da skill. Dos seis itens,
+> **quatro fecharam**: `TRAJES` no catálogo e a seed reescrita (B5), a prop `traje`
+> no `AvatarKokeshi` (B5), e **o PNG saindo de `public/dev/`** — fechado em
+> 2026-08-13.
+>
+> **O endereço definitivo é `public/items/traje/`, versionado.** A dívida não era
+> cosmética: `public/dev/` está no `.gitignore`, a Vercel builda a árvore do git, e
+> a peça nunca chegava ao ar. Pior, o efeito não era o fallback chapado que se
+> supunha — `compositor.ts:391` escolhe o ramo pelo **campo declarado**, não pelo
+> arquivo existindo, então ele suprimia a sombra do queixo e o plano lateral e a
+> arte não vinha: **17 formas contra as 19 do boneco sem traje**, com 42 328 px
+> (farda) e 68 536 px (gambesão) de sombra, luz e traço sumindo. O aluno vestido
+> saía mais chapado que o aluno pelado.
+>
+> Foram medidas as três saídas — versionar (259 KB, saída determinística verificada
+> em duas rodadas), gerar no `prebuild` (1,355 s medido, 0 byte no git) e Supabase
+> Storage (mecanismo inexistente no projeto; quebra a atomicidade entre asset e
+> deploy). **O Doug escolheu versionar**, pelo precedente do livro de aberturas —
+> `public/chess/livro-aberturas.v1.json`, 875 KB gerados e commitados, com `--check`
+> no `prebuild`. O gate é `src/lib/avatar/__tests__/pngDaPecaNoDeploy.test.ts`.
+>
+> **Os dois últimos fecharam no mesmo dia**, a pedido do Doug: o `useUser` passou a
+> ler `avatar_traje`, e o teste de ausência nasceu em
+> `estilo/__tests__/traje-de-elenco.test.ts`. **A lista dos seis está zerada.**
+>
+> O teste merece uma linha porque a primeira versão dele era falsa: ela comparava
+> `compor(BASE)` com `compor({...BASE, traje: undefined})`, e os dois lados passam
+> pelo mesmo ramo — uma mutação (`arteDoTraje()` devolvendo `<g/>` na ausência, um
+> grupo vazio em todo boneco do produto) **passou verde**. A âncora passou a ser a
+> contagem de formas congelada, **19 sem traje e 17 com arte**, que é medida por
+> `avatar:folha-base` e `arte:folha-traje` — programas de fora deste teste. Refeitas
+> as três mutações, as três ficam vermelhas.
+>
+> **Achado aberto no caminho:** o perfil público (`/perfil/[userId]`) desenha todo
+> aluno de macacão — a matview `user_public_profiles` não expõe `avatar_traje`, e
+> conserto é migration. É o **G21** de `docs/achados.md`.
 
 ### Bloco 3 — Fundo
 
