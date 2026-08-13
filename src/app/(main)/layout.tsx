@@ -22,6 +22,11 @@ export default async function MainLayout({
     avatar_skin: number;
     avatar_hair: string | null;
     avatar_hair_color: number;
+    // As duas peças do recorte de cabeça (achado G22). A navbar é a única das cinco
+    // telas que não passa por RPC de lista: ela lê `users` direto, então aqui a
+    // chave não se perde num cast — ela nem sai do banco se faltar no SELECT.
+    avatar_chapeu: string | null;
+    avatar_rosto: string | null;
     avatar_chosen: boolean;
   } | null = null;
   let title: string = "Aprendiz";
@@ -41,7 +46,7 @@ export default async function MainLayout({
     const { data } = await supabase
       .from("users")
       .select(
-        "display_name, level, role, avatar_skin, avatar_hair, avatar_hair_color, avatar_chosen",
+        "display_name, level, role, avatar_skin, avatar_hair, avatar_hair_color, avatar_chapeu, avatar_rosto, avatar_chosen",
       )
       .eq("id", user.id)
       .single();
@@ -81,6 +86,8 @@ export default async function MainLayout({
       skin={profile.avatar_skin}
       hair={profile.avatar_hair}
       hairColor={profile.avatar_hair_color}
+      chapeu={profile.avatar_chapeu}
+      rosto={profile.avatar_rosto}
       lado={32}
       ns="nav"
     />

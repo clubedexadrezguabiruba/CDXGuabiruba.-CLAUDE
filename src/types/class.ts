@@ -121,6 +121,13 @@ export interface FeedEvent {
   avatar_hair: string | null;
   avatar_hair_color: number;
   /**
+   * As duas peças que o recorte de cabeça mostra. Ver `RankingEntry` — o mural cai
+   * no mesmo achado **G22** pela mesma porta: `get_class_feed` as devolve, e
+   * `as FeedEvent[]` (`src/hooks/useClassFeed.ts:39`) as jogava fora.
+   */
+  avatar_chapeu: string | null;
+  avatar_rosto: string | null;
+  /**
    * O número da patente, para a `<MolduraPatente>`. Desde o B2 da moldura.
    *
    * O mural é a única das cinco telas que NÃO lê da matview — ele junta `users`

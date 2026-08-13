@@ -16,6 +16,24 @@ export interface RankingEntry {
   avatar_skin: number;
   avatar_hair: string | null;
   avatar_hair_color: number;
+  /**
+   * As duas peças que o RECORTE DE CABEÇA mostra — `null` é ausência de peça.
+   *
+   * As RPCs de lista as servem desde o Bloco 1 (`20260811160000`), por decisão
+   * explícita: *"a lista mostra a CABEÇA"*. Aqui elas faltavam, e `as RankingEntry`
+   * descartava as duas em silêncio — o achado **G22**, que é o G21 em quatro telas.
+   * Invisível enquanto os catálogos de chapéu e rosto estão vazios; visível no dia
+   * da primeira peça, que é tarde demais para descobrir.
+   *
+   * Traje **não** entra: ele não aparece no recorte de cabeça. Fundo e pet também
+   * não — são componentes irmãos, fora do SVG (doc 21 §3.4).
+   *
+   * A conferência 5 de `verify:identidade-nas-listas` cobra este tipo a partir do
+   * que `<AvatarCabeca>` repassa ao SVG, então quem mexer no componente move a
+   * exigência junto.
+   */
+  avatar_chapeu: string | null;
+  avatar_rosto: string | null;
   level: number;
   metric_value: number;
   title: string;

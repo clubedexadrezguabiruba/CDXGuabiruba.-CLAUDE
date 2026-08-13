@@ -163,6 +163,8 @@ export default function ClassRankingClient({
                             skin={entry.avatar_skin}
                             hair={entry.avatar_hair}
                             hairColor={entry.avatar_hair_color}
+                            chapeu={entry.avatar_chapeu}
+                            rosto={entry.avatar_rosto}
                             lado={40}
                             ns={`cr-${entry.user_id}`}
                           />

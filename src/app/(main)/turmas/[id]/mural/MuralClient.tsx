@@ -124,6 +124,8 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
                       skin={event.avatar_skin}
                       hair={event.avatar_hair}
                       hairColor={event.avatar_hair_color}
+                      chapeu={event.avatar_chapeu}
+                      rosto={event.avatar_rosto}
                       lado={32}
                       ns={`mu-${event.id}`}
                     />

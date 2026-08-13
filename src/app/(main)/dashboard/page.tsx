@@ -8,6 +8,7 @@ import Card, { CardTitle } from "@/components/ui/Card";
 import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
 import MolduraPatente from "@/components/avatar/MolduraPatente";
 import { xpForLevel } from "@/lib/gamification/xp";
+import type { RankingData, RankingEntry } from "@/types/ranking";
 
 const ATALHOS = [
   { href: "/aulas", titulo: "Continuar Treinamento" },
@@ -15,27 +16,15 @@ const ATALHOS = [
   { href: "/bots", titulo: "Enfrentar Bot" },
 ] as const;
 
-interface RankingEntry {
-  user_id: string;
-  public_name: string;
-  /** A identidade kokeshi, desde o Bloco 6. `avatar_hair` NULL é a careca. */
-  avatar_skin: number;
-  avatar_hair: string | null;
-  avatar_hair_color: number;
-  level: number;
-  metric_value: number;
-  title: string;
-  /** O número da patente, para a moldura. Ver `src/types/ranking.ts`. */
-  achieved_tier: number;
-  position: number;
-}
-
-interface RankingResponse {
-  entries: RankingEntry[];
-  my_rank: RankingEntry | null;
-  is_hidden: boolean;
-}
-
+/*
+ * O tipo do ranking vem de `@/types/ranking`, e não de uma cópia local.
+ *
+ * Havia uma aqui — `RankingEntry` + `RankingResponse` reescritos à mão, idênticos
+ * ao original menos as chaves que o original tinha ganhado depois. Foi o que deixou
+ * esta tela de fora do conserto do **G22** e, pior, o que fez a conferência 5 do
+ * `verify:identidade-nas-listas` aprová-la olhando um arquivo que ela não lia. Quem
+ * pegou foi o `tsc`; o gate passou a exigir o import junto, para não depender disso.
+ */
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default async function DashboardPage() {
@@ -82,7 +71,7 @@ export default async function DashboardPage() {
 
   const title = titleData?.current_title ?? "Aprendiz";
 
-  const response = ranking as RankingResponse | null;
+  const response = ranking as RankingData | null;
   const entries: RankingEntry[] = response?.entries ?? [];
 
   return (
@@ -166,6 +155,8 @@ export default async function DashboardPage() {
                       skin={entry.avatar_skin}
                       hair={entry.avatar_hair}
                       hairColor={entry.avatar_hair_color}
+                      chapeu={entry.avatar_chapeu}
+                      rosto={entry.avatar_rosto}
                       lado={32}
                       ns={`qh-${entry.user_id}`}
                     />

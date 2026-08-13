@@ -33,9 +33,16 @@
  *     inteiro passa a dizer que ninguém foi promovido. É a mesma forma da falha 1 —
  *     dado ausente que a interface aceita em silêncio.
  *
- * AS QUATRO CONFERÊNCIAS
- * ----------------------
- *  1. As três RPCs de ranking, CHAMADAS de verdade, devolvem as três colunas da
+ *  6. **A peça chega ao navegador e morre na fronteira do TypeScript.** É a metade
+ *     de CIMA da falha, e ela não tem nada a ver com o banco: a RPC devolve
+ *     `avatar_chapeu`, o tipo da lista não declara a chave, e `as RankingEntry`
+ *     a descarta em silêncio. O aluno equipa a peça, se vê com ela no `/perfil`, e
+ *     continua de cabeça pelada no ranking. Foi o achado G21 no perfil público e o
+ *     G22 aqui — mesmo defeito, cinco telas.
+ *
+ * AS CINCO CONFERÊNCIAS
+ * ---------------------
+ *  1. As RPCs de ranking, CHAMADAS de verdade, devolvem as colunas da
  *     identidade **mais `achieved_tier` como número**, e nenhuma das duas mortas.
  *     Chamar em vez de ler o corpo é o que pega a lição 2 do Bloco B: plpgsql não
  *     valida corpo contra esquema.
@@ -46,6 +53,11 @@
  *  4. A autorização, MEDIDA por comportamento: personificar um usuário que **não**
  *     é da turma e exigir que a chamada seja recusada. É a única prova que não
  *     depende de eu acreditar no corpo da função.
+ *  5. **O caminho de volta, do banco até a tela** (G22): toda prop de aparência que
+ *     `<AvatarCabeca>` repassa ao SVG é declarada no tipo da lista e passada pelas
+ *     cinco telas que o desenham. A lista do que é cobrado sai do **componente**, não
+ *     deste arquivo — o dia em que o chapéu entrar no recorte, as cinco telas passam
+ *     a ser cobradas por ele sem ninguém editar o gate.
  *
  * COMO ELE NÃO SUJA A PRODUÇÃO
  * ----------------------------
@@ -61,14 +73,101 @@
  * Uso: npm run verify:identidade-nas-listas
  */
 
+import { readFileSync } from "fs";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
 import postgres from "postgres";
 import type { Sql } from "postgres";
 import { getDbUrl } from "../db-url";
 
-/** As três colunas da identidade kokeshi (Bloco C). */
-const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_hair", "avatar_hair_color"] as const;
+const RAIZ = resolve(fileURLToPath(import.meta.url), "../../../..");
+
+/**
+ * Prop de `<AvatarCabeca>` → coluna que as RPCs de lista devolvem.
+ *
+ * É a **convenção de nome**, não um inventário de peças: quem decide o que é
+ * cobrado é o componente, logo abaixo. `traje` está aqui sem ser desenhado hoje
+ * pelo recorte — se alguém um dia o repassar ao SVG da cabeça, o gate já sabe qual
+ * coluna exigir. `fundo` e `pet` ficam de fora porque não são props do boneco: são
+ * componentes irmãos, fora do SVG (doc 21 §3.4).
+ */
+const PROP_PARA_COLUNA: Record<string, string> = {
+  skin: "avatar_skin",
+  hair: "avatar_hair",
+  hairColor: "avatar_hair_color",
+  traje: "avatar_traje",
+  chapeu: "avatar_chapeu",
+  rosto: "avatar_rosto",
+};
+
+const COMPONENTE_CABECA = "src/components/avatar/AvatarCabeca.tsx";
+
+/**
+ * As props de aparência que `<AvatarCabeca>` REPASSA ao SVG, lidas do componente.
+ *
+ * É a âncora deste gate, e o motivo de ele não ter lista de slots escrita à mão.
+ * O que a lista tem de entregar não é uma opinião deste arquivo: é o que o próprio
+ * componente enfia no `svgDoAluno`. No dia em que uma peça nova entrar ali — ou
+ * sair —, as cinco telas passam a ser cobradas por ela sozinhas.
+ *
+ * É o mesmo mecanismo da conferência 7 de `verify:perfil-publico`, que nasceu do
+ * G21 e cuja lição foi: a peça se perde entre o banco e a tela, não dentro do banco.
+ *
+ * Regex e não parser de propósito — a pergunta é "o nome aparece dentro da chamada?",
+ * e para isso o texto basta.
+ */
+function propsDaCabeca(): string[] {
+  const src = readFileSync(resolve(RAIZ, COMPONENTE_CABECA), "utf8");
+  const chamada = src.match(/svgDoAluno\(\{([\s\S]*?)\}/);
+  if (!chamada) {
+    throw new Error(
+      `não achei a chamada de svgDoAluno em ${COMPONENTE_CABECA} — ` +
+        "o gate inteiro pende dela; se o componente mudou de forma, esta leitura muda junto",
+    );
+  }
+  return [...chamada[1].matchAll(/(\w+)/g)]
+    .map((m) => m[1])
+    .filter((nome) => nome in PROP_PARA_COLUNA)
+    .sort();
+}
+
+/** As props acima, traduzidas para o nome da coluna que a RPC tem de devolver. */
+const PROPS_DA_CABECA = propsDaCabeca();
+const COLUNAS_IDENTIDADE = PROPS_DA_CABECA.map((p) => PROP_PARA_COLUNA[p]!);
+
+/**
+ * As cinco telas que desenham o recorte de cabeça, e de onde cada uma tira o dado.
+ *
+ * `design-lab/Primitivos.tsx` fica de fora de propósito: ele passa literais para
+ * mostrar a moldura, não vem de RPC nenhuma, e cobrá-lo seria pedir que a bancada
+ * de design carregasse o guarda-roupa inteiro.
+ */
+const CONSUMIDORES: { arquivo: string; rotulo: string; tipo?: string }[] = [
+  {
+    arquivo: "src/app/(main)/dashboard/page.tsx",
+    rotulo: "Quadro de Honra",
+    tipo: "src/types/ranking.ts",
+  },
+  {
+    arquivo: "src/app/(main)/ranking/RankingClient.tsx",
+    rotulo: "ranking global",
+    tipo: "src/types/ranking.ts",
+  },
+  {
+    arquivo: "src/app/(main)/turmas/[id]/ranking/ClassRankingClient.tsx",
+    rotulo: "ranking de turma",
+    tipo: "src/types/ranking.ts",
+  },
+  {
+    arquivo: "src/app/(main)/turmas/[id]/mural/MuralClient.tsx",
+    rotulo: "mural",
+    tipo: "src/types/class.ts",
+  },
+  // A navbar não tem tipo compartilhado: ela faz o próprio SELECT em `users`, com
+  // um tipo escrito na função. Por isso a coluna é cobrada no texto do SELECT — é
+  // ali que a chave deixa de existir, um degrau antes do cast.
+  { arquivo: "src/app/(main)/layout.tsx", rotulo: "navbar" },
+];
 
 /**
  * O NÚMERO da patente, que a `<MolduraPatente>` mapeia para cor.
@@ -415,6 +514,84 @@ export async function conferir(db: Sql): Promise<Relatorio> {
       } else {
         ok(`quem não é da turma é recusado ("${erroForasteiro.split("\n")[0]}")`);
       }
+    }
+  }
+
+  // --- 5. Do banco até a tela: o cast não pode comer a peça (achado G22) ----
+  console.log("\n5. As cinco telas passam ao boneco o que o componente desenha");
+
+  info(`<AvatarCabeca> repassa ao SVG: ${PROPS_DA_CABECA.join(", ")}`);
+
+  for (const { arquivo, rotulo, tipo } of CONSUMIDORES) {
+    const src = readFileSync(resolve(RAIZ, arquivo), "utf8");
+
+    const passadas = new Set<string>();
+    for (const tag of src.matchAll(/<AvatarCabeca\b([\s\S]*?)\/>/g)) {
+      for (const p of tag[1].matchAll(/(\w+)\s*=\s*\{/g)) passadas.add(p[1]);
+    }
+
+    if (passadas.size === 0) {
+      nok(
+        `${rotulo}: não achei nenhum <AvatarCabeca …/> em ${arquivo}`,
+        "ou a tela deixou de desenhar o boneco — e sai desta lista — ou a tag ganhou filhos e a leitura precisa mudar",
+      );
+      continue;
+    }
+
+    // A tela tem de IMPORTAR o tipo que esta tabela diz que ela usa, e isto não é
+    // zelo: o `/dashboard` mantinha um `RankingEntry` local, cópia à mão do
+    // original sem as chaves que ele ganhou depois. Sem esta conferência, as linhas
+    // abaixo aprovariam a tela lendo um arquivo que ela não importa — o gate
+    // passaria verde sobre o defeito que existe para pegar. Quem pegou foi o `tsc`,
+    // e gate que depende do próximo comando não é gate.
+    if (tipo) {
+      const modulo = tipo.replace(/^src\//, "@/").replace(/\.ts$/, "");
+      // `from "…"`, e não o nome solto no texto: o tipo local que este gate existe
+      // para pegar trazia, no comentário dele, a linha "Ver `src/types/ranking.ts`".
+      // Procurar o nome cru aprovaria a tela pela citação de onde o original mora —
+      // que é precisamente o arquivo que ela NÃO estava usando.
+      const importa = new RegExp(`from\\s*["']${modulo.replace("/", "\\/")}["']`).test(src);
+      if (!importa) {
+        nok(
+          `${rotulo} não importa '${modulo}'`,
+          `esta tabela diz que ela usa o tipo de ${tipo}; se ela declara o próprio, a cópia envelhece calada e as conferências abaixo medem o arquivo errado. ${arquivo}`,
+        );
+        continue;
+      }
+      ok(`${rotulo} importa o tipo de '${modulo}' em vez de reescrevê-lo`);
+    }
+
+    for (const prop of PROPS_DA_CABECA) {
+      const coluna = PROP_PARA_COLUNA[prop]!;
+
+      if (!passadas.has(prop)) {
+        nok(
+          `${rotulo} não passa '${prop}' ao <AvatarCabeca>`,
+          `o componente repassa essa prop ao SVG, então o boneco sai sem a peça nesta tela. ${arquivo}`,
+        );
+        continue;
+      }
+
+      // O tipo é o degrau onde a chave morre calada: a RPC mandou, o cast
+      // descartou. Sem tipo compartilhado (a navbar), o degrau é o SELECT — a
+      // chave nem chega a sair do banco.
+      const fonte = tipo ?? arquivo;
+      const texto = tipo ? readFileSync(resolve(RAIZ, tipo), "utf8") : src;
+      const alvo = tipo
+        ? texto
+        : (texto.match(/\.select\(\s*[\s\S]*?\)/)?.[0] ?? "");
+
+      if (!new RegExp(`\\b${coluna}\\b`).test(alvo)) {
+        nok(
+          `${rotulo}: '${prop}' vai à tag, mas '${coluna}' não está em ${fonte}`,
+          tipo
+            ? `\`as ${tipo.includes("class") ? "FeedEvent" : "RankingEntry"}\` descarta em silêncio toda chave que o tipo não nomeia — a peça chega do banco e morre na fronteira (achado G21/G22)`
+            : "a navbar faz o próprio SELECT; coluna fora dele nem sai do banco",
+        );
+        continue;
+      }
+
+      ok(`${rotulo}: '${prop}' vai à tag e '${coluna}' está em ${fonte}`);
     }
   }
 

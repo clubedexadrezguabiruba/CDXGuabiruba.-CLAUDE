@@ -566,7 +566,59 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
-### G22 — as listas descartam chapéu e rosto pelo mesmo `as` que descartava o traje
+### G22 — ~~as listas descartam chapéu e rosto pelo mesmo `as` que descartava o traje~~ ✅ FECHADO
+
+> **CONSERTADO em 2026-08-13**, na sessão seguinte à do G21, por decisão do Doug de
+> fazê-lo **antes** do Bloco 3 e não junto do bloco do chapéu. O motivo da inversão
+> não é o conserto — são 5 telas e 4 campos, meia hora —, é a **régua**: ela só
+> previne enquanto o catálogo está vazio. Escrita depois da primeira peça de chapéu,
+> ela chega junto com o bug e vira laudo.
+>
+> **Zero migrations, como o achado previa.** A conferência 1 do gate confirmou no
+> caminho, contra produção: `get_ranking`, `get_ranking_with_position`,
+> `get_class_ranking` e `get_class_feed` **já devolviam** `avatar_chapeu` e
+> `avatar_rosto`.
+>
+> **A régua: conferência 5 de `verify:identidade-nas-listas`.** Ela não tem lista de
+> slots escrita à mão — lê do **próprio `<AvatarCabeca>`** quais props de aparência o
+> componente repassa ao `svgDoAluno` (`AvatarCabeca.tsx:69`) e exige cada uma das
+> cinco telas que o desenham, mais a chave no tipo da lista, mais a coluna na RPC. É
+> o mecanismo da conferência 7 do `verify:perfil-publico`, um degrau adiante: quem
+> mexer no componente move a exigência junto.
+>
+> **59 passed | 10 failed** antes (5 telas × 2 peças) → **73 | 0** depois.
+>
+> **Duas correções ao diagnóstico deste achado**, as duas medidas ao executá-lo:
+>
+> **1. A navbar não lê do `useUser`.** O achado dizia "as duas colunas no `useUser`
+> para a navbar". `layout.tsx` é Server Component e faz o **próprio** `SELECT` em
+> `users` (`:41-47`); o `UserProfile` do `useUser` nem declara `avatar_skin`, então
+> nunca poderia alimentar boneco nenhum. O conserto lá foi outro — a coluna no
+> `SELECT`, o campo no tipo local e as props. **`useUser` não foi tocado.**
+>
+> **2. Não eram dois tipos, eram três — e o terceiro cegou a primeira versão da
+> régua.** O `/dashboard` mantinha um `RankingEntry` **local**, cópia à mão do
+> original sem as chaves que ele ganhou depois. A régua, na primeira versão, aprovou
+> o Quadro de Honra lendo `src/types/ranking.ts` — arquivo que aquela tela **não
+> importava**. Quem pegou foi o `tsc`, no comando seguinte.
+>
+> O conserto foi nos dois lados: a cópia local morreu (a tela importa `RankingData` e
+> `RankingEntry` do original) e o gate ganhou a conferência do **import**, para não
+> depender do próximo comando. Ela procura `from "@/types/ranking"`, e **não** o nome
+> solto no texto — o comentário do tipo local dizia *"Ver `src/types/ranking.ts`"* e
+> teria enganado a versão frouxa, aprovando a tela pela citação de onde mora o
+> arquivo que ela não usava.
+>
+> **O que continua NÃO medido, e é honesto dizer:** nenhuma peça de chapéu ou rosto
+> existe, então o caminho novo não foi exercido com dado real. A prova é
+> **estrutural** — prop na tag, chave no tipo, coluna na RPC —, não um pixel. O
+> primeiro chapéu é que vai provar o render, e a conferência 5 é o que garante que
+> ele não chegue a cinco telas de cabeça pelada. Segue sem medir se `avatar_fundo` e
+> `avatar_pet` têm consumidor previsto em lista: eles são componentes irmãos, fora do
+> SVG (doc 21 §3.4), e por isso ficam fora do `PROP_PARA_COLUNA` do gate.
+>
+> O texto abaixo fica como registro do defeito.
+
 **Prova:** `MEDIDO` — 2026-08-13, no fechamento do G21, respondendo ao "o que NÃO
 está medido" dele. Achado pelo Claude. Registrado e **não consertado**, pela regra 9.
 

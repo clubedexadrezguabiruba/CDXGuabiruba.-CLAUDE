@@ -206,6 +206,19 @@ aplicada** — ela semeia os 9 slugs, cria a coluna `ordem` e ensina
 `recompute_user_title` a vestir na promoção. Aplicá-la sozinha reprova o
 `verify:catalogo-slots` de propósito: o código das peças ainda não existe.
 
+✅ **O G22 fechou em 2026-08-13, e o Bloco 3 é o próximo.** As cinco telas de
+recorte de cabeça passavam ao boneco só pele/cabelo/cor, e o `as` descartava
+`avatar_chapeu` e `avatar_rosto` que as RPCs já devolviam — o G21 em cinco telas.
+**Zero migrations.** A régua é a **conferência 5** de `verify:identidade-nas-listas`
+(**59/10 → 73/0**), ancorada no que o próprio `<AvatarCabeca>` repassa ao SVG: nada
+de lista de slots à mão. Fechado **antes** do Bloco 3 de propósito — régua escrita
+depois da primeira peça de chapéu não previne nada.
+
+Ele derrubou duas coisas de caminho: a navbar **não** lia do `useUser` (faz o
+próprio `SELECT`), e o `/dashboard` mantinha um **terceiro** `RankingEntry`, cópia
+local que cegou a primeira versão da régua — o `tsc` pegou, e o gate ganhou a
+conferência do `import` para não depender disso. Detalhe em `docs/achados.md`.
+
 **Decisões travando trabalho: nenhuma.** A última caiu em 2026-08-11 —
 
 - ~~**Régua da patente — duas versões vivas, não três** (achado **T1**)~~
@@ -232,9 +245,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 0 |
-| **Árvore** | **5 arquivos sujos** |
-| **Último commit** | 60f2331 · 2026-08-13 · feat(avatar): a lista dos seis zera — o useUser lê o traje, e o teste de ausência ganha âncora de fora |
+| **Commits à frente de `origin/main`** | 1 |
+| **Árvore** | **10 arquivos sujos** |
+| **Último commit** | 6abf05b · 2026-08-13 · fix(avatar): o colega vê a farda — o G21 não era migration, era um `as` que jogava a peça fora |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
