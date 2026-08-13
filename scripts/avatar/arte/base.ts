@@ -246,6 +246,67 @@ export function noCorpo(x: number, y: number): boolean {
   return Math.abs(x - CENTRO_X) <= meioDoTroncoEm(y) + FOLGA;
 }
 
+// ---------------------------------------------------------------------------
+// O CAMPO DO TRAJE — onde uma peça de roupa pode legitimamente existir
+// ---------------------------------------------------------------------------
+//
+// Ele nasceu em 2026-08-13, com a esteira de CORES FINAIS. Até então a peça era
+// reconhecida pela cor: o pedido mandava pintar tudo em ciano, e nada mais na
+// imagem morava naquele matiz. Com a paleta permissiva a arte chega na cor que o
+// aluno vai ver, e a cor deixa de ser instrumento de medição.
+//
+// O que substitui o ciano é a **diferença contra a base** — mas diferença sozinha
+// levaria junto tudo que o gerador re-sintetizou: as feições repintadas, o ruído
+// de reencode, a sombra do chão que ele resolveu redesenhar. É o que o docstring de
+// `extrair.ts` já dizia da diferença: *"ótima para PERGUNTAR se o boneco continua o
+// mesmo, e ruim para responder quais pixels são a peça"*.
+//
+// **O campo é o que a torna boa para a segunda pergunta.** Restringir a diferença à
+// região em que uma roupa PODE estar recupera a precisão que a cor dava, e a
+// fronteira não é escolhida: ela sai dos tetos que o `PEDIDO-TRAJE.md` já publica e
+// que o doc 21 §6.1 mediu.
+
+/**
+ * Quanto a roupa pode passar da silhueta do tronco, de cada lado: **26 unidades**.
+ *
+ * É metade do transbordo da cabeça na cintura (51,9 u) — a cabeça é a parte mais
+ * larga do boneco, e é isso que faz ele ser este boneco. Passar disso não deixa a
+ * roupa mais legível: apaga o kokeshi. Medido no doc 21 §6.1.
+ */
+export const TRANSBORDO_LATERAL = 26;
+
+/**
+ * Até onde a barra pode descer, em unidades abaixo da silhueta externa do tronco:
+ * **18**.
+ *
+ * A silhueta externa fecha em `TRONCO.yBase + TRACO/2` = 640 u, e a sombra do chão
+ * termina em 658. São as mesmas 18 u que o pedido publica como "21 px" no canvas de
+ * 1024. Abaixo disso não há roupa — há a sombra do chão, e o que muda ali é o
+ * gerador mexendo no que não devia.
+ */
+export const TRANSBORDO_BARRA = 18;
+
+/**
+ * A peça de traje pode existir aqui, e em nenhum outro lugar.
+ *
+ * Três fronteiras, e as três são teto publicado, não escolha:
+ *
+ *  - **em cima, o queixo.** `extensoes(traje, false)` é a última camada do SVG
+ *    (`compositor.ts:971`), depois do rosto e do cabelo: uma gola que subisse
+ *    acima do queixo cobriria a boca da criança. O pedido diz "nem um pixel acima".
+ *  - **dos lados**, a meia-largura do tronco mais `TRANSBORDO_LATERAL`;
+ *  - **embaixo**, a base da silhueta mais `TRANSBORDO_BARRA`.
+ *
+ * O que fica de fora não é perda silenciosa: `extrairTraje` conta os pixels
+ * candidatos que caíram fora e os imprime, porque descarte em silêncio é o modo de
+ * falha que esta rota inteira existe para fechar.
+ */
+export function noCampoDoTraje(x: number, y: number): boolean {
+  if (y <= Y_QUEIXO) return false;
+  if (y > TRONCO.yBase + TRACO / 2 + TRANSBORDO_BARRA) return false;
+  return Math.abs(x - CENTRO_X) <= meioDoTroncoEm(y) + FOLGA + TRANSBORDO_LATERAL;
+}
+
 /** O canvas inteiro, em unidades. Serve de universo para as contas de área. */
 export const CANVAS_EM_UNIDADES: Caixa = (() => {
   const a = paraUnidade(0, 0);

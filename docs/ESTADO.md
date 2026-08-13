@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 8 |
+| **Commits à frente de `origin/main`** | 9 |
 | **Árvore** | **14 arquivos sujos** |
-| **Último commit** | c596c3b · 2026-08-13 · feat(avatar): o banco aprende a moldura — achieved_tier nas listas, e o CHECK do traje cai |
+| **Último commit** | fab18e7 · 2026-08-13 · feat(avatar): a moldura de patente — o anel em volta do boneco, nos 8 call sites |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

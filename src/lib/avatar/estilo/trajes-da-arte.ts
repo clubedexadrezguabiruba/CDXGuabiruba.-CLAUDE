@@ -13,9 +13,12 @@
  *  - `tinta.png` — o INTERIOR da peça, clipado no `pathTronco()`. Nunca a
  *    fronteira: o que excede a silhueta é `extensoes`, e extensão é vetor
  *    (doc 21 §6.1, e `tipos.ts:51`);
- *  - `tinta.cor` — o pano da patente, lido de `scripts/avatar/patentes.ts` e
- *    travado por `verify:paleta-patentes`. É o fallback chapado se o PNG faltar,
- *    e é o que o compositor escurece para a sombra do queixo e o plano lateral;
+ *  - `tinta.cor` — a cor dominante MEDIDA na arte (moda em baldes de 8 níveis por
+ *    canal, com a média dentro do balde vencedor). É o fallback chapado se o PNG
+ *    faltar, e é o que o compositor escurece para a sombra do queixo e o plano
+ *    lateral quando não há arte. **Ela não vem mais de `patentes.ts`**: a patente
+ *    deixou de vestir o boneco em 2026-08-13, e a cor do traje passou a ser final e
+ *    livre (doc 21 §0);
  *  - **`escalaMedida` é ausente de propósito.** Com ela ausente o compositor usa
  *    `k = 1` (`compositor.ts:373`), e o `<image>` ocupa o `viewBox` inteiro — que
  *    é exatamente o retângulo em que o PNG foi recortado (px 212→812 × 92→932,
@@ -25,10 +28,15 @@
 import type { Traje } from "./tipos";
 
 export const TRAJES_DA_ARTE: Record<string, Traje> = {
-  "traje-soldado-farda": {
-    id: "traje-soldado-farda",
-    nome: "Farda de Soldado",
-    tinta: { png: "/dev/traje/traje-soldado-farda.png", cor: "#78833B" },
+  "traje-farda": {
+    id: "traje-farda",
+    nome: "Farda da Academia",
+    tinta: { png: "/dev/traje/traje-farda.png", cor: "#78833B" },
+  },
+  "traje-gambesao": {
+    id: "traje-gambesao",
+    nome: "Gambesão Acolchoado",
+    tinta: { png: "/dev/traje/traje-gambesao.png", cor: "#13ABB3" },
   },
 };
 

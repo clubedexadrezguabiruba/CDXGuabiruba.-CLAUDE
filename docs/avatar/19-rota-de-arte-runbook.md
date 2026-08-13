@@ -300,6 +300,41 @@ conversor** cai no `--check`. Nenhum dos dois exige render.
 
 ## 12. A rota do TRAJE — o que muda, e o que não muda
 
+> ### ⚠️ EMENDA DE 2026-08-13 — o ciano saiu, e com ele metade do passo 4
+>
+> **O passo 3 e o passo 4 mudaram, e a tabela abaixo ainda descreve os antigos.**
+> Onde ela divergir desta caixa, a caixa vence.
+>
+> | | antes (ciano instrumental) | **agora (cor final)** |
+> |---|---|---|
+> | como a peça é reconhecida | matiz 180° ∩ saturação — o ciano do pedido | **diferença contra a base ∩ campo do traje** (`noCampoDoTraje`, base.ts) |
+> | o que o passo 4 faz | recolore na cor da patente + recorta | **só recorta** — a cor é a que a artista pintou |
+> | de onde vem a cor | `scripts/avatar/patentes.ts` | da própria arte |
+> | o slug | `traje-<patente>-<nome>` | **`traje-<nome>`** |
+> | o controle negativo | remedir a luminância de cada papel na saída | **extrair a PRÓPRIA base devolve 0 px** |
+>
+> **Por que:** a patente deixou de vestir o boneco (doc 21 §0). Sem cor de destino
+> não há o que recolorir, e sem ciano no pedido não há matiz reservado para
+> reconhecer a peça.
+>
+> **O campo do traje é o que devolve a precisão que a cor dava.** A diferença sozinha
+> levaria as feições repintadas, o ruído de reencode e a sombra do chão redesenhada —
+> é o que `extrair.ts` sempre disse dela. As três fronteiras do campo são teto
+> publicado, não escolha: o queixo em cima, `meioDoTronco + 26 u` dos lados,
+> `yBase + traço/2 + 18 u` embaixo.
+>
+> **Uma peça ainda se recolore, e a lista só encolhe.** A `traje-farda` foi desenhada
+> em ciano, e o que o Doug aprovou foi o resultado oliva. Assar o oliva na arte de
+> origem **foi tentado e reprovou duas vezes**: o Gate −1 passou a acusar 72
+> ladrilhos de forma no corpo (ele reconhece a peça pelo ciano, justamente para
+> julgar o boneco fora dela), e a máscara encolheu 11 122 px. Então o ciano fica na
+> arte e o oliva é **declarado** em `COR_FINAL_DECLARADA` (`traje.ts`) — uma linha,
+> para uma peça, sem sucessora.
+>
+> **O passo 2 também mudou, e antes de tudo:** o Gate −1 tirou do alvo do registro o
+> que a peça **escureceu** na faixa de rodapé. É o conserto do achado **G19**, e sem
+> ele nenhum traje com barra passa. Ver `docs/achados.md`.
+
 *Escrita em 2026-08-12, quando `traje-soldado-farda` passou por aqui. A rota nasceu
 para cabelo; esta seção é a metade que difere. A esteira comando a comando, com os
 números e as três ressalvas, está em

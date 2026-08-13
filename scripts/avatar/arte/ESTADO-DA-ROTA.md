@@ -2994,3 +2994,73 @@ unificação **cancelada** em 2026-08-07 (achado T5, fechado).
 
 **Não se mexeu em código:** nenhuma linha de `pecas-da-arte.ts`, `cabelo.ts` ou do
 compositor depende do Passo 8 — ele nunca começou.
+
+---
+
+## 2026-08-13 — a esteira de CORES FINAIS, e a segunda peça de traje entrou
+
+O Bloco B4 da virada de direção (doc 21 §0). Quatro coisas, nesta ordem.
+
+### 1. O G19 fechou, e ele era pré-requisito
+
+O Gate −1 media o registro num SAD sobre a faixa de rodapé, menos o que a peça
+cobrisse — e "o que a peça cobrisse" era só o **ciano**. O contorno preto da barra
+não é ciano, ficava dentro do alvo, e o mínimo escorregava. Com a diretriz do
+transbordo obrigatória, ia acontecer em toda peça de traje.
+
+O conserto: sai também o que **escureceu** em relação à base, dentro da faixa
+(`ESCURECEU = NIVEL = 24`). Assimétrico de propósito — excluir tudo que *mudou*
+faria o SAD valer 0 em (0,0) por construção e o registro aprovaria qualquer coisa.
+
+| entrada | antes | depois |
+|---|---|---|
+| farda (controle negativo) | 0 / 0 · 100,00% | **0 / 0 · 100,00%** |
+| a própria base (controle negativo) | 0 / 0 · 100,00% | **0 / 0 · 100,00%** |
+| gambesão | 0 / **2** · REPROVADA | **0 / 0 · APROVADA** |
+| fixtures b, c, d | reprovam | reprovam |
+| fixtures e, f | passam no registro | passam no registro |
+
+**Preço declarado:** a fixture d (recorte de 60 px) caiu de (−18, 3) para (−2, 0).
+Ainda reprova duas vezes, mas a margem do registro foi de 18× para 2× a tolerância.
+O limite de profundidade que consertaria isso derruba o gambesão, e escolhê-lo maior
+seria calibrar na peça que se quer aprovar.
+
+### 2. Os slugs perderam a patente
+
+`traje-soldado-farda` → **`traje-farda`**. Custou zero: nenhuma linha no banco.
+Depois do seed do B5 custaria migration de dados.
+
+### 3. A rota de cores finais
+
+| | antes | agora |
+|---|---|---|
+| máscara | matiz 180° ∩ saturação | **diff contra a base ∩ `noCampoDoTraje`** + salpico + conectividade |
+| passo 4 | recolore + recorta | **só recorta** |
+| saída | RGBA na cor da patente | **RGBA na cor da arte** |
+| controle | luminância por papel na saída | **extrair a própria base = 0 px** |
+
+O campo do traje sai de teto publicado: queixo em cima, `meioDoTronco + 26 u` dos
+lados, `yBase + traço/2 + 18 u` embaixo.
+
+**A farda continua sendo recolorida, e é a única.** `COR_FINAL_DECLARADA` tem uma
+entrada. Assar o oliva na arte foi tentado e reprovou: o Gate −1 acusou 72 ladrilhos
+de forma (ele reconhece a peça pelo ciano) e a máscara encolheu 11 122 px.
+
+### 4. As duas peças, medidas
+
+| | `traje-farda` | `traje-gambesao` |
+|---|---|---|
+| Gate −1 | aprovada, 0/0/100,00% | aprovada, 0/0/100,00% |
+| máscara | 90 510 px | 113 533 px |
+| fora do campo | 813 px | 5 957 px |
+| controle na base | **0 px** | **0 px** |
+| cor de saída | `#78833B` (declarada) | `#13ABB3` (da arte) |
+| colagem | 1 : 1, no pixel | 1 : 1, no pixel |
+| transbordo | **3,86%** | **17,64%** |
+| distinção a 56 px vs. sem traje | 36,45% | 43,90% |
+| distinção entre as duas | **43,47%** | |
+| composto | 17 formas / 5 537 bytes | 17 formas / 5 540 bytes |
+
+**As duas pontas que ficaram para o Doug** (e não são régua, são olho): o transbordo
+das duas cai fora do alvo de ~10% em direções opostas, e os dois vocabulários de
+arte destoam na folha. Ver o parecer no fim do Bloco B4.

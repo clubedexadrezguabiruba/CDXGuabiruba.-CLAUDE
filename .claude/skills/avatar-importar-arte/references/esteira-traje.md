@@ -3,6 +3,31 @@
 *Escrita em 2026-08-12, quando a primeira peça de traje passou pela rota
 (`traje-soldado-farda`). A rota nasceu para cabelo; esta é a metade dela que muda.*
 
+> ### ⚠️ EMENDA DE 2026-08-13 — leia antes de qualquer passo daqui
+>
+> A esteira mudou em quatro pontos, e o texto abaixo ainda descreve os antigos.
+> **Onde divergir, esta caixa vence.** O detalhe está na §12 do runbook.
+>
+> 1. **A arte chega em COR FINAL.** O ciano instrumental saiu do
+>    `PEDIDO-TRAJE.md`, e o passo 4 (`arte:traje`) **não recolore mais nada** — ele
+>    só recorta. A cor que a artista pintou é a que vai à tela.
+> 2. **A peça é reconhecida por DIFERENÇA contra a base**, restrita ao campo do
+>    traje (`noCampoDoTraje` em `base.ts`: queixo em cima, +26 u dos lados, +18 u
+>    abaixo da base do tronco), mais salpico e conectividade.
+> 3. **O slug perdeu a patente:** `traje-<nome>`, não `traje-<patente>-<nome>`.
+>    `traje-soldado-farda` virou `traje-farda`.
+> 4. **O controle negativo é outro:** extrair a **própria base** tem de devolver
+>    **0 px**. O controle antigo (remedir a luminância de cada papel) vigiava a
+>    recolorização e morreu com ela.
+>
+> **Uma peça ainda se recolore:** a `traje-farda`, em `COR_FINAL_DECLARADA`
+> (`traje.ts`), porque ela foi desenhada em ciano e o que o Doug aprovou foi o
+> oliva. É resíduo de transição, não mecanismo — arte nova não entra ali.
+>
+> **E o Gate −1 mudou antes de tudo:** ele tira do alvo do registro o que a peça
+> escureceu na faixa de rodapé (achado **G19**, fechado). Sem isso nenhum traje com
+> barra passa.
+
 O runbook do processo é
 [docs/avatar/19-rota-de-arte-runbook.md](../../../../docs/avatar/19-rota-de-arte-runbook.md);
 o registro de execução, com cada número medido, é

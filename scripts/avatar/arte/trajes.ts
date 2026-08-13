@@ -46,8 +46,12 @@ const SAIDA = "src/lib/avatar/estilo/trajes-da-arte.ts";
  * que **têm arte desenhada**, que é a trava nº 1 do doc 21 §1.3 — arte por
  * demanda, nunca estoque.
  */
+// A convenção é `traje-<nome>`, sem patente — desde 2026-08-13, quando a patente
+// saiu da roupa e virou moldura (doc 21 §0.7). `traje-soldado-farda` virou
+// `traje-farda` no mesmo commit em que a recolorização por patente morreu.
 const NOMES: Record<string, string> = {
-  "traje-soldado-farda": "Farda de Soldado",
+  "traje-farda": "Farda da Academia",
+  "traje-gambesao": "Gambesão Acolchoado",
 };
 
 /** `public/dev/traje/x.png` → `/dev/traje/x.png`, que é a URL que o browser pede. */
@@ -68,9 +72,12 @@ const CABECALHO = `/**
  *  - \`tinta.png\` — o INTERIOR da peça, clipado no \`pathTronco()\`. Nunca a
  *    fronteira: o que excede a silhueta é \`extensoes\`, e extensão é vetor
  *    (doc 21 §6.1, e \`tipos.ts:51\`);
- *  - \`tinta.cor\` — o pano da patente, lido de \`scripts/avatar/patentes.ts\` e
- *    travado por \`verify:paleta-patentes\`. É o fallback chapado se o PNG faltar,
- *    e é o que o compositor escurece para a sombra do queixo e o plano lateral;
+ *  - \`tinta.cor\` — a cor dominante MEDIDA na arte (moda em baldes de 8 níveis por
+ *    canal, com a média dentro do balde vencedor). É o fallback chapado se o PNG
+ *    faltar, e é o que o compositor escurece para a sombra do queixo e o plano
+ *    lateral quando não há arte. **Ela não vem mais de \`patentes.ts\`**: a patente
+ *    deixou de vestir o boneco em 2026-08-13, e a cor do traje passou a ser final e
+ *    livre (doc 21 §0);
  *  - **\`escalaMedida\` é ausente de propósito.** Com ela ausente o compositor usa
  *    \`k = 1\` (\`compositor.ts:373\`), e o \`<image>\` ocupa o \`viewBox\` inteiro — que
  *    é exatamente o retângulo em que o PNG foi recortado (px 212→812 × 92→932,
@@ -126,10 +133,11 @@ async function gerar(): Promise<string> {
       continue;
     }
     console.log(
-      `  ${p.slug.padEnd(24)} ${p.patente.padEnd(10)} pano ${p.cores.massa} · ` +
-        `sombra ${p.cores.sombra} · luz ${p.cores.luz} · ${(p.bytes / 1024).toFixed(1)} KB`,
+      `  ${p.slug.padEnd(20)} ${nome.padEnd(22)} cor ${p.cor} · ` +
+        `${p.pixels.toLocaleString("pt-BR")} px · ${(p.bytes / 1024).toFixed(1)} KB` +
+        `   controle na base ${p.controleNaBase} px`,
     );
-    blocos.push(corpoDaPeca(p.slug, nome, urlDoPng(p.png), p.cores.massa));
+    blocos.push(corpoDaPeca(p.slug, nome, urlDoPng(p.png), p.cor));
   }
   if (faltou) process.exit(1);
 

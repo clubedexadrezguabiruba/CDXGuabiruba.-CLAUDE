@@ -76,7 +76,38 @@ lista.
 
 ## 🟠 Trava trabalho
 
-### G19 — o Gate −1 mede o registro na faixa que a diretriz do transbordo manda invadir: traje com barra larga reprova por um deslocamento que não houve
+### G19 — ~~o Gate −1 mede o registro na faixa que a diretriz do transbordo manda invadir~~ ✅ FECHADO
+
+> **CONSERTADO em 2026-08-13**, na abertura do Bloco B4 — e ele deixou de ter
+> conserto opcional: com a paleta permissiva a arte chega em **cor final**, então a
+> máscara de ciano não fica pior, ela fica **vazia**.
+>
+> **O conserto é o que o próprio achado previa:** tirar do alvo do SAD, dentro da
+> faixa de rodapé, os pixels que **escureceram** em relação à base — conservador e
+> independente do registro. `gate-menos-um.ts`, constante `ESCURECEU = NIVEL = 24`.
+>
+> **Por que "escureceu" e não "mudou":** excluir tudo que difere no índice 0 faria o
+> SAD valer ~0 em (0,0) por construção, e o registro passaria a aprovar tudo. A
+> assimetria salva o sinal — um boneco deslocado escurece de um lado da elipse de
+> sombra e **clareia** do outro, e o lado que clareou continua medindo.
+>
+> | entrada | antes | depois |
+> |---|---|---|
+> | `traje-soldado-farda` (controle negativo) | 0 / 0 · 100,00% | **0 / 0 · 100,00%** |
+> | a própria base (controle negativo) | 0 / 0 · 100,00% | **0 / 0 · 100,00%** |
+> | gambesão aprovado | 0 / **2** · REPROVADA | **0 / 0 · APROVADA** |
+> | fixture b (deslocamento 3 px) | (3, 3) reprova | (3, 3) reprova |
+> | fixture c (escala 103%) | (0, 8) reprova | (0, 8) reprova |
+> | fixture d (recorte 60 px) | (−18, 3) reprova | **(−2, 0)** reprova |
+> | fixtures e, f | passam no registro | passam no registro |
+>
+> **O preço está declarado no código:** a fixture d perdeu margem — de 18× para 2× a
+> tolerância —, embora continue reprovando duas vezes (registro **e** 79 ladrilhos
+> de forma no rosto). O limite de profundidade que a consertaria (30 u) derruba o
+> gambesão de volta, e escolher 40 u seria calibrar o teto na peça que se quer
+> aprovar. Ficou a régua simples com o custo escrito.
+>
+> O texto abaixo fica como registro do defeito.
 
 **Prova:** `MEDIDO` — 2026-08-12, na 2ª rodada de arte do gambesão do Soldado.
 Achado pelo Claude ao conciliar o gate com a leitura por subagente. Registrado e

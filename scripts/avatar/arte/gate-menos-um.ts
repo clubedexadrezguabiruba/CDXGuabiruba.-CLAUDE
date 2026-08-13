@@ -311,6 +311,111 @@ const MATIZ_PECA = 180;
 const TOL_MATIZ_PECA = 30;
 const SAT_MIN_PECA = 0.18;
 
+/**
+ * ---------------------------------------------------------------------------
+ * O CONSERTO DO G19: A MÁSCARA DO RODAPÉ SÓ VIA CIANO, E A BARRA DA ROUPA NÃO É
+ * ---------------------------------------------------------------------------
+ *
+ * Quanto um pixel do rodapé precisa ter ESCURECIDO, em níveis de luminância, para
+ * sair do alvo do registro: **24**, o mesmo `NIVEL` das outras contas deste arquivo.
+ *
+ * **O defeito, medido em 2026-08-12** (achado G19). O registro é um SAD calculado
+ * só sobre a faixa de rodapé, menos o que a peça cobrir — e "o que a peça cobrir"
+ * era a máscara `preliminar`, que é **matiz ∩ saturação**, ou seja, ciano e só
+ * ciano. O **contorno preto** que a barra da roupa carrega não é ciano, não entrava
+ * na máscara, e ficava dentro do alvo do SAD como estrutura escura que a base não
+ * tem. Aí o mínimo escorrega: descer a base ~8 px alinha parcialmente a borda da
+ * elipse de sombra do chão com a barra nova.
+ *
+ * | arte | peça no rodapé | registro medido |
+ * |---|---|---|
+ * | `traje-soldado-farda`, aprovada | 0,7% | 0 / 0 · 100,00% |
+ * | gambesão, aprovado pelo Doug | **5,1%** | 0 / **2** · 100,00% |
+ *
+ * E os percentuais contavam **só o ciano**: o traço preto da barra, que é o que de
+ * fato enviesa, não aparecia nem no número.
+ *
+ * **Por que ele ia se repetir em TODA peça de traje.** Em 2026-08-12 o transbordo
+ * virou diretriz obrigatória, com teto de 21 px na barra — e a barra desce
+ * exatamente dentro da faixa de rodapé. O pedido manda o gerador fazer a coisa que
+ * fazia este gate mentir.
+ *
+ * **E em 2026-08-13 ele deixou de ter conserto opcional:** com a paleta permissiva
+ * a arte chega em **cor final**, não em ciano. A máscara `preliminar` passa a
+ * encontrar ZERO pixels de peça em qualquer traje novo — ela não fica pior, ela
+ * fica vazia.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE "ESCURECEU" E NÃO "MUDOU"
+ * ---------------------------------------------------------------------------
+ *
+ * A regra tem de valer **antes** de o registro estar provado — é o TEMPO 2, e a
+ * ordem em três tempos é a espinha deste gate. Então ela não pode depender de saber
+ * o deslocamento.
+ *
+ * Tirar do alvo tudo que **mudou** seria a saída óbvia e é a errada, e o motivo é
+ * circular: excluir todo pixel que difere no índice 0 faz o SAD valer ~0 em (0,0)
+ * **por construção**, qualquer outro deslocamento fica pior, e o registro passa a
+ * aprovar tudo. O gate ficaria verde por vacuidade — que é o defeito que este
+ * projeto mais persegue.
+ *
+ * **Escureceu é assimétrico, e é isso que salva o sinal.** A peça é tinta desenhada
+ * SOBRE o rodapé, que é fundo claro mais a elipse de sombra: pôr pano ali escurece.
+ * Já um boneco deslocado escurece de um lado da elipse e **clareia** do outro — e o
+ * lado que clareou continua dentro do alvo, medindo. Metade do sinal de borda
+ * sobrevive, e a metade que sobrevive basta: as três fixtures de deslocamento,
+ * escala e recorte continuam reprovando pelo registro (medido, tabela no commit).
+ *
+ * O `PISO_AREA_REGISTRO` continua sendo a rede: se a exclusão comer tanto do rodapé
+ * que sobre menos da metade, o gate diz *"o registro não é mensurável"* em vez de
+ * aprovar em silêncio.
+ */
+const ESCURECEU = NIVEL;
+
+/**
+ * ---------------------------------------------------------------------------
+ * O QUE A EXCLUSÃO CUSTA, DECLARADO — e por que NÃO tem limite de profundidade
+ * ---------------------------------------------------------------------------
+ *
+ * A exclusão come sinal, e o sinal do rodapé é mais escasso do que a fração de
+ * ÁREA sugere. Medido na base:
+ *
+ * | | |
+ * |---|---|
+ * | a faixa de rodapé inteira | y 816 → 1023 px = **212 992 px** |
+ * | dela, o que NÃO é fundo puro (a elipse de sombra + o fundo do tronco) | **24 332 px, 11,4%** |
+ * | onde esse não-fundo mora | y 816 → **879** px, ou 0 → **47 u** abaixo do tronco |
+ *
+ * Os outros 88,6% são marfim chapado e não contribuem com um bit para o SAD. O que
+ * `fracaoMensuravel` mede é área, e área ali é quase toda vazio — por isso ele
+ * continua marcando ~95% mesmo quando a exclusão morde de verdade.
+ *
+ * **O PREÇO, MEDIDO NAS SEIS FIXTURES.** Todas mantêm o veredito exigido, e uma
+ * perde margem:
+ *
+ * | fixture | registro antes | registro depois | exigido |
+ * |---|---|---|---|
+ * | b — deslocamento 3 px | (3, 3) | (3, 3) | reprovar ✓ |
+ * | c — escala 103% | (0, 8) · 100,75% | (0, 8) · 100,75% | reprovar ✓ |
+ * | **d — recorte de 60 px** | (−18, 3) | **(−2, 0)** | reprovar ✓ |
+ * | e — só antialiasing | (0, 0) | (0, 0) | passar ✓ |
+ * | f — quadrado no corpo | (0, 0) | (0, 0) | passar no registro ✓ |
+ * | a própria base | (0, 0) | (0, 0) | passar ✓ |
+ *
+ * **A fixture d é a perda, e ela fica escrita.** Ela ainda reprova — 2 px contra
+ * tolerância de 1, e mais 79 ladrilhos de forma no rosto, que sozinhos bastariam —
+ * mas a margem do registro caiu de 18× para 2× a tolerância. Um recorte MENOR que
+ * este poderia escapar do registro e depender só da forma para reprovar.
+ *
+ * **E o limite de profundidade que consertaria isso foi tentado e recusado.**
+ * Restringir a exclusão a 30 u abaixo do tronco (18 u de teto da barra + 12 u de
+ * traço) devolve a fixture d a (−10, 1) — e **derruba o gambesão de volta para
+ * (0, 2)**, porque o escurecimento dele desce a 38,7 u, p95 em 34,5. Escolher 40 u
+ * em vez de 30 seria calibrar o teto na peça que eu quero aprovar, que é
+ * literalmente a regra que `gates.md` proíbe: *"teto calibrado na peça que se quer
+ * aprovar aprova o defeito junto"*. Fica a régua simples, com o preço declarado.
+ */
+
 // ---------------------------------------------------------------------------
 // O laudo
 // ---------------------------------------------------------------------------
@@ -544,13 +649,25 @@ export async function gateMenosUm(caminhoArte: string): Promise<Laudo> {
       nominal[y * baseImg.w + x] = paraUnidade(x, y).y > Y_FIM_TRONCO ? 1 : 0;
     }
   }
+  // A CORREÇÃO DO G19 — o que a peça ESCURECEU também sai do alvo. Ver `ESCURECEU`.
+  const escureceuNoRodape = new Uint8Array(nPx);
+  if (confereDim) {
+    for (let i = 0; i < nPx; i++) {
+      if (!nominal[i]) continue;
+      const j = i * 3;
+      const lb = luz(baseImg.data[j], baseImg.data[j + 1], baseImg.data[j + 2]);
+      const la = luz(arte.data[j], arte.data[j + 1], arte.data[j + 2]);
+      if (lb - la > ESCURECEU) escureceuNoRodape[i] = 1;
+    }
+  }
+
   const alvo = new Uint8Array(nPx);
   let areaNominal = 0;
   let areaAlvo = 0;
   for (let i = 0; i < nPx; i++) {
     if (!nominal[i]) continue;
     areaNominal++;
-    if (!preliminar[i]) (alvo[i] = 1), areaAlvo++;
+    if (!preliminar[i] && !escureceuNoRodape[i]) (alvo[i] = 1), areaAlvo++;
   }
   const fracaoMensuravel = areaNominal ? areaAlvo / areaNominal : 0;
   const registroMensuravel = fracaoMensuravel >= PISO_AREA_REGISTRO;

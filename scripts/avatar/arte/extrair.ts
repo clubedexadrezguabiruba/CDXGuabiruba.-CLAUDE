@@ -109,12 +109,23 @@ import { mkdirSync, writeFileSync } from "fs";
 import sharp from "sharp";
 
 import { TRACO } from "../../../src/lib/avatar/estilo/geometria";
-import { ESCALA, FUNDO, LADO, PASTA, PNG_BASE, paraUnidade, regiaoDoPixel, saidaDaArte } from "./base";
+import {
+  ESCALA,
+  FUNDO,
+  LADO,
+  PASTA,
+  PNG_BASE,
+  noCampoDoTraje,
+  paraUnidade,
+  regiaoDoPixel,
+  saidaDaArte,
+} from "./base";
 import {
   type Componente,
   type Img,
   carregar,
   componentes,
+  delta,
   dilatar,
   distanciaMatiz,
   luz,
@@ -419,6 +430,182 @@ export function mascaraDaPeca(
     if (peca[i] && !teal[i]) traco[i] = 1;
   }
   return { teal, traco, peca, foraDaPermitida };
+}
+
+// ---------------------------------------------------------------------------
+// A ROTA DE CORES FINAIS — a peça de TRAJE, desde 2026-08-13
+// ---------------------------------------------------------------------------
+//
+// Tudo acima desta linha reconhece a peça pela COR: o ciano instrumental em 180°,
+// que nada mais na base tem. Era o que permitia responder "quais pixels são a
+// peça?" sem confundir com o que o gerador re-sintetizou.
+//
+// **A paleta permissiva tirou o instrumento.** Com cor final e livre (doc 21 §0), a
+// arte chega na cor que o aluno vai ver, e não há mais matiz reservado. O ciano não
+// fica pior — ele fica **ausente**.
+//
+// O que substitui: **diferença contra a base, restrita ao campo do traje**. A
+// diferença sozinha é ruim para esta pergunta, e o docstring do topo deste arquivo
+// já dizia por quê — ela levaria as feições repintadas, o ruído de reencode e a
+// sombra do chão redesenhada. O campo (`noCampoDoTraje`, base.ts) é o que devolve a
+// precisão: fora dele nada é roupa, por teto publicado.
+//
+// **Três filtros, nesta ordem, e cada um responde a um defeito já medido:**
+//
+//  1. **diferença > `NIVEL_TRAJE`, dentro do campo** — o que mudou onde roupa pode
+//     estar;
+//  2. **salpico fora** — o mesmo `PISO_TEAL` do cabelo, pelo mesmo motivo e com a
+//     mesma derivação (um quadrado de um traço de lado). O gerador salpica;
+//  3. **conectividade** — só componentes com pelo menos `PISO_SOLTA` da maior. Uma
+//     roupa é uma coisa só; três manchas soltas são reencode.
+//
+// **O CONTROLE NEGATIVO é a própria base.** Extrair `base-oficial.png` contra ela
+// mesma tem de devolver **0 px** — se devolver mais, a régua está inventando peça
+// onde não há nenhuma, e todo número que sair dela é ficção. Ele roda em
+// `arte:traje` a cada peça, não uma vez na vida.
+
+/**
+ * Quanto um canal precisa mudar para o pixel contar como traje: **24 níveis**.
+ *
+ * O mesmo `NIVEL` do Gate −1 e o mesmo do gate (a) de distinção a 56 px da
+ * `folha-base.ts`, e é o mesmo pela mesma razão: abaixo disso a diferença não se
+ * acha olhando. Reusar em vez de escolher um número novo evita a segunda régua que
+ * diverge da primeira — que é a doença crônica desta rota.
+ */
+const NIVEL_TRAJE = 24;
+
+export interface ExtracaoDeTraje {
+  /** 1 onde há peça. */
+  mascara: Uint8Array;
+  mantidas: Componente[];
+  descartadas: Componente[];
+  /** Candidatos que diferiam da base mas caíram FORA do campo do traje. */
+  foraDoCampo: number;
+  /** Pixels que o filtro de salpico removeu. */
+  salpico: number;
+  caixaUnidades: { x0: number; y0: number; x1: number; y1: number };
+  /** A cor dominante da peça — o fallback chapado de `tinta.cor`. */
+  corDominante: [number, number, number];
+  arte: Img;
+  base: Img;
+}
+
+export async function extrairTraje(caminhoArte: string): Promise<ExtracaoDeTraje> {
+  const arte = await carregar(caminhoArte, FUNDO);
+  const base = await carregar(PNG_BASE, FUNDO);
+  if (arte.w !== base.w || arte.h !== base.h) {
+    throw new Error(
+      `a arte tem ${arte.w}×${arte.h} e a base tem ${base.w}×${base.h} — ` +
+        `a diferença precisa de índice comum, e o Gate −1 é quem prova isso antes`,
+    );
+  }
+  const n = arte.w * arte.h;
+
+  // ---------------------------------------------- 1. diferença dentro do campo
+  const cru = new Uint8Array(n);
+  let foraDoCampo = 0;
+  for (let y = 0; y < arte.h; y++) {
+    for (let x = 0; x < arte.w; x++) {
+      if (delta(base, arte, x, y) <= NIVEL_TRAJE) continue;
+      const u = paraUnidade(x, y);
+      if (noCampoDoTraje(u.x, u.y)) cru[y * arte.w + x] = 1;
+      else foraDoCampo++;
+    }
+  }
+
+  // ------------------------------------------------------------ 2. o salpico
+  const limpo = semSalpico(cru, arte.w, arte.h, PISO_TEAL);
+  let salpico = 0;
+  for (let i = 0; i < n; i++) if (cru[i] && !limpo[i]) salpico++;
+
+  // ------------------------------------------------------- 3. conectividade
+  const comps = componentes(limpo, arte.w, arte.h);
+  const maior = comps.length ? comps[0].area : 0;
+  const mantidas: Componente[] = [];
+  const descartadas: Componente[] = [];
+  for (const c of comps) (c.area >= maior * PISO_SOLTA ? mantidas : descartadas).push(c);
+
+  const mascara = new Uint8Array(n);
+  {
+    const fila = new Int32Array(n);
+    for (const s of mantidas.map((c) => c.semente)) {
+      let ini = 0,
+        fim = 0;
+      fila[fim++] = s;
+      mascara[s] = 1;
+      while (ini < fim) {
+        const p = fila[ini++];
+        const x = p % arte.w;
+        const y = (p / arte.w) | 0;
+        for (const q of [
+          x > 0 ? p - 1 : -1,
+          x < arte.w - 1 ? p + 1 : -1,
+          y > 0 ? p - arte.w : -1,
+          y < arte.h - 1 ? p + arte.w : -1,
+        ])
+          if (q >= 0 && limpo[q] && !mascara[q]) (mascara[q] = 1), (fila[fim++] = q);
+      }
+    }
+  }
+
+  // -------------------------------------- a caixa e a cor dominante da peça
+  //
+  // A dominante é a MODA em blocos de 8 níveis por canal, não a média: a média de
+  // uma peça com pano claro e traço preto devolve um cinza que não existe em lugar
+  // nenhum do desenho, e é ela que iria para `tinta.cor` como fallback chapado.
+  const balde = new Map<number, number>();
+  let x0 = arte.w,
+    y0 = arte.h,
+    x1 = -1,
+    y1 = -1;
+  for (let i = 0; i < n; i++) {
+    if (!mascara[i]) continue;
+    const j = i * 3;
+    const k = ((arte.data[j] >> 3) << 10) | ((arte.data[j + 1] >> 3) << 5) | (arte.data[j + 2] >> 3);
+    balde.set(k, (balde.get(k) ?? 0) + 1);
+    const x = i % arte.w;
+    const y = (i / arte.w) | 0;
+    if (x < x0) x0 = x;
+    if (x > x1) x1 = x;
+    if (y < y0) y0 = y;
+    if (y > y1) y1 = y;
+  }
+  let melhorK = -1,
+    melhorN = -1;
+  for (const [k, c] of balde) if (c > melhorN) (melhorN = c), (melhorK = k);
+  // A média DENTRO do balde vencedor: o balde tem 8 níveis de largura, e devolver o
+  // centro dele seria arredondar a cor da peça para múltiplo de 8 sem motivo.
+  let sr = 0,
+    sg = 0,
+    sb = 0,
+    sn = 0;
+  for (let i = 0; i < n; i++) {
+    if (!mascara[i]) continue;
+    const j = i * 3;
+    const k = ((arte.data[j] >> 3) << 10) | ((arte.data[j + 1] >> 3) << 5) | (arte.data[j + 2] >> 3);
+    if (k !== melhorK) continue;
+    sr += arte.data[j];
+    sg += arte.data[j + 1];
+    sb += arte.data[j + 2];
+    sn++;
+  }
+  const corDominante: [number, number, number] = sn
+    ? [Math.round(sr / sn), Math.round(sg / sn), Math.round(sb / sn)]
+    : [0, 0, 0];
+
+  const a = paraUnidade(x0, y0);
+  const b = paraUnidade(x1, y1);
+  return {
+    mascara,
+    mantidas,
+    descartadas,
+    foraDoCampo,
+    salpico,
+    caixaUnidades: x1 < 0 ? { x0: 0, y0: 0, x1: 0, y1: 0 } : { x0: a.x, y0: a.y, x1: b.x, y1: b.y },
+    corDominante,
+    arte,
+    base,
+  };
 }
 
 export async function extrair(caminhoArte: string): Promise<Extracao> {
