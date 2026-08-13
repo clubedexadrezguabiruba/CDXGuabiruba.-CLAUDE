@@ -516,6 +516,51 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
+### G20 — o gambesão tem PELE no pescoço, e este boneco não tem pescoço
+
+**Prova:** `MEDIDO` — 2026-08-12 por subagente sobre a arte crua, reconfirmado
+2026-08-13 na folha de contato da peça montada.
+
+**O Doug APROVOU a peça em 2026-08-13, com este defeito nomeado**, e pediu o
+conserto em sessão própria: *"aprovo os dois trajes! apenas arrume a parte do
+pescoço do traje azul"*. Ou seja: **isto é trabalho encomendado**, não achado à
+espera de decisão — a única linha desta lista nesse estado.
+
+**O que está lá, medido:**
+
+| | |
+|---|---|
+| na arte crua (1024²) | **1 666 px** de RGB (182, 128, 88), bbox x 497–566 × y 513–649 |
+| quanto desce | a bbox da pele vai a y 647 — **146 px abaixo do queixo** |
+| na peça montada, na folha | pele exposta no decote laçado entre y 1035 e 1055, **13 px de largura no pico**, afinando para 4 |
+| a 340 px | lê como gola aberta, e é plausivelmente intencional |
+| **a 56 px** | vira **um ponto pêssego isolado no pescoço**, sem explicação |
+
+É a **única pele abaixo da cabeça em toda a folha** — o controle sem traje e a
+farda não têm nenhuma.
+
+**A causa não é a extração.** A rota de cores finais faz o que deve: aqueles
+pixels diferem da base e caem dentro do campo do traje, então são peça. O gerador
+é que desenhou pele onde o boneco não tem pescoço — e o mesmo gesto cortou o traço
+do queixo (vazio de 186 px em y 502, divergência de 214 px na cabeça).
+
+**Por que 🟡 e não 🟠:** nada trava. A peça está no catálogo, é sorteável e
+renderiza; o defeito é de leitura a 56 px, que é onde o avatar mais aparece.
+
+**O conserto, quando for a hora** — e as duas saídas têm custo diferente:
+
+1. **Retoque de geometria no Gemini**, uma rodada: fechar o traço do queixo e
+   tirar a tira de pele. Reentra pela esteira inteira (Gate −1 → `arte:traje` →
+   `arte:trajes` → folha), e o slug não muda. É o que o sidecar
+   `traje-gambesao.md` já previa como "um retoque leve só de geometria".
+2. **Cortar no campo do traje**: subir o piso de `noCampoDoTraje` acima do decote.
+   Barato e **errado** — cortaria decote legítimo de toda peça futura, e é a
+   forma exata de calibrar a régua no defeito que este repositório proíbe.
+
+**O decote 19 px fora do centro fica de fora deste achado**, e é decisão: o Doug
+aprovou a peça vendo a folha, e assimetria de decote não é a mesma classe de
+defeito que pele onde não há pescoço.
+
 ### G18 — ~~o passo 0 da esteira do traje ensina o CONTRÁRIO do pedido~~ ✅ FECHADO
 
 > **CONSERTADO em 2026-08-13**, de carona no Bloco B1 da virada de direção — o

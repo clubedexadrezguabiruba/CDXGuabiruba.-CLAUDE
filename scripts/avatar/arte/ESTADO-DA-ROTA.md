@@ -3064,3 +3064,24 @@ de forma (ele reconhece a peça pelo ciano) e a máscara encolheu 11 122 px.
 **As duas pontas que ficaram para o Doug** (e não são régua, são olho): o transbordo
 das duas cai fora do alvo de ~10% em direções opostas, e os dois vocabulários de
 arte destoam na folha. Ver o parecer no fim do Bloco B4.
+
+### O parecer do Doug, 2026-08-13 — as duas peças passaram
+
+> *"analisei a folha traje e aprovo os dois trajes! apenas arrume a parte do
+> pescoço do traje azul, mas faremos isso em um novo chat."*
+
+**A esteira do traje tem duas peças aprovadas e uma ponta.** A ponta é o achado
+**G20** (a tira de pele no decote do gambesão), e ela é a única de
+`docs/achados.md` com "sim" do Doug — trabalho encomendado, em sessão própria.
+
+**As duas ressalvas que eu tinha levantado morreram na tela, e é onde deviam
+morrer:**
+
+| ressalva | veredito |
+|---|---|
+| transbordo fora do alvo de ~10% nos dois sentidos (farda 3,86%, gambesão 17,64%) | **aceito** |
+| dois vocabulários de arte destoando lado a lado | **aceito** — estilo misto está decidido na folha, como o doc 21 §0.4 mandava |
+
+**A rota volta a ter zero pontas de processo.** O que existe é uma peça com um
+retoque encomendado, e o caminho dele é o de sempre: retoque de geometria no
+Gemini → Gate −1 → `arte:traje` → `arte:trajes` → folha. O slug não muda.

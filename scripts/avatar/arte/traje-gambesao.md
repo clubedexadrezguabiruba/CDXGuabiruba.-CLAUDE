@@ -1,5 +1,30 @@
 # `traje-gambesao.png` — a arte aprovada pelo Doug em 2026-08-12, importada em 2026-08-13
 
+> ## ✅ APROVADA NA FOLHA EM 2026-08-13, com um conserto encomendado
+>
+> As palavras do Doug, olhando `folha-traje.png` com as duas peças lado a lado:
+> *"analisei a folha traje e aprovo os dois trajes! apenas arrume a parte do
+> pescoço do traje azul, mas faremos isso em um novo chat."*
+>
+> **O que isso fecha:** a parada do Bloco B4 — a única aprovação que existe nesta
+> rota é o olho dele na folha (doc 19 §2, passo 12). As duas peças estão no
+> catálogo e são sorteáveis.
+>
+> **O que isso NÃO fecha, e virou trabalho encomendado:** a **tira de pele no
+> decote** (o defeito nº 2 abaixo). É o achado **G20** em `docs/achados.md`, e ele
+> é a única linha daquela lista que já tem "sim" do Doug — os outros esperam a hora.
+>
+> **O que ele NÃO pediu, e portanto fica como está:** o decote 19 px fora do
+> centro, as seis canaletas em vez de cinco, e o contorno fino de 2–3 px (que é o
+> G17 e não é desta peça). Ele viu a folha e aprovou; assimetria de decote não é a
+> mesma classe de defeito que pele onde não há pescoço.
+>
+> **Os dois números que ele viu e aceitou**, e que caem fora do alvo: transbordo de
+> **17,64%** contra o alvo de ~10% (a farda, do outro lado, mede 3,86%), e os dois
+> vocabulários de arte destoando lado a lado — chapado-com-gradiente contra
+> pintado-com-sombra-dura. **Estilo misto está aceito na tela**, que é onde o doc
+> 21 §0.4 mandava decidir.
+
 **O que é:** a 3ª rodada do gambesão, gerada no Gemini
 (`Gemini_Generated_Image_ipfpn5ipfpn5ipfp.png`). **Aprovada pelo Doug** junto com a
 virada de direção que tornou a paleta permissiva — a frase dele: *"esta arte foi

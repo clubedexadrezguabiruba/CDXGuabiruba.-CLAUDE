@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 10 |
-| **Árvore** | **18 arquivos sujos** |
-| **Último commit** | 9350774 · 2026-08-13 · feat(avatar): a esteira de cores finais — o G19 fecha, os slugs perdem a patente, e o gambesão entra |
+| **Commits à frente de `origin/main`** | 12 |
+| **Árvore** | **4 arquivos sujos** |
+| **Último commit** | ef4f269 · 2026-08-13 · feat(avatar): claim_chest v3 — o baú volta a dar peça, e o XP vira um prêmio entre outros |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

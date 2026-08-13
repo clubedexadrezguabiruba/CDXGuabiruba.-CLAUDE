@@ -138,9 +138,20 @@ No lugar do Bloco 2, seis blocos:
 > | B5 | `verify:catalogo-slots` **34/1 → 36/0**; `CATALOGO.traje` deixou de ser vazio e virou **derivado** de `TRAJES_DA_ARTE` |
 > | B6 | `verify:chest-pool` **20/0 → 22/0**; 60 aberturas reais, 1 peça sorteada e gravada no guarda-roupa, 59 XP na escala, **nenhuma repetida**. O ensaio pegou um bug real (`record` não atribuído) que quebrava a 1ª abertura |
 >
-> **O que ficou para o olho do Doug, e não para régua nenhuma:** o transbordo das
-> duas peças cai fora do alvo de ~10% em direções opostas (farda 3,86%, gambesão
-> 17,64%), e os dois vocabulários de arte destoam lado a lado na folha.
+> **A PARADA FECHOU em 2026-08-13.** O Doug olhou a folha e aprovou as duas:
+> *"aprovo os dois trajes! apenas arrume a parte do pescoço do traje azul, mas
+> faremos isso em um novo chat."*
+>
+> Com isso ele aceitou, vendo, as duas coisas que eu tinha levantado e que não são
+> régua: o transbordo caindo fora do alvo de ~10% em direções opostas (farda
+> 3,86%, gambesão 17,64%) e os **dois vocabulários de arte destoando** lado a lado.
+> **Estilo misto está aceito na tela**, que é onde a §0.4 mandava decidir — e não
+> por regra escrita antes de olhar.
+>
+> **O que sobrou é uma coisa só, e ela é trabalho encomendado:** a tira de pele no
+> decote do gambesão, achado **G20**. É a única linha de `docs/achados.md` que já
+> tem "sim" do Doug — as outras esperam a hora dele. Sessão própria, por decisão
+> dele.
 
 **A economia:** **1 traje inicial** (`origem = 'marco_nivel', min_level = 1`, livre
 desde a criação do avatar) + **39 por baú**. O inicial recomendado é a **farda** — a
