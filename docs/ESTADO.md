@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 2 |
-| **Árvore** | **23 arquivos sujos** |
-| **Último commit** | be784cc · 2026-08-12 · feat(avatar): a fundação dos slots — o guarda-roupa existe e o boneco não se mexeu |
+| **Commits à frente de `origin/main`** | 5 |
+| **Árvore** | **1 arquivos sujos** |
+| **Último commit** | a49c2c5 · 2026-08-13 · feat(avatar): o gambesão aprovado, dois achados medidos, e o transbordo virou diretriz |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -283,7 +283,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 85 |
+| **Migrations** | 84 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 17 |
 | **Primitivos de UI** | 4 |
@@ -293,7 +293,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-10 |
+| `CLAUDE.md` | 2026-08-12 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-11 |
