@@ -1,18 +1,28 @@
 # `traje-gambesao.png` — a arte aprovada pelo Doug em 2026-08-12, importada em 2026-08-13
 
-> ## ✅ APROVADA NA FOLHA EM 2026-08-13, com um conserto encomendado
+> ## ⚠️ ESTE PNG NÃO É MAIS A SAÍDA CRUA DO GERADOR
+>
+> Em 2026-08-13 ele passou pelo **reparo do G20**: 3 151 pixels trocados por
+> `scripts/avatar/arte/reparo-g20.ts`, com aprovação do Doug na folha. A saída
+> original do Gemini está no git, no commit anterior ao do reparo. **O cabeçalho
+> daquele script é a procedência** — se ele acusar mais de 0 px sobre este arquivo,
+> o PNG no disco não é o que foi aprovado.
+
+> ## ✅ APROVADA NA FOLHA EM 2026-08-13, e o conserto encomendado FOI FEITO
 >
 > As palavras do Doug, olhando `folha-traje.png` com as duas peças lado a lado:
 > *"analisei a folha traje e aprovo os dois trajes! apenas arrume a parte do
 > pescoço do traje azul, mas faremos isso em um novo chat."*
 >
+> O novo chat aconteceu no mesmo dia, e ele aprovou o reparo na folha: **"aprovado"**.
+>
 > **O que isso fecha:** a parada do Bloco B4 — a única aprovação que existe nesta
 > rota é o olho dele na folha (doc 19 §2, passo 12). As duas peças estão no
 > catálogo e são sorteáveis.
 >
-> **O que isso NÃO fecha, e virou trabalho encomendado:** a **tira de pele no
-> decote** (o defeito nº 2 abaixo). É o achado **G20** em `docs/achados.md`, e ele
-> é a única linha daquela lista que já tem "sim" do Doug — os outros esperam a hora.
+> **O que virou trabalho encomendado, e fechou:** a **tira de pele no decote** (os
+> defeitos nº 1 e nº 2 abaixo — eram um gesto só do gerador, não dois). É o achado
+> **G20** em `docs/achados.md`, hoje **FECHADO**.
 >
 > **O que ele NÃO pediu, e portanto fica como está:** o decote 19 px fora do
 > centro, as seis canaletas em vez de cinco, e o contorno fino de 2–3 px (que é o
@@ -46,9 +56,9 @@ nenhum do disco.** O original em `Downloads` já sumiu uma vez — a candidata a
 | | |
 |---|---|
 | Gate −1 | **APROVADA** — deslocamento (0, 0), escala 100,00%, rodapé mensurável 94,2% |
-| máscara (diff contra a base ∩ campo do traje) | **113 533 px** |
+| máscara (diff contra a base ∩ campo do traje) | **113 533 px** na importação → **113 538 px** depois do reparo do G20 |
 | caixa | u x 97→401 · y 353→642 |
-| fora do campo do traje | 5 957 px (feição repintada, sombra do chão, ruído) |
+| fora do campo do traje | 5 957 px na importação → **4 068 px depois do reparo do G20** (feição repintada, sombra do chão, ruído) |
 | salpico removido | 0 px |
 | componentes soltas descartadas | 0 |
 | controle negativo (a régua na própria base) | **0 px** |
@@ -81,13 +91,17 @@ O teal `#13ABB3` **é a cor final da peça**. Nada é recolorido: ela não está
 
 **Continua sendo problema** (é geometria e composição, não cor):
 
-1. **O traço do queixo foi cortado.** Em y = 502 a base tem uma corrida contínua de
-   preto de x 363 a 696; esta arte tem 362–430 e 617–698 — **um vazio de 186 px**.
-   Divergência na cabeça: **214 px** contra 10 px da candidata anterior.
-2. **Uma tira cor de pele passa por esse corte** — 1 666 px, RGB (182,128,88), bbox
-   x 497–566 × y 513–649. Confirmado na folha de contato: a pele aparece no decote
-   laçado, **13 px de largura no pico**, e a 56 px vira um ponto pêssego isolado no
-   pescoço, sem explicação. É a única pele abaixo da cabeça em toda a folha.
+1. ~~**O traço do queixo foi cortado.**~~ ✅ **CONSERTADO em 2026-08-13.** Em y = 502
+   a base tem uma corrida contínua de preto de x 363 a 696; esta arte tinha 362–432
+   e 615–698 — **um vazio de 182 px**. O reparo restaurou 1 889 px copiados da
+   própria base, e a corrida voltou a ser contínua (362–698).
+2. ~~**Uma tira cor de pele passa por esse corte.**~~ ✅ **CONSERTADO no mesmo
+   gesto** — era o mesmo defeito: o gerador desenhou um pescoço, furando o traço e
+   pintando pele pelo buraco. Eram 2 006 px de RGB (182,128,88) ± 40 abaixo de
+   y 505, bbox x 487–596 × y 506–647, dos quais **1 344 caíam dentro do campo do
+   traje** e viravam peça. Hoje: **0**. O preenchimento saiu da interpolação do pano
+   vizinho de cada linha — 1 262 px com **725 tons distintos**, contra 212 tons da
+   área equivalente do pano. Cordão e ilhoses intactos.
 3. **O decote está 19 px à direita do centro** — eixo da abertura em x 532, centro
    do corpo em 512–513. (Era 42 px na rodada anterior; melhorou, não zerou.)
 4. **Seis canaletas, assimétricas** — costuras em x 392, 465, 535, 596, 657;
@@ -98,9 +112,13 @@ O teal `#13ABB3` **é a cor final da peça**. Nada é recolorido: ela não está
    cabeça mantém os 5. Há degrau de peso na junção do queixo. **É o achado G17**, e
    não é desta peça: a extração entrega o miolo do traço, não o traço.
 
-**A decisão que fica para o Doug:** aceitar os cinco como estão, ou pedir **um**
-retoque leve só de geometria (fechar o queixo, centrar o decote). Nenhum deles é de
-cor, então nenhum é resolvido pela mudança de direção.
+**A decisão que ficou para o Doug, e ele decidiu:** os dois primeiros foram
+consertados em 2026-08-13 — mas **não pelo Gemini**, e é a novidade de método. O
+retoque saiu no pixel, por programa, porque o defeito era descritível em régua:
+restaurar o traço é *copiar a base de volta*, e a pele estava separada do cordão por
+um vale medido no histograma (miolo do cordão em R 32–95, pele em R ≥ 144). Isso
+evitou uma rodada de gerador — que traria de volta o risco de mexer no que já estava
+aprovado. **Os outros três (nº 3, 4 e 5) ficam como estão**, por decisão dele.
 
 ## O que ela acerta, e é o que a aprovou
 

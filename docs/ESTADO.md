@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 12 |
-| **Árvore** | **4 arquivos sujos** |
-| **Último commit** | ef4f269 · 2026-08-13 · feat(avatar): claim_chest v3 — o baú volta a dar peça, e o XP vira um prêmio entre outros |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **7 arquivos sujos** |
+| **Último commit** | 8709bb0 · 2026-08-13 · docs(avatar): o Doug aprovou as duas peças na folha — e o pescoço do gambesão virou G20 |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

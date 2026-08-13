@@ -3085,3 +3085,79 @@ morrer:**
 **A rota volta a ter zero pontas de processo.** O que existe é uma peça com um
 retoque encomendado, e o caminho dele é o de sempre: retoque de geometria no
 Gemini → Gate −1 → `arte:traje` → `arte:trajes` → folha. O slug não muda.
+
+---
+
+## 2026-08-13 — o G20 fechou, e a rota ganhou uma quarta saída para arte defeituosa
+
+O retoque encomendado pelo Doug ao aprovar as duas peças. Ele saiu **sem rodada de
+gerador** — e é a novidade de método desta entrada.
+
+### A descoberta que mudou o conserto
+
+O achado descrevia dois defeitos (traço do queixo cortado, tira de pele no decote).
+São **um gesto só**: o gerador desenhou um pescoço, furando o traço e pintando pele
+pelo buraco. E `Y_QUEIXO` = 515,84 px parte esse gesto em duas metades de natureza
+diferente, porque é onde `noCampoDoTraje` passa a valer:
+
+| | onde | o que se faz | px | efeito |
+|---|---|---|---|---|
+| A | y 502–515, **acima** do queixo | restaurar a base — copiar o pixel de volta | 1 889 | **fora do campo**: não muda a peça, muda o Gate −1 |
+| B | o V do decote, **dentro** do campo | preencher com o pano da arte, interpolado na linha | 655 | é o defeito que se via |
+| C | o canal do laço | idem — a barra do cordão em y 538–542 cortava a componente | 607 | idem |
+
+**Restaurar não é desenhar.** O passo A copia `base-oficial.png`; e como aquela
+faixa está acima do queixo, ela sai da máscara — pixel igual à base deixa de
+divergir. O contorno ali é do compositor, como sempre foi (amarra nº 3 da §12).
+
+### A régua que separou pele de couro
+
+O difícil não era achar a pele, era **não apagar o cordão**: os dois têm o mesmo
+matiz (R/G ≈ 1,35), só a luz separa. O histograma dos quentes em y 550–615 tem vale
+— miolo do cordão em **R 32–95** (223 px), pele em **R ≥ 144** (313 px), franja de
+antialias no meio. Piso em **100** apaga pele e franja, e poupa o cordão e a barra
+horizontal do laço (R máx 101). As colunas de ilhoses (x 486–504 e 558–572) ficam
+fora da janela x 512–550 por construção.
+
+### A primeira tentativa reprovou, e o registro é o que importa
+
+Ela preencheu o canal com **balde de tinta** — uma cor medida, constante: 417 px de
+tom único dentro de um pano que tem 212 tons na área equivalente, mais uma franja
+tan de 1 px contornando o remendo (piso R ≥ 160, alto demais para pegar o
+antialias). O remendo se anunciava. **Quem pegou foi a leitura da arte renderizada,
+não a régua** — nenhum gate desta rota reprova chapado nem franja.
+
+A versão que passou usa a mesma interpolação do passo B no canal: **725 tons
+distintos** em 1 262 px trocados.
+
+### Os números da reentrada
+
+| passo | antes do reparo | depois |
+|---|---|---|
+| Gate −1 | APROVADA · `permitida` 7 ladrilhos / 8 798 px · não explicado 2 867 px | **APROVADA** · `permitida` **1** / **6 909 px** · não explicado **1 636 px** |
+| pele dentro do campo do traje | 1 344 px | **0** |
+| traço do queixo em y 502 | 362–432 + 615–698 (vazio de 182 px) | **362–698 contínuo** (base: 363–696) |
+| `arte:traje` — máscara | 113 533 px | 113 538 px |
+| `arte:traje` — fora do campo | 5 957 px | **4 068 px** |
+| cor · controle negativo · fora do recorte | `#13ABB3` · 0 · 0 | **idênticos** |
+| folha — colagem · transbordo · distinção 56 px | 1:1 · 17,64% · 43,90% | **idênticos** |
+
+**O parecer do Doug:** *"aprovado"*.
+
+### A quarta saída, e quando ela vale
+
+A rota tinha três caminhos para arte defeituosa: refazer no gerador, retocar no
+gerador, ou recusar. Agora tem um quarto — **retoque no pixel, por programa** — e
+ele vale quando **o defeito é descritível em régua**: restaurar o que a base já tem,
+ou trocar uma cor que um número separa da vizinhança. Aqui evitou uma rodada de
+gerador, que traria de volta o risco de mexer no que já estava aprovado.
+
+**O preço é procedência**, e ele se paga com um arquivo: `reparo-g20.ts` fica no
+repositório com o cabeçalho explicando cada número, e roda como asserção — sobre a
+arte reparada ele conta **0 px**. Se contar mais, o PNG no disco não é o aprovado. A
+saída crua do Gemini continua no git, no commit anterior.
+
+**O que isto NÃO autoriza:** desenhar forma nova por programa. Os defeitos nº 3, 4 e
+5 do sidecar (decote 19 px fora do centro, seis canaletas em vez de cinco, contorno
+fino) continuam abertos e **continuam sendo caso de gerador ou de nada** — o Doug
+decidiu que ficam como estão.

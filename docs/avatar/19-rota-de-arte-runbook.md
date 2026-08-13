@@ -241,6 +241,37 @@ Se algo além da arte retocada se mexer, **pare e mostre**. Um paramétrico que
 muda um byte quer dizer que a mudança veio do conversor e vale para todos — isso
 é achado, não rebase.
 
+> ### O retoque NO PIXEL — a quarta saída, aberta em 2026-08-13
+>
+> Nem toda arte defeituosa precisa voltar ao gerador. Quando o defeito é
+> **descritível em régua**, ele se conserta por programa e reentra pela mesma
+> esteira. Foi assim que o achado **G20** fechou — a tira de pele no decote do
+> gambesão, 3 151 px trocados por `scripts/avatar/arte/reparo-g20.ts`.
+>
+> **Vale quando** a operação é (a) *restaurar* o que a base já tem — copiar o pixel
+> de volta não é desenhar —, ou (b) trocar uma cor que **um número medido** separa
+> da vizinhança. No G20 o vale do histograma separava o miolo do cordão (R 32–95) da
+> pele (R ≥ 144).
+>
+> **Não vale** para forma nova. Desenhar por programa é o que a rota inteira existe
+> para evitar; a arte é do Doug e do gerador.
+>
+> **Três amarras, e as três custaram uma reprovação para aparecer:**
+>
+> 1. **o preenchimento sai da própria arte** — interpolação do vizinho na mesma
+>    linha, nunca uma cor constante. A 1ª tentativa usou balde de tinta e deixou
+>    417 px de tom único dentro de um pano com 212 tons: o remendo se anunciava;
+> 2. **o piso da máscara tem que pegar o antialias.** Piso alto deixa franja de 1 px
+>    contornando o remendo — pior que o defeito original, que ao menos tinha
+>    gradiente;
+> 3. **procedência é obrigatória.** O script fica no repositório, o cabeçalho
+>    explica de onde sai cada número, e ele **roda como asserção**: sobre a arte já
+>    reparada tem que contar 0 px. A saída crua do gerador fica no git.
+>
+> **Nenhum gate desta rota reprova chapado ou franja.** Quem pegou as duas foi a
+> leitura da arte renderizada, por subagente. Retoque no pixel **não dispensa o
+> olho** — dispensa a rodada de gerador.
+
 ## 9. As amarras que não se negocia
 
 1. **A base de edição não encolhe.** `base-oficial.ts` pede `escala: 1`

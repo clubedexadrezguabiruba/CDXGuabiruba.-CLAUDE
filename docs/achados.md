@@ -516,7 +516,41 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
-### G20 — o gambesão tem PELE no pescoço, e este boneco não tem pescoço
+### G20 — ~~o gambesão tem PELE no pescoço, e este boneco não tem pescoço~~ ✅ FECHADO
+
+> **CONSERTADO em 2026-08-13**, e pela saída nº 1 — retoque de geometria, reentrando
+> pela esteira inteira. Mas **não no Gemini**: no pixel, por programa
+> (`scripts/avatar/arte/reparo-g20.ts`), porque o defeito era descritível em régua.
+> O Doug aprovou o resultado na folha: **"aprovado"**.
+>
+> **A descoberta que mudou o conserto:** eram *um gesto só*, não dois defeitos. O
+> gerador desenhou um pescoço — furou o traço do queixo e pintou pele pelo buraco.
+> E `Y_QUEIXO` = 515,84 px parte o problema em duas metades de natureza diferente:
+>
+> | | onde | o que se fez | medido |
+> |---|---|---|---|
+> | A | y 502–515, **acima** do queixo | restaurar a base — copiar o pixel de volta, não desenhar | 1 889 px · fora do campo do traje, então **não muda a peça**, muda o Gate −1 |
+> | B | o V do decote, **dentro** do campo | preencher com o pano da própria arte, interpolado na linha | 655 px |
+> | C | o canal do laço | idem — a barra do cordão em y 538–542 cortava a componente, então a pele de baixo era outra | 607 px |
+>
+> **A régua que separou pele de couro**, que era o difícil: as duas têm o mesmo
+> matiz (R/G ≈ 1,35), só a luz separa. O histograma dos quentes em y 550–615 tem
+> vale — miolo do cordão em **R 32–95** (223 px), pele em **R ≥ 144** (313 px). Piso
+> em 100 apaga a pele e a franja de antialias, e poupa o cordão e a barra horizontal
+> do laço (R máx 101).
+>
+> **A primeira tentativa reprovou, e o registro fica:** ela preencheu o canal com
+> balde de tinta — 417 px de cor única dentro de um pano com 212 tons, mais uma
+> franja tan de 1 px contornando o remendo (piso R ≥ 160, alto demais). O remendo se
+> anunciava. A versão que passou usa interpolação: **725 tons distintos** em 1 262 px.
+>
+> **Antes / depois, mesmo programa:** 3 151 px a trocar → **0**.
+> **Na peça:** pele dentro do campo do traje 1 344 px → **0**.
+> **Gate −1:** `permitida` de 7 ladrilhos → 1; "não explicado" de 2 867 → 1 636 px.
+> **Estáveis:** máscara 113 533 → 113 538 px, cor `#13ABB3`, colagem 1:1, transbordo
+> 17,64%, distinção a 56 px 43,90%, controle negativo 0 px.
+>
+> O texto abaixo fica como registro do defeito.
 
 **Prova:** `MEDIDO` — 2026-08-12 por subagente sobre a arte crua, reconfirmado
 2026-08-13 na folha de contato da peça montada.
