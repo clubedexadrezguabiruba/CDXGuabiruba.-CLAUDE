@@ -114,7 +114,7 @@ pelo gatilho abaixo, antes de começar, sem esperar o usuário pedir.**
 | Construir componente novo, migrar tela para os primitivos de `src/components/ui/`, ou mexer em espaçamento/hierarquia/estado vazio | `impeccable` |
 | Bug, comportamento errado, "isso não devia acontecer" | `/gate` |
 | Desenhar peça do elenco do avatar — cabelo, chapéu, traje, pet, fundo — ou refazer uma que lê errado | `avatar-desenho` (3 variantes, crítica renderizada) |
-| **O Doug editou a arte sobre a base oficial** (`arte:base` → Gemini) e ela precisa virar peça — não desenhe variante: **importe pela rota de arte** | `avatar-importar-arte` (o runbook é [docs/avatar/19-rota-de-arte-runbook.md](docs/avatar/19-rota-de-arte-runbook.md)) |
+| **O Doug editou a arte sobre a base oficial** (`arte:base` → Gemini) e ela precisa virar peça — não desenhe variante: **importe pela rota de arte**. Vale para **cabelo e traje**: a skill bifurca no começo, e se o arquivo começa com `traje-` o corredor é outro | `avatar-importar-arte` (o runbook é [docs/avatar/19-rota-de-arte-runbook.md](docs/avatar/19-rota-de-arte-runbook.md); a esteira do traje é a §12 dele) |
 | Referência de arte nova, ou qualquer número de `geometria.ts` que precise sair de medição | `avatar-regua` |
 | Detalhe de movimento, transição, o que faz a interface "sentir" bem | `emil-design-eng` |
 | Antes de mexer em auth, RLS, RPC de recompensa, ou qualquer coisa que o repositório público exponha | `security-review` |

@@ -202,7 +202,14 @@ export interface Extracao {
   base: Img;
 }
 
-const PAPEIS: Papel[] = ["massa", "sombra", "luz", "traco"];
+/**
+ * A ORDEM É A CODIFICAÇÃO de `Extracao.papeis` — `papeis[i] = índice + 1`, com 0
+ * significando "fora da peça". Exportada desde a esteira do traje: quem lê
+ * `papeis` precisa desta tabela para saber o que cada número quer dizer, e uma
+ * segunda cópia dela em outro arquivo seria o começo de duas que divergem — o
+ * mesmo motivo pelo qual `pixels.ts` existe.
+ */
+export const PAPEIS: Papel[] = ["massa", "sombra", "luz", "traco"];
 
 /**
  * Os três tons de ciano, separados por PARTIÇÃO ÓTIMA de luminância.

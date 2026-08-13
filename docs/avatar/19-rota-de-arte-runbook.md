@@ -264,6 +264,27 @@ muda um byte quer dizer que a mudança veio do conversor e vale para todos — i
 5. **`pecas-da-arte.ts` é gerado.** Corrigir o cabeçalho dele é corrigir
    `pecas.ts`, nunca o arquivo. `npm run arte:pecas -- --check` está em
    `verify:arte` e reprova quando ele defasa do `converter()`.
+6. **TODO PEDIDO NOMEIA O QUE O BONECO NÃO TEM.** Um bloco fixo, em toda arte,
+   com estas palavras: *"este boneco não tem braços, mãos, ombros salientes,
+   pernas, pés, orelhas nem pescoço; o corpo é uma peça só em forma de sino e a
+   cabeça senta direto em cima dela; não acrescente nenhuma dessas partes, nem
+   desenhando, nem sugerindo com manga, cava, punho ou sombra; se a referência
+   tiver braços, ignore os braços dela"*.
+
+   **Não é zelo, é medido:** na primeira tentativa do traje, em 2026-08-12, o
+   gerador acrescentou braços — decisão do Doug de endurecer os pedidos a partir
+   dali. E a lista tem duas ausências que só existem no **nosso** boneco e nenhum
+   gerador supõe: **as orelhas saíram no Bloco 1d** (`geometria.ts:188-192`,
+   *"a resposta agora é nenhuma, para todos os 92 itens de catálogo"*) e **não há
+   pescoço** — o topo do tronco desaparece sob a cabeça (`geometria.ts`, `TRONCO.yTopo`).
+
+   Duas travas de redação vêm junto, aprendidas na mesma rodada:
+
+   - **repetir a proibição em dois lugares** — no bloco fixo, e de novo na lista
+     de "não use" do fim. Proibição dita uma vez só o gerador atropela;
+   - **não usar a palavra que convida o defeito.** O pedido dizia *"a linha do
+     ombro marcada"*, e ombro é onde braço nasce. Virou *"o alto do corpo"*.
+     É o mesmo mecanismo do doc 17 §5.0, um andar acima: **o pedido é a causa**.
 
 ## 10. O CI
 
@@ -276,6 +297,50 @@ arte:fixtures  →  arte:reguas  →  arte:cor-proibida  →  arte:escala  →  
 As duas direções que ele fecha: **um literal promovido que mude** cai nos selos de
 `parametrico-congelado.ts` (via `npm test`); **`pecas-da-arte.ts` que defase do
 conversor** cai no `--check`. Nenhum dos dois exige render.
+
+## 12. A rota do TRAJE — o que muda, e o que não muda
+
+*Escrita em 2026-08-12, quando `traje-soldado-farda` passou por aqui. A rota nasceu
+para cabelo; esta seção é a metade que difere. A esteira comando a comando, com os
+números e as três ressalvas, está em
+[`.claude/skills/avatar-importar-arte/references/esteira-traje.md`](../../.claude/skills/avatar-importar-arte/references/esteira-traje.md).*
+
+| # | passo | cabelo | **traje** |
+|---|---|---|---|
+| 0 | base de edição | `arte:base` | **`arte:base-tronco`** — a mesma base, o campo medido |
+| 1 | o pedido | `PEDIDO-GEMINI.md` | **`PEDIDO-TRAJE.md`** |
+| 2 | Gate −1 | `arte:gate` | **igual** |
+| 3 | extração | `arte:extrair` | **igual** |
+| 4 | a peça | `arte:contorno` → `arte:converter` → `arte:espessura` | **`arte:traje`** |
+| 5 | o literal | `arte:pecas` | **`arte:trajes`** |
+| 6 | o `--check` no CI | `arte:pecas --check` | **`arte:trajes --check`** |
+| 7 | a folha | `arte:folha` | **`arte:folha-traje`** |
+
+**Os passos 2 e 3 não precisaram de uma linha de mudança**, e isso contraria o que
+esta rota previa. `base-tronco.ts` foi escrito dizendo que a inversão de
+`REGIOES_QUE_REPROVAM` viria depois — para traje o corpo é o campo e a cabeça é que
+tem de ficar intacta. Não veio: a regra do Bloco 12 (o tronco fora da extração)
+atribuiu **99,1%** do que mudou à própria peça, e o Gate −1 aprovou de primeira. **A
+inversão só entra se alguma arte reprovar por ela.**
+
+**Onde o traje vira raster, e o cabelo não.** A §6.1 do doc 21 diz que o que excede
+a silhueta é `extensoes`, e extensão é vetor. Esta peça transbordou 10,75% e o
+raster serviu, porque `arteDoTraje()` desenha o `<image>` **fora do clip**, depois do
+contorno do tronco — onde a roupa passa, o traço dela vira a borda externa. O
+traçado continua devendo para uma peça que precise de **forma própria** (capa,
+ombreira), não para o transbordo do pano.
+
+**Três amarras que só existem aqui:**
+
+1. **a cor não se escreve** — sai do slug (`traje-<patente>-<nome>`) via `PATENTES`,
+   travada por `verify:paleta-patentes`. As três opções de uma patente saem no mesmo
+   pano por construção;
+2. **a arte carrega o próprio volume**, inclusive a sombra sob o queixo. O
+   compositor não sombreia peça com `tinta.png` — pintar por cima dobrava o
+   sombreado (1 933 px repintados → 10);
+3. **o contorno do tronco é do compositor, sempre.** Tirá-lo derrubou a borda para
+   p50 7,5 u; reconstruí-lo no PNG subiu para 15,0 u. As duas reprovaram na tela. A
+   causa real — a extração entrega o miolo do traço — é o achado **G17**.
 
 ## 11. As imagens vão por subagente
 

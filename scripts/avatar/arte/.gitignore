@@ -25,3 +25,14 @@ base-regioes.png
 .f-*.png
 .fc-*.png
 .fx-*.png
+
+# O diagnóstico do campo do tronco e as duas máscaras que ele conta, todos
+# regerados por `npm run arte:base-tronco`. O que versiona é o programa e o
+# PEDIDO-TRAJE.md; o desenho do campo é derivado, como o `base-regioes.png`.
+base-tronco-campo.png
+.t-*.png
+
+# A folha do traje e os intermediários dela, regerados por `arte:folha-traje`.
+folha-traje.html
+folha-traje.png
+traje/

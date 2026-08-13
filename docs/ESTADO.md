@@ -184,6 +184,28 @@ extrair, o mesmo dilema do Bloco 6 — mais `equipar_peca: 1`, que é nova.
 Ela chega junto com o primeiro traje, no Bloco 2. O necrológio dela no gate agora
 tem endereço.
 
+⏸️ **O BLOCO 2 (traje por patente) PAROU EM 2026-08-12, e o método mudou: o traje
+vai pela ROTA DE ARTE, com o Doug desenhando.** A folha de contato foi reprovada
+por ele — *"feias, sem vida, quadradas… quero o nível de cabelo feito através de
+arte, não por você: espetado ou assimétrico ou chanel"* —, e o número confirmou a
+leitura depois: os três cabelos que ele citou são os três que vieram de arte
+(**64, 85 e 112 pontos**), contra 7 e 0 dos dois de código. Uma ordem de
+grandeza, identificada a olho antes de qualquer medição.
+
+**O registro completo está em `docs/avatar/21-slots-do-avatar-plano.md`**, no
+bloco de execução do Bloco 2: as 4 decisões do Doug (a silhueta não cabe e não se
+repropõe; 3 opções por patente e não 4; o Macacão fica byte a byte; os 9
+rascunhos ficam intocados), as 5 réguas novas que valem para todo slot, e a
+esteira que a próxima sessão constrói — **a rota de arte já suporta traje quase
+inteira, e o que muda é uma inversão de duas linhas** em
+`scripts/avatar/arte/base.ts:281` (hoje o Gate −1 protege o corpo; para traje ele
+tem de proteger a cabeça).
+
+**A migration `20260812120000_bloco2_traje_por_patente.sql` está escrita e NÃO
+aplicada** — ela semeia os 9 slugs, cria a coluna `ordem` e ensina
+`recompute_user_title` a vestir na promoção. Aplicá-la sozinha reprova o
+`verify:catalogo-slots` de propósito: o código das peças ainda não existe.
+
 **Decisões travando trabalho: nenhuma.** A última caiu em 2026-08-11 —
 
 - ~~**Régua da patente — duas versões vivas, não três** (achado **T1**)~~
@@ -210,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **15 arquivos sujos** |
-| **Último commit** | a35b3e8 · 2026-08-11 · docs(avatar): o plano dos outros slots — a raridade volta porque quem tinha morrido era a arte |
+| **Commits à frente de `origin/main`** | 2 |
+| **Árvore** | **23 arquivos sujos** |
+| **Último commit** | be784cc · 2026-08-12 · feat(avatar): a fundação dos slots — o guarda-roupa existe e o boneco não se mexeu |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -228,9 +250,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **29 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **30 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check`
 
 ## Frentes
 
@@ -261,7 +283,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 84 |
+| **Migrations** | 85 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 17 |
 | **Primitivos de UI** | 4 |

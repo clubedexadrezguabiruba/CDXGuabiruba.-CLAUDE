@@ -1,7 +1,7 @@
 ---
 name: avatar-importar-arte
-description: Importa uma arte do avatar para o catálogo pela rota de arte — o Doug edita o cabelo sobre um render do próprio compositor, o Gate −1 prova que o boneco não se mexeu, e a peça sai medida em vez de adivinhada. Use quando já existe arte editada sobre a base oficial e ela precisa virar peça de código; quando uma arte retocada volta para reentrada; quando um traçado saiu com menos massa que a arte; quando algo da referência "sumiu" da peça sem nenhum gate reprovar; ou quando o pedido for "importa esse cabelo", "cola esse cabelo no catálogo", "por que a mecha não apareceu?". Não é para inventar forma nova (isso é avatar-desenho) nem para medir número solto de referência (isso é avatar-regua).
-version: 2.0.0
+description: Importa uma arte do avatar (CABELO ou TRAJE) para o catálogo pela rota de arte — o Doug edita a peça sobre um render do próprio compositor, o Gate −1 prova que o boneco não se mexeu, e a peça sai medida em vez de adivinhada. Use quando já existe arte editada sobre a base oficial e ela precisa virar peça de código; quando uma arte retocada volta para reentrada; quando um traçado saiu com menos massa que a arte; quando algo da referência "sumiu" da peça sem nenhum gate reprovar; ou quando o pedido for "importa esse cabelo", "importa esse traje", "cola essa peça no catálogo", "por que a mecha não apareceu?". Cobre as DUAS esteiras: a do cabelo (contorno → converter → pecas) e a do traje (arte:traje → arte:trajes → arte:folha-traje), que dividem o Gate −1 e a extração. Não é para inventar forma nova (isso é avatar-desenho) nem para medir número solto de referência (isso é avatar-regua).
+version: 3.0.0
 argument-hint: "[nome da arte, sem extensão]"
 ---
 
@@ -31,6 +31,35 @@ ou por `grep`.
 | medir um número de referência para `geometria.ts` | `avatar-regua` |
 | **arte editada sobre a base oficial precisa virar peça** | **esta** |
 | **arte retocada volta para reentrada** | **esta** (§8 do runbook) |
+
+## Primeira pergunta: é CABELO ou é TRAJE?
+
+São duas esteiras, e elas dividem quatro passos. Errar de corredor faz o programa
+reclamar de um jeito que não aponta a causa.
+
+| | **cabelo** | **traje** |
+|---|---|---|
+| o arquivo | `entrada.png`, `chanel.png`, … | **`traje-<patente>-<nome>.png`** |
+| a peça vira | geometria `{t,y}` | **raster recortado** |
+| os comandos do meio | `arte:contorno` → `arte:converter` → `arte:espessura` → `arte:pecas` | **`arte:traje` → `arte:trajes`** |
+| a folha | `arte:folha` | **`arte:folha-traje`** |
+| onde está escrito | este arquivo, abaixo | **[`references/esteira-traje.md`](references/esteira-traje.md)** |
+
+**Se o nome do arquivo começa com `traje-`, vá para
+[`references/esteira-traje.md`](references/esteira-traje.md) e siga por lá.** O
+resto deste arquivo é a rota do cabelo. Os passos 2 e 3 — Gate −1 e extração — são
+os mesmos nas duas, sem uma linha de diferença.
+
+**Três regras do traje que o cabelo não tem, e que valem antes de qualquer
+comando:**
+
+1. **a cor não se escreve** — sai do slug, via `PATENTES` em
+   `scripts/avatar/patentes.ts`, travada por `verify:paleta-patentes`;
+2. **a arte carrega o próprio volume**, inclusive a sombra sob o queixo — o
+   compositor não sombreia peça que tem `tinta.png`;
+3. **o contorno do tronco é do compositor, sempre.** Já foi tentado tirá-lo e já
+   foi tentado reconstruí-lo no PNG; as duas reprovaram na tela. Ver §3.3 da
+   referência e o achado **G17**.
 
 Se a peça já tem arte, **não desenhe variante**: importe. Desenhar três
 interpretações de uma decisão já tomada faz o Doug escolher a que por acaso mais
@@ -117,6 +146,10 @@ contorno de crânio.
 
 ## Referências
 
+- **`references/esteira-traje.md`** — a rota do TRAJE inteira: os 10 passos, o que
+  só existe nela, as três ressalvas do Doug de 2026-08-12 e o que cada uma virou,
+  os números da primeira peça para comparar com a próxima, e o que a promoção ainda
+  deve
 - `references/gates.md` — cada gate desta rota, a pergunta que ele faz, o controle
   que o prova e o que ele não pega
 - `references/rota-semantica-legado.md` — a rota antiga, por que ela existiu, o que

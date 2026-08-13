@@ -369,17 +369,6 @@ function tintaTronco(ns: string, traje: Traje | undefined): string {
   const cor = traje?.tinta.cor ?? TRAJE_BASE.roupa;
   let out = `<use href="#${ns}-p-tronco" fill="${cor}"/>`;
 
-  if (traje?.tinta.png) {
-    const k = traje.escalaMedida ?? 1;
-    const w = VIEWBOX.w * k;
-    const h = VIEWBOX.h * k;
-    const dx = (VIEWBOX.w - w) / 2;
-    const dy = (VIEWBOX.h - h) / 2;
-    out +=
-      `<image href="${attr(traje.tinta.png)}" x="${dx.toFixed(2)}" y="${dy.toFixed(2)}" ` +
-      `width="${w.toFixed(2)}" height="${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`;
-  }
-
   for (const dec of traje?.decoracao ?? []) {
     out +=
       `<path d="${attr(dec.d)}" fill="${dec.fill ?? "none"}"` +
@@ -387,11 +376,62 @@ function tintaTronco(ns: string, traje: Traje | undefined): string {
       `/>`;
   }
 
-  out +=
-    `<path d="${pathSombraQueixoTronco()}" ` +
-    `fill="${escurecer(cor, fatorDeTom(FACETAS.sombraQueixo.delta, FACETAS.PLATO_TRONCO))}"/>`;
-  out += `<path d="${pathPlanoLateralTronco()}" fill="${escurecer(cor, 0.9)}" opacity=".42"/>`;
+  // O VOLUME DO COMPOSITOR SÓ EXISTE QUANDO NÃO HÁ ARTE, e a decisão é do Doug,
+  // em 2026-08-12, olhando a primeira folha de traje: *"a sombra do corpo ficou
+  // por cima da roupa, não foi ajustado/eliminado"*.
+  //
+  // A sombra de contato do queixo e o plano lateral foram desenhados para o
+  // macacão CHAPADO da base, que não tem volume nenhum de si. Uma arte de traje
+  // traz o próprio — a farda do Soldado chegou com 29 790 px de sombra e 11 626
+  // de luz, medidos —, e pintar os dois por cima **dobra o sombreado**: some o
+  // que a artista desenhou e aparece um degrau que não é de ninguém.
+  //
+  // Então quem tem `tinta.png` responde pelo próprio volume, inclusive pela
+  // sombra sob o queixo. É o que o `PEDIDO-TRAJE.md` passa a pedir.
+  if (!traje?.tinta.png) {
+    out +=
+      `<path d="${pathSombraQueixoTronco()}" ` +
+      `fill="${escurecer(cor, fatorDeTom(FACETAS.sombraQueixo.delta, FACETAS.PLATO_TRONCO))}"/>`;
+    out += `<path d="${pathPlanoLateralTronco()}" fill="${escurecer(cor, 0.9)}" opacity=".42"/>`;
+  }
   return out;
+}
+
+/**
+ * A ARTE DO TRAJE — **fora do clip**, e é o conserto da segunda ressalva do Doug.
+ *
+ * Ela morava dentro de `tintaTronco()`, logo dentro do `clipPath` do tronco. O
+ * resultado foi medido na primeira folha e o Doug viu antes da régua: *"a imagem
+ * PNG passa sim da silhueta, mesmo que pouco; a arte feita por você eliminou essa
+ * silhueta e desenhou apenas dentro do corpo"*.
+ *
+ * Ele tem razão, e o número concorda: 5 767 px da arte caíam fora do clip. A maior
+ * parte era o traço da própria peça — que o contorno do tronco redesenhava por
+ * cima, então não se notava —, mas **1 497 px de sombra e luz sumiam**, e com eles
+ * o transbordo que faz roupa parecer roupa em vez de tinta no tronco (doc 21 §6.1,
+ * *"roupa veste, não pinta"*).
+ *
+ * Fora do clip a arte guarda o que a artista desenhou, inclusive o que passa da
+ * silhueta. **E ela entra DEPOIS do contorno do tronco**: onde a roupa transborda,
+ * o traço dela vira a borda externa, que é exatamente a regra que `extensoes()` já
+ * enuncia para capa e ombreira. A diferença é só o formato — ali vetor, aqui
+ * raster —, e a regra de composição é a mesma.
+ *
+ * O que NÃO muda: sem `tinta.png` esta função devolve string vazia, e o SVG sai
+ * byte a byte igual ao de sempre. É o que mantém os 19 formas / 7 468 bytes da
+ * `folha-base` e os 11 selos parados.
+ */
+function arteDoTraje(traje: Traje | undefined): string {
+  if (!traje?.tinta.png) return "";
+  const k = traje.escalaMedida ?? 1;
+  const w = VIEWBOX.w * k;
+  const h = VIEWBOX.h * k;
+  const dx = (VIEWBOX.w - w) / 2;
+  const dy = (VIEWBOX.h - h) / 2;
+  return (
+    `<image href="${attr(traje.tinta.png)}" x="${dx.toFixed(2)}" y="${dy.toFixed(2)}" ` +
+    `width="${w.toFixed(2)}" height="${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`
+  );
 }
 
 /**
@@ -882,7 +922,27 @@ export function compor(estado: EstadoAvatar): string {
     `<g class="kk-respira">` +
     extensoes(traje, true) +
     `<g clip-path="url(#${ns}-c-tronco)">${tintaTronco(ns, traje)}</g>` +
+    // O CONTORNO DO TRONCO É SEMPRE DESENHADO, e a tentativa de tirá-lo quando há
+    // arte foi REVERTIDA por decisão do Doug em 2026-08-12: *"regrediu e muito,
+    // deixa a borda como estava"*.
+    //
+    // O que se tentou: com a arte por cima, o traço do tronco parecia brigar com o
+    // contorno do PNG, e a ideia era dar preferência ao PNG. Reprovado na tela.
+    // A régua explica por quê — sem este traço a borda cai para p50 7,5 u, com
+    // metade do perímetro abaixo de 8 u, contra os 11,7 u limpos que ele entrega.
+    // Reconstruí-lo dentro do PNG por um anel foi pior ainda: 15,0 u, um quarto
+    // mais pesado que o contorno da cabeça, e o Doug pegou a olho.
+    //
+    // A fina do contorno da arte fica REGISTRADA como achado, não consertada aqui.
     `<use href="#${ns}-p-tronco" class="kk-traco"/>` +
+    // A ARTE DO TRAJE ENTRA AQUI, depois do contorno do tronco e antes da cabeça.
+    //
+    // Depois do contorno porque onde a roupa transborda é o traço DELA que vira a
+    // borda externa; antes da cabeça porque a cabeça é opaca, vem por cima, e é o
+    // que faz a gola sumir atrás do queixo em vez de flutuar sobre ele.
+    //
+    // Vazia quando não há `tinta.png` — nenhum byte muda no boneco de sempre.
+    arteDoTraje(traje) +
     extensoesCabelo(modeloCabelo, true) +
     `<use href="#${ns}-p-cabeca" class="kk-pele"/>` +
     `<g clip-path="url(#${ns}-c-cabeca)">` +

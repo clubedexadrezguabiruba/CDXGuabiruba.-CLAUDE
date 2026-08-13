@@ -311,6 +311,85 @@ critério de 2026-08-11:
 - **A cor de roupa e acessório é definitiva** (regra 14): duas peças da mesma
   patente têm de sair na mesma cor, porque nada as harmoniza depois.
 
+### 6.1 Roupa VESTE, não pinta — a diretriz da silhueta
+
+**Decisão do Doug em 2026-08-12, olhando a primeira rodada de arte do traje:**
+*"roupa deve passar a silhueta (como é na vida real, senão vira pintura de
+tronco)"*.
+
+Ela reverte o que este plano dizia na §3.4 (*"traje é tinta clipada no tronco,
+tem de respeitar a silhueta"*) e o que o doc 17 §5.2 proíbe — mas aquela
+proibição era do **pipeline morto**: `FOLGA = 40` em `mascara-base.ts` media
+contra as máscaras do macacão da base antiga, e o kokeshi não tem esse teto.
+
+**A regra:** toda peça de traje excede a silhueta em **pelo menos um evento** —
+barra, gola, ombro ou punho. Peça inteiramente contida no `clipPath` do tronco lê
+como tinta sobre o boneco, não como roupa vestida nele.
+
+**O mecanismo já existe e não é a tinta.** `Traje.extensoes` (`tipos.ts:72-82`)
+é forma própria com contorno próprio, desenhada **fora do clip**: onde ela cruza
+o tronco, o preenchimento dela tapa o traço de baixo e o traço dela vira a nova
+borda externa. `atras: true` põe a forma sob o tronco; `atras: false` põe por
+cima. Exigência: sobreposição de no mínimo `SANGRIA = 10 u` com o corpo — a
+extensão **cobre** o tronco, nunca encosta nele.
+
+**Os tetos, medidos em 2026-08-12** (`FOLGA_PROJETO` + meio traço, contra a
+meia-largura externa da cabeça, que é 188,0 u):
+
+| onde | y | tronco externo | **transbordo da cabeça** | até a borda do `viewBox` |
+|---|---|---|---|---|
+| ombro | 360 | 111,0 u | **77,0 u** | 139,0 u |
+| peito | 483 | 135,6 u | **52,4 u** | 114,4 u |
+| **cintura** | 543 | 136,1 u | **51,9 u** | 113,9 u |
+| barra | 615 | 109,4 u | **78,6 u** | 140,6 u |
+
+O **transbordo de 51,9 u na cintura é o que define o kokeshi**: a cabeça é a
+parte mais larga do boneco. O teto lateral é **metade dele — 26 u por lado** —, e
+é o mesmo 26 u que a régua de silhueta binária já tinha registrado nesta seção.
+Passar disso não deixa a roupa mais legível: apaga o boneco.
+
+Para baixo há **18 u** da barra do tronco (y 640) até o fim da sombra do chão
+(y 658), e 60 u até o fim do `viewBox`. Para cima, **a gola na frente para no
+queixo (y 347,2)**: `extensoes(traje, false)` é a **última** camada do SVG
+(`compositor.ts:971`), depois do rosto, do cabelo e do chapéu — uma gola alta com
+`atras: false` cobriria a boca da criança.
+
+⚠️ **A consequência que isto teria na rota de arte — e ela foi resolvida de outro
+jeito no mesmo dia.** Extensão é `{ d, cor }`, vetor, e o tipo diz que `tinta.png`
+é *"o interior, nunca a fronteira"* (`tipos.ts:51`). Pela letra, o que excede a
+silhueta teria de ser traçado, e a esteira de traçado viraria obrigatória.
+
+**Não foi o que aconteceu.** Ao ver a primeira folha, o Doug pegou o defeito antes
+da régua: *"a imagem PNG passa sim da silhueta, mesmo que pouco; a arte feita por
+você eliminou essa silhueta e desenhou apenas dentro do corpo"*. O conserto foi
+mover a arte para **fora do `clipPath`**, e não traçá-la:
+
+- `arteDoTraje()` (`compositor.ts`) emite o `<image>` **depois do contorno do
+  tronco** e antes da cabeça. Onde a roupa transborda, o traço dela vira a borda
+  externa — a mesma regra que `extensoes()` enuncia, com o formato trocado;
+- medido antes: 5 767 px fora do clip, dos quais **1 497 px de sombra e luz
+  sumiam**. Depois: **95,38% da arte visível**, e só a cabeça esconde;
+- **sem `tinta.png` a função devolve string vazia**, e o SVG sai byte a byte
+  igual — é o que manteve os 19 formas / 7 468 bytes e os 11 selos parados.
+
+O traçado continua devendo para uma peça que precise de forma própria (capa,
+ombreira), não para o transbordo do pano.
+
+### 6.2 O volume é da ARTE, nunca do compositor
+
+Segunda ressalva do Doug na mesma folha: *"a sombra do corpo ficou por cima da
+roupa, não foi ajustado/eliminado"*.
+
+`pathSombraQueixoTronco()` e `pathPlanoLateralTronco()` eram desenhados depois da
+arte, e foram feitos para o macacão **chapado** da base, que não tem volume de si.
+Uma arte de traje traz o próprio — a farda do Soldado chegou com 29 790 px de
+sombra e 11 626 de luz —, e as duas camadas por cima **dobravam o sombreado**.
+
+**A regra:** quem tem `tinta.png` responde pelo próprio volume, inclusive pela
+sombra de contato sob o queixo; o compositor não acrescenta nada. Medido: 1 933 px
+repintados viraram **10 px**. O `PEDIDO-TRAJE.md` foi virado do avesso para pedir
+o contrário do que pedia.
+
 | Slot | Como se desenha | Por quê assim |
 |---|---|---|
 | **Traje** | **Código**: `tinta.cor` = o pano medido da patente (doc 17) + `decoracao` (gola, botões, faixa, debrum, galão) | As opções de uma patente têm **o mesmo pano** — a lei do doc 17 diz que a separação entre patentes está na cor (a 56 px o uniforme é massa de cor, `17:96-101`). A variação mora na decoração e nos tons medidos da família. O pipeline `avatar:garment` **não é ressuscitado**: ele mede contra as máscaras do macacão da base antiga e fica verde por vacuidade no kokeshi (`16:3-29`) |
@@ -443,6 +522,148 @@ O momento de produto: **a promoção veste** — e o aluno novo já se veste.
 
 **Parada:** folha de contato a 56 px aprovada pelo Doug; e2e "promover veste e
 aparece" (roda o Doug).
+
+> ### ⏸️ EXECUÇÃO DE 2026-08-12 — a arte NÃO passou, e o caminho mudou
+>
+> **Onde parou:** a folha de contato foi reprovada pelo Doug, e a decisão dele
+> fecha a questão do método: **o traje vai pela ROTA DE ARTE (doc 19), com ele
+> desenhando — não por código escrito pelo Claude.**
+>
+> As palavras dele, olhando a folha: *"as peças desenhadas diretamente por você
+> via código estão feias, sem vida, quadradas. Elas se distinguem pelo menos e
+> têm leitura boa… quero o nível de cabelo feito através de arte, não por você —
+> espetado ou assimétrico ou chanel."*
+>
+> **E o número confirma a leitura dele, medido depois:**
+>
+> | cabelo | origem | pontos |
+> |---|---|---|
+> | coque | código | **7** |
+> | moicano | código | **0** |
+> | chanel | **arte** | **64** |
+> | assimetrico | **arte** | **85** |
+> | espetado | **arte** | **112** |
+>
+> Os três que ele citou são exatamente os três que vieram de arte; os dois de
+> código são os que ele não citou. A diferença é de **uma ordem de grandeza**, e
+> ele a identificou a olho antes de qualquer medição.
+>
+> #### As quatro decisões do Doug nesta sessão, e as quatro ficam
+>
+> 1. **A silhueta foi tentada e não cabe.** Três voltas de arte perseguiram
+>    silhueta porque três críticos disseram que é o canal forte a 56 px. Eles têm
+>    razão sobre o canal; a geometria deste boneco não o oferece — ver a régua
+>    abaixo. **Não repropor.**
+> 2. **São 3 opções por patente, não 4** (9 peças, não 11). Decisão de
+>    2026-08-12, com a régua de silhueta binária na mesa: a quarta opção de
+>    Soldado e de Aspirante repetia a terceira (1,47% e 1,56% de diferença de
+>    FORMA, contra os 10 e 15% que a régua de cor mostrava).
+> 3. **O Macacão do Aprendiz fica exatamente como está.** A crítica leu *"boneco
+>    de madeira sem pintar"* e a causa é medida (o bege fica preso entre o fundo
+>    e o tom da pele), mas o custo de consertar é o byte a byte: a opção A
+>    deixaria de ser gratuita e todo aluno careca mudaria de aparência.
+> 4. **Os 9 rascunhos ficam guardados e intocados**, em `.scratch/`. Eles
+>    passam na régua de leitura; o que falta neles é a pele.
+>
+> #### As cinco réguas que esta execução produziu, e que valem para todo slot
+>
+> Nenhuma delas se remede — todas estão medidas e escritas nos rascunhos:
+>
+> | régua | o número | onde ela morde |
+> |---|---|---|
+> | **valor** (luminância) | piso 40 entre massas vizinhas | dois tons podem estar longe em matiz e colados em valor: `#5E5442` × `#4F5A46` distam 17 em RGB e **1** em valor — a mesma tinta a 56 px |
+> | **teto de silhueta** | **26 u na cintura**, 53 u na barra | na cintura o teto é MENOR que o piso de leitura (50 u): ali não existe saliência legível, e crescer apaga o transbordo de 51,9 u que define o kokeshi |
+> | **margem útil de um bloco** | a geométrica **− 6 − 19** | meio traço mais o plano lateral; explica por que uma tarja de 49 u lê como 1,95 px |
+> | **silhueta binária** | mede forma, ignora tinta | as 9 peças diferem 0,31 a 2,46% em FORMA e 6 a 16% em COR: elas se separam por tinta, não por silhueta |
+> | **escala** | a fração de pixels é **invariante de escala** | 5,89% a 56 px, 5,46% a 150, 5,41% a 340 — a métrica não sabe responder "onde a criança escolhe" |
+>
+> #### O que fica pronto e não se refaz
+>
+> - **A migration `20260812120000_bloco2_traje_por_patente.sql` está escrita e
+>   NÃO aplicada.** Ela semeia os 9 slugs, cria a coluna `ordem` e ensina
+>   `recompute_user_title` a vestir na promoção. **Ela não pode ser aplicada
+>   sozinha** — `verify:catalogo-slots` exige que banco e código tenham os mesmos
+>   slugs, e o código das peças não existe. Se a arte mudar os slugs, a migration
+>   muda junto.
+> - **A coluna `ordem`, que este plano não previa.** O §7 manda "auto-equipar a
+>   1ª opção", e não existia "primeira" no banco: por slug,
+>   `traje-soldado-avental` vem antes de `traje-soldado-farda`, e a promoção
+>   vestiria o avental em vez da farda lisa.
+> - **Os alunos que JÁ têm patente passam a vestir**, num `UPDATE` de
+>   reconciliação — sem ele o traje só apareceria para quem fosse promovido
+>   depois, e é o formato do achado R4 um andar abaixo.
+> - **O Aprendiz A é gratuito, provado**: 4 configurações compostas (careca,
+>   animado, com cabelo, folha externa) e 4 SVGs **byte a byte idênticos**. O
+>   caso animado dá 7 468 bytes, que é o número congelado da `folha-base`.
+> - **O achado G16**: nenhum gate mede o boneco completo (base + cabelo + traje),
+>   e com os dois juntos ele bate exatamente o teto de 26 formas.
+>
+> #### A esteira que a próxima sessão constrói
+>
+> A rota de arte (doc 19) **já suporta traje quase inteira**. O que muda é uma
+> inversão de duas linhas: hoje `REGIOES_QUE_REPROVAM = ["rosto", "corpo"]`
+> (`scripts/avatar/arte/base.ts:281`) protege o corpo, porque a rota nasceu para
+> cabelo. Para traje o corpo é o campo de desenho e **a cabeça é que precisa
+> ficar intacta**.
+>
+> | passo | existe | muda |
+> |---|---|---|
+> | base de edição | `arte:base`, 1024 px, escala 1,2 | tronco em foco |
+> | o Doug desenha | Gemini/Canva sobre o PNG | igual |
+> | Gate −1 | protege `rosto` + `corpo` | protege a **cabeça**; corpo livre |
+> | traçado | `tracar-cabelo.ts` (biblioteca compartilhada) | outra geometria de origem |
+> | catálogo | `Cabelo.massa/clara/linhas` | `Traje` ganha os mesmos três campos |
+>
+> **O atalho a considerar antes de investir no traçado:** `Traje.tinta.png` já
+> está no tipo e `tintaTronco()` já sabe desenhá-lo, clipado no tronco e escalado
+> pela `escalaMedida`. A arte do Doug entraria como PNG direto, sem traçado — fica
+> pesada (um arquivo por peça) e não escala para 9, mas prova o nível na tela
+> antes de a esteira de traçado ser construída.
+>
+> **Primeira peça sugerida:** uma do **Soldado** — a patente sem cor clara
+> (decisão medida do doc 17 §3.1). Se o volume funcionar só com tons de oliva,
+> funciona em qualquer patente.
+
+> ### ✅ EXECUÇÃO DE 2026-08-12 (2ª sessão) — a esteira do traje existe, e a
+> ### primeira peça passou por ela
+>
+> **`traje-soldado-farda` aprovada pelo Doug na folha**, e a esteira ficou pronta
+> para as 8 seguintes. Ela é a §12 do doc 19 e a
+> `references/esteira-traje.md` da skill `avatar-importar-arte`.
+>
+> | comando novo | o que faz |
+> |---|---|
+> | `arte:base-tronco` | a base de edição e o campo do tronco, medidos |
+> | `arte:traje -- <N artes>` | recolore pelo slug e recorta 1 : 1 |
+> | `arte:trajes [--check]` | **gera** `trajes-da-arte.ts`; o `--check` está no `verify:arte` |
+> | `arte:folha-traje -- <N>` | a folha de N peças entre si, com o controle sem-traje |
+>
+> **Os números da peça:** Gate −1 aprovada (deslocamento 0/0, escala 100,00%),
+> extração com 1 componente e 0 descartadas, colagem em **(0, 0)** pela busca de
+> registro, **95,38%** da arte visível, transbordo de **10,75%**, distinção de
+> **38,93%** contra o boneco sem traje (piso 5%), e o composto **−2 formas /
+> −1 294 bytes**. `folha-base` em 19 / 7 468 e os 11 selos parados.
+>
+> **Três ressalvas do Doug, todas pegas a olho antes de qualquer régua:**
+>
+> 1. *"a roupa passa da silhueta, e você eliminou isso"* → a arte saiu de dentro do
+>    `clipPath` (§6.1 acima);
+> 2. *"a sombra do corpo ficou por cima da roupa"* → o compositor não sombreia peça
+>    com arte (§6.2 acima);
+> 3. *"o contorno do tronco briga com o do PNG"* → **tentado e revertido**, por
+>    decisão dele: *"regrediu e muito, deixa a borda como estava"*. A causa real —
+>    a extração entrega o miolo do traço, não o traço — virou o achado **G17**.
+>
+> **Duas réguas minhas erraram e os controles pegaram**, e as duas ficam escritas
+> no código: o controle de tom media razão relativa e castigava tom escuro (a
+> régua certa é luminância em níveis, com teto de 0,50 vindo do arredondamento de
+> 8 bits); e a busca de registro corria sobre a massa chapada, devolvendo quase o
+> mesmo número para posições diferentes — corre sobre o traço da peça, e declara
+> empate se o 2º colocado ficar a menos de 2%.
+>
+> **O que a promoção ainda deve** está na §7 da referência da skill: `TRAJES` no
+> catálogo, a seed reescrita, a prop `traje` no `AvatarKokeshi`, o `useUser`, o
+> teste de ausência byte a byte, e o PNG saindo de `public/dev/`.
 
 ### Bloco 3 — Fundo
 

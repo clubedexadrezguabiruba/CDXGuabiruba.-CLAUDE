@@ -29,6 +29,13 @@
 > cabeça, o rosto, os olhos, as sobrancelhas, a boca, a pele, o corpo, a roupa,
 > os contornos e o fundo bege claro.
 >
+> **ESTE BONECO NÃO TEM BRAÇOS.** Ele não tem braços, não tem mãos, não tem
+> pernas, não tem pés, não tem orelhas e não tem pescoço. O corpo dele é uma peça
+> só, em forma de sino, e a cabeça senta direto em cima dela. **Não acrescente
+> nenhuma dessas partes**, nem desenhando, nem sugerindo com uma sombra. Se a sua
+> imagem de referência tiver braços ou orelhas, ignore-os por completo — em
+> especial as orelhas, que este boneco não tem e o cabelo não deve revelar.
+>
 > Desenhe o cabelo diretamente sobre a cabeça existente, encaixado nela.
 >
 > Preserve da referência: a silhueta externa do penteado, as pontas superiores, as

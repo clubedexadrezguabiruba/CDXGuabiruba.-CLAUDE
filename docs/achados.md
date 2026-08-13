@@ -427,6 +427,90 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
+### G17 — a extração entrega o MIOLO do traço, não o traço: o contorno da peça chega com metade do perímetro abaixo do legível
+
+**Prova:** `MEDIDO` — 2026-08-12, na primeira peça de traje pela rota de arte
+(`traje-soldado-farda`). Achado pelo Claude ao consertar uma ressalva do Doug.
+Registrado e **não consertado**, pela regra do "achar não é consertar".
+
+**O número, na borda do tronco, em banda de preto puro (< 25 por canal):**
+
+| render | p05 | p50 | p95 | perímetro < 8 u |
+|---|---|---|---|---|
+| o boneco sem traje (referência) | 10,8 | **11,7** | 16,7 | **0,0%** |
+| a peça sozinha, sem o traço do tronco | 2,5 | **7,5** | 11,7 | **51,6%** |
+
+O traço do boneco é 12 u. O contorno que a peça carrega mede **7,5 u de mediana**,
+e **metade do perímetro fica abaixo de 8 u** — que é o piso de legibilidade desta
+rota (0,64 px a 56, logo abaixo da sobrancelha inteira, `cabelo.ts:334-337`).
+
+**A causa, com arquivo:** `extrair.ts` classifica como `traco` o preto que sobrou
+**dentro da máscara da peça**. O rabo antialiasado do contorno morre contra o fundo
+bege e não é preto o bastante para entrar na máscara. Chega o miolo do traço.
+
+**Hoje não aparece na tela, e é por isso que é 🟡 e não 🟠:** o compositor desenha
+o contorno do tronco por baixo da arte (`compositor.ts`, `compor`), e ele entrega
+os 12 u. O achado morde no dia em que uma peça **transbordar de verdade** — ali o
+contorno externo é o da arte, e a régua diz que ele é fino.
+
+**Duas saídas foram tentadas e as duas reprovaram, o que vale registrar:**
+
+1. **tirar o traço do tronco quando há arte** ("o PNG tem preferência") — a borda
+   caiu para os 7,5 u da tabela;
+2. **reconstruir a banda no PNG** com um anel de `TRACO/2` centrado na fronteira do
+   núcleo colorido — subiu para **p50 15,0 u**, um quarto mais pesada que o
+   contorno da cabeça. **O Doug reprovou a olho**, sem ver a medição:
+   *"regrediu e muito, deixa a borda como estava"*.
+
+A saída que ainda não foi tentada é **a montante**: pedir ao gerador um contorno
+de peça mais escuro, ou alargar a máscara antes de classificar o papel. As duas
+mexem na extração, que é compartilhada com o cabelo — e o cabelo está aprovado.
+
+### G16 — nenhum gate mede o boneco COMPLETO: base + cabelo + traje
+**Prova:** `MEDIDO` — 2026-08-12, ao orçar a arte do Bloco 2 dos slots. Achado
+pelo Claude, desenhando os trajes. Registrado e **não consertado**, pela regra 9.
+
+**Os dois gates de orçamento medem metades diferentes, e nenhum mede o todo:**
+
+| gate | compõe | não compõe |
+|---|---|---|
+| `avatar:variantes` | base + **traje** | cabelo |
+| `avatar:folha-base` | base + **cabelo** | traje |
+
+`ORCAMENTO_COMPOSTO` (26 formas / 10 240 bytes) declara-se "base + UM item", e o
+docstring justifica: *"nunca há dois cabelos num render, então somar os cinco
+orçaria uma composição que não existe."* O argumento vale para dois cabelos e
+**não vale para cabelo + traje**, que são dois itens no mesmo render — e sempre
+foram, desde que o boneco veste o macacão da base.
+
+**Medido, compondo os dois juntos:**
+
+| cena | formas | bytes |
+|---|---|---|
+| base careca, sem traje | 19 | 6 813 |
+| chanel, sem traje | 23 | 11 867 |
+| base + o traje mais pesado dos 9 rascunhos | 22 | 8 235 |
+| **chanel + esse mesmo traje** | **26** | **13 289** |
+
+O boneco completo bate **exatamente** o teto de formas — zero folga —, e nenhum
+gate olha para esse número. Um traje com uma forma a mais passaria nos dois
+gates e estouraria na tela.
+
+**Os bytes já estão acima do teto hoje, e isso NÃO é o achado.** É decisão A do
+Doug em 2026-08-06: peça traçada de arte real tem mais pontos que paramétrica, e
+o teto de bytes *"não veta arte aprovada"* — ele vira registro (`folha-base.ts:417-423`).
+O que não existe é a mesma conversa sobre FORMAS, que veta.
+
+**Consequência para quem for desenhar traje:** o orçamento real de uma peça é
+**3 formas** (26 − 23 do cabelo mais pesado), não as 7 que a conta ingênua
+sugere. Isso é contornável agrupando subpaths num `<path>` só — o truque que
+`extensoesCabelo` já usa —, mas quem não souber vai descobrir tarde.
+
+**O conserto, quando o Doug mandar:** medir o composto real (base + cabelo +
+traje) em um dos dois gates, e decidir se o teto de 26 sobe. O número de 26 saiu
+da conta do ranking com **um** item; com dois ele precisa ser remedido, não
+reinterpretado.
+
 ### G14 — o e2e roda contra qualquer app que esteja na porta 3000, e reporta como falha desta
 **Prova:** `MEDIDO` — 2026-08-10, run real do E.5. `playwright.config.ts:88-93`
 (`reuseExistingServer: true` + `baseURL` fixo em `http://localhost:3000`). Achado

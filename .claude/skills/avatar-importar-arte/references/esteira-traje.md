@@ -1,0 +1,178 @@
+# A esteira do TRAJE, comando a comando
+
+*Escrita em 2026-08-12, quando a primeira peça de traje passou pela rota
+(`traje-soldado-farda`). A rota nasceu para cabelo; esta é a metade dela que muda.*
+
+O runbook do processo é
+[docs/avatar/19-rota-de-arte-runbook.md](../../../../docs/avatar/19-rota-de-arte-runbook.md);
+o registro de execução, com cada número medido, é
+[ESTADO-DA-ROTA.md](../../../../scripts/avatar/arte/ESTADO-DA-ROTA.md).
+
+---
+
+## 1. Os dez passos, contra os do cabelo
+
+Quatro passos são idênticos, e isso é o ponto: quem sabe a rota do cabelo sabe
+esta.
+
+| # | passo | cabelo | **traje** |
+|---|---|---|---|
+| 0 | base de edição | `arte:base` | **`arte:base-tronco`** (a mesma base, o campo medido) |
+| 1 | o pedido | `PEDIDO-GEMINI.md` | **`PEDIDO-TRAJE.md`** |
+| 2 | Gate −1 | `arte:gate` | **igual, sem mudança** |
+| 3 | extração | `arte:extrair` | **igual, sem mudança** |
+| 4 | a peça | `arte:contorno` → `arte:converter` → `arte:espessura` | **`arte:traje`** |
+| 5 | o literal | `arte:pecas` | **`arte:trajes`** |
+| 6 | o `--check` no CI | `arte:pecas --check` | **`arte:trajes --check`** |
+| 7 | a folha | `arte:folha` | **`arte:folha-traje`** |
+| 8 | o parecer | o Doug | o Doug |
+| 9 | promoção | `CABELOS` | `TRAJES` + seed do banco |
+
+```
+npm run arte:base-tronco                                    # olhe o campo uma vez
+# o Doug desenha no Gemini, pelo PEDIDO-TRAJE.md
+npm run arte:gate       -- scripts/avatar/arte/<SLUG>.png
+npm run arte:extrair    -- scripts/avatar/arte/<SLUG>.png
+npm run arte:traje      -- scripts/avatar/arte/<SLUG>.png   # recolore + recorta
+npm run arte:trajes                                         # gera o literal
+npm run arte:folha-traje                                    # a folha, N peças
+```
+
+**Os passos 2 e 3 não precisaram de nenhuma mudança**, e isso foi surpresa. Eu
+tinha planejado inverter `REGIOES_QUE_REPROVAM` (que protege `rosto` e `corpo`)
+porque no traje o corpo é o campo. Não foi preciso: a regra do Bloco 12 atribuiu
+**99,1%** do que mudou à própria peça e o Gate −1 aprovou de primeira. A inversão
+só entra se alguma arte reprovar por ela.
+
+## 2. O que só existe no traje
+
+**A cor vem da régua, não do desenho.** O slug é `traje-<patente>-<nome>`, e
+`arte:traje` lê o pano em `scripts/avatar/patentes.ts` (`PATENTES`), travado por
+`verify:paleta-patentes`. Nenhum hexadecimal escrito à mão, e as três opções de uma
+patente saem no mesmo pano **por construção** — que é a regra 14 do doc 15. Aprendiz
+não está em `PATENTES` (começa no tier 1) e cai em `TRAJE_BASE.roupa`.
+
+**A razão de tom vem da arte.** Sombra e luz não se escolhem: saem da razão de
+luminância que a artista pôs no ciano. Medido na primeira peça: sombra **0,3290 ×**
+massa, luz **1,5506 ×**.
+
+**A luz mistura com branco, não multiplica.** Multiplicar estoura o canal em pano
+claro — o Mestre (`#AEBCCE`) × 1,55 vira branco e perde o matiz. A mistura acerta a
+luminância alvo exatamente. É o que o produto já faz com `.kk-luz` (branco com
+opacidade).
+
+**A colagem é conta.** `escalaMedida` fica **ausente** — o campo diz "nunca escrita
+à mão" e o auto-ajuste que a produziria não existe em código. Com ela ausente,
+`k = 1` e o `<image>` ocupa o `viewBox` inteiro, que na base de edição é o retângulo
+px 212→812 × 92→932 = **600 × 840**, 5:7 cravado. Recortar ali põe a peça 1 : 1.
+
+**O nome é a única coisa que uma pessoa escreve.** `NOMES` em `trajes.ts`, uma linha
+por peça. Arte sem nome **reprova** em vez de inventar "Traje Soldado Farda".
+
+## 3. As três ressalvas do Doug, e o que cada uma virou
+
+Ele reprovou a primeira folha em três pontos, todos com o olho, todos antes da
+régua. **As três valem para toda peça nova.**
+
+### 3.1 "a roupa passa da silhueta, e você eliminou isso"
+
+A arte era desenhada **dentro** do `clipPath` do tronco, então tudo que passava era
+cortado: 5 767 px, dos quais 1 497 de sombra e luz sumiam de verdade. Com eles ia
+embora o transbordo que faz roupa parecer roupa (doc 21 §6.1).
+
+**Conserto:** `arteDoTraje()` emite o `<image>` **fora do clip**, depois do contorno
+do tronco. Medido depois: **95,38% da arte visível**, e só a cabeça esconde.
+
+### 3.2 "a sombra do corpo ficou por cima da roupa"
+
+`pathSombraQueixoTronco()` e `pathPlanoLateralTronco()` eram desenhados depois da
+arte. Foram feitos para o macacão **chapado** da base, que não tem volume de si; uma
+arte de traje traz o próprio, e as duas por cima **dobravam o sombreado**.
+
+**Conserto:** quem tem `tinta.png` não recebe sombra nenhuma do compositor. Medido:
+1 933 px repintados → **10 px**. O `PEDIDO-TRAJE.md` passou a pedir o contrário do
+que pedia: a arte desenha o próprio volume, **inclusive a sombra sob o queixo**.
+
+### 3.3 "o contorno do tronco briga com o do PNG" — e o conserto foi REVERTIDO
+
+Duas saídas foram tentadas e as duas reprovaram na tela:
+
+1. **tirar o traço do tronco quando há arte** → a borda caiu para p50 **7,5 u**, com
+   51,6% do perímetro abaixo de 8 u, contra os 11,7 u limpos da referência;
+2. **reconstruir a banda no PNG** com um anel de `TRACO/2` → subiu para p50
+   **15,0 u**, um quarto mais pesada que o contorno da cabeça. O Doug: *"regrediu e
+   muito, deixa a borda como estava"*.
+
+**Fica como estava: o compositor desenha o traço do tronco, sempre.** A causa real —
+a extração entrega o miolo do traço, não o traço — está registrada como **G17** em
+`docs/achados.md`, e não se conserta aqui. Ela só morde quando uma peça transbordar
+muito, porque ali o contorno externo é o da arte.
+
+## 4. O que a folha mede, e o controle de cada número
+
+`arte:folha-traje` desenha 4 seções — tamanhos, os 4 fundos a 56 px, close do
+tronco, e o traje sob os 6 cabelos. **A coluna "sem traje" é o controle negativo em
+todas**: se a peça não colou, as duas ficam idênticas e a distinção dá zero.
+
+No terminal, nunca na imagem (doc 19 §11):
+
+| número | o que ele responde | referência |
+|---|---|---|
+| **registro pelo traço** | a peça caiu no pixel certo? | máximo em (0,0), e o 2º lugar tem de ficar atrás |
+| onde foi parar o desenho | visível / atrás da cabeça / sob o traço / repintado / além da silhueta | repintado ≈ 0 |
+| distinção × sem traje a 56 px | a peça lê no ranking? | piso de 5% (`folha-base.ts:185`) |
+| distinção entre peças | duas opções da mesma patente separam? | piso de 5% |
+| orçamento | formas e bytes | `<image>` custa **0 formas** |
+
+**A busca de registro corre sobre o TRAÇO da peça, não sobre a massa** — e isso
+custou uma rodada. Casando o desenho inteiro, a régua devolveu (−2, 0) numa peça que
+estava em (0, 0): a massa de um traje é uma mancha larga e chapada, e deslocá-la 2 px
+muda uma fração do total. Régua que devolve quase o mesmo número para posições
+diferentes é *o* modo de falha desta rota. As linhas pretas são finas e de contraste
+máximo — um pixel de desvio já derruba a concordância. **A régua imprime a distância
+para o 2º colocado, e declara empate se ela for menor que 2%.**
+
+## 5. Os números da primeira peça, para comparar com a próxima
+
+`traje-soldado-farda`, 2026-08-12:
+
+| | |
+|---|---|
+| Gate −1 | APROVADA · deslocamento 0/0 px · escala 100,00% · rosto forma 0 |
+| extração | 99 167 px · 1 componente · 0 descartadas · matizes 180/181/179° |
+| recolorização | os 4 papéis dentro do teto de quantização (±0,50 nível) |
+| PNG da peça | **9,9 KB**, 600 × 840 |
+| registro | **(0, 0)**, 2º lugar 19,9% atrás |
+| visível | **95,38%** |
+| transbordo | 10,75% da arte além da silhueta |
+| distinção × sem traje | **38,93%** (piso 5%) |
+| orçamento | **−2 formas, −1 294 bytes** (as sombras do sistema saem) |
+
+## 6. As asserções negativas, que são o trabalho
+
+Peça nova não pode mover o que já está congelado:
+
+- `npm run avatar:folha-base` em **19 formas / 7 468 bytes**, exatos. Se andarem, a
+  mudança vazou para o caso **sem traje** — isso é achado, não rebase;
+- os **11 selos** de `parametrico-congelado.ts` verdes. Eles assam
+  `TRAJE_BASE.roupa`: "harmonizar" essa cor moveria os 11 de uma vez;
+- **497 testes** parados;
+- `npm run arte:trajes -- --check` conferindo caractere a caractere;
+- `verify:catalogo-slots` verde — e enquanto a peça não for promovida, ele tem de
+  seguir dizendo **"vazio dos dois lados"**.
+
+## 7. A promoção — o que ainda falta, e não é pouco
+
+O catálogo e o banco **andam juntos**: `verify:catalogo-slots` compara os conjuntos
+de slugs slot a slot, nos dois sentidos. Promover exige, na mesma passada:
+
+1. `TRAJES` em `src/lib/avatar/catalogo.ts` + `CATALOGO.traje` derivado de
+   `Object.keys()`;
+2. a seed no banco — a migration `20260812120000` semeia **9 slugs** e precisa ser
+   reescrita para semear só os que têm arte;
+3. **`AvatarKokeshi` não tem prop `traje`** — sem isso nenhuma tela do produto
+   desenha a peça. Falta `trajeDe(slug)` e o repasse em `svgDoAluno`;
+4. `useUser` não lê `avatar_traje`;
+5. o teste que **não existe**: o análogo de `pecas-de-elenco.test.ts` para traje —
+   *ausente = byte a byte igual*;
+6. o PNG sai de `public/dev/traje/` (ignorado pelo git) para o endereço definitivo.

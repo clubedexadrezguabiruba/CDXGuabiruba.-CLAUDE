@@ -45,6 +45,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import type { Cabelo, PontoFranja } from "../../../src/lib/avatar/estilo/cabelo";
 import { converter } from "./converter";
 import { PASTA } from "./base";
+import { primeiraDivergencia, semCR } from "./gerado";
 
 /** As artes e o rótulo que cada uma leva na página. */
 const ARTES: { arquivo: string; nome: string; nota: string }[] = [
@@ -215,30 +216,9 @@ async function gerar(): Promise<string> {
   return `${CABECALHO}\n${blocos.join("\n\n")}\n${RODAPE}`;
 }
 
-/**
- * AS QUEBRAS DE LINHA NORMALIZADAS — e sem isto o gate é vermelho por acidente.
- *
- * O gerador escreve `\n`; o git desta máquina tem `core.autocrlf=true` e devolve
- * `\r\n` no `checkout`. Comparar bytes crus faz o `--check` reprovar **todo arquivo
- * que o git tocou**, com um laudo que aponta a linha 1 e uma diferença de bytes
- * exatamente igual ao número de linhas. Medido aqui: 16 702 contra 16 206, para
- * 496 linhas.
- *
- * A pergunta do gate é *"o literal ainda é o que o \`converter()\` produz?"*, e
- * quebra de linha do working tree não faz parte dela. `gerar-livro-aberturas.ts:116`
- * já normalizava assim — a lição existia no repositório e não tinha chegado aqui.
- */
-const semCR = (s: string) => s.replace(/\r\n?/g, "\n");
-
-/** A primeira linha em que as duas strings divergem — para o laudo dizer ONDE. */
-function primeiraDivergencia(a: string, b: string): number {
-  const la = a.split("\n");
-  const lb = b.split("\n");
-  for (let i = 0; i < Math.max(la.length, lb.length); i++) {
-    if (la[i] !== lb[i]) return i + 1;
-  }
-  return 0;
-}
+// `semCR` e `primeiraDivergencia` moravam aqui e subiram para `./gerado` quando
+// `arte:trajes` passou a precisar das duas. A lição do CRLF está lá, inteira; o
+// motivo de não copiá-las é o de sempre neste diretório (ver `pixels.ts`).
 
 async function principal(): Promise<void> {
   const check = process.argv.includes("--check");

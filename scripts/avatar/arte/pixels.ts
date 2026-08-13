@@ -179,6 +179,23 @@ export function dilatar(m: Uint8Array, w: number, h: number, r: number): Uint8Ar
   return atual;
 }
 
+/**
+ * Erode uma máscara por `r` pixels — o complemento de `dilatar`, e literalmente
+ * implementado assim.
+ *
+ * Nasceu na esteira do traje, para separar o miolo visível de uma peça da faixa
+ * de borda em que o traço do tronco a cobre. Perguntar "a peça caiu no lugar?"
+ * dentro dessa faixa devolve sempre não, porque ali quem manda é o contorno.
+ */
+export function erodir(m: Uint8Array, w: number, h: number, r: number): Uint8Array {
+  const fora = new Uint8Array(m.length);
+  for (let i = 0; i < m.length; i++) fora[i] = m[i] ? 0 : 1;
+  const crescido = dilatar(fora, w, h, r);
+  const saida = new Uint8Array(m.length);
+  for (let i = 0; i < m.length; i++) saida[i] = m[i] && !crescido[i] ? 1 : 0;
+  return saida;
+}
+
 /** Escreve uma máscara como PNG preto-e-branco. Diagnóstico, não medida. */
 export async function salvarMascara(
   mascara: Uint8Array,
