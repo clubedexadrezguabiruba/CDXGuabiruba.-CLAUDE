@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 6 |
-| **Árvore** | **8 arquivos sujos** |
-| **Último commit** | a5cd9b1 · 2026-08-13 · chore(avatar): apagar a migration do Bloco 2 — o traje deixa de ser por patente |
+| **Commits à frente de `origin/main`** | 7 |
+| **Árvore** | **4 arquivos sujos** |
+| **Último commit** | 070ef74 · 2026-08-13 · docs(avatar): a lei da Academia 64 — a patente vira moldura e a cor do traje fica livre |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -283,7 +283,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 84 |
+| **Migrations** | 85 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 17 |
 | **Primitivos de UI** | 4 |

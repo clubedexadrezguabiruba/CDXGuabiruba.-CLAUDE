@@ -27,13 +27,21 @@
  *     `class_feed` E da de `users`. Se a checagem de pertencimento não estiver
  *     lá, qualquer aluno logado lê o mural — e o nome — de qualquer turma.
  *
+ *  5. **A moldura fica meio muda.** Desde 2026-08-13 a patente aparece como um anel
+ *     em volta do avatar, e ela lê `achieved_tier`. A falha aqui não quebra tela
+ *     nenhuma: sem a chave, o componente desenha o anel do tier 0, e o ranking
+ *     inteiro passa a dizer que ninguém foi promovido. É a mesma forma da falha 1 —
+ *     dado ausente que a interface aceita em silêncio.
+ *
  * AS QUATRO CONFERÊNCIAS
  * ----------------------
  *  1. As três RPCs de ranking, CHAMADAS de verdade, devolvem as três colunas da
- *     identidade e nenhuma das duas mortas. Chamar em vez de ler o corpo é o que
- *     pega a lição 2 do Bloco B: plpgsql não valida corpo contra esquema.
- *  2. `get_class_feed` existe, e devolve as três colunas mais `display_name`,
- *     `event_data` e `created_at` — as sete chaves que `MuralClient` lê.
+ *     identidade **mais `achieved_tier` como número**, e nenhuma das duas mortas.
+ *     Chamar em vez de ler o corpo é o que pega a lição 2 do Bloco B: plpgsql não
+ *     valida corpo contra esquema.
+ *  2. `get_class_feed` existe, e devolve as três colunas da identidade, o
+ *     `achieved_tier` e mais `display_name`, `event_data` e `created_at` — as
+ *     chaves que `MuralClient` lê.
  *  3. O privilégio de `get_class_feed`: `anon` NÃO executa, `authenticated` executa.
  *  4. A autorização, MEDIDA por comportamento: personificar um usuário que **não**
  *     é da turma e exigir que a chamada seja recusada. É a única prova que não
@@ -61,6 +69,23 @@ import { getDbUrl } from "../db-url";
 
 /** As três colunas da identidade kokeshi (Bloco C). */
 const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_hair", "avatar_hair_color"] as const;
+
+/**
+ * O NÚMERO da patente, que a `<MolduraPatente>` mapeia para cor.
+ *
+ * Entrou no B2 da moldura (2026-08-13). É cobrado ao lado da identidade, e não
+ * dentro dela, porque responde outra pergunta: a identidade diz **quem o boneco é**,
+ * o tier diz **em que degrau o aluno está**. As duas viajam juntas porque as cinco
+ * telas de lista desenham as duas coisas no mesmo elemento — o recorte de cabeça
+ * dentro do anel de patente.
+ *
+ * **Por que o NÚMERO e não o nome.** A view já manda `title` ("Soldado"). Derivar a
+ * cor do nome no cliente seria uma segunda tabela de patentes escrita em
+ * TypeScript, discordando de `scripts/avatar/patentes.ts` no dia em que alguém
+ * renomear um degrau — e o banco tem **8 tiers** contra as 6 cores da paleta
+ * (achado D11), então os nomes já não são um mapa confiável.
+ */
+const COLUNA_MOLDURA = "achieved_tier";
 
 /** O que as RPCs de ranking deixaram de devolver no Bloco 6 — os dois da pilha v2. */
 const CHAVES_MORTAS = ["avatar_config", "avatar_base"] as const;
@@ -217,6 +242,31 @@ export async function conferir(db: Sql): Promise<Relatorio> {
         );
     }
 
+    // A moldura, e a falha dela é silenciosa de um jeito próprio: sem a chave o
+    // componente não quebra, ele desenha o anel do tier 0 em todo mundo — e o
+    // ranking passa a dizer que a turma inteira é Aprendiz.
+    const tier = entrada[COLUNA_MOLDURA];
+    if (!(COLUNA_MOLDURA in entrada)) {
+      nok(
+        `${rotulo} não devolve '${COLUNA_MOLDURA}'`,
+        "é o que a <MolduraPatente> lê; sem a chave toda a lista sai com o anel do tier 0 — " +
+          "não quebra nada, e diz que ninguém foi promovido",
+      );
+    } else if (typeof tier !== "number") {
+      nok(
+        `${rotulo}: '${COLUNA_MOLDURA}' não é número (${JSON.stringify(tier)})`,
+        "a moldura indexa a paleta pelo tier; o nome da patente não serve — o banco tem 8 tiers " +
+          "contra as 6 cores de scripts/avatar/patentes.ts (achado D11)",
+      );
+    } else if (!Number.isInteger(tier) || tier < 0) {
+      nok(
+        `${rotulo}: '${COLUNA_MOLDURA}' fora da escada (${tier})`,
+        "tier é índice inteiro da escada de patentes, a partir de 0 (Aprendiz)",
+      );
+    } else {
+      ok(`${rotulo} devolve '${COLUNA_MOLDURA}' como número (${tier})`);
+    }
+
     for (const chave of CHAVES_MORTAS) {
       if (chave in entrada)
         nok(
@@ -288,7 +338,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
         }
       } else {
         const linha = linhas[0]!;
-        for (const chave of [...CHAVES_DO_MURAL, ...COLUNAS_IDENTIDADE]) {
+        for (const chave of [...CHAVES_DO_MURAL, ...COLUNAS_IDENTIDADE, COLUNA_MOLDURA]) {
           if (chave in linha) ok(`get_class_feed devolve '${chave}'`);
           else
             nok(

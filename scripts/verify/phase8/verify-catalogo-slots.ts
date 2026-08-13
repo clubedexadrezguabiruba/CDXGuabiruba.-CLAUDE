@@ -23,6 +23,14 @@
  *     migration recusa; este gate mede os DADOS, porque migration é intenção e
  *     estado do banco é fato — e um CHECK dropado amanhã não avisa ninguém.
  *
+ *  4. **A economia do traje voltando por acidente ao vínculo com patente.** Desde
+ *     2026-08-13 a patente dá **moldura**, não roupa (doc 21 §0), e a economia é
+ *     **1 traje inicial + o resto por baú** (doc 22 §1). A conferência 3 mede as
+ *     duas metades disso, e ela é a que mudou de sinal: até essa data ela exigia
+ *     "nenhum traje sai de baú", que era a trava nº 3 do doc 21 §1.3. A trava foi
+ *     **revogada** — o CHECK `avatar_catalogo_traje_nao_e_de_bau` caiu na migration
+ *     `20260813120000` —, e o que a substitui é a régua da economia nova.
+ *
  * POR QUE ELE NÃO PASSA POR VACUIDADE COM O CATÁLOGO VAZIO
  * --------------------------------------------------------
  * No Bloco 1 não existe nenhuma peça: os dois lados são conjuntos vazios, e a
@@ -249,7 +257,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
   }
 
   // --- 3. Os dados do catálogo são coerentes -------------------------------
-  console.log("\n3. Origem × colunas, e o traje que não sai de baú");
+  console.log("\n3. Origem × colunas, e a economia do traje (1 inicial + o resto de baú)");
 
   const incoerentes = await db<{ slug: string; origem: string; motivo: string }[]>`
     select slug, origem,
@@ -285,15 +293,48 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     ok("toda peça traz a régua da própria origem, e só ela");
   }
 
-  const trajeDeBau = await db<{ slug: string }[]>`
-    select slug from public.avatar_catalogo where slot = 'traje' and origem = 'bau'`;
-  if (trajeDeBau.length > 0) {
+  // A economia do traje: 1 inicial + o resto todo de baú.
+  //
+  // ESTA CONFERÊNCIA FOI VIRADA DO AVESSO EM 2026-08-13. Ela media o contrário —
+  // "nenhum traje no pool de baú", a trava nº 3 do doc 21 §1.3 — e a premissa dela
+  // caiu com o vínculo patente→traje: o mérito de patente agora é a MOLDURA, e o
+  // traje virou a principal peça de baú do produto (39 das 40).
+  //
+  // O que ela mede agora é a economia decidida (doc 21 §0.6, doc 22 §1), e ela tem
+  // dentes nos dois sentidos:
+  //
+  //   (i)  NENHUM traje é `marco_patente`. É a trava contra a reintrodução silenciosa
+  //        do vínculo — se alguém semear um traje por patente, a moldura passa a
+  //        competir com a roupa pelo mesmo sinal, que é o defeito que a virada
+  //        desfez.
+  //   (ii) NO MÁXIMO UM traje é `marco_nivel`. Dois iniciais é uma economia que
+  //        ninguém decidiu, e ela apareceria em produção como duas peças grátis na
+  //        criação do avatar.
+  const trajes = await db<{ slug: string; origem: string }[]>`
+    select slug, origem from public.avatar_catalogo where slot = 'traje' order by slug`;
+
+  const trajePorPatente = trajes.filter((t) => t.origem === "marco_patente");
+  if (trajePorPatente.length > 0) {
     nok(
-      `${trajeDeBau.length} traje(s) saindo de baú: ${trajeDeBau.map((t) => t.slug).join(", ")}`,
-      "uniforme é mérito de patente (doc 21 §1.3, trava nº 3) — sair de baú apaga o mérito",
+      `${trajePorPatente.length} traje(s) com origem 'marco_patente': ${trajePorPatente.map((t) => t.slug).join(", ")}`,
+      "o vínculo patente→traje foi desfeito em 2026-08-13 (doc 21 §0): a patente dá MOLDURA, " +
+        "não roupa. Traje por patente faz a moldura e a roupa disputarem o mesmo sinal",
     );
   } else {
-    ok("nenhum traje no pool de baú");
+    ok("nenhum traje amarrado a patente (a patente dá moldura, não roupa)");
+  }
+
+  const iniciais = trajes.filter((t) => t.origem === "marco_nivel");
+  if (iniciais.length > 1) {
+    nok(
+      `${iniciais.length} trajes iniciais: ${iniciais.map((t) => t.slug).join(", ")}`,
+      "a economia decidida é 1 inicial + o resto por baú (doc 22 §1) — dois iniciais é " +
+        "uma segunda peça grátis que ninguém decidiu dar",
+    );
+  } else if (iniciais.length === 1) {
+    ok(`1 traje inicial (${iniciais[0]!.slug}), o resto sai de baú`);
+  } else {
+    info("nenhum traje semeado ainda — o inicial chega no B5, e os de baú a partir dele");
   }
 
   // A pirâmide é MEDIDA e relatada; ela só ganha dentes no Bloco 4, junto do
