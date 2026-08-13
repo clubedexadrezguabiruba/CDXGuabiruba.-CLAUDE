@@ -66,6 +66,25 @@ opacidade).
 `k = 1` e o `<image>` ocupa o `viewBox` inteiro, que na base de edição é o retângulo
 px 212→812 × 92→932 = **600 × 840**, 5:7 cravado. Recortar ali põe a peça 1 : 1.
 
+**O transbordo é obrigatório, com alvo medido — e é diretriz, não preferência.**
+Decisão do Doug em 2026-08-12: *"deve passar da silhueta, que nem a primeira arte.
+isso deve ser padrão e diretriz"*. A farda mediu **10,75%** em `ALÉM DA SILHUETA`;
+é o **alvo**, não o teto de tolerância. Peça perto de zero ali reprova sozinha,
+mesmo com o resto verde. Ela passa em **três lugares e nos três** — barra, lateral
+do alto, lateral da cintura —, com teto de 21 px na barra e 31 px por lado. **O
+pedido não pode dizer "na dúvida, passe menos"**: foi essa frase que produziu a
+rodada de transbordo zero, porque gerador em dúvida passa zero.
+
+**E o outro lado: a roupa não abre para fora embaixo — mas isso é critério de
+aceitação, não texto de prompt.** Decisão do Doug de 2026-08-12: *"não precisa dizer
+isso no prompt, pois as artes já vêm sem abrir para fora por baixo"*. Quem manda na
+forma geral é o boneco; a roupa engrossa a borda dele. ⚠️ **A régua para isso não
+existe:** a tabela de folgas mede cintura (31 px), ombro (46 px) e a descida da
+barra (21 px), e **não** a largura na altura da barra — justo onde o corpo curva
+para dentro e pano pendurado não acompanha. Aplicar o teto da cintura ali é
+inventar régua, e foi o que eu fiz na 2ª rodada do gambesão: chamei de "virou
+vestido" uma peça que media **+20/+23 na cintura, dentro do teto**.
+
 **O nome é a única coisa que uma pessoa escreve.** `NOMES` em `trajes.ts`, uma linha
 por peça. Arte sem nome **reprova** em vez de inventar "Traje Soldado Farda".
 

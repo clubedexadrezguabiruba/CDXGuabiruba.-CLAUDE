@@ -330,7 +330,7 @@ contorno do tronco — onde a roupa passa, o traço dela vira a borda externa. O
 traçado continua devendo para uma peça que precise de **forma própria** (capa,
 ombreira), não para o transbordo do pano.
 
-**Três amarras que só existem aqui:**
+**Quatro amarras que só existem aqui:**
 
 1. **a cor não se escreve** — sai do slug (`traje-<patente>-<nome>`) via `PATENTES`,
    travada por `verify:paleta-patentes`. As três opções de uma patente saem no mesmo
@@ -340,7 +340,29 @@ ombreira), não para o transbordo do pano.
    sombreado (1 933 px repintados → 10);
 3. **o contorno do tronco é do compositor, sempre.** Tirá-lo derrubou a borda para
    p50 7,5 u; reconstruí-lo no PNG subiu para 15,0 u. As duas reprovaram na tela. A
-   causa real — a extração entrega o miolo do traço — é o achado **G17**.
+   causa real — a extração entrega o miolo do traço — é o achado **G17**;
+4. **o transbordo é obrigatório, e tem alvo medido.** Decisão do Doug em
+   2026-08-12: *"deve passar da silhueta, que nem a primeira arte. isso deve ser
+   padrão e diretriz"*. A farda aprovada mediu **10,75%** em `ALÉM DA SILHUETA`, e
+   esse é o alvo — não a tolerância. Peça perto de zero ali é reprovação sozinha,
+   mesmo com todos os outros números verdes: roupa que termina na linha do corpo lê
+   como tinta sobre madeira (doc 21 §6.1, *"roupa veste, não pinta"*). Ela passa em
+   **três lugares e nos três** — barra, lateral do alto, lateral da cintura —, com
+   teto de 21 px na barra e 31 px por lado. **O `PEDIDO-TRAJE.md` não pode conter a
+   frase "na dúvida, passe menos"**, que foi a causa medida da rodada de transbordo
+   zero: gerador em dúvida passa zero.
+
+   **O outro lado, e ele é critério de aceitação, não texto de prompt:** a roupa
+   **não abre para fora embaixo**. Quem manda na forma geral do boneco é o boneco;
+   a roupa engrossa a borda dele, não vira saia nem vestido evasê, e a cabeça
+   continua sendo com folga a parte mais larga. O Doug decidiu em 2026-08-12 que
+   isso **não entra no texto colado** — *"as artes já vêm sem abrir para fora por
+   baixo"* —, porque proibição que o gerador não estava violando dilui as que
+   importam. ⚠️ **E falta a régua:** a tabela de folgas mede cintura, ombro e a
+   descida da barra, mas **não a largura na altura da barra**, que é onde o corpo
+   da base curva para dentro e o pano pendurado legitimamente não acompanha.
+   Enquanto essa linha não for medida em `base-tronco.ts`, aplicar o teto da
+   cintura ali é inventar régua — foi o erro do Claude na 2ª rodada do gambesão.
 
 ## 11. As imagens vão por subagente
 

@@ -76,6 +76,64 @@ lista.
 
 ## 🟠 Trava trabalho
 
+### G19 — o Gate −1 mede o registro na faixa que a diretriz do transbordo manda invadir: traje com barra larga reprova por um deslocamento que não houve
+
+**Prova:** `MEDIDO` — 2026-08-12, na 2ª rodada de arte do gambesão do Soldado.
+Achado pelo Claude ao conciliar o gate com a leitura por subagente. Registrado e
+**não consertado**, pela regra do "achar não é consertar".
+
+**A contradição, dentro da saída do MESMO comando.** `npm run arte:gate` na
+candidata do Gemini reprovou com *"registro: deslocamento (0, 8) px e escala
+100,25% — o gerador moveu ou redimensionou o boneco"*, e no painel logo acima
+imprimiu:
+
+```
+· rosto            0    144      0       119   0.33%
+```
+
+**Zero ladrilhos de forma diferentes, de 144.** Um deslocamento real de 8 px com
+escala 100,25% acenderia o rosto inteiro. A leitura independente por subagente
+mediu a cabeça idêntica no pixel: 10 px divergentes em toda a região y 130–500 ×
+x 250–790, bbox da pele igual (y 154, x 310–730), traço preto do queixo com
+310–314 px por linha contra 310–318 da base.
+
+**A causa, com arquivo e linha.** O registro é um SAD calculado **só sobre a faixa
+de rodapé** — `gate-menos-um.ts:544`, `paraUnidade(x, y).y > Y_FIM_TRONCO`, com
+`Y_FIM_TRONCO` em `base.ts:241`. A máscara que protege essa faixa da peça é
+**preliminar e só de ciano** (`:533`: matiz ∩ saturação). O **contorno preto** que
+a barra da roupa carrega não é ciano, **não entra na máscara**, e fica dentro do
+alvo do SAD como estrutura escura que a base não tem. Aí o mínimo escorrega:
+descer a base ~8 px alinha parcialmente a borda da elipse de sombra do chão com a
+barra nova.
+
+**Dose-dependente, com controle negativo:**
+
+| arte | peça dentro do rodapé | registro medido |
+|---|---|---|
+| `traje-soldado-farda` — **aprovada** | 0,7% (rodapé mensurável 99,3%) | 0 / 0 · 100,00% |
+| gambesão, candidata Gemini | **6,6%** (rodapé mensurável 93,4%) | 0 / **8** · **100,25%** |
+
+E os 6,6% contam **só o ciano**: o traço preto da barra, que é o que de fato
+enviesa, não aparece nesse número.
+
+**Por que 🟠 e não 🟡:** em 2026-08-12 o Doug tornou o transbordo **diretriz
+obrigatória** (*"deve passar da silhueta, que nem a primeira arte. isso deve ser
+padrão e diretriz"*), com teto de **21 px na barra** — e a barra desce exatamente
+dentro da faixa de rodapé. O `PEDIDO-TRAJE.md` agora manda o gerador fazer a coisa
+que faz este gate mentir. A reprovação vem com a instrução *"gere a arte de novo
+sobre a base oficial"*, então o custo é uma rodada de gerador e o tempo do Doug,
+por um defeito que não existe. Vai se repetir em toda peça de traje daqui em
+diante.
+
+**A saída provável, quando for a hora** — e ela não é mexer no teto do
+transbordo: a máscara do rodapé precisa excluir **também o preto que não está na
+base**, não só o ciano. Hoje `preliminar` é construída antes do registro de
+propósito (o comentário em `:524-526` explica: o traço da peça exigiria um registro
+que ainda não existe). Um passo barato: tirar do alvo os pixels que **escureceram**
+em relação à base dentro da faixa, que é conservador e não depende de registro.
+**Nada disso se faz sem controle negativo** — a farda aprovada tem de continuar
+medindo 0 / 0 · 100,00%.
+
 ### T1 — ~~A régua da patente: por trilha, ou por dose fixa?~~ FECHADO
 > ✅ **Decidido pelo Doug em 2026-08-11: a patente vem de concluir uma trilha.**
 > Fechado no mesmo dia, porque a medição mostrou que a decisão **não exige mudar
@@ -426,6 +484,42 @@ segue com zero ocorrências no repositório.*
 ---
 
 ## 🟡 Promessa sem lastro
+
+### G18 — o passo 0 da esteira do traje ensina o CONTRÁRIO do pedido: `arte:base-tronco` ainda promete que o compositor sombreia a arte
+
+**Prova:** `MEDIDO` — 2026-08-12, ao abrir a segunda peça de traje
+(`traje-soldado-duas-pecas`). Achado pelo Claude ao rodar o passo 0. Registrado e
+**não consertado**, pela regra do "achar não é consertar".
+
+`npm run arte:base-tronco` imprime, como última seção antes de o Doug ir desenhar:
+
+```
+O QUE O SISTEMA REPÕE POR CIMA DA ARTE (compositor.ts:389-393)
+  sombra do queixo    contato da cabeça no tronco
+  plano lateral       escurecimento da lateral, opacidade .42
+  → a arte é pintada CHAPADA; quem faz o volume de contato é o compositor
+```
+
+**Nada disso vale mais para peça com arte.** No mesmo dia, atendendo à segunda
+ressalva do Doug (*"a sombra do corpo ficou por cima da roupa"*), `tintaTronco()`
+passou a suprimir as duas quando existe `tinta.png` —
+`src/lib/avatar/estilo/compositor.ts:391`, `if (!traje?.tinta.png)`. E toda peça
+que sai desta esteira tem `tinta.png`, por construção: é o que `arte:traje` gera.
+
+**A fonte:** `scripts/avatar/arte/base-tronco.ts:303-305`. É `console.log` puro,
+sem gate por trás — e a citação de linha (`compositor.ts:389-393`) hoje aponta
+para o comentário que explica a supressão, não para o código suprimido.
+
+**Por que 🟡 e não 🟠:** nenhum gate lê esse texto e nenhum render depende dele. O
+custo é humano e concreto: quem seguir o passo 0 desenha a peça **sem** a sombra
+de contato sob o queixo, esperando que o sistema a reponha — e ela não vem. Volta
+uma rodada de Gemini e o tempo do Doug. O `PEDIDO-TRAJE.md` diz o certo (*"o
+volume é TODO seu, inclusive a sombra sob o queixo"*), então hoje quem lê os dois
+vê a contradição; quem lê só o terminal, não.
+
+**O conserto, quando for a hora:** o bloco tem de bifurcar — o que o sistema repõe
+**sem** arte (as duas camadas) e **com** arte (só o contorno de 12 u, desenhado
+depois). Uma tela, nenhuma régua nova.
 
 ### G17 — a extração entrega o MIOLO do traço, não o traço: o contorno da peça chega com metade do perímetro abaixo do legível
 
