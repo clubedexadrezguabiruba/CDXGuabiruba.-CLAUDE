@@ -31,12 +31,12 @@ export const TRAJES_DA_ARTE: Record<string, Traje> = {
   "traje-farda": {
     id: "traje-farda",
     nome: "Farda da Academia",
-    tinta: { png: "/dev/traje/traje-farda.png", cor: "#78833B" },
+    tinta: { png: "/items/traje/traje-farda.png", cor: "#78833B" },
   },
   "traje-gambesao": {
     id: "traje-gambesao",
     nome: "Gambesão Acolchoado",
-    tinta: { png: "/dev/traje/traje-gambesao.png", cor: "#13ABB3" },
+    tinta: { png: "/items/traje/traje-gambesao.png", cor: "#13ABB3" },
   },
 };
 

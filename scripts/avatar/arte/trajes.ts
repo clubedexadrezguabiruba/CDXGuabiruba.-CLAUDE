@@ -54,7 +54,7 @@ const NOMES: Record<string, string> = {
   "traje-gambesao": "Gambesão Acolchoado",
 };
 
-/** `public/dev/traje/x.png` → `/dev/traje/x.png`, que é a URL que o browser pede. */
+/** `public/items/traje/x.png` → `/items/traje/x.png`, que é a URL que o browser pede. */
 const urlDoPng = (caminho: string) => caminho.replace(/^public/, "");
 
 const CABECALHO = `/**
@@ -187,7 +187,10 @@ async function principal(): Promise<void> {
     `\n  escrito. A peça ainda NÃO está no catálogo: \`CATALOGO.traje\` continua vazio\n` +
       `  até a seed do banco entrar junto (verify:catalogo-slots compara os dois).`,
   );
-  console.log(`  os PNGs estão em ${PASTA_TRAJE}/ — endereço provisório, ver doc 21 Bloco 2.`);
+  console.log(
+    `  os PNGs estão em ${PASTA_TRAJE}/ — versionados de propósito: é o que os leva\n` +
+      `  ao deploy (\`pngDaPecaNoDeploy.test.ts\`). Não esqueça o \`git add\` deles.`,
+  );
 }
 
 principal().catch((e) => {

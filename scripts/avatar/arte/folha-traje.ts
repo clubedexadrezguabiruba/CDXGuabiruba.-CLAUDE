@@ -10,7 +10,7 @@
  * O PNG ENTRA COMO DATA-URI, E NÃO É PREFERÊNCIA
  * ---------------------------------------------------------------------------
  *
- * `Traje.tinta.png` guarda `/dev/traje/<slug>.png`, que é o que o BROWSER pede — e
+ * `Traje.tinta.png` guarda `/items/traje/<slug>.png`, que é o que o BROWSER pede — e
  * funciona no produto, porque o SVG é inline no documento e o caminho resolve
  * contra o domínio. Numa folha, não: `renderizarSvg` usa `page.setContent()` sem
  * `baseURL`, a página fica em `about:blank`, e um `href` relativo resolve contra

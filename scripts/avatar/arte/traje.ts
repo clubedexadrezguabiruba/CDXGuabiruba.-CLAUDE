@@ -81,8 +81,29 @@ import { ESCALA, LADO, ORIGEM, PNG_BASE } from "./base";
 import { extrairTraje } from "./extrair";
 import { luz } from "./pixels";
 
-/** Onde os PNGs de peça nascem. `dev/` porque `public/items/` é policiado. */
-export const PASTA_TRAJE = "public/dev/traje";
+/**
+ * Onde os PNGs de peça nascem — **a prateleira do produto**, desde 2026-08-13.
+ *
+ * Era `public/dev/traje`, e a justificativa escrita aqui era *"`dev/` porque
+ * `public/items/` é policiado"*: o `verify:avatar-assets` reprovava arquivo órfão
+ * lá dentro. **Esse gate não existe mais** — o Bloco D o apagou junto com os 44
+ * arquivos de `public/items/` (`scripts/estado.ts:263-267`), e a proibição
+ * sobreviveu ao motivo dela por meses.
+ *
+ * O preço foi o defeito que `pngDaPecaNoDeploy.test.ts` fecha: `public/dev/` está
+ * no `.gitignore` (linha 69), a Vercel builda a árvore do git, e a peça nunca
+ * subiu. Na oficina tudo aparecia; no ar, 404 — e como `compositor.ts:391` decide
+ * pelo campo declarado e não pelo arquivo existindo, o aluno vestido saía com
+ * menos volume que o aluno sem traje.
+ *
+ * `public/items/` é onde a base do boneco já mora, e é o endereço que a criança
+ * pede. Ele é versionado de propósito — o PNG é derivado, mas é derivado que vai
+ * ao ar, e este projeto já tinha escolhido esse caminho uma vez: o livro de
+ * aberturas (875 KB, gerado) está commitado em `public/chess/` com o `--check` do
+ * `prebuild` provando que confere. Duas peças pesam 259 KB, e a saída é
+ * determinística — duas rodadas do gerador dão o mesmo byte.
+ */
+export const PASTA_TRAJE = "public/items/traje";
 
 /** O recorte: o `viewBox` inteiro, em pixels da base de edição. */
 export const RECORTE = {
@@ -128,8 +149,9 @@ const SLUG = /^traje-[a-z0-9]+(-[a-z0-9]+)*$/;
  * final e não entra nesta tabela. Ela é o resíduo de uma transição, não um
  * mecanismo.
  *
- * (E o PNG de saída não serve de fonte canônica: `public/dev/` é gitignored, então
- * o CI o regenera da arte a cada rodada. O que está commitado é a arte.)
+ * (O PNG de saída passou a ser commitado em 2026-08-13, mas continua não sendo
+ * fonte canônica: quem manda é a arte, e o `--check` regera do zero a cada rodada
+ * e compara. Se um dia os dois divergirem, o certo é a arte.)
  */
 const COR_FINAL_DECLARADA: Record<string, string> = {
   // O oliva `#78833B` que o Doug aprovou na folha de 2026-08-12. Ele nasceu em

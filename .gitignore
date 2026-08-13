@@ -63,9 +63,19 @@ public/stockfish/
 # Saída do avatar:garment — regenerável, e sai daqui para public/items no Bloco 7b
 scripts/avatar/uniformes/
 
-# Cópia dos uniformes para a página de conferência /dev/avatar-uniforme.
-# NÃO é public/items/: `verify:avatar-assets` reprova arquivo órfão lá dentro, e
-# a linha do uniforme em `items` só nasce no Bloco 7b.
+# A OFICINA: o que existe só para as páginas de conferência /dev/*.
+#
+# Cópia dos uniformes para /dev/avatar-uniforme, e nada mais. **Isto é o que NÃO
+# vai ao ar** — a Vercel builda a árvore do git, então o que está aqui não existe
+# em produção. É o efeito desejado para material de conferência, e foi um defeito
+# quando a peça de traje nasceu aqui por engano (2026-08-13): ela chegava a 404
+# na tela da criança, e `compositor.ts:391` suprimia o volume do tronco assim
+# mesmo, por olhar o campo declarado e não o arquivo.
+#
+# A justificativa antiga desta linha — *"NÃO é public/items/: verify:avatar-assets
+# reprova arquivo órfão lá dentro"* — morreu com o gate, que o Bloco D apagou
+# (`scripts/estado.ts:263-267`). **Asset de produto mora em `public/items/`**, e
+# `pngDaPecaNoDeploy.test.ts` cobra isso peça a peça.
 public/dev/
 
 # Playwright MCP (screenshots e snapshots de sessao)
