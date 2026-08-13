@@ -97,8 +97,14 @@ O produto tem uma **bíblia tonal escrita e vinculante**:
 `docs/Recruta64_Biblia_Tonal_v1.md` (1054 linhas). É brand commitment, não
 sugestão. Os pontos que constrangem qualquer trabalho visual futuro:
 
-- **O universo é "O Reino das 64 Casas"** — fantasia medieval elegante com
-  vocabulário de campanha. **Não é militarismo realista.**
+- **O universo é "A Academia 64"** — uma academia extraordinária de estratégia:
+  fantasia leve e mistério, **sem época**. **Não é militarismo realista.** Aluno
+  pode ser moderno ou excêntrico; bot pode ser coruja, autômato ou criatura — o que
+  amarra o elenco é o lugar compartilhado. (Substituiu *"O Reino das 64 Casas"* em
+  2026-08-13; o porquê medido está na Bíblia Tonal §3b.)
+- **A patente aparece na moldura em volta do avatar, não na roupa.** Duas
+  linguagens de cor que nunca ocupam o mesmo elemento: patente na moldura, raridade
+  na vitrine do editor. O traje é peça de catálogo com **cor final livre**.
 - **Vocabulário de navegação obrigatório** (§8). A navegação principal usa
   palavras claras — Início, Trilhas, Desafios, Bots, Quadro de Honra, Perfil,
   Turmas — e a camada temática aparece em títulos e blocos internos:
@@ -106,7 +112,9 @@ sugestão. Os pontos que constrangem qualquer trabalho visual futuro:
   **Desafios Táticos** · Missões diárias → **Ordens do Dia** · Análise pós-jogo →
   **Revisão de Batalha** · Ranking → **Quadro de Honra** · Streak → **Sequência de
   Campanha** · Badges → **Insígnias** · Itens → **Equipamentos** · Turmas →
-  **Companhias**.
+  **Companhias**. ⚠️ Este vocabulário é o **do reino** e ainda não foi revisto para
+  a Academia — ele continua sendo o que está em tela, e a revisão é bloco próprio
+  (Bíblia Tonal §5b). Não troque palavra de interface de carona em outra tarefa.
 - **Escada de patentes de 6 degraus**, que é o eixo de progressão do produto:
   Soldado → Aspirante → Capitão → Comandante → General → Mestre. (O tier de
   entrada chama-se **Aprendiz**; "Recruta" é o nome da *trilha* de aulas, não de

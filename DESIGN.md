@@ -5,7 +5,7 @@ src/components/ui/ existirem, para capturar componentes reais. -->
 
 ---
 name: Recruta 64
-description: O Reino das 64 Casas — a formação em xadrez do Clube de Xadrez Guabiruba, no celular do aluno
+description: A Academia 64 — a formação em xadrez do Clube de Xadrez Guabiruba, no celular do aluno
 colors:
   deep-navy: "#0F1A2E"
   dark-base: "#060F18"
@@ -42,8 +42,15 @@ typography:
 
 ## Overview
 
-**Creative North Star: "O Reino das 64 Casas"** — um reino de fantasia medieval
-elegante onde se estuda xadrez, e onde o aluno sobe de patente conforme aprende.
+**Creative North Star: "A Academia 64"** — uma academia extraordinária de
+estratégia onde se estuda xadrez, e onde o aluno sobe de patente conforme aprende.
+Fantasia leve e mistério, **sem época**: a coerência vem do lugar compartilhado, não
+de um século compartilhado.
+
+> Substituiu *"O Reino das 64 Casas"* em 2026-08-13. O porquê está medido na Bíblia
+> Tonal §3b; o que ainda não migrou (a interface ainda diz "Reino das 64 Casas" em
+> 5 telas e na landing) está na §5b de lá. **Não conserte a interface de carona** —
+> é bloco próprio.
 
 **Direção macro: Continuidade** — decidida em 2026-07-31, comparando três
 candidatas lado a lado em `/design-lab`. O app passa a falar a língua que a
@@ -62,6 +69,8 @@ devem voltar como sugestão:
 A personalidade é **premium e limpa, não barulhenta**. A fantasia entra pelo
 vocabulário e pela cor da patente, quase nunca por ornamento: o objeto central de
 quase toda tela é um tabuleiro de xadrez, e ele não disputa atenção com moldura.
+A **moldura de patente é a única exceção**, e é pequena de propósito: um anel em
+volta do avatar, nunca em volta do tabuleiro.
 A densidade é **alta em informação, baixa em decoração** — o aluno abre o produto
 em intervalos de minutos, no celular, e precisa ver onde parou antes de ler
 qualquer número.
@@ -72,9 +81,10 @@ Uma tela de primeira aula e uma tela de patente Mestre não devem ter a mesma
 temperatura.
 
 **Key Characteristics:**
-- Fantasia medieval elegante, com símbolos de campanha e estratégia
+- Fantasia leve e mistério, com símbolos de estudo, estratégia e reconhecimento
 - Interface premium e limpa; o tabuleiro é o herói, a moldura recua
-- Progressão visível por patente — a cor é o degrau
+- Progressão visível por patente — a cor é o degrau, e o lugar dela é a **moldura
+  em volta do avatar**, não a roupa do boneco
 - Celular primeiro, a sério: 375px é o alvo de projeto
 - Prestígio sem humilhação
 
@@ -139,6 +149,30 @@ vêm de `scripts/avatar/patentes.ts`, que é a fonte única e é medida por
 que o produto tem. Se a cor não está dizendo *em que degrau o aluno está*, ela
 não é dessa família.
 
+**The Two Color Languages Rule.** Existem **duas** linguagens de cor com significado
+no produto, e elas nunca ocupam o mesmo elemento:
+
+| | patente | raridade |
+|---|---|---|
+| responde | quem o aluno **é** | quanto uma peça é **rara** |
+| onde vive | **moldura em volta do avatar** — navbar, rankings, mural, dashboard, perfil | **vitrine e cards do editor de avatar** |
+| fonte | `scripts/avatar/patentes.ts` | as cores de raridade do editor |
+
+Cor de raridade em volta de um avatar, ou cor de patente num card de vitrine, ensina
+o aluno que cor não significa nada. A escada de patentes **deixou de vestir o
+boneco** em 2026-08-13 — o traje é peça de catálogo com cor livre, e a patente
+aparece só na moldura.
+
+**The Frame Is Not Art Rule.** A moldura de patente é **CSS fora do SVG** e é
+**automática** — sai de `achieved_tier`, sem slot, sem escolha, sem estado novo.
+Custo de arte zero, e é por isso que ela cabe. Uma moldura que precisasse de asset
+por patente seria seis assets para manter, e não valeria.
+
+A **faixa proibida de matiz 0°–44°** (doc 17) era lei do pipeline de recoloração do
+SVG, onde matiz quente colidia com a pele do boneco. Fora do SVG não há colisão: **a
+moldura pode usar dourado.** As distâncias mínimas — ≥40 entre patentes quaisquer,
+≥60 entre vizinhas — continuam valendo e continuam medidas.
+
 **The Measured Palette Rule.** Nenhuma cor entra perto da escada de patentes sem
 passar por `verify:paleta-patentes`. Existe lei de distância mínima de matiz entre
 patentes vizinhas, e ela já reprovou um dourado: **`#C9B37E` é proibido** — cai a
@@ -161,7 +195,8 @@ crianças, e daltonismo é comum.
 **Label/Mono Font:** nenhuma distinta hoje.
 
 **Character:** Cinzel é capitalis romana — pedra, inscrição, honra. É de onde vem
-todo o "medieval elegante" do produto sem precisar de um único ornamento. Inter
+toda a gravidade do produto sem precisar de um único ornamento; na Academia 64 ela
+lê como inscrição de fachada e placa de sala, não como pergaminho de reino. Inter
 faz o trabalho de leitura no celular, invisível de propósito. O par funciona
 porque um fala e o outro informa; **quando os dois falam, nenhum é ouvido.**
 

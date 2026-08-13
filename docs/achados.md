@@ -485,7 +485,18 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
-### G18 — o passo 0 da esteira do traje ensina o CONTRÁRIO do pedido: `arte:base-tronco` ainda promete que o compositor sombreia a arte
+### G18 — ~~o passo 0 da esteira do traje ensina o CONTRÁRIO do pedido~~ ✅ FECHADO
+
+> **CONSERTADO em 2026-08-13**, de carona no Bloco B1 da virada de direção — o
+> `PEDIDO-TRAJE.md` estava sendo reescrito no mesmo commit, e deixar o terminal
+> contradizendo o pedido novo repetiria o defeito com outra roupagem.
+>
+> **O conserto é o que o próprio achado previa:** o bloco bifurcou.
+> `base-tronco.ts:303-317` agora imprime **COM arte** (só o contorno de 12 u; o
+> volume inteiro é da arte, inclusive a sombra de contato) e **SEM arte** (as duas
+> camadas do macacão bege). Uma tela, nenhuma régua nova — como estava escrito.
+>
+> O texto abaixo fica como registro do defeito.
 
 **Prova:** `MEDIDO` — 2026-08-12, ao abrir a segunda peça de traje
 (`traje-soldado-duas-pecas`). Achado pelo Claude ao rodar o passo 0. Registrado e

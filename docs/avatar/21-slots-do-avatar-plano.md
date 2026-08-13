@@ -13,6 +13,143 @@
 > Decidido pelo Doug em 2026-08-11, com a bancada na mesa. A execução, bloco a
 > bloco, marca-se aqui.
 
+---
+
+## 0. EMENDA DE 2026-08-13 — a patente sai da roupa e vira moldura
+
+**Leia esta seção antes de qualquer outra deste documento.** Onde o resto do doc
+divergir dela, **ela vence**, e os pontos divergentes estão nomeados abaixo um a um.
+
+O Doug tomou quatro decisões definitivas. O plano de execução completo está em
+`~/.claude/plans/farei-algimas-mudan-as-definitivas-tingly-seahorse.md`.
+
+### 0.1 O que mudou
+
+| | antes (este doc, 2026-08-11) | **agora** |
+|---|---|---|
+| a patente veste | o **traje** do boneco | uma **moldura** em volta do avatar |
+| cor do traje | o pano medido da patente (doc 17) | **cor final livre**, vinda da arte |
+| tons por peça | 3 chapados obrigatórios | livres — aerógrafo é aceito |
+| tamanho do catálogo | 11 trajes (3 patentes × 3-4) | **~40 trajes** com raridade |
+| como se ganha traje | promoção de patente | **1 inicial + 39 por baú** |
+| traje pode sair de baú? | **nunca** (trava nº 3) | **é a regra** — o baú é a única porta |
+| tema | reino medieval / campanha | **Academia 64** (Bíblia Tonal §3, §5) |
+
+### 0.2 A trava nº 3 da §1.3 está REVOGADA
+
+Ela dizia: *"Pool de baú só com estético: fundo, rosto, chapéu, pet. **Uniforme
+nunca sai de baú** — traje é mérito de patente, e misturar as duas coisas apaga o
+mérito."*
+
+**A premissa dela caiu junto com o vínculo.** Traje deixou de ser mérito de patente;
+o mérito de patente agora é a moldura, que ninguém sorteia e ninguém escolhe. Sem o
+vínculo não há mérito a apagar, e o argumento fica sem sujeito.
+
+O que a substitui: **traje é a principal peça de baú do produto** — 39 das ~40 —, e
+é ela que dá peso real ao baú, que hoje só paga XP.
+
+Consequência técnica imediata: o CHECK `avatar_catalogo_traje_nao_e_de_bau`, nascido
+no Bloco 1 como versão em banco desta trava, **cai no Bloco B2**. O
+`avatar_catalogo_origem_coerente` **fica** — é ele que já garante que peça de baú
+tenha raridade.
+
+**As outras três travas da §1.3 continuam de pé**, e a nº 1 (arte por demanda, nunca
+estoque) é a que mais importa agora: o doc dos ~40 é **menu**, não fila de produção.
+Nenhuma peça vira arte antes de ser chamada, e cada uma passa pela folha.
+
+### 0.3 A moldura
+
+- **Automática**: derivada de `achieved_tier`. Sem slot, sem escolha, sem coluna
+  nova, sem estado novo. Se ela precisasse de slot, não caberia.
+- **CSS fora do SVG**: custo de arte **zero**. Nenhum asset por patente.
+- **Fonte da cor**: `scripts/avatar/patentes.ts` — a mesma de sempre, e o doc 17
+  continua sendo a régua. As distâncias mínimas (**≥40 entre patentes quaisquer,
+  ≥60 entre vizinhas**) migram inteiras para ela.
+- **A faixa proibida de matiz 0°–44° NÃO se aplica.** Ela era lei do pipeline de
+  recoloração do SVG, onde matiz quente colidia com a pele. Fora do SVG não há
+  colisão: **a moldura pode usar dourado.**
+- **Nunca colide com raridade**: moldura = cor de **patente**, só em volta do avatar
+  (navbar, rankings, mural, dashboard, perfil). Cores de **raridade** só na vitrine e
+  nos cards do editor. As duas no mesmo elemento ensinam que cor não significa nada.
+
+### 0.4 Permissiva não é sem lei
+
+Morreram a cor-da-patente e os 3 tons exatos. Ficam cinco leis, e **as duas últimas
+são novas e mensuráveis**:
+
+1. **Gate −1** — a peça não move o boneco.
+2. **Transbordo obrigatório, com alvo (~10%)** — §6.1 deste doc continua valendo
+   inteira, e é a única parte da §6 que a emenda não toca.
+3. **Legibilidade a 56 px na folha.**
+4. **Contraste com o fundo claro `#FBF8F5`** — peça bege some no card marfim.
+5. **O contorno preto do boneco continua legível.**
+
+A aprovação final continua sendo **o olho do Doug na folha**.
+
+**Estilo misto é aceito em princípio** — farda chapada ao lado de gambesão
+aerografado. Se destoar, decide-se na folha, lado a lado, peça a peça.
+
+### 0.5 O que esta emenda invalida, ponto a ponto
+
+| onde | o que lá está escrito | veredito |
+|---|---|---|
+| §1.2, linha "Quanto traje desenhar?" | 3 Aprendiz + 4 Soldado + 4 Aspirante | **morta** — não há mais traje por patente. O catálogo é de ~40 com raridade |
+| §1.2, linha "E quem ainda não foi promovido?" | Aprendiz tier 0 também escolhe | **dissolvida** — sem patente no traje, não há quem fique de fora. Todo aluno tem o traje inicial desde a criação |
+| §1.3, trava nº 3 | uniforme nunca sai de baú | **REVOGADA** (§0.2) |
+| §1.3, trava nº 4 | moldura de raridade continua morta | **parcialmente ressuscitada** — como moldura de **patente**, não de raridade. O eixo mudou; o mecanismo é o mesmo |
+| §2 (d) | "4 opções por patente" × quantas patentes existem | **dissolvida** — o achado D11 deixa de bloquear traje. Ele continua aberto para a moldura, que precisa das 6 |
+| §6, tabela, linha **Traje** | `tinta.cor` = o pano medido da patente + decoração | **morta** — a arte chega em **cor final** (RGBA), pela esteira do Bloco B4 |
+| §6, bullet "a cor de roupa é definitiva (regra 14)" | duas peças da mesma patente têm de sair na mesma cor | **morta** — era a lei que criava o problema de distinção |
+| §7, Bloco 2 inteiro | traje por patente, a promoção veste | **redefinido** — ver §0.6 |
+| §7, Bloco 3 (Fundo) | estreia a esteira de baú | **passa a ser o traje** — o traje chega ao baú primeiro |
+
+O que **não** muda: §3 (arquitetura de slot), §3.3, §3.4, §5 (o editor), §6.1
+(transbordo), §6.2 (o volume é da arte), §8 (os gates), e a esteira do doc 19 §12.
+
+### 0.6 O Bloco 2 redefinido
+
+O antigo "Bloco 2 — Traje por patente" está **encerrado sem entrega**, e o registro
+de execução dele (as duas caixas de 2026-08-12 na §7) fica no lugar como história:
+tudo que ele mediu continua verdadeiro, e a esteira que a 2ª sessão construiu é
+exatamente o que os blocos novos usam.
+
+A `20260812120000_bloco2_traje_por_patente.sql` **foi apagada** em 2026-08-13. Nunca
+chegou ao banco; era ela que deixava `verify:no-dup-rpc` vermelho.
+
+No lugar do Bloco 2, seis blocos:
+
+| bloco | o que é | estado |
+|---|---|---|
+| **B0** | apagar a migration não aplicada | ✅ |
+| **B1** | a lei — Bíblia Tonal, DESIGN, PRODUCT, esta emenda, o doc dos ~40, os pedidos de arte | ✅ |
+| **B2** | banco estrutural: cai o CHECK, a matview carrega `achieved_tier`, os gates espelham | |
+| **B3** | a moldura: `<MolduraPatente>` nos 8 call sites, `verify:paleta-patentes` reescrito | |
+| **B4** | a esteira de cores finais: G19, o rename da farda, a rota RGBA, o gambesão | |
+| **B5** | a vitrine: seed do traje inicial, aba "Roupa", primeira chamadora de `equipar_peca` | |
+| **B6** | o baú: `claim_chest` v3 com pool por raridade | |
+
+**A economia:** **1 traje inicial** (`origem = 'marco_nivel', min_level = 1`, livre
+desde a criação do avatar) + **39 por baú**. O inicial recomendado é a **farda** — a
+peça lisa, o degrau de onde a raridade sobe. O **gambesão** entra como peça de baú
+acima de `common`: ele carrega canaletas, ilhoses e cordão.
+
+O inicial **não** é semeado como "baú grátis": peça de `origem = 'bau'` exige linha
+em `avatar_guarda_roupa`, e a conferência 4 do `verify:avatar-db` reprovaria em bloco.
+
+**"Sem traje" continua válido** (NULL = macacão de treino), espelhando o careca do
+cabelo. O inicial é opção, não obrigação.
+
+⚠️ **Entre B5 e B6 existe vitrine sem porta**: o gambesão aparece como peça de baú e
+o baú ainda não a dá. Janela curta e prevista — é a mesma que a §7, Bloco 3 já
+avisava para o fundo.
+
+### 0.7 Os slugs perdem a patente
+
+`traje-soldado-farda` → convenção **`traje-<nome>`**. Renomear agora custa zero:
+nenhuma linha no banco. Depois do seed custa migration de dados.
+
+---
+
 ## 1. A decisão, e o que ela reverte
 
 O avatar kokeshi tem **um** item vestível: cabelo. Este plano dá a ele os
@@ -59,13 +196,15 @@ nascem deste plano, não do arrependimento futuro:
    disciplina. O pecado da v2 (8 uniformes no banco, 0 renderáveis) fica
    impossível: o conjunto de slugs do banco tem de ser igual ao do código,
    slot a slot (§8).
-3. **Pool de baú só com estético** (a lição D16): fundo, rosto, chapéu, pet.
+3. ~~**Pool de baú só com estético** (a lição D16): fundo, rosto, chapéu, pet.
    **Uniforme nunca sai de baú** — traje é mérito de patente, e misturar as
-   duas coisas apaga o mérito.
-4. **A moldura de raridade (6.2 do doc 15) continua morta.** O argumento que a
-   criou ("lê a 56 px porque é a borda do cartão, custa zero desenho") de fato
-   ressuscita com a raridade — mas isso é decisão nova do Doug, registrada como
-   aberta na §9, não escopo deste plano.
+   duas coisas apaga o mérito.~~
+   **REVOGADA em 2026-08-13 — ver §0.2.** Traje deixou de ser mérito de patente,
+   então não há mérito a apagar. O traje passa a ser a principal peça de baú.
+4. ~~**A moldura de raridade (6.2 do doc 15) continua morta.**~~
+   **Parcialmente ressuscitada em 2026-08-13 — ver §0.3.** Volta como moldura de
+   **patente**, não de raridade: o mecanismo é o mesmo (CSS fora do SVG, custo de
+   arte zero), o eixo é outro.
 
 ## 2. As quatro tensões, encaradas
 
@@ -308,8 +447,10 @@ critério de 2026-08-11:
 - **Folha de contato entre peças** antes de a seguinte começar.
 - **Peça de cabeça tem de SEPARAR das outras a 32 px** — largura da silhueta e
   massa, não detalhe interno. Tronco julga a 56 px.
-- **A cor de roupa e acessório é definitiva** (regra 14): duas peças da mesma
-  patente têm de sair na mesma cor, porque nada as harmoniza depois.
+- ~~**A cor de roupa e acessório é definitiva** (regra 14): duas peças da mesma
+  patente têm de sair na mesma cor, porque nada as harmoniza depois.~~
+  **MORTA em 2026-08-13 (§0.5).** Era esta lei que criava o problema de distinção
+  entre peças a 56 px. A cor de traje agora é **livre e final**, vinda da arte.
 
 ### 6.1 Roupa VESTE, não pinta — a diretriz da silhueta
 
@@ -392,7 +533,7 @@ o contrário do que pedia.
 
 | Slot | Como se desenha | Por quê assim |
 |---|---|---|
-| **Traje** | **Código**: `tinta.cor` = o pano medido da patente (doc 17) + `decoracao` (gola, botões, faixa, debrum, galão) | As opções de uma patente têm **o mesmo pano** — a lei do doc 17 diz que a separação entre patentes está na cor (a 56 px o uniforme é massa de cor, `17:96-101`). A variação mora na decoração e nos tons medidos da família. O pipeline `avatar:garment` **não é ressuscitado**: ele mede contra as máscaras do macacão da base antiga e fica verde por vacuidade no kokeshi (`16:3-29`) |
+| **Traje** | ~~Código: `tinta.cor` = o pano medido da patente + decoração~~ → **MORTO (§0.5).** A arte chega em **cor final (RGBA)** pela esteira do doc 19 §12, com a rota de extração do Bloco B4 | A lei do mesmo pano por patente caiu com o vínculo patente→traje. O pipeline `avatar:garment` continua **não** ressuscitado, pelo motivo de sempre: mede contra as máscaras do macacão da base antiga e fica verde por vacuidade no kokeshi (`16:3-29`) |
 | **Fundo** | Código: cenas simples nas regiões da Bíblia Tonal (acampamento, vila, fortaleza, cidade, cidadela), cor fixa | Não toca a geometria do boneco, não disputa espaço, não depende da Frente B. **O mais barato de todos**, e por isso é quem estreia a esteira de baú |
 | **Rosto** | Código: paramétrico ancorado em `OLHO` e `BOCA` (`geometria.ts:420-449`, `:537`), como **camada sobreposta** | **Sem haste, lente pode exceder o rosto** (decisão do Doug). A rota de arte não entra: o rosto é região protegida do Gate −1 (`ESTADO-DA-ROTA.md:186`) — e não precisa entrar |
 | **Chapéu** | **Um chapéu de prova em código primeiro**; os demais pela rota que a peça pedir | A rota de arte foi desenhada para servir chapéu (`ESTADO-DA-ROTA.md:546-548`), mas **nunca foi exercitada com um** — e o teto disponível é zero. O de prova mede o teto real antes da Frente B |
@@ -489,7 +630,14 @@ congelados, byte a byte.
 > §1.3 vira CHECK em vez de disciplina) e `avatar_catalogo_origem_coerente` (o
 > que não é da origem é `NULL`).
 
-### Bloco 2 — Traje por patente
+### Bloco 2 — Traje por patente ⛔ ENCERRADO SEM ENTREGA (2026-08-13)
+
+> **Este bloco foi substituído pelos blocos B0–B6 da §0.6.** A patente deixou de
+> vestir o boneco. O texto abaixo e os dois registros de execução ficam como
+> história — tudo que eles **mediram** continua verdadeiro, e a esteira que a 2ª
+> sessão construiu é exatamente a que os blocos novos usam. O que caducou é a
+> **direção**: as 9 peças por patente, o auto-equipar na promoção, a coluna `ordem`
+> e a trava "traje só para patente alcançável".
 
 O momento de produto: **a promoção veste** — e o aluno novo já se veste.
 
@@ -579,12 +727,10 @@ aparece" (roda o Doug).
 >
 > #### O que fica pronto e não se refaz
 >
-> - **A migration `20260812120000_bloco2_traje_por_patente.sql` está escrita e
->   NÃO aplicada.** Ela semeia os 9 slugs, cria a coluna `ordem` e ensina
->   `recompute_user_title` a vestir na promoção. **Ela não pode ser aplicada
->   sozinha** — `verify:catalogo-slots` exige que banco e código tenham os mesmos
->   slugs, e o código das peças não existe. Se a arte mudar os slugs, a migration
->   muda junto.
+> - ~~**A migration `20260812120000_bloco2_traje_por_patente.sql` está escrita e
+>   NÃO aplicada.**~~ **APAGADA em 2026-08-13 (§0.6).** Nunca chegou ao banco, e era
+>   ela que deixava `verify:no-dup-rpc` vermelho, por redefinir
+>   `recompute_user_title` acima do ratchet.
 > - **A coluna `ordem`, que este plano não previa.** O §7 manda "auto-equipar a
 >   1ª opção", e não existia "primeira" no banco: por slug,
 >   `traje-soldado-avental` vem antes de `traje-soldado-farda`, e a promoção
@@ -666,6 +812,10 @@ aparece" (roda o Doug).
 > teste de ausência byte a byte, e o PNG saindo de `public/dev/`.
 
 ### Bloco 3 — Fundo
+
+> ⚠️ **Deixou de ser quem estreia a esteira de baú** (§0.5). Quem estreia agora é o
+> **traje**, nos blocos B5 e B6 da §0.6. O resto deste bloco continua de pé, e ele
+> passa a vir depois do B6.
 
 O slot mais barato estreia a esteira de baú.
 
@@ -764,22 +914,30 @@ careca), aprovada pelo Doug.
 4. Pirâmide de raridade do pool de baú dentro da faixa declarada.
 
 **`verify:avatar-db` (ampliado, nunca afrouxado):** as três listas de proibidos
-e a regex de colunas mortas ficam **intactas**; entram (a) **traje só para
-patente alcançável**, fechando a dívida de `:36-39`, e (b) peça equipada existe
-e pertence ao dono.
+e a regex de colunas mortas ficam **intactas**; entram (a) ~~**traje só para
+patente alcançável**, fechando a dívida de `:36-39`~~ — **caducou em 2026-08-13
+(§0.5)**: não há mais traje por patente, e a dívida de `:36-39` morre com o vínculo,
+não é paga; e (b) peça equipada existe e pertence ao dono.
 
-**`verify:chest-pool` (reescrito no Bloco 4):** chances 45/30/18/7 intactas,
+**`verify:chest-pool` (reescrito no Bloco B6):** chances 45/30/18/7 intactas,
 XP presente no pool comum, fallback de pool vazio conferido no ledger.
+
+**`verify:paleta-patentes` (reescrito no Bloco B3):** a fonte deixa de ser o
+pipeline de SVG e passa a ser a moldura. **Caem** as conferências de matiz proibido,
+de delta por canal e de tabela-contra-SVG; **ficam** as distâncias 40/60, medidas
+contra a fonte nova.
 
 ## 9. O que este plano NÃO resolve
 
-- **A moldura de raridade (6.2).** Morta desde 2026-08-11 com a justificativa
-  "raridade morreu com os itens" — justificativa que este plano derruba. O
-  argumento original volta a valer, e a decisão é do Doug. **Registrado como
-  aberto, não incluído.**
-- **O achado D11** (Lenda / Grão-Mestre × Mestre; 8 tiers × 6 patentes). "Por
+- ~~**A moldura de raridade (6.2).**~~ **RESOLVIDO em 2026-08-13** — o Doug decidiu,
+  e ela volta como moldura de **patente** (§0.3), no Bloco B3.
+- **O achado D11** (Lenda / Grão-Mestre × Mestre; 8 tiers × 6 patentes). ~~"Por
   demanda" o contorna; ele precisa estar decidido antes dos trajes do Capitão
-  para cima.
+  para cima.~~ **Ficou mais urgente, não menos:** o traje deixou de depender de
+  patente, mas a **moldura** depende, e ela vai ao ar para todo aluno no B3. Os 8
+  tiers do banco contra as 6 cores da paleta precisam de resposta — o B3 resolve
+  provisoriamente por saturação (tier ≥ 6 usa a cor de Mestre), e a decisão de
+  produto continua do Doug.
 - **A escada de nível está mais curta do que o Doug aprovou** (achado **G10**):
   a curva viva é 1,05, não 1,08, e a ~300 XP/dia o nível 30 custa **20,8 dias**,
   não 35. Se este plano amarrar peça a nível, **essa é a régua real** — e é
@@ -792,6 +950,15 @@ XP presente no pool comum, fallback de pool vazio conferido no ledger.
 
 ## 10. Changelog
 
+- **2026-08-13 — emenda §0: a patente sai da roupa e vira moldura.** Quatro
+  decisões definitivas do Doug: (1) traje deixa de ser por patente — a patente dá
+  **moldura** em volta do avatar; (2) o tema afrouxa de reino medieval para
+  **Academia 64**; (3) a paleta de traje fica **permissiva** (cor final livre, sem
+  recolorir, sem 3 tons chapados) e o **gambesão está aprovado**; (4) catálogo-alvo
+  de **~40 trajes com raridade**, como menu, não fila. Economia: **1 inicial + 39
+  por baú**. A trava nº 3 da §1.3 está **revogada**; a nº 4 volta com outro eixo. O
+  Bloco 2 está **encerrado sem entrega** e substituído pelos blocos B0–B6 da §0.6.
+  A migration `20260812120000` foi apagada.
 - **2026-08-11 — criado.** Decisões do Doug nesta sessão: a v2 falhou por arte
   do boneco velho (raridade e baú voltam); pet por ovo + Chocadeira; traje por
   demanda (11 peças, não 24); **o Aprendiz também escolhe, com 3 opções**, e a

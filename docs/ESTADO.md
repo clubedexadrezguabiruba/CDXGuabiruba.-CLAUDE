@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 5 |
-| **Árvore** | **1 arquivos sujos** |
-| **Último commit** | a49c2c5 · 2026-08-13 · feat(avatar): o gambesão aprovado, dois achados medidos, e o transbordo virou diretriz |
+| **Commits à frente de `origin/main`** | 6 |
+| **Árvore** | **8 arquivos sujos** |
+| **Último commit** | a5cd9b1 · 2026-08-13 · chore(avatar): apagar a migration do Bloco 2 — o traje deixa de ser por patente |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

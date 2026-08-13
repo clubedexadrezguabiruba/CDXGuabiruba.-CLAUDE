@@ -300,11 +300,20 @@ async function principal() {
       `(${cabeca.x1 - cabeca.x0 + 1} × ${cabeca.y1 - cabeca.y0 + 1})`,
   );
 
-  console.log(`\n  O QUE O SISTEMA REPÕE POR CIMA DA ARTE (compositor.ts:389-393)`);
-  console.log(`    sombra do queixo    contato da cabeça no tronco`);
-  console.log(`    plano lateral       escurecimento da lateral, opacidade .42`);
-  console.log(`    contorno do tronco  ${TRACO} u, desenhado DEPOIS da tinta (compositor.ts:895)`);
-  console.log(`    → a arte é pintada CHAPADA; quem faz o volume de contato é o compositor`);
+  // Este bloco BIFURCA de propósito, e a bifurcação é o conserto do achado G18.
+  // Ele dizia "a arte é pintada CHAPADA; quem faz o volume é o compositor" — o
+  // contrário do que o PEDIDO-TRAJE.md pede desde 2026-08-12. Quem seguisse o
+  // terminal desenhava a peça SEM a sombra de contato, esperando que o sistema a
+  // repusesse, e ela não vinha: `tintaTronco()` suprime as duas camadas quando
+  // existe `tinta.png` (compositor.ts:391), e toda peça desta esteira tem uma.
+  console.log(`\n  O QUE O SISTEMA DESENHA POR CIMA — e depende de haver arte`);
+  console.log(`    COM arte (o seu caso, sempre nesta esteira):`);
+  console.log(`      contorno do tronco  ${TRACO} u, desenhado DEPOIS da tinta (compositor.ts:895)`);
+  console.log(`      e MAIS NADA         → o volume inteiro é da ARTE, inclusive a`);
+  console.log(`                            sombra de contato logo abaixo do queixo`);
+  console.log(`    SEM arte (o macacão bege da base, só para você saber o que é o quê):`);
+  console.log(`      sombra do queixo    contato da cabeça no tronco`);
+  console.log(`      plano lateral       escurecimento da lateral, opacidade .42`);
 
   console.log(`\n  escritos            ${CAMPO}   (diagnóstico — NÃO sobe para o gerador)`);
   console.log(`                      ${M_TRONCO}\n                      ${M_CABECA}`);

@@ -44,11 +44,32 @@ O aluno deve sentir que:
 
 ## 3. Posicionamento tonal
 
+> **Revisão de 2026-08-13 — a Academia 64.** As §3, §5, §12 e §13 foram reescritas
+> nesta data. O tema deixou de ser *reino medieval / campanha* e passou a ser a
+> **Academia 64**. O que motivou a mudança está na §3b, e o que ainda **não** foi
+> migrado está na §5b — leia as duas antes de usar qualquer outra seção deste doc
+> como lei.
+
 ### Fórmula tonal do produto
 
-- **70% campanha estratégica**
-- **20% fantasia medieval elegante**
+- **70% formação estratégica** — a Academia leva o estudo a sério
+- **20% fantasia leve e mistério** — extraordinário, não de época
 - **10% calor humano e humor leve**
+
+O que mudou foi só a linha do meio, e ela é a que carrega a direção de arte. Antes
+dizia *fantasia medieval elegante*; agora diz **fantasia leve e mistério**, sem
+âncora de época.
+
+### O que "fantasia leve e mistério" autoriza, e o que continua proibindo
+
+**Autoriza:** aluno moderno ou excêntrico; bot que é coruja, autômato ou criatura;
+traje que não existe em nenhum século; cor que não pede licença a uma paleta de
+patente. A Academia é o lugar onde essas coisas convivem — é ela que dá coerência,
+não a época.
+
+**Continua proibindo** exatamente o que a §12 sempre proibiu: guerra realista,
+brutalidade, humor pastelão, estética caótica, dark fantasy no core. Afrouxar a
+época não afrouxa o gosto.
 
 ### O que isso significa na prática
 
@@ -79,6 +100,32 @@ A guerra aqui é **simbólica**.
 
 ---
 
+## 3b. Por que a época caiu — os três atritos medidos
+
+A época não foi trocada por gosto. Ela vinha cobrando preço em três lugares, e os
+três estavam medidos antes da decisão.
+
+**1. O gerador de arte brigava com ela.** Os pedidos de traje precisavam repetir
+"nada de fantasia", listar exceções ("túnica oriental é aceita") e recusar peças
+que o gerador insistia em desenhar (camisa social). Uma direção que precisa de
+lista de exceções para ser obedecida está descrevendo mal o que quer. Na Academia
+64 a túnica pertence ao mundo, e a exceção morre sozinha.
+
+**2. A lei de cor por patente apagava as peças.** Amarrado à época e à patente, todo
+traje de uma mesma patente saía do mesmo pano, e a régua de distinção media pouco:
+a 56 px, o piso de 5% entre duas peças do mesmo oliva era arrancado a fórceps. Com
+cor final e livre, a distinção sai de graça — e a régua volta a **julgar**, em vez
+de projetar (é a lição de `nao-desenhar-para-a-regua`).
+
+**3. A patente ocupava o corpo do boneco.** Vestir a patente gastava o único slot
+grande do avatar num eixo que só tem 6 valores. Trocada por **moldura** — CSS em
+volta do avatar, custo de arte zero —, a patente aparece melhor e o traje fica
+livre para as ~40 peças de catálogo.
+
+Nenhum dos três é argumento estético. Os três são custo.
+
+---
+
 ## 4. Promessa de marca
 
 ### Frase de identidade
@@ -96,22 +143,68 @@ No Recruta 64, você entra como aprendiz, treina com método, sobe de patente e 
 
 ## Nome oficial do universo
 
-**O Reino das 64 Casas**
+**A Academia 64**
 
-Esse é o nome oficial do universo narrativo e simbólico do Recruta 64.
-Ele serve como base para identidade visual, direção de arte, vocabulário e progressão do produto.
+Uma academia extraordinária de estratégia. É o nome oficial do universo narrativo e
+simbólico do Recruta 64, e substitui *O Reino das 64 Casas* a partir de 2026-08-13.
+
+O que a Academia é, em uma frase: **um lugar, não uma época.** Ela tem corredores,
+salas, professores, turmas, um quadro de honra e um arquivo — e quem passa por eles
+pode ter vindo de qualquer lugar e qualquer tempo. É esse afrouxamento que a
+palavra *reino* não permitia.
+
+### O que a Academia dá que o reino não dava
+
+| | Reino das 64 Casas | Academia 64 |
+|---|---|---|
+| coerência vem de | época compartilhada | **lugar compartilhado** |
+| aluno pode ser | de época | moderno, excêntrico, de qualquer parte |
+| bot pode ser | personagem medieval | coruja, autômato, criatura — é professor ou visitante |
+| traje é | uniforme da patente | peça de catálogo, cor livre |
+| patente aparece | na roupa | na **moldura** em volta do avatar |
 
 ## Estrutura macro da jornada
 
-**A Campanha do Jovem Recruta**
+**A Formação do Recruta**
 
-Essa é a estrutura narrativa da progressão do aluno dentro do produto.
-Ela organiza a sensação de avanço, formação e ascensão ao longo da experiência.
+Essa é a estrutura narrativa da progressão do aluno dentro do produto. Ela organiza
+a sensação de avanço, formação e ascensão ao longo da experiência.
+
+A palavra **campanha** sai do vocabulário de lei. Ela descrevia uma marcha por
+territórios; a Academia descreve uma **formação** que acontece num lugar só, e que
+sobe por patentes em vez de por mapas.
 
 ### Lógica do mundo
 
-O aluno progride por territórios e centros de formação.
-Cada etapa representa não apenas dificuldade maior, mas também um novo nível de maturidade estratégica.
+O aluno progride por **etapas de formação**. Cada etapa representa não apenas
+dificuldade maior, mas também um novo nível de maturidade estratégica — e a
+Academia o reconhece publicamente por patente.
+
+---
+
+## 5b. O que ainda NÃO migrou — e por isso não vale como lei
+
+A virada de 2026-08-13 tocou **as leis e os docs**. A interface não foi tocada, de
+propósito: trocar vocabulário em tela é um bloco próprio, com revisão de texto, e
+misturá-lo à virada da arte tornaria os dois irrevisáveis.
+
+Enquanto esse bloco não acontecer, estes lugares ainda dizem *reino* e *campanha* —
+e onde eles contradisserem as §3, §5, §12 ou §13, **quem vence são as §3, §5, §12 e
+§13**:
+
+- **§6 deste doc** (as 5 regiões: Acampamento dos Recrutas, Vila dos Soldados,
+  Fortaleza dos Estrategistas…). Os nomes das três primeiras estão **no banco**, na
+  coluna `stage` dos bots, e são lidos por `BotGrid.tsx` — mudá-los é migration de
+  dados, não edição de texto.
+- **§11 e §16 deste doc** (nomes de tela e textos por feature).
+- **A interface**: `supertitulo="Reino das 64 Casas"` em 5 telas, mais a landing
+  (`src/app/page.tsx`) e o design-lab.
+- **`docs/Recruta64_Diretriz_Geral_dos_Bots_v1.md`** — a Diretriz dos 20 Mestres
+  inteira pressupõe o reino. É o doc mais desalinhado com a Academia, e o mais caro
+  de reescrever; fica para o mesmo bloco.
+
+**Não conserte esses lugares de carona em outra tarefa.** Achado é achado
+(`docs/achados.md`); a hora é do Doug.
 
 ---
 
@@ -599,22 +692,22 @@ Não deve soar como zombaria, competição tóxica ou humilhação pública.
 
 ## Estilo geral recomendado
 
-- fantasia medieval elegante
+- **fantasia leve, com mistério** — extraordinário sem época
 - interface premium e limpa
-- símbolos de campanha e estratégia
-- progressão visual por regiões e patentes
+- símbolos de estudo, estratégia e reconhecimento
+- progressão visual por etapas e patentes
 
 ### Palavras-chave de direção
 
-- campanha
+- academia
+- formação
 - disciplina
 - honra
-- fortaleza
-- estandarte
+- estudo
+- mistério
 - estratégia
 - comando
 - progressão
-- conselho
 - maestria
 
 ### Evitar
@@ -625,6 +718,50 @@ Não deve soar como zombaria, competição tóxica ou humilhação pública.
 - estética caótica
 - dark fantasy excessiva no core do produto
 
+### Onde a patente aparece — e onde a raridade aparece
+
+São **duas linguagens de cor**, e elas nunca podem ocupar o mesmo elemento. Quando
+ocupam, o aluno aprende que cor não significa nada.
+
+| | patente | raridade |
+|---|---|---|
+| eixo | quem o aluno **é** (6 tiers) | quanto uma peça é **rara** (4 faixas) |
+| onde aparece | **moldura em volta do avatar** — navbar, rankings, mural, dashboard, perfil | **vitrine e cards do editor** — nunca fora dela |
+| fonte da cor | `scripts/avatar/patentes.ts` | as cores de raridade do editor |
+| onde **nunca** aparece | dentro do SVG do boneco; nos cards da vitrine | em volta do avatar; em qualquer lugar do perfil ou do ranking |
+
+A moldura é **CSS fora do SVG** e **automática** — derivada de `achieved_tier`, sem
+slot, sem escolha, sem estado novo. A paleta medida das 6 patentes
+(`docs/avatar/17-patentes-uniformes-design.md`) migra inteira para ela, junto com as
+distâncias mínimas: **≥40 entre patentes quaisquer, ≥60 entre vizinhas**.
+
+A **faixa proibida de matiz 0°–44°** que aquele doc declara **não vale para a
+moldura**. Ela era lei do pipeline de recoloração do SVG — existia porque matiz
+quente colidia com a pele do boneco. Em CSS, fora do SVG, não há colisão: a moldura
+**pode** usar dourado.
+
+### A lei da arte de traje, depois que a paleta afrouxou
+
+Permissiva **não é** sem lei. Morreram duas coisas — a cor obrigatória da patente e
+os 3 tons chapados. Ficaram cinco, e as duas últimas são novas:
+
+1. **Gate −1** — a peça não move o boneco. Continua sendo a trava de entrada.
+2. **Transbordo obrigatório, com alvo (~10%)** — traje que não transborda parece
+   pintado no corpo, não vestido.
+3. **Legibilidade a 56 px na folha** — se a peça vira mancha, não entra.
+4. **Contraste com o fundo claro `#FBF8F5`** (nova). Peça bege some no card marfim
+   do editor; é o defeito que a cor livre torna possível, então vira lei junto com
+   ela.
+5. **O contorno preto do boneco continua legível** (nova). A cor livre não pode
+   engolir a silhueta que dá identidade ao personagem.
+
+A aprovação final continua sendo **o olho do Doug na folha de contato**. As cinco
+leis reprovam; nenhuma delas aprova.
+
+**Estilo misto é aceito em princípio.** O catálogo vai ter peça chapada (a farda) ao
+lado de peça aerografada (o gambesão). Se destoar, decide-se **na folha, lado a
+lado, peça a peça** — não por regra escrita antes de olhar.
+
 ---
 
 ## 13. Regras para personagens e bots
@@ -633,7 +770,18 @@ Não deve soar como zombaria, competição tóxica ou humilhação pública.
 2. O humor deve ser leve e pontual, principalmente nos níveis iniciais.
 3. Os bots avançados devem parecer prestigiosos, não aleatórios.
 4. A progressão visual dos bots deve acompanhar a progressão do mundo.
-5. Mesmo os bots finais precisam continuar pertencendo ao universo do Recruta 64.
+5. **Um bot não precisa ser humano nem ser de época.** Coruja, autômato, criatura —
+   tudo cabe, desde que pertença à **Academia**: seja professor, visitante,
+   bibliotecário, adversário convidado. O que amarra o elenco é o lugar
+   compartilhado, não um século compartilhado.
+6. Mesmo os bots finais precisam continuar pertencendo ao universo do Recruta 64.
+
+**Zero acoplamento técnico.** Um bot é um PNG por slug em `public/bots/` mais
+`phrases_json` no banco — trocar o elenco não toca em código. Foi isso que tornou
+esta regra barata de afrouxar.
+
+⚠️ A `docs/Recruta64_Diretriz_Geral_dos_Bots_v1.md` (os 20 Mestres) foi escrita para
+o reino e **ainda não** foi revista. Ver §5b.
 
 ---
 
