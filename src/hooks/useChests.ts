@@ -32,6 +32,15 @@ export interface ClaimResult {
   isXp: boolean;
   /** Quanto de XP, quando `isXp`. Zero nos outros casos. */
   xp: number;
+  /**
+   * A PEÇA, desde o `claim_chest` v3 (B6, 2026-08-13). Ausente quando o prêmio
+   * foi XP ou ovo — os três são exclusivos.
+   *
+   * O baú voltou a dar objeto depois de o E.2 tê-lo deixado só com XP: 39 dos 40
+   * trajes do catálogo saem daqui, e ele é a única porta (doc 22 §1).
+   */
+  itemSlug?: string;
+  itemSlot?: string;
 }
 
 const supabase = createBrowserClient(
@@ -104,6 +113,22 @@ export function useChests() {
 
       if (json.is_egg) {
         return { rarity, alreadyClaimed: false, isEgg: true, isXp: false, xp: 0 };
+      }
+
+      // A PEÇA, desde o claim_chest v3 (B6, 2026-08-13). Ela e o XP são
+      // exclusivos: `is_xp` false com `item_slug` presente é o baú tendo dado
+      // objeto. Nenhuma chave antiga mudou de tipo — as duas são novas e
+      // opcionais, e um cliente que as ignore continua funcionando.
+      if (json.item_slug) {
+        return {
+          rarity,
+          alreadyClaimed: false,
+          isEgg: false,
+          isXp: false,
+          xp: 0,
+          itemSlug: json.item_slug as string,
+          itemSlot: json.item_slot as string,
+        };
       }
 
       return {

@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 9 |
-| **Árvore** | **14 arquivos sujos** |
-| **Último commit** | fab18e7 · 2026-08-13 · feat(avatar): a moldura de patente — o anel em volta do boneco, nos 8 call sites |
+| **Commits à frente de `origin/main`** | 10 |
+| **Árvore** | **18 arquivos sujos** |
+| **Último commit** | 9350774 · 2026-08-13 · feat(avatar): a esteira de cores finais — o G19 fecha, os slugs perdem a patente, e o gambesão entra |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -283,7 +283,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 85 |
+| **Migrations** | 87 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 17 |
 | **Primitivos de UI** | 4 |

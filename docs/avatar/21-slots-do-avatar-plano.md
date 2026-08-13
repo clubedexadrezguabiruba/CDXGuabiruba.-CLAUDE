@@ -122,11 +122,25 @@ No lugar do Bloco 2, seis blocos:
 |---|---|---|
 | **B0** | apagar a migration não aplicada | ✅ |
 | **B1** | a lei — Bíblia Tonal, DESIGN, PRODUCT, esta emenda, o doc dos ~40, os pedidos de arte | ✅ |
-| **B2** | banco estrutural: cai o CHECK, a matview carrega `achieved_tier`, os gates espelham | |
-| **B3** | a moldura: `<MolduraPatente>` nos 8 call sites, `verify:paleta-patentes` reescrito | |
-| **B4** | a esteira de cores finais: G19, o rename da farda, a rota RGBA, o gambesão | |
-| **B5** | a vitrine: seed do traje inicial, aba "Roupa", primeira chamadora de `equipar_peca` | |
-| **B6** | o baú: `claim_chest` v3 com pool por raridade | |
+| **B2** | banco estrutural: cai o CHECK, a matview carrega `achieved_tier`, os gates espelham | ✅ |
+| **B3** | a moldura: `<MolduraPatente>` nos 8 call sites, `verify:paleta-patentes` reescrito | ✅ |
+| **B4** | a esteira de cores finais: G19, o rename da farda, a rota RGBA, o gambesão | ✅ |
+| **B5** | a vitrine: seed do traje inicial, aba "Roupa", primeira chamadora de `equipar_peca` | ✅ |
+| **B6** | o baú: `claim_chest` v3 com pool por raridade | ✅ |
+
+> **Executados em 2026-08-13, e os números que cada um deixou:**
+>
+> | bloco | o que ficou medido |
+> |---|---|
+> | B2 | `verify:identidade-nas-listas` **32/4 → 36/0** no ensaio a seco; matview com `achieved_tier`, sem `avatar_config`; 5 funções recoladas (a 5ª, `get_class_feed`, foi decisão de execução — o mural é call site da moldura) |
+> | B3 | par mais apertado **72,5** contra piso 60; anel mais apagado contra o marfim **103,7** contra piso 40; `corDaMoldura()` cobre os 8 tiers, com a **saturação do tier 7** medida |
+> | B4 | G19 fechado — gambesão de (0,**2**) para (0,0); controle negativo da extração **0 px na própria base**; farda 90 510 px, gambesão 113 533 px; distinção entre as duas **43,47%** a 56 px |
+> | B5 | `verify:catalogo-slots` **34/1 → 36/0**; `CATALOGO.traje` deixou de ser vazio e virou **derivado** de `TRAJES_DA_ARTE` |
+> | B6 | `verify:chest-pool` **20/0 → 22/0**; 60 aberturas reais, 1 peça sorteada e gravada no guarda-roupa, 59 XP na escala, **nenhuma repetida**. O ensaio pegou um bug real (`record` não atribuído) que quebrava a 1ª abertura |
+>
+> **O que ficou para o olho do Doug, e não para régua nenhuma:** o transbordo das
+> duas peças cai fora do alvo de ~10% em direções opostas (farda 3,86%, gambesão
+> 17,64%), e os dois vocabulários de arte destoam lado a lado na folha.
 
 **A economia:** **1 traje inicial** (`origem = 'marco_nivel', min_level = 1`, livre
 desde a criação do avatar) + **39 por baú**. O inicial recomendado é a **farda** — a

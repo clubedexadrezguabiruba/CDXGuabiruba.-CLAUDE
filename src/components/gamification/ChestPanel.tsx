@@ -133,6 +133,8 @@ export default function ChestPanel() {
         <ChestOpeningModal
           isEgg={claimResult.isEgg}
           xp={claimResult.xp}
+          itemSlug={claimResult.itemSlug}
+          raridade={claimResult.rarity}
           onClose={handleCloseModal}
         />
       )}

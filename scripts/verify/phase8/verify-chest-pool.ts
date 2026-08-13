@@ -9,14 +9,22 @@
  *
  * O QUE ESTE GATE PROVA AGORA
  * ---------------------------
- * A decisão do **T9** (docs/achados.md, 2026-08-10): o baú paga XP na hora, em
- * toda raridade, na escala 15/25/40/60, e **nenhum baú cria ovo**. O ovo não
- * morreu — hiberna, esperando o pet do Bloco 8 —, então este gate também cobra
- * que as duas funções dele continuem **existindo**.
+ * **REESCRITO NO B6 (2026-08-13), quando o baú voltou a dar PEÇA.** Até então ele
+ * media a decisão do T9 na forma dela de 2026-08-10: *toda* abertura paga XP na
+ * hora. A decisão não foi revogada — ela ganhou objeto. Agora:
  *
- * Antes da migration 20260810180000 ele falha em quatro pontos: `claim_chest`
- * ainda chama `_create_random_pet_egg`, 55% das aberturas viram ovo, o `common`
- * paga 5 em vez de 15, e a fila de produção tem ovo dentro.
+ *  - o baú **nunca sai de mãos vazias** (a lição da T9, intacta), mas o que sai é
+ *    **peça OU XP**;
+ *  - o **XP é um prêmio dentro do pool `common`**, não o prêmio de toda raridade;
+ *  - fora do `common`, XP só é legítimo como **fallback de pool esgotado** — e o
+ *    gate mede a diferença, porque ela é medível: se há peça inédita naquela
+ *    raridade, XP ali é desenho errado;
+ *  - **nenhum baú cria ovo.** O ovo não morreu, hiberna esperando o pet do Bloco
+ *    8, e este gate continua cobrando que as duas funções dele **existam** e
+ *    **não sejam chamadas**.
+ *
+ * As conferências 1, 2 e 3 não mudaram uma linha: elas são sobre o ovo, e o ovo
+ * continua dormindo.
  *
  * AS CINCO CONFERÊNCIAS
  * ---------------------
@@ -29,9 +37,15 @@
  *     aberturas" seria só amostragem com sorte.
  *  3. A fila de produção está vazia — é o que a migration esvaziou, e é o que
  *     mantém a Chocadeira do /perfil sem ovo fantasma.
- *  4. 60 aberturas reais: zero exceção, zero ovo criado, XP em todas.
- *  5. A escala 15/25/40/60 bate por raridade, no JSON devolvido **e** no ledger
- *     `xp_grants` — prometer XP e não creditar é a falha que some sem sintoma.
+ *  4. 60 aberturas reais: zero exceção, zero ovo criado, **peça ou XP em todas**,
+ *     XP fora do `common` só com pool esgotado, e **nenhuma peça repetida** — o
+ *     pool é de inéditas, e repetir prova que o `NOT EXISTS` não enxerga a linha
+ *     que a abertura anterior gravou.
+ *  5. A escala 15/25/40/60 bate por raridade **nas aberturas que pagaram XP**, no
+ *     JSON devolvido **e** no ledger `xp_grants` — prometer XP e não creditar é a
+ *     falha que some sem sintoma. E a peça concedida tem de estar no
+ *     guarda-roupa: prometer slug sem gravar a linha entrega uma peça que
+ *     `equipar_peca` recusa no clique seguinte.
  *
  * ⚠️ POR QUE O CORPO É LIDO SEM COMENTÁRIO
  * A migration do E.2 explica, dentro do próprio corpo de `claim_chest`, que
@@ -78,6 +92,9 @@ const DORMENTES = ["_create_random_pet_egg", "hatch_egg"] as const;
 
 interface Resultado {
   is_egg?: boolean;
+  /** As duas chaves NOVAS do v3 (B6). Ausentes quando o prêmio foi XP. */
+  item_slug?: string;
+  item_slot?: string;
   is_xp?: boolean;
   rarity?: string;
   scrapped_xp?: number;
@@ -233,7 +250,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
   }
 
   // --- 4. 60 aberturas reais ---
-  console.log(`\n4. ${ABERTURAS} aberturas reais`);
+  console.log(`\n4. ${ABERTURAS} aberturas reais — peça OU XP, e nada repetido`);
 
   const [cobaia] = await db<{ id: string; email: string }[]>`
     select id, email from users order by created_at limit 1`;
@@ -289,36 +306,123 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     );
   }
 
-  const semXp = resultados.filter((r) => !r.is_xp);
-  if (semXp.length === 0) {
-    ok(`toda abertura pagou XP na hora (${ABERTURAS}/${ABERTURAS})`);
+  // O XP deixou de ser TODO prêmio, e virou UM prêmio — só no pool `common`.
+  // Toda abertura tem de entregar exatamente uma das duas coisas.
+  const nemUmNemOutro = resultados.filter((r) => !r.is_xp && !r.item_slug);
+  if (nemUmNemOutro.length === 0) {
+    ok(`toda abertura entregou peça OU XP (${ABERTURAS}/${ABERTURAS}) — nenhuma saiu vazia`);
   } else {
     nok(
-      `${semXp.length} de ${ABERTURAS} aberturas não pagaram XP na hora`,
-      `veio ${semXp.slice(0, 5).map((r) => `${r.rarity}→${r.is_egg ? "ovo" : "nada"}`).join(", ")}`,
+      `${nemUmNemOutro.length} de ${ABERTURAS} aberturas não entregaram nada`,
+      "é a lição da T9: o baú nunca sai de mãos vazias, e o fallback de pool vazio existe para isso",
+    );
+  }
+
+  // O XP NÃO PODE APARECER FORA DO `common` — a não ser como fallback de pool
+  // vazio, que é legítimo. A distinção é medível: se houver peça inédita daquela
+  // raridade no catálogo, XP ali é o desenho errado, não o degradar previsto.
+  const inedito = await db<{ raridade: string; n: number }[]>`
+    select c.raridade, count(*)::int as n
+    from avatar_catalogo c
+    where c.origem = 'bau'
+      and not exists (
+        select 1 from avatar_guarda_roupa g
+        where g.user_id = ${cobaia.id} and g.slug = c.slug)
+    group by c.raridade`;
+  const poolDe = new Map(inedito.map((r) => [r.raridade, r.n]));
+
+  const xpIndevido = resultados.filter(
+    (r) => r.is_xp && r.rarity !== "common" && (poolDe.get(r.rarity ?? "") ?? 0) > 0,
+  );
+  if (xpIndevido.length === 0) {
+    ok(
+      "XP só saiu no pool common ou com o pool esgotado — " +
+        (inedito.length
+          ? inedito.map((r) => `${r.raridade} ${r.n} inéditas`).join(" · ")
+          : "nenhuma peça de baú no catálogo, então TUDO é fallback"),
+    );
+  } else {
+    nok(
+      `${xpIndevido.length} aberturas pagaram XP numa raridade que TINHA peça inédita`,
+      "um baú lendário que paga 60 de XP com a peça lendária disponível é a decepção " +
+        "que a raridade existe para não produzir",
+    );
+  }
+
+  // Peça concedida = linha no guarda-roupa. Prometer no JSON e não gravar é a
+  // mesma falha silenciosa do XP sem ledger, um andar acima: a peça apareceria no
+  // modal e `equipar_peca` a recusaria no clique seguinte.
+  const comPeca = resultados.filter((r) => r.item_slug);
+  if (comPeca.length > 0) {
+    const slugs = [...new Set(comPeca.map((r) => r.item_slug as string))];
+    const [guardado] = await db<{ n: number }[]>`
+      select count(*)::int as n from avatar_guarda_roupa
+      where user_id = ${cobaia.id} and fonte = 'bau' and slug = any(${slugs})`;
+    if (guardado.n === slugs.length) {
+      ok(`as ${slugs.length} peça(s) sorteada(s) estão no guarda-roupa: ${slugs.join(", ")}`);
+    } else {
+      nok(
+        `${slugs.length} peça(s) prometida(s) no JSON, ${guardado.n} no guarda-roupa`,
+        "baú que devolve slug sem gravar a linha entrega uma peça que equipar_peca recusa",
+      );
+    }
+
+    // NENHUMA PEÇA REPETIDA. O pool é de inéditas por construção, e é isto que
+    // prova que o `NOT EXISTS` enxerga a linha que a abertura anterior gravou —
+    // dentro da mesma transação, que é onde um `NOT EXISTS` mal escrito falharia.
+    const repetidas = comPeca.length - slugs.length;
+    if (repetidas === 0) {
+      ok(`nenhuma peça repetida em ${comPeca.length} sorteios de peça`);
+    } else {
+      nok(
+        `${repetidas} peça(s) sorteada(s) mais de uma vez`,
+        "o pool é de INÉDITAS: repetir quer dizer que o NOT EXISTS não vê a linha " +
+          "que a abertura anterior gravou",
+      );
+    }
+  } else {
+    const total = [...poolDe.values()].reduce((a, b) => a + b, 0);
+    console.log(
+      `  [INFO] nenhuma peça saiu nas ${ABERTURAS} aberturas — ` +
+        `o catálogo de baú tem ${total} peça(s) inédita(s) para esta cobaia`,
     );
   }
 
   // --- 5. A escala, no JSON e no ledger ---
-  console.log("\n5. A escala 15/25/40/60 por raridade");
+  console.log("\n5. A escala 15/25/40/60 nas aberturas que pagaram XP");
 
-  const fora = resultados.filter((r) => r.scrapped_xp !== ESCALA[r.rarity ?? ""]);
+  const pagaramXp = resultados.filter((r) => r.is_xp);
+  const fora = pagaramXp.filter((r) => r.scrapped_xp !== ESCALA[r.rarity ?? ""]);
   if (fora.length > 0) {
+    const amostra = fora
+      .slice(0, 5)
+      .map((r) => `${r.rarity}→${r.scrapped_xp}`)
+      .join(", ");
     nok(
-      `${fora.length} de ${ABERTURAS} aberturas fora da escala`,
-      `esperado ${JSON.stringify(ESCALA)}; veio ${fora
-        .slice(0, 5)
-        .map((r) => `${r.rarity}→${r.scrapped_xp}`)
-        .join(", ")}`,
+      `${fora.length} de ${pagaramXp.length} aberturas de XP fora da escala`,
+      `esperado ${JSON.stringify(ESCALA)}; veio ${amostra}`,
     );
   } else {
     const dist: Record<string, number> = {};
     for (const r of resultados) dist[r.rarity ?? "?"] = (dist[r.rarity ?? "?"] ?? 0) + 1;
     ok(
-      `escala respeitada em ${ABERTURAS}/${ABERTURAS} — ` +
+      `escala respeitada em ${pagaramXp.length}/${pagaramXp.length} aberturas de XP — ` +
+        "raridades sorteadas: " +
         Object.entries(dist)
           .map(([k, v]) => `${k} ${v}`)
           .join(" · "),
+    );
+  }
+
+  // A peça NÃO paga XP, e isso é contrato: `scrapped_xp` 0 nela. O cliente
+  // ramifica no par (is_xp, scrapped_xp); prometer os dois mostra duas telas.
+  const pecaComXp = comPeca.filter((r) => (r.scrapped_xp ?? 0) !== 0);
+  if (pecaComXp.length === 0) {
+    ok("abertura que deu peça devolveu scrapped_xp = 0");
+  } else {
+    nok(
+      `${pecaComXp.length} aberturas deram peça E prometeram XP`,
+      "o cliente ramifica no par (is_xp, scrapped_xp); prometer os dois mostra duas telas",
     );
   }
 
@@ -327,11 +431,12 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     select count(*)::int as n, coalesce(sum(amount),0)::int as xp
     from xp_grants where source='item_scrap' and source_id = any(${chaves})`;
 
-  if (credito.xp === prometido && credito.n === ABERTURAS) {
+  if (credito.xp === prometido && credito.n === pagaramXp.length) {
     ok(`o XP prometido foi creditado: ${credito.xp} XP em ${credito.n} grants`);
   } else {
     nok(
-      `prometido ${prometido} XP, creditado ${credito.xp} em ${credito.n} grants`,
+      `prometido ${prometido} XP em ${pagaramXp.length} aberturas, ` +
+        `creditado ${credito.xp} em ${credito.n} grants`,
       "baú que devolve número sem gravar no ledger some sem sintoma",
     );
   }

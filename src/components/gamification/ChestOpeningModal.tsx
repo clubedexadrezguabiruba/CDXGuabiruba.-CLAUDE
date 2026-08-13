@@ -3,14 +3,44 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { soundManager } from "@/lib/sounds/soundManager";
+import { AvatarTronco } from "@/components/avatar/AvatarTronco";
+import { TRAJES_DA_ARTE } from "@/lib/avatar/estilo/trajes-da-arte";
 
 interface ChestOpeningModalProps {
   /** Ovo criado — a recompensa chega ao chocar. */
   isEgg?: boolean;
   /** XP pago na hora. */
   xp?: number;
+  /**
+   * A PEÇA sorteada, desde o `claim_chest` v3 (B6, 2026-08-13). Os três desfechos
+   * são exclusivos: ovo, peça, ou XP.
+   */
+  itemSlug?: string;
+  /** A raridade do baú — é a cor da moldura do card da peça. */
+  raridade?: string;
   onClose: () => void;
 }
+
+/**
+ * A cor da raridade, e ela é a MESMA da vitrine do editor.
+ *
+ * Uma segunda tabela aqui divergiria da primeira no dia em que alguém acertasse o
+ * roxo do épico num lugar só — e o aluno veria a peça sair do baú numa cor e
+ * aparecer no guarda-roupa em outra.
+ */
+const COR_DA_RARIDADE: Record<string, string> = {
+  common: "#94A3B8",
+  rare: "#3A55B5",
+  epic: "#7A3168",
+  legendary: "#C9A84C",
+};
+
+const NOME_DA_RARIDADE: Record<string, string> = {
+  common: "Comum",
+  rare: "Rara",
+  epic: "Épica",
+  legendary: "Lendária",
+};
 
 /**
  * Modal de abertura de baú — três fases, dois desfechos.
@@ -39,6 +69,8 @@ interface ChestOpeningModalProps {
 export default function ChestOpeningModal({
   isEgg = false,
   xp = 0,
+  itemSlug,
+  raridade = "common",
   onClose,
 }: ChestOpeningModalProps) {
   const [phase, setPhase] = useState<1 | 2 | 3>(1);
@@ -118,8 +150,41 @@ export default function ChestOpeningModal({
           </div>
         )}
 
-        {/* Fase 3b: XP na hora */}
-        {phase === 3 && !isEgg && (
+        {/* Fase 3b: A PEÇA — o baú voltou a dar objeto no B6 (2026-08-13) */}
+        {phase === 3 && !isEgg && itemSlug && (
+          <div className="animate-scale-in flex w-72 flex-col items-center rounded-2xl border-2 bg-white p-6 shadow-2xl"
+               style={{ borderColor: COR_DA_RARIDADE[raridade] ?? COR_DA_RARIDADE.common }}>
+            {/* O tronco, e não o boneco inteiro: a peça é o assunto do card, e é a
+                mesma decisão §5.2 do doc 21 que a vitrine do editor já segue. */}
+            <div className="mb-3 grid place-items-center rounded-xl bg-warm-stone px-2 py-2">
+              <AvatarTronco skin={2} hair={null} hairColor={0} traje={itemSlug} altura={120} ns="bau" />
+            </div>
+            {/* O nome da raridade vai ESCRITO junto da cor da moldura — a
+                "Colorblind Rule" do DESIGN.md: cor sozinha não informa nada. */}
+            <p className="text-xs font-semibold uppercase tracking-wider"
+               style={{ color: COR_DA_RARIDADE[raridade] ?? COR_DA_RARIDADE.common }}>
+              Peça {NOME_DA_RARIDADE[raridade] ?? "Comum"}
+            </p>
+            <h3 className="mt-1 text-center text-lg font-bold text-ink">
+              {TRAJES_DA_ARTE[itemSlug]?.nome ?? itemSlug}
+            </h3>
+            <p className="mt-2 text-center text-sm text-ink/70">
+              Já está no seu guarda-roupa. Vista no perfil quando quiser.
+            </p>
+            <Link
+              href="/perfil"
+              className="mt-4 block w-full rounded-lg bg-deep-navy py-2 text-center text-sm font-medium text-warm-ivory transition-opacity hover:opacity-90"
+            >
+              Ir para o perfil
+            </Link>
+            <button onClick={onClose} className="mt-2 text-xs text-ink/60 hover:text-ink">
+              Fechar
+            </button>
+          </div>
+        )}
+
+        {/* Fase 3c: XP na hora */}
+        {phase === 3 && !isEgg && !itemSlug && (
           <div className="animate-xp-reveal flex flex-col items-center gap-3">
             <div className="text-5xl">⚔️</div>
             <p className="text-2xl font-bold text-amber-500">+{xp} XP</p>
