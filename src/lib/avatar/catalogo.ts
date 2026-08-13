@@ -19,11 +19,13 @@
  *
  * Nenhum dos dois quebra o `apply`. Os dois quebram na cara da criança.
  *
- * POR QUE OS CINCO SLOTS NASCEM VAZIOS
- * ------------------------------------
- * Porque o Bloco 1 é encanamento e **não desenha uma peça sequer** — o boneco
- * tem de sair byte a byte igual ao de hoje. As peças chegam nos blocos seguintes:
- * traje no 2, fundo no 3, rosto no 5, chapéu no 7, pet no 8.
+ * POR QUE QUATRO DOS CINCO SLOTS AINDA NASCEM VAZIOS
+ * --------------------------------------------------
+ * Porque o Bloco 1 era encanamento e **não desenhou uma peça sequer** — o boneco
+ * tinha de sair byte a byte igual ao de então. **O traje deixou de ser vazio em
+ * 2026-08-13** (bloco B5 da virada): duas peças, `traje-farda` (a inicial) e
+ * `traje-gambesao` (a primeira de baú). Os outros quatro chegam nos blocos deles —
+ * fundo, rosto, chapéu, pet.
  *
  * A LISTA É DERIVADA ONDE JÁ EXISTE REGISTRO, E ISSO É DE PROPÓSITO
  * -----------------------------------------------------------------
@@ -35,6 +37,7 @@
  * derivado no seu bloco. O gate não muda: ele já compara conjuntos.
  */
 
+import { TRAJES_DA_ARTE } from "./estilo/trajes-da-arte";
 import type { PecaSobreposta } from "./estilo/tipos";
 
 /** Os cinco slots do guarda-roupa. Iguais ao CHECK de `avatar_catalogo.slot`. */
@@ -58,7 +61,12 @@ export const ROSTOS: Record<string, PecaSobreposta> = {};
  * declarado.
  */
 export const CATALOGO: Record<Slot, readonly string[]> = {
-  traje: [],
+  // DERIVADO desde o B5 (2026-08-13), e é o que a nota acima previa: "cada um vira
+  // derivado no seu bloco". O registro das peças de traje é `TRAJES_DA_ARTE`, que
+  // por sua vez é GERADO por `npm run arte:trajes` a partir dos PNGs da esteira —
+  // então o slug é consequência de existir arte renderizável, nunca uma segunda
+  // declaração que pode discordar dela. É a trava nº 2 fechada na origem.
+  traje: Object.keys(TRAJES_DA_ARTE),
   chapeu: Object.keys(CHAPEUS),
   rosto: Object.keys(ROSTOS),
   fundo: [],

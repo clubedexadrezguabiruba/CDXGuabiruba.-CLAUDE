@@ -20,20 +20,45 @@ import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import EditorDeAparencia, {
   type Aparencia,
   type CabeloDoCatalogo,
+  type TrajeDoCatalogo,
 } from "@/components/avatar/EditorDeAparencia";
+import { createClient } from "@/lib/supabase/client";
 import Card from "@/components/ui/Card";
 
 export default function CriarPersonagemClient({
   nivel,
   inicial,
   catalogo,
+  catalogoTraje,
+  trajeInicial,
 }: {
   nivel: number;
   inicial: Aparencia;
   catalogo: CabeloDoCatalogo[];
+  /** `avatar_catalogo` do slot traje, com `possui` já resolvido no servidor. */
+  catalogoTraje: TrajeDoCatalogo[];
+  /** `users.avatar_traje` — NULL na criação, que é o macacão de treino. */
+  trajeInicial: string | null;
 }) {
   const router = useRouter();
   const [aparencia, setAparencia] = useState<Aparencia>(inicial);
+  const [traje, setTraje] = useState<string | null>(trajeInicial);
+
+  /**
+   * A criança veste o boneco NA CRIAÇÃO, e não só depois da primeira promoção.
+   *
+   * Duas RPCs em sequência, e elas são independentes de propósito: `equipar_peca`
+   * grava na hora, `update_avatar_identity` no Confirmar. **Falha parcial não
+   * deixa boneco errado, deixa boneco padrão** — se a roupa não gravar, o aluno
+   * fica sem traje, que é o macacão de treino e é um estado legítimo.
+   */
+  async function trocarTraje(slug: string | null): Promise<string | null> {
+    const supabase = createClient();
+    const { error } = await supabase.rpc("equipar_peca", { p_slot: "traje", p_slug: slug });
+    if (error) return `Não foi possível vestir essa peça. ${error.message}`;
+    setTraje(slug);
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-warm-ivory font-sans text-ink">
@@ -52,6 +77,7 @@ export default function CriarPersonagemClient({
             skin={aparencia.skin}
             hair={aparencia.hair}
             hairColor={aparencia.hairColor}
+            traje={traje}
             altura={210}
             animado
             ns="palco"
@@ -64,6 +90,9 @@ export default function CriarPersonagemClient({
             valor={aparencia}
             aoMudar={setAparencia}
             catalogo={catalogo}
+            trajes={catalogoTraje}
+            traje={traje}
+            aoTrocarTraje={trocarTraje}
             nivel={nivel}
             rotuloAcao="Confirmar"
             aoSalvar={() => router.push("/dashboard")}

@@ -44,7 +44,9 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
+import { AvatarTronco } from "@/components/avatar/AvatarTronco";
 import { CABELOS } from "@/lib/avatar/estilo/cabelo";
+import { TRAJES_DA_ARTE } from "@/lib/avatar/estilo/trajes-da-arte";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { cn } from "@/lib/cn";
 
@@ -60,6 +62,48 @@ export interface CabeloDoCatalogo {
   slug: string;
   min_level: number;
 }
+
+/**
+ * Uma linha de `avatar_catalogo` do slot `traje`, como a tela a lê no servidor.
+ *
+ * O aluno lê o catálogo INTEIRO, inclusive as peças que ainda não tem — é o que
+ * permite a vitrine. Quem recusa é `equipar_peca`, não esta lista.
+ */
+export interface TrajeDoCatalogo {
+  slug: string;
+  origem: "marco_nivel" | "marco_patente" | "bau";
+  min_level: number | null;
+  min_tier: number | null;
+  raridade: "common" | "rare" | "epic" | "legendary" | null;
+  /** `true` se o aluno tem linha em `avatar_guarda_roupa` para este slug. */
+  possui: boolean;
+}
+
+/**
+ * A cor de cada raridade — a SEGUNDA linguagem de cor do produto.
+ *
+ * Ela vive **só aqui**, na vitrine e nos cards do editor, e nunca em volta de um
+ * avatar: ali quem manda é a cor de PATENTE, pela `<MolduraPatente>`. As duas no
+ * mesmo elemento ensinam o aluno que cor não significa nada (DESIGN.md, "The Two
+ * Color Languages Rule").
+ *
+ * Os hexadecimais são os do `EggHatchingModal`, que já desenhava moldura de
+ * raridade desde a v2 — reusar em vez de escolher de novo evita a segunda paleta
+ * que diverge da primeira.
+ */
+const COR_DA_RARIDADE: Record<NonNullable<TrajeDoCatalogo["raridade"]>, string> = {
+  common: "#94A3B8",
+  rare: "#3A55B5",
+  epic: "#7A3168",
+  legendary: "#C9A84C",
+};
+
+const NOME_DA_RARIDADE: Record<NonNullable<TrajeDoCatalogo["raridade"]>, string> = {
+  common: "Comum",
+  rare: "Rara",
+  epic: "Épica",
+  legendary: "Lendária",
+};
 
 /**
  * Rótulos das 8 cores de cabelo, na ordem de `CABELO` em `palette.ts`.
@@ -90,6 +134,16 @@ const NOMES_PELE = Array.from({ length: PELE.length }, (_, i) => `Tom ${i + 1}`)
 /** Slug → nome que o aluno lê. Slug fora do catálogo do código sai como slug. */
 function nomeDoModelo(slug: string): string {
   return (CABELOS as Record<string, { nome: string } | undefined>)[slug]?.nome ?? slug;
+}
+
+/**
+ * Slug → nome da peça de traje. `undefined` quando o código ainda não a desenha.
+ *
+ * O nome vem de `TRAJES_DA_ARTE`, que é GERADO pela esteira: ele é consequência de
+ * existir arte renderizável, nunca uma segunda lista que pode discordar do banco.
+ */
+function nomeDoTraje(slug: string): string | undefined {
+  return TRAJES_DA_ARTE[slug]?.nome;
 }
 
 function IconeCadeado({ className }: { className?: string }) {
@@ -230,11 +284,209 @@ function FileiraDeCores({
   );
 }
 
+/**
+ * A VITRINE DO TRAJE — e ela é o oposto de uma lista do que o aluno tem.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE A PEÇA QUE ELE NÃO TEM APARECE
+ * ---------------------------------------------------------------------------
+ *
+ * Vitrine é o que faz raridade significar alguma coisa. Sem ela o aluno não sabe
+ * que existe o que não tem, e o baú entrega uma surpresa sem antecipação — que é
+ * metade do que um baú é. Decisão do doc 21 §1.2, e é ela que este bloco cumpre.
+ *
+ * A peça de baú que ele ainda não ganhou aparece em **silhueta com "?"**, na cor da
+ * raridade. A peça de marco aparece com o cadeado de sempre, informando o que falta.
+ *
+ * ---------------------------------------------------------------------------
+ * O CADEADO É INFORMAÇÃO, NUNCA TRAVA
+ * ---------------------------------------------------------------------------
+ *
+ * Quem recusa é `equipar_peca`, que confere o direito dentro da transação (Regra
+ * Inviolável nº 1). Editar o DOM para habilitar o botão continua batendo na exceção
+ * da RPC, e a mensagem dela aparece no bloco de erro. É a mesma regra que o seletor
+ * de cabelo já segue.
+ *
+ * ---------------------------------------------------------------------------
+ * A ROUPA SALVA NA HORA, E A IDENTIDADE NÃO — a assimetria é do banco
+ * ---------------------------------------------------------------------------
+ *
+ * `update_avatar_identity` recebe as TRÊS colunas de uma vez, então a identidade
+ * tem um estado "em prova" que só vira fato no botão. `equipar_peca` recebe **um
+ * slot por chamada** e é idempotente: não há o que juntar, e um botão de salvar
+ * para uma coisa que já é uma chamada só seria cerimônia.
+ *
+ * Então vestir é imediato — como num guarda-roupa de jogo. O palco repinta quando o
+ * servidor confirma, nunca antes: `aoTrocarTraje` só é chamado depois do `await`.
+ */
+function Vitrine({
+  trajes,
+  atual,
+  nivel,
+  tier,
+  aoTrocar,
+}: {
+  trajes: TrajeDoCatalogo[];
+  atual: string | null;
+  nivel: number;
+  tier: number;
+  aoTrocar: (slug: string | null) => Promise<string | null>;
+}) {
+  const [ocupado, setOcupado] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  // "Sem traje" primeiro porque é o estado que nenhuma régua nega — o espelho exato
+  // do careca. Depois o que o aluno pode usar, e por último o que ele ainda deseja:
+  // a lista lida de cima para baixo é a progressão.
+  const podeUsar = (t: TrajeDoCatalogo) =>
+    t.origem === "bau"
+      ? t.possui
+      : t.origem === "marco_nivel"
+        ? nivel >= (t.min_level ?? 1)
+        : tier >= (t.min_tier ?? 0);
+
+  const ordenados = [...trajes].sort((a, b) => {
+    const d = Number(podeUsar(b)) - Number(podeUsar(a));
+    return d !== 0 ? d : a.slug.localeCompare(b.slug);
+  });
+
+  const opcoes = [{ slug: null as string | null }, ...ordenados.map((t) => ({ slug: t.slug, t }))];
+
+  async function escolher(slug: string | null) {
+    if (ocupado) return;
+    setOcupado(slug ?? "sem-traje");
+    setErro(null);
+    const msg = await aoTrocar(slug);
+    setOcupado(null);
+    if (msg) setErro(msg);
+  }
+
+  return (
+    <section className="max-w-xs">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className={TITULO_DE_GRUPO}>Roupa</h3>
+        <span className="truncate text-xs text-ink/70">
+          {atual ? (nomeDoTraje(atual) ?? atual) : "Sem traje"}
+        </span>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {opcoes.map(({ slug, t }: { slug: string | null; t?: TrajeDoCatalogo }) => {
+          const selecionado = slug === atual;
+          const livre = !t || podeUsar(t);
+          const chave = slug ?? "sem-traje";
+          const nome = slug ? (nomeDoTraje(slug) ?? slug) : "Sem traje";
+          // Peça de baú não possuída é SILHUETA: o desenho fica escondido, e é
+          // isso que cria o desejo. Peça de marco mostra o desenho com cadeado —
+          // ela não é surpresa, é degrau, e esconder um degrau não motiva ninguém.
+          const emSilhueta = Boolean(t && t.origem === "bau" && !t.possui);
+          const cor = t?.raridade ? COR_DA_RARIDADE[t.raridade] : null;
+
+          return (
+            <button
+              key={chave}
+              type="button"
+              disabled={!livre || ocupado !== null}
+              aria-pressed={selecionado}
+              aria-label={
+                emSilhueta
+                  ? `${nome} — peça ${t?.raridade ? NOME_DA_RARIDADE[t.raridade].toLowerCase() : ""} de baú, você ainda não tem`
+                  : !livre
+                    ? `${nome} — bloqueado, exige nível ${t?.min_level ?? 1}`
+                    : nome
+              }
+              onClick={() => escolher(slug)}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-lg border px-1 py-2 transition-colors",
+                FOCO,
+                livre ? "bg-warm-stone" : "bg-white",
+                !livre
+                  ? "cursor-not-allowed border-dashed border-ink/25"
+                  : selecionado
+                    ? "border-gold bg-gold/10 ring-1 ring-gold"
+                    : "border-ink/25 hover:border-gold/60",
+                ocupado !== null && "opacity-70",
+              )}
+              // A cor da raridade entra como FIO, não como fundo: fundo colorido
+              // atrás de um boneco bege mata o contorno preto, que é a silhueta que
+              // dá identidade ao personagem.
+              style={cor && !livre ? { borderColor: cor } : undefined}
+            >
+              <span className="relative grid place-items-center">
+                <AvatarTronco
+                  skin={2}
+                  hair={null}
+                  hairColor={0}
+                  traje={emSilhueta ? null : slug}
+                  altura={96}
+                  ns={`vit-${chave}`}
+                />
+                {emSilhueta && (
+                  // A silhueta é um véu POR CIMA do tronco vazio, com o "?" na cor
+                  // da raridade. Desenhar a peça e cobri-la seria pagar o SVG dela
+                  // para não mostrá-lo — e vazaria o desenho no devtools.
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 grid place-items-center rounded-md bg-ink/[0.07] text-2xl font-bold"
+                    style={{ color: cor ?? undefined }}
+                  >
+                    ?
+                  </span>
+                )}
+              </span>
+              <span className="text-sm font-semibold leading-tight">{nome}</span>
+              <span
+                className={cn(
+                  "flex min-h-4 items-center gap-1 text-[11px]",
+                  livre ? "font-semibold text-ink" : "font-medium text-ink/70",
+                )}
+              >
+                {emSilhueta ? (
+                  // O nome da raridade vai ESCRITO junto da cor — "Colorblind
+                  // Rule": um fio colorido sozinho não informa nada.
+                  <>
+                    <IconeCadeado />
+                    {t?.raridade ? NOME_DA_RARIDADE[t.raridade] : "De baú"}
+                  </>
+                ) : !livre ? (
+                  <>
+                    <IconeCadeado />
+                    Nível {t?.min_level ?? 1}
+                  </>
+                ) : selecionado ? (
+                  <>
+                    <IconeCheck />
+                    Em uso
+                  </>
+                ) : null}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {erro && (
+        <p
+          role="alert"
+          className="mt-3 flex items-start gap-2 rounded-lg border border-erro/40 bg-erro/5 px-3 py-2 text-sm text-ink"
+        >
+          <IconeAlerta className="mt-0.5 shrink-0 text-erro" />
+          <span>{erro}</span>
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default function EditorDeAparencia({
   valor,
   aoMudar,
   catalogo,
+  trajes,
+  traje,
+  aoTrocarTraje,
   nivel,
+  tier = 0,
   rotuloAcao,
   aoSalvar,
   className,
@@ -242,8 +494,25 @@ export default function EditorDeAparencia({
   valor: Aparencia;
   aoMudar: (proxima: Aparencia) => void;
   catalogo: CabeloDoCatalogo[];
+  /**
+   * `avatar_catalogo` do slot traje, INTEIRO — inclusive o que o aluno não tem.
+   * Ausente, a aba "Roupa" não aparece: é o que mantém `/criar-personagem` e
+   * qualquer chamador antigo idênticos ao de antes deste bloco.
+   */
+  trajes?: TrajeDoCatalogo[];
+  /** `users.avatar_traje`. `null` é o macacão de treino — ausência de peça. */
+  traje?: string | null;
+  /**
+   * Chama `equipar_peca` e devolve a MENSAGEM DE ERRO, ou `null` se deu certo.
+   *
+   * A tela é quem chama a RPC porque é ela quem repinta o palco: o editor não tem
+   * boneco grande de propósito (ver o docstring do topo).
+   */
+  aoTrocarTraje?: (slug: string | null) => Promise<string | null>;
   /** Nível de XP do aluno. Só decide o que a tela DESENHA travado — ver docstring. */
   nivel: number;
+  /** `achieved_tier`. Só decide o que a tela desenha travado, como o nível. */
+  tier?: number;
   /** O que o botão diz. "Confirmar" na criação, "Salvar aparência" no perfil. */
   rotuloAcao: string;
   /** Chamado depois de a RPC confirmar. Nunca antes: recompensa é reação a fato. */
@@ -430,6 +699,31 @@ export default function EditorDeAparencia({
         indice={valor.skin}
         aoEscolher={(i) => aoMudar({ ...valor, skin: i })}
       />
+
+      {/*
+        A VITRINE FICA DEPOIS DA IDENTIDADE, e não em aba separada — por ora.
+
+        O doc 21 §5.1 decidiu ABAS por slot (`Cabelo | Roupa | Rosto | Fundo | Pet`),
+        e a decisão continua de pé: cinco slots empilhados num rolo comprido é o que
+        ela existe para impedir. Mas hoje há **dois** grupos, e uma casca de abas
+        para dois é mais cerimônia do que navegação — a criança pagaria um clique
+        para ver o que cabe na mesma tela.
+
+        A casca nasce no bloco do terceiro slot, que é quando ela passa a ganhar
+        alguma coisa. Registrado aqui para não ser esquecido nem reinventado.
+
+        A separação que JÁ existe é a que importa, e é do banco: a identidade sobe
+        por `update_avatar_identity` no botão, a roupa por `equipar_peca` na hora.
+      */}
+      {trajes && aoTrocarTraje && (
+        <Vitrine
+          trajes={trajes}
+          atual={traje ?? null}
+          nivel={nivel}
+          tier={tier}
+          aoTrocar={aoTrocarTraje}
+        />
+      )}
 
       <div className="space-y-3">
         {erro && (

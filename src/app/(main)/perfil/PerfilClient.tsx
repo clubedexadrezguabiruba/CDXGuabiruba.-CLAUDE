@@ -10,7 +10,9 @@ import MolduraPatente from "@/components/avatar/MolduraPatente";
 import EditorDeAparencia, {
   type Aparencia,
   type CabeloDoCatalogo,
+  type TrajeDoCatalogo,
 } from "@/components/avatar/EditorDeAparencia";
+import { createClient } from "@/lib/supabase/client";
 import Card, { CardTitle } from "@/components/ui/Card";
 import AchievementPanel from "@/components/gamification/AchievementPanel";
 import { xpForLevel } from "@/lib/gamification/xp";
@@ -64,6 +66,10 @@ interface PerfilClientProps {
   aparencia: Aparencia;
   /** `avatar_hair_catalog` inteiro — inclusive o que este aluno ainda não alcança. */
   catalogoCabelo: CabeloDoCatalogo[];
+  /** `avatar_catalogo` do slot traje, inteiro, com `possui` já resolvido. */
+  catalogoTraje: TrajeDoCatalogo[];
+  /** `users.avatar_traje`. `null` é o macacão de treino — ausência de peça. */
+  trajeInicial: string | null;
   botsDefeated: number;
   lessonsCompleted: number;
   puzzlesSolved: number;
@@ -299,6 +305,8 @@ export default function PerfilClient({
   profile,
   aparencia,
   catalogoCabelo,
+  catalogoTraje,
+  trajeInicial,
   botsDefeated,
   lessonsCompleted,
   puzzlesSolved,
@@ -317,6 +325,35 @@ export default function PerfilClient({
     emProva.skin !== salvo.skin ||
     emProva.hair !== salvo.hair ||
     emProva.hairColor !== salvo.hairColor;
+
+  // O TRAJE NÃO TEM ESTADO "EM PROVA", e a assimetria é do banco: `equipar_peca`
+  // recebe um slot por chamada e é idempotente, então vestir já é o fato. Este
+  // estado só existe para o palco repintar sem esperar o `router.refresh()` — e
+  // ele só muda DEPOIS de o servidor confirmar.
+  const [traje, setTraje] = useState<string | null>(trajeInicial);
+
+  /**
+   * A PRIMEIRA CHAMADORA DE `equipar_peca` — ela existia desde o Bloco 1 e nunca
+   * tinha sido usada.
+   *
+   * Devolve a mensagem de erro do servidor, ou `null` se deu certo. O palco só
+   * repinta **depois** do `await`: um otimista aqui mostraria a criança vestida com
+   * uma peça que a RPC recusou, e a recusa é o ponto (Regra Inviolável nº 1).
+   *
+   * Sem `router.refresh()`: o único dado da página que muda é `avatar_traje`, e ele
+   * já está no estado local. Recarregar a árvore inteira por uma troca de roupa
+   * custaria as seis consultas do `page.tsx` a cada clique.
+   */
+  async function trocarTraje(slug: string | null): Promise<string | null> {
+    const supabase = createClient();
+    const { error } = await supabase.rpc("equipar_peca", {
+      p_slot: "traje",
+      p_slug: slug,
+    });
+    if (error) return `Não foi possível vestir essa peça. ${error.message}`;
+    setTraje(slug);
+    return null;
+  }
 
   // --- XP ---
   const xpNeeded = xpForLevel(profile.level);
@@ -415,6 +452,7 @@ export default function PerfilClient({
                   skin={emProva.skin}
                   hair={emProva.hair}
                   hairColor={emProva.hairColor}
+                  traje={traje}
                   altura={168}
                   animado
                   ns="palco"
@@ -578,7 +616,11 @@ export default function PerfilClient({
                 valor={emProva}
                 aoMudar={setEmProva}
                 catalogo={catalogoCabelo}
+                trajes={catalogoTraje}
+                traje={traje}
+                aoTrocarTraje={trocarTraje}
                 nivel={profile.level}
+                tier={profile.achievedTier}
                 rotuloAcao="Salvar aparência"
                 aoSalvar={() => {
                   setSalvo(emProva);

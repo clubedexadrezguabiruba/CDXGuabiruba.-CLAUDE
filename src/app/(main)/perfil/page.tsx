@@ -3,6 +3,7 @@ import PerfilClient from "./PerfilClient";
 import type {
   Aparencia,
   CabeloDoCatalogo,
+  TrajeDoCatalogo,
 } from "@/components/avatar/EditorDeAparencia";
 
 export interface ProfileData {
@@ -40,7 +41,7 @@ export default async function PerfilPage() {
   // Buscar dados do perfil
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_hair, avatar_hair_color")
+    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_hair, avatar_hair_color, avatar_traje")
     .eq("id", user.id)
     .single();
 
@@ -51,6 +52,22 @@ export default async function PerfilPage() {
   const { data: catalogoCabelo } = await supabase
     .from("avatar_hair_catalog")
     .select("slug, min_level");
+
+  // O catálogo de traje INTEIRO, pelo mesmo motivo do cabelo: é o que permite a
+  // VITRINE mostrar o que o aluno ainda não tem. Quem recusa é `equipar_peca`.
+  const { data: catalogoTraje } = await supabase
+    .from("avatar_catalogo")
+    .select("slug, origem, min_level, min_tier, raridade")
+    .eq("slot", "traje");
+
+  // O guarda-roupa dele — a outra metade da vitrine. Peça de baú sem linha aqui
+  // aparece em silhueta; a RLS já limita a leitura ao próprio aluno.
+  const { data: guardaRoupa } = await supabase
+    .from("avatar_guarda_roupa")
+    .select("slug")
+    .eq("user_id", user.id);
+
+  const possuidas = new Set((guardaRoupa ?? []).map((g) => g.slug as string));
 
   // `achieved_tier` entra no SELECT que já existia — a consulta continua sendo UMA.
   // É ele que a <MolduraPatente> lê no palco de 168 px.
@@ -116,6 +133,16 @@ export default async function PerfilPage() {
       profile={profileData}
       aparencia={aparencia}
       catalogoCabelo={(catalogoCabelo as CabeloDoCatalogo[] | null) ?? []}
+      catalogoTraje={
+        // O `possui` é montado AQUI, no servidor, e não no cliente: juntar catálogo
+        // com guarda-roupa é a única conta que decide silhueta × peça, e ela não
+        // pode depender de duas listas chegarem à tela em ordens diferentes.
+        ((catalogoTraje ?? []) as Omit<TrajeDoCatalogo, "possui">[]).map((t) => ({
+          ...t,
+          possui: possuidas.has(t.slug),
+        }))
+      }
+      trajeInicial={profile?.avatar_traje ?? null}
       botsDefeated={botsDefeated ?? 0}
       lessonsCompleted={lessonsCompleted ?? 0}
       puzzlesSolved={puzzlesSolved ?? 0}

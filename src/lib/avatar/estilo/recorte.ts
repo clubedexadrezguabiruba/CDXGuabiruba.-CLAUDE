@@ -77,7 +77,7 @@
  */
 
 import { ESCALA_PADRAO, naTela } from "./compositor";
-import { CAIXA_CABECA, EIXO_CABECA, VIEWBOX } from "./geometria";
+import { CAIXA_CABECA, CENTRO_X, EIXO_CABECA, TRACO, TRONCO, VIEWBOX } from "./geometria";
 
 /**
  * Quanto o cabelo passa da caixa da cabeça, em unidades INTERNAS.
@@ -128,6 +128,78 @@ export function recortarNaCabeca(svg: string, recorte: Recorte = RECORTE_CABECA)
   if (!svg.includes(VIEWBOX_INTEIRO)) {
     throw new Error(
       `recortarNaCabeca: não achei ${VIEWBOX_INTEIRO} no SVG. ` +
+        "compor() mudou o formato do viewBox e este recorte precisa acompanhar.",
+    );
+  }
+  return svg.replace(
+    VIEWBOX_INTEIRO,
+    `viewBox="${n(recorte.x)} ${n(recorte.y)} ${n(recorte.w)} ${n(recorte.h)}"`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// O RECORTE DE TRONCO — o card mostra a PEÇA, nunca o boneco vestido com ela
+// ---------------------------------------------------------------------------
+//
+// Nasceu no B5 (2026-08-13), com a vitrine do traje, e é a decisão §5.2 do doc 21:
+// *"o card mostra só a parte que a peça ocupa"*. Um card de roupa que desenha o
+// boneco inteiro faz a criança comparar seis cabeças idênticas para escolher uma
+// roupa — 57% do desenho é o mesmo em todas as fichas, e o que muda fica pequeno.
+//
+// **É retangular, e essa é a diferença que importa.** O recorte de cabeça é
+// quadrado porque os cinco lugares que o consomem são cápsulas redondas de 32 e
+// 40 px. O tronco não é: ele é mais alto que largo, e forçá-lo em quadrado
+// significaria ou sobra dos lados ou cortar a barra — a parte da peça que mais
+// carrega o transbordo, e que é justamente o que distingue vestir de pintar.
+
+/**
+ * Quanto o traje pode passar da silhueta do tronco, em unidades internas.
+ *
+ * É o mesmo **26** de `TRANSBORDO_LATERAL` (`scripts/avatar/arte/base.ts`), o teto
+ * medido no doc 21 §6.1 — metade do transbordo da cabeça na cintura. Escrito aqui
+ * porque `src/` não importa de `scripts/`, e o valor é teto de arte, não conta
+ * derivável de `geometria.ts`. Se um dia divergirem, o gate do campo do traje
+ * reprova primeiro.
+ */
+export const FOLGA_LATERAL_DO_TRAJE = 26;
+
+/**
+ * A janela do tronco, em unidades do QUADRO.
+ *
+ * Começa no QUEIXO, não no topo do tronco: `TRONCO.yTopo` é 320 e fica escondido
+ * atrás da cabeça — 9 255 px do campo que a criança nunca vê. Enquadrar ali daria
+ * um card com um terço de nada em cima.
+ *
+ * Termina abaixo da base da silhueta, com a folga do transbordo: a barra é o evento
+ * que mais separa uma peça da outra, e cortá-la seria esconder o que o card existe
+ * para mostrar.
+ */
+export const RECORTE_TRONCO: Recorte = (() => {
+  const meia = (TRONCO.perfil.reduce((m, p) => Math.max(m, p.meio), 0) +
+    TRACO / 2 +
+    FOLGA_LATERAL_DO_TRAJE) *
+    ESCALA_PADRAO;
+  const topo = naTela({ y: CAIXA_CABECA.y1 }).y;
+  const base = naTela({ y: TRONCO.yBase + TRACO / 2 + FOLGA_LATERAL_DO_TRAJE }).y;
+  return {
+    x: naTela({ x: CENTRO_X }).x - meia,
+    y: topo,
+    w: 2 * meia,
+    h: base - topo,
+  };
+})();
+
+/**
+ * Troca o `viewBox` do corpo inteiro pelo do tronco.
+ *
+ * Lança se não encontrar o `viewBox` esperado, pelo mesmo motivo de
+ * `recortarNaCabeca`: um `replace` que não casa devolve a string original em
+ * silêncio, e o sintoma seria um boneco inteiro espremido no card de roupa.
+ */
+export function recortarNoTronco(svg: string, recorte: Recorte = RECORTE_TRONCO): string {
+  if (!svg.includes(VIEWBOX_INTEIRO)) {
+    throw new Error(
+      `recortarNoTronco: não achei ${VIEWBOX_INTEIRO} no SVG. ` +
         "compor() mudou o formato do viewBox e este recorte precisa acompanhar.",
     );
   }
