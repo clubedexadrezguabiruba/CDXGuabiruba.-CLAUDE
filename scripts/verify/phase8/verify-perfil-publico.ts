@@ -28,8 +28,15 @@
  *     quebra em runtime — na cara de quem abrir o ranking. Quatro funções leem
  *     `avatar_config` de lá.
  *
- * AS CINCO CONFERÊNCIAS
- * ---------------------
+ *  5. **A peça equipada não atravessa o TypeScript.** Toda coluna de slot já chega
+ *     à tela pela RPC, mas `page.tsx` faz `profile as PublicProfileData`: o cast
+ *     descarta em silêncio a chave que o tipo não nomeia, e o aluno que equipou a
+ *     Farda aparece de macacão para os colegas. Era o achado G21, e ele não tinha
+ *     régua nenhuma — as conferências 1 a 6 medem banco × banco, e este furo é
+ *     código × tela.
+ *
+ * AS CONFERÊNCIAS
+ * ---------------
  *  1. As três colunas da identidade estão na matview.
  *  2. Os seis índices, com o UNIQUE em `user_id`. Não é enfeite: sem ele o
  *     `REFRESH ... CONCURRENTLY` recusa, e quem o chama é `grant_xp` a cada
@@ -44,6 +51,11 @@
  *     que não depende de eu acreditar no corpo da função.
  *  6. Anti-regressão da lição 2: as 4 RPCs que leem a matview são CHAMADAS, e
  *     coluna legada ainda citada por função tem de continuar existindo na view.
+ *  7. O colega vê o mesmo boneco que o aluno vê de si: toda prop de aparência que
+ *     o próprio `/perfil` passa ao `<AvatarKokeshi>`, o `/perfil/[userId]` também
+ *     passa — e para cada uma, a RPC devolve a coluna e `PublicProfileData` a
+ *     declara. **Quem define o que é cobrado é a tela do próprio perfil**, não uma
+ *     lista aqui: quando o chapéu entrar lá, esta conferência o cobra sozinha.
  *
  * COMO ELE NÃO SUJA A PRODUÇÃO
  * ----------------------------
@@ -59,11 +71,15 @@
  * Uso: npm run verify:perfil-publico
  */
 
+import { readFileSync } from "fs";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
 import postgres from "postgres";
 import type { Sql } from "postgres";
 import { getDbUrl } from "../db-url";
+
+/** A raiz do repositório, a partir de `scripts/verify/phase8/`. */
+const RAIZ = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..");
 
 /** As três colunas da identidade kokeshi (Bloco C), que o E.3 levou à matview. */
 const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_hair", "avatar_hair_color"] as const;
@@ -89,6 +105,43 @@ const INDICES = [
  * aqui precisa ser editado à mão quando o D30 reescrever as RPCs de ranking.
  */
 const LEGADAS_NA_VIEW = ["avatar_config", "avatar_base"] as const;
+
+/**
+ * Prop de `<AvatarKokeshi>` → coluna que `get_public_profile` devolve.
+ *
+ * É a única lista escrita à mão da conferência 7, e ela é a **convenção de nome**,
+ * não um inventário de peças: quem decide o que é cobrado é a tela do próprio
+ * perfil, não este objeto. `fundo` e `pet` não entram porque não são props do
+ * boneco — são componentes irmãos, fora do SVG (doc 21 §3.4).
+ */
+const PROP_PARA_COLUNA: Record<string, string> = {
+  skin: "avatar_skin",
+  hair: "avatar_hair",
+  hairColor: "avatar_hair_color",
+  traje: "avatar_traje",
+  chapeu: "avatar_chapeu",
+  rosto: "avatar_rosto",
+};
+
+const TELA_PROPRIA = "src/app/(main)/perfil/PerfilClient.tsx";
+const TELA_PUBLICA = "src/app/(main)/perfil/[userId]/PublicProfileClient.tsx";
+const TIPO_PUBLICO = "src/types/ranking.ts";
+
+/**
+ * As props que um arquivo passa a `<AvatarKokeshi>`, lidas do JSX.
+ *
+ * Regex e não parser de propósito: a pergunta é "o nome da prop aparece dentro da
+ * tag?", e para isso o texto basta. Um `<AvatarKokeshi>` sem `/>` (com filhos)
+ * escaparia — nenhum dos dois tem, e o `<AvatarCabeca>` das listas não é lido aqui.
+ */
+function propsDoKokeshi(caminho: string): Set<string> {
+  const src = readFileSync(resolve(RAIZ, caminho), "utf8");
+  const props = new Set<string>();
+  for (const tag of src.matchAll(/<AvatarKokeshi\b([\s\S]*?)\/>/g)) {
+    for (const p of tag[1].matchAll(/(\w+)\s*=\s*\{/g)) props.add(p[1]);
+  }
+  return props;
+}
 
 /**
  * Tira comentário de SQL antes de procurar citação no corpo.
@@ -459,6 +512,46 @@ export async function conferir(db: Sql): Promise<Relatorio> {
         erro + " — coluna que a matview perdeu, lida por uma função que ninguém recompilou",
       );
     }
+  }
+
+  // --- 7. O colega vê o mesmo boneco que o aluno vê de si (achado G21) ---
+  console.log("\n7. A tela do colega desenha o mesmo boneco que a do próprio aluno");
+
+  const propsProprias = propsDoKokeshi(TELA_PROPRIA);
+  const propsPublicas = propsDoKokeshi(TELA_PUBLICA);
+  const tipoPublico = readFileSync(resolve(RAIZ, TIPO_PUBLICO), "utf8");
+
+  // O que é cobrado sai da tela do PRÓPRIO perfil, não de uma lista aqui: no dia
+  // em que o chapéu entrar lá, esta conferência passa a cobrá-lo do perfil público
+  // sozinha. É o mesmo mecanismo da conferência 6 — nada aqui se edita à mão.
+  const aparencia = [...propsProprias].filter((p) => p in PROP_PARA_COLUNA).sort();
+  info(`o próprio /perfil passa ao <AvatarKokeshi>: ${aparencia.join(", ")}`);
+
+  for (const prop of aparencia) {
+    const coluna = PROP_PARA_COLUNA[prop];
+
+    if (!propsPublicas.has(prop)) {
+      nok(
+        `/perfil/[userId] não passa '${prop}' ao <AvatarKokeshi>, e o próprio /perfil passa`,
+        `o aluno se vê com a peça e aparece sem ela para os colegas — que é o único lugar onde ela tem plateia. ${TELA_PUBLICA}`,
+      );
+      continue;
+    }
+    if (!(coluna in perfilAntes)) {
+      nok(
+        `a tela passa '${prop}', mas get_public_profile não devolve '${coluna}'`,
+        "a prop chegaria undefined em toda visita: a matview precisa da coluna e a RPC precisa devolvê-la",
+      );
+      continue;
+    }
+    if (!new RegExp(`\\b${coluna}\\b`).test(tipoPublico)) {
+      nok(
+        `${coluna} não está declarada em PublicProfileData`,
+        `page.tsx faz \`profile as PublicProfileData\` — o cast descarta em silêncio a chave que a RPC mandou. ${TIPO_PUBLICO}`,
+      );
+      continue;
+    }
+    ok(`'${prop}' vai à tela do colega, a RPC devolve '${coluna}' e o tipo o declara`);
   }
 
   return { passed, failed };

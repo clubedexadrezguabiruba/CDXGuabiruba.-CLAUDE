@@ -865,9 +865,18 @@ aparece" (roda o Doug).
 > `avatar:folha-base` e `arte:folha-traje` — programas de fora deste teste. Refeitas
 > as três mutações, as três ficam vermelhas.
 >
-> **Achado aberto no caminho:** o perfil público (`/perfil/[userId]`) desenha todo
-> aluno de macacão — a matview `user_public_profiles` não expõe `avatar_traje`, e
-> conserto é migration. É o **G21** de `docs/achados.md`.
+> **Achado aberto no caminho, e fechado no dia seguinte:** o perfil público
+> (`/perfil/[userId]`) desenhava todo aluno de macacão. Era o **G21** — e o
+> diagnóstico registrado aqui, *"a matview não expõe `avatar_traje`, o conserto é
+> migration"*, **estava errado**: a matview carrega os cinco slugs desde o Bloco 1, e
+> quem descartava a farda era o `as PublicProfileData` do `page.tsx` sobre um tipo que
+> só nomeava três chaves de avatar. **Zero migrations.** A régua nova é a conferência
+> 7 de `verify:perfil-publico`, e ela cobra o perfil público a partir do que o próprio
+> `/perfil` passa ao boneco — o chapéu do Bloco 7 vai encontrá-la pronta.
+>
+> O mesmo `as` descarta `avatar_chapeu` e `avatar_rosto` nas quatro listas e na
+> navbar, onde eles **são** desenhados pelo `<AvatarCabeca>`. Invisível hoje (catálogo
+> vazio), morde no bloco do chapéu: é o **G22**, aberto e não consertado.
 
 ### Bloco 3 — Fundo
 

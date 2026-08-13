@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **14 arquivos sujos** |
-| **Último commit** | ba9453a · 2026-08-13 · fix(avatar): o G20 fecha — o gambesão perde o pescoço que nunca teve, e a rota ganha a quarta saída |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **5 arquivos sujos** |
+| **Último commit** | 60f2331 · 2026-08-13 · feat(avatar): a lista dos seis zera — o useUser lê o traje, e o teste de ausência ganha âncora de fora |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

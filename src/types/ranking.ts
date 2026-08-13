@@ -57,6 +57,22 @@ export interface PublicProfileData {
   avatar_skin: number;
   avatar_hair: string | null;
   avatar_hair_color: number;
+  /**
+   * `users.avatar_traje` — o slug da peça equipada, `null` para o macacão de treino.
+   *
+   * **Ele sempre chegou; o que faltava era declará-lo.** A matview carrega os cinco
+   * slugs de equipar desde o Bloco 1 (`20260811160000`) e `get_public_profile` os
+   * devolve desde então — mas `page.tsx` faz `profile as PublicProfileData`, e um
+   * cast descarta em silêncio toda chave que o tipo não nomeia. Era o achado G21: o
+   * colega via o aluno de macacão porque o TypeScript jogava a farda fora na
+   * fronteira, não porque o banco não a tivesse mandado.
+   *
+   * Os outros quatro slugs da RPC (`chapeu`, `rosto`, `fundo`, `pet`) seguem de
+   * fora **de propósito**: entram quando alguma tela os desenhar. A conferência 7
+   * de `verify:perfil-publico` cobra este tipo a partir do que o próprio `/perfil`
+   * passa ao boneco, então o dia em que o chapéu chegar lá ela reprova aqui sozinha.
+   */
+  avatar_traje: string | null;
   level: number;
   xp: number;
   puzzle_rating: number;

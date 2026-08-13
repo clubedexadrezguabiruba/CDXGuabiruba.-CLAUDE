@@ -13,10 +13,15 @@ interface Props {
 /**
  * O avatar saiu daqui no Bloco D e voltou no E.4.
  *
- * Ele não é buscado: as três colunas chegam prontas dentro de `get_public_profile`,
+ * Ele não é buscado: as colunas chegam prontas dentro de `get_public_profile`,
  * que o E.3 reescreveu para devolver `avatar_skin`/`avatar_hair`/`avatar_hair_color`
  * no lugar do `equipped_items` fixo em `[]` da pilha v2. Índice e slug, a mesma
  * língua do banco — a tradução para hex é do `<AvatarKokeshi>`.
+ *
+ * **`traje` entrou em 2026-08-13, fechando o G21**, e não custou migration: a RPC já
+ * devolvia o slug desde o Bloco 1: quem o perdia era o `as PublicProfileData` do
+ * `page.tsx`, sobre um tipo que só nomeava três chaves de avatar. `null` é o macacão
+ * de treino, que é estado legítimo — o espelho do careca.
  *
  * **Sem animação, e de propósito:** este é o perfil de OUTRA pessoa, uma tela de
  * leitura. Piscar e respirar são para o boneco do próprio aluno, onde o movimento
@@ -56,6 +61,7 @@ export default function PublicProfileClient({ profile }: Props) {
               skin={profile.avatar_skin}
               hair={profile.avatar_hair}
               hairColor={profile.avatar_hair_color}
+              traje={profile.avatar_traje}
               altura={104}
               ns="perfil-publico"
               rotulo={`Avatar de ${profile.public_name}`}

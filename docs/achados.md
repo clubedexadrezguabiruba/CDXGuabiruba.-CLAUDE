@@ -76,35 +76,55 @@ lista.
 
 ## 🟠 Trava trabalho
 
-### G21 — o perfil público mostra todo aluno de macacão: o traje não chega lá, e não tem por onde chegar
-**Prova:** `MEDIDO` — 2026-08-13, rastreando quem desenha o boneco inteiro, ao
-fechar a dívida do `useUser`. Achado pelo Claude. Registrado e **não consertado**,
-pela regra 9.
+### G21 — ~~o perfil público mostra todo aluno de macacão~~ ✅ FECHADO
 
-`src/app/(main)/perfil/[userId]/PublicProfileClient.tsx:55` monta o
-`<AvatarKokeshi>` com `skin`, `hair` e `hairColor` — **e mais nada**. Sem a prop
-`traje`, o componente cai no macacão de treino. O aluno que equipou a Farda ou
-ganhou o Gambesão se vê vestido no próprio `/perfil` e **aparece pelado para os
-colegas**, que é justamente o lugar onde a peça teria público.
-
-**E não é uma prop esquecida.** A tela lê a matview `user_public_profiles`, e a
-definição vigente (`20260813120000_b2_moldura_estrutural.sql:75-77`) expõe
-`avatar_skin`, `avatar_hair` e `avatar_hair_color`. **`avatar_traje` não está lá.**
-O dado não existe do lado de fora — o conserto é migration, não uma linha de JSX.
-
-**Por que isso é 🟠 e não cosmético:** o B5 e o B6 fecharam declarando o traje no
-ar, e o `verify:catalogo-slots` concorda — ele compara código × banco, não código ×
-tela. A premissa "peça de slot chega a todo lugar que desenha o boneco" está errada
-e é sobre ela que os blocos de chapéu, fundo e pet vão construir. Cada slot novo
-repete o furo, e a matview precisa de uma coluna nova por slot.
-
-**O conserto, se o Doug mandar:** migration que recria a matview com `u.avatar_traje`
-(e o refresh), o campo no tipo da tela, a prop no componente. O `verify:perfil-publico`
-tem 36 conferências e nenhuma olha para slot — a de nº 37 seria a régua.
-
-**O que NÃO está medido:** se o `RankingEntry` e as listas de turma têm o mesmo
-furo. Elas usam `<AvatarCabeca>`, que é só cabeça e não desenha traje — então
-provavelmente não —, mas isso eu deduzi da assinatura do componente, não medi.
+> **CONSERTADO em 2026-08-13** — e **o diagnóstico deste achado estava errado na
+> metade que mandava fazer migration.** O sintoma era real; a causa, não.
+>
+> **O que ele afirmava:** que `20260813120000_b2_moldura_estrutural.sql:75-77`
+> expunha só `avatar_skin`, `avatar_hair` e `avatar_hair_color`, que `avatar_traje`
+> não estava na matview, e que **"o dado não existe do lado de fora — o conserto é
+> migration"**.
+>
+> **O que foi medido antes de mexer.** O `SELECT` não acaba na linha 77: ele segue
+> em `u.avatar_traje` (78), `u.avatar_chapeu` (79), `u.avatar_rosto` (80),
+> `u.avatar_fundo` (81), `u.avatar_pet` (82) — **os cinco slugs de equipar, lá desde
+> o Bloco 1** (`20260811160000`). Contra a produção: `verify:perfil-publico` imprime
+> *"a matview tem 21 colunas"* com os cinco na lista, e `get_public_profile` chamada
+> de verdade devolve 23 chaves, `avatar_traje` entre elas. O achado leu uma lista de
+> `SELECT` curta demais e parou de conferir ali.
+>
+> **A causa real, em uma linha:** `page.tsx:27` faz `profile as PublicProfileData`, e
+> `PublicProfileData` (`src/types/ranking.ts`) nomeava três chaves de avatar. **Um
+> `as` descarta em silêncio toda chave que o tipo não declara** — a farda chegava do
+> banco e morria na fronteira do TypeScript, não antes dela.
+>
+> **A decisão que o briefing pedia — "uma coluna por slot ou uma coluna com os cinco
+> juntos?" — já estava tomada, no Bloco 1: uma por slot, as cinco de uma vez.** Não
+> houve 5 migrations contra 1 a medir; houve **zero migrations**.
+>
+> **O conserto, medido:** o campo em `PublicProfileData`, a prop em
+> `PublicProfileClient.tsx`. Reprodução: para `teacherdoug004@gmail.com`
+> (`traje-farda` equipado), `svgDoAluno` com as props que a tela montava dava **16
+> formas** — o macacão de base — contra **15** com a prop. Régua: a **conferência 7**
+> de `verify:perfil-publico`, que reprovou antes (32 passed | 1 failed) e passou
+> depois (33 | 0).
+>
+> **Por que a régua não é uma lista de slots.** Ela lê as props de aparência que o
+> **próprio** `/perfil` passa ao `<AvatarKokeshi>` e exige as mesmas do
+> `/perfil/[userId]`, mais a coluna na RPC e o campo no tipo. Quem define o que é
+> cobrado é a tela do aluno: no dia em que o chapéu entrar lá, ela o cobra do perfil
+> público sozinha, sem ninguém editar o gate. Era o furo que o achado apontou
+> corretamente — `verify:catalogo-slots` compara código × banco, e ninguém comparava
+> código × tela.
+>
+> **A lição, que é o motivo de isto ficar escrito:** achado com `MEDIDO` no
+> cabeçalho pode ter sido medido no lugar errado. O custo aqui teria sido uma
+> migration inútil que recriaria a matview e derrubaria seis índices para acrescentar
+> uma coluna que já estava lá.
+>
+> O "não medido" deste achado — se as listas têm o mesmo furo — **foi medido no
+> fechamento e virou o G22**.
 
 ### G19 — ~~o Gate −1 mede o registro na faixa que a diretriz do transbordo manda invadir~~ ✅ FECHADO
 
@@ -545,6 +565,50 @@ segue com zero ocorrências no repositório.*
 ---
 
 ## 🟡 Promessa sem lastro
+
+### G22 — as listas descartam chapéu e rosto pelo mesmo `as` que descartava o traje
+**Prova:** `MEDIDO` — 2026-08-13, no fechamento do G21, respondendo ao "o que NÃO
+está medido" dele. Achado pelo Claude. Registrado e **não consertado**, pela regra 9.
+
+O G21 supôs que as listas escapariam porque `<AvatarCabeca>` "é só cabeça". **Metade
+certa.** Traje de fato não entra no recorte da cabeça — mas **chapéu e rosto entram**:
+`src/components/avatar/AvatarCabeca.tsx:57-69` recebe as duas props e as repassa a
+`svgDoAluno`, e o comentário da linha 64 diz o porquê (*"são exatamente as duas peças
+que o recorte de cabeça mostra"*).
+
+E as duas se perdem pelo mesmo caminho do G21, um degrau antes:
+
+- As RPCs **devolvem** `avatar_chapeu` e `avatar_rosto` — `get_ranking`,
+  `get_ranking_with_position`, `get_class_ranking` e `get_class_feed`
+  (`20260813120000_b2_moldura_estrutural.sql`, linhas 304-305 e 329-330, 414-415,
+  455/465/475/485, 556-557). Foi decisão explícita do Bloco 1: *"a lista mostra a
+  CABEÇA"*.
+- `RankingEntry` (`src/types/ranking.ts:16-18`) **não declara nenhuma das duas**, e o
+  mesmo `as` do G21 as descarta.
+- Os **quatro** call sites passam só `skin`, `hair`, `hairColor`:
+  `dashboard/page.tsx:165`, `ranking/RankingClient.tsx:132`,
+  `turmas/[id]/ranking/ClassRankingClient.tsx:162`,
+  `turmas/[id]/mural/MuralClient.tsx:123`. O `layout.tsx:80` (navbar) lê de `useUser`,
+  que também não busca os dois — é o mesmo furo por outra porta.
+
+**Por que é 🟡 e não 🟠:** hoje não muda um pixel. Os catálogos de chapéu e rosto
+estão **vazios** — a coluna sempre vem `null` e o boneco sai byte a byte igual. É
+promessa sem lastro, não bug visível: o servidor entrega a peça e cinco telas a
+jogam fora, e ninguém percebe porque não há peça.
+
+**Quando morde:** no bloco do chapéu. A primeira peça entra no catálogo, o aluno a
+equipa, se vê com ela no `/perfil` — e continua de cabeça pelada no ranking, no
+mural e na navbar. É o G21 de novo, em quatro telas em vez de uma.
+
+**O conserto, se o Doug mandar:** os dois campos em `RankingEntry`, as duas props nos
+quatro call sites, e as duas colunas no `useUser` para a navbar. **Zero migrations** —
+o banco já entrega, como no G21. A régua é a conferência 7 de `verify:perfil-publico`
+generalizada para `<AvatarCabeca>` × as RPCs de lista, ou uma irmã dela em
+`verify:identidade-nas-listas`.
+
+**O que NÃO está medido:** se `avatar_fundo` e `avatar_pet` têm consumidor previsto
+em alguma lista. Eles são componentes irmãos, fora do SVG (doc 21 §3.4), e nenhuma
+tela os desenha hoje.
 
 ### G20 — ~~o gambesão tem PELE no pescoço, e este boneco não tem pescoço~~ ✅ FECHADO
 
