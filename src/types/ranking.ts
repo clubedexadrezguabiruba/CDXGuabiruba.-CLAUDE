@@ -85,8 +85,9 @@ export interface PublicProfileData {
    * colega via o aluno de macacão porque o TypeScript jogava a farda fora na
    * fronteira, não porque o banco não a tivesse mandado.
    *
-   * Os outros quatro slugs da RPC (`chapeu`, `rosto`, `fundo`, `pet`) seguem de
-   * fora **de propósito**: entram quando alguma tela os desenhar. A conferência 7
+   * Os outros três slugs da RPC (`chapeu`, `rosto`, `pet`) seguem de fora **de
+   * propósito**: entram quando alguma tela os desenhar. Eram quatro — `fundo` foi
+   * apagado em 2026-08-13, e a RPC não o devolve mais. A conferência 7
    * de `verify:perfil-publico` cobra este tipo a partir do que o próprio `/perfil`
    * passa ao boneco, então o dia em que o chapéu chegar lá ela reprova aqui sozinha.
    */

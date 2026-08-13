@@ -65,14 +65,15 @@ import type { Sql } from "postgres";
 import { getDbUrl } from "../db-url";
 import { CATALOGO, SLOTS } from "../../../src/lib/avatar/catalogo";
 
-/** As 5 colunas de equipar que o Bloco 1 acrescentou a `users`. */
-const COLUNAS_EQUIPAR = [
-  "avatar_traje",
-  "avatar_chapeu",
-  "avatar_rosto",
-  "avatar_fundo",
-  "avatar_pet",
-] as const;
+/**
+ * As colunas de equipar que o Bloco 1 acrescentou a `users`.
+ *
+ * Eram **5**. `avatar_fundo` foi apagada em 2026-08-13, junto com o slot `fundo`
+ * inteiro: a peça de teste do Bloco 3 provou o achado **G23** — nenhuma cor de
+ * fundo faz os seis anéis de patente lerem —, e o Doug decidiu por um fundo único
+ * para todo aluno, que é o marfim que os palcos já usavam.
+ */
+const COLUNAS_EQUIPAR = ["avatar_traje", "avatar_chapeu", "avatar_rosto", "avatar_pet"] as const;
 
 /** As duas tabelas da arquitetura B (doc 21 §3.1). */
 const TABELAS = ["avatar_catalogo", "avatar_guarda_roupa"] as const;
@@ -365,15 +366,25 @@ export async function conferir(db: Sql): Promise<Relatorio> {
 
   // As peças plantadas. Existem só dentro desta transação e são o que impede a
   // conferência de passar por vacuidade com o catálogo real ainda vazio.
-  const livre = `${FIXTURE}-fundo-livre`;
-  const alto = `${FIXTURE}-fundo-alto`;
+  //
+  // A COBAIA É `pet`, E ERA `fundo` ATÉ 2026-08-13 — quando o slot `fundo` morreu
+  // (achado G23), esta bateria precisou de outro slot vazio. `pet` foi escolhido
+  // por duas razões medidas: a conferência (a) precisa de DOIS slots distintos —
+  // planta num, tenta gravar no outro —, e com `pet` ela continua sendo pet→chapeu,
+  // sem mudar de forma; e `pet` nasce `[]` sem registro derivado, ao contrário de
+  // `traje`, que sai de `Object.keys(TRAJES_DA_ARTE)` e já tem duas peças reais.
+  //
+  // A ordem protege o gate: a conferência 2 (banco × código, slot a slot) roda
+  // ANTES deste insert, então plantar aqui não desequilibra a comparação.
+  const livre = `${FIXTURE}-pet-livre`;
+  const alto = `${FIXTURE}-pet-alto`;
   const dono = `${FIXTURE}-rosto-do-bau`;
   const alheio = `${FIXTURE}-rosto-alheio`;
 
   await db`
     insert into public.avatar_catalogo (slug, slot, origem, min_level, raridade) values
-      (${livre},  'fundo', 'marco_nivel', 1,    null),
-      (${alto},   'fundo', 'marco_nivel', 9999, null),
+      (${livre},  'pet',   'marco_nivel', 1,    null),
+      (${alto},   'pet',   'marco_nivel', 9999, null),
       (${dono},   'rosto', 'bau',         null, 'rare'),
       (${alheio}, 'rosto', 'bau',         null, 'epic')`;
 
@@ -394,7 +405,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     db`select public.equipar_peca('chapeu', ${livre})`,
   );
   if (errSlot) {
-    ok(`equipar a peça de fundo "${livre}" no slot chapeu foi NEGADO`);
+    ok(`equipar a peça de pet "${livre}" no slot chapeu foi NEGADO`);
     info(`mensagem do servidor: ${errSlot.split("\n")[0]}`);
   } else {
     nok(
@@ -405,7 +416,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
 
   // (b) sem direito, por marco de nível — NEGADA
   const errNivel = await tentar(db, "sp_nivel", () =>
-    db`select public.equipar_peca('fundo', ${alto})`,
+    db`select public.equipar_peca('pet',${alto})`,
   );
   if (errNivel) {
     ok(`equipar "${alto}" (exige nível 9999) no nível ${cobaia.level} foi NEGADO`);
@@ -419,7 +430,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
 
   // (c) slug inexistente — NEGADO
   const errSlug = await tentar(db, "sp_slug", () =>
-    db`select public.equipar_peca('fundo', 'peca-que-nao-existe')`,
+    db`select public.equipar_peca('pet','peca-que-nao-existe')`,
   );
   if (errSlug) ok("slug inexistente foi NEGADO");
   else nok("slug inexistente foi ACEITO", "a RPC não confere existência — grava lixo em users");
@@ -440,18 +451,18 @@ export async function conferir(db: Sql): Promise<Relatorio> {
   // (e) peça a que se tem direito por NÍVEL — aceita E persistida.
   //     Um gate que só nega passa por vacuidade se a RPC negar tudo.
   const errLivre = await tentar(db, "sp_livre", () =>
-    db`select public.equipar_peca('fundo', ${livre})`,
+    db`select public.equipar_peca('pet',${livre})`,
   );
   // (f) peça a que se tem direito pelo GUARDA-ROUPA — aceita.
   const errDono = await tentar(db, "sp_dono", () =>
     db`select public.equipar_peca('rosto', ${dono})`,
   );
 
-  const [gravado] = await db<{ fundo: string | null; rosto: string | null; traje: string | null }[]>`
-    select avatar_fundo as fundo, avatar_rosto as rosto, avatar_traje as traje
+  const [gravado] = await db<{ pet: string | null; rosto: string | null; traje: string | null }[]>`
+    select avatar_pet as pet, avatar_rosto as rosto, avatar_traje as traje
     from public.users where id = ${cobaia.id}`;
 
-  if (!errLivre && gravado?.fundo === livre) {
+  if (!errLivre && gravado?.pet === livre) {
     ok(`equipar "${livre}" (nível 1) foi aceito e PERSISTIU`);
   } else {
     nok(
@@ -469,21 +480,21 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     );
   }
 
-  // (g) um slot por chamada: os outros quatro não podem ter sido zerados.
+  // (g) um slot por chamada: os outros três não podem ter sido zerados.
   if (gravado?.traje === null) {
-    ok("equipar um slot não mexeu nos outros quatro (avatar_traje segue NULL)");
+    ok("equipar um slot não mexeu nos outros três (avatar_traje segue NULL)");
   } else {
     nok(
-      `equipar fundo/rosto mexeu em avatar_traje (virou ${JSON.stringify(gravado?.traje)})`,
+      `equipar pet/rosto mexeu em avatar_traje (virou ${JSON.stringify(gravado?.traje)})`,
       "o CASE do UPDATE tem de preservar as colunas dos outros slots",
     );
   }
 
   // (h) tirar a peça — NULL é valor legítimo, sempre permitido.
-  const errNulo = await tentar(db, "sp_nulo", () => db`select public.equipar_peca('fundo', null)`);
-  const [depois] = await db<{ fundo: string | null }[]>`
-    select avatar_fundo as fundo from public.users where id = ${cobaia.id}`;
-  if (!errNulo && depois?.fundo === null) {
+  const errNulo = await tentar(db, "sp_nulo", () => db`select public.equipar_peca('pet',null)`);
+  const [depois] = await db<{ pet: string | null }[]>`
+    select avatar_pet as pet from public.users where id = ${cobaia.id}`;
+  if (!errNulo && depois?.pet === null) {
     ok("tirar a peça (p_slug NULL) foi aceito");
   } else {
     nok(

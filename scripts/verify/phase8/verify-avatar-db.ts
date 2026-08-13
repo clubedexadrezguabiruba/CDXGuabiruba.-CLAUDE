@@ -493,7 +493,6 @@ async function main() {
             ('avatar_traje',  u.avatar_traje),
             ('avatar_chapeu', u.avatar_chapeu),
             ('avatar_rosto',  u.avatar_rosto),
-            ('avatar_fundo',  u.avatar_fundo),
             ('avatar_pet',    u.avatar_pet)
           ) as v(coluna, slug)
           where v.slug is not null
@@ -525,8 +524,7 @@ async function main() {
       const [{ n: equipadas }] = await sql<{ n: number }[]>`
         select count(*)::int as n from public.users
         where avatar_traje is not null or avatar_chapeu is not null
-           or avatar_rosto is not null or avatar_fundo is not null
-           or avatar_pet   is not null`;
+           or avatar_rosto is not null or avatar_pet    is not null`;
 
       if (indevidos.length > 0) {
         nok(

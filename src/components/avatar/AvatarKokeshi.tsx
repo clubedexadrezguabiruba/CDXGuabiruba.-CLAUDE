@@ -77,8 +77,9 @@ export interface AvatarKokeshiProps {
    * `users.avatar_chapeu` e `users.avatar_rosto` — slugs de `avatar_catalogo`.
    *
    * **Opcionais, e ausentes o boneco é o de hoje.** São as duas únicas peças do
-   * guarda-roupa que entram no SVG pela cabeça; traje é tinta no tronco, e fundo
-   * e pet são componentes irmãos, fora daqui (doc 21 §3.4).
+   * guarda-roupa que entram no SVG pela cabeça; traje é tinta no tronco, e pet é
+   * componente irmão, fora daqui (doc 21 §3.4). O `fundo` também era irmão, e
+   * deixou de existir em 2026-08-13 — o palco é marfim para todo aluno.
    *
    * Slug que o código ainda não desenha degrada para ausência — ver `pecaDeCabeca`.
    * Enquanto os dois catálogos estiverem vazios (até os Blocos 5 e 7), passar

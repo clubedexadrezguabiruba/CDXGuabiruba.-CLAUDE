@@ -1,4 +1,4 @@
-# 21 — Os outros slots do avatar: traje, chapéu, rosto, fundo e pet
+# 21 — Os outros slots do avatar: traje, chapéu, rosto e pet
 
 > **Este documento é o plano vigente do guarda-roupa do avatar.** Onde ele
 > divergir do doc 14 (backlog), do doc 15 (plano até pronto), do doc 16
@@ -12,6 +12,84 @@
 >
 > Decidido pelo Doug em 2026-08-11, com a bancada na mesa. A execução, bloco a
 > bloco, marca-se aqui.
+
+---
+
+## 0-A. EMENDA DE 2026-08-13 (a segunda do dia) — o slot `fundo` morre
+
+**Leia esta seção antes de qualquer outra, inclusive antes da §0.** Onde o resto do
+documento divergir dela, **ela vence**.
+
+O Doug decidiu: **remover os tipos de fundo por completo.** Todo aluno fica com um
+fundo padrão único, sem escolha, sem catálogo, sem baú — e esse fundo é o
+`bg-warm-stone` (`#F5F0E8`) que os palcos já usam. **Zero arte, zero componente
+novo, zero pixel muda.**
+
+### 0-A.1 O que matou o bloco não foi falta de arte
+
+A peça de teste (`fundo-observatorio`, 3 variantes construídas, renderizadas no
+Chromium e criticadas) **matou a premissa em vez da peça**. Duas coisas ficaram
+medidas, e as duas valem guardar:
+
+**A tese do halo funcionou, e o número é grande.** Medido pixel a pixel, o contraste
+do contorno preto do boneco contra o que está exatamente atrás dele, a 104 px:
+
+| variante | contraste médio do contorno |
+|---|---|
+| A Lua (disco pálido atrás da cabeça) | **311,6** |
+| A Cúpula | 114,4 |
+| A Carta (céu chapado, sem disco) | 75,1 |
+
+Só que o disco salva a **cabeça** e abandona o **tronco** — 1,25 na base, que é
+justamente onde o traje encosta.
+
+**E a folha achou o que não é de nenhuma variante: o achado G23.** A
+`<MolduraPatente>` é um anel desenhado **sobre** o fundo do avatar. Para uma patente
+de luminância `Lp`, um fundo de luminância `Lb` só dá contraste ≥ 3 fora da faixa
+`((Lp+0,05)/3 − 0,05 ; 3·(Lp+0,05) − 0,05)`. **As seis faixas cobrem [0 , 1]
+inteiro.** Não existe cor de fundo — clara, escura, nenhuma — que faça os seis anéis
+lerem. Não é escolha de arte: é a aritmética das seis cores que já estão no produto.
+
+O G23 fica aberto em `docs/achados.md` porque **ele não morre com o bloco**: contra
+o card de hoje, o anel do **Mestre já está em contraste 1,82**, em produção.
+
+### 0-A.2 O que morre, ponto a ponto
+
+| onde | o que lá está escrito | veredito |
+|---|---|---|
+| título | *"traje, chapéu, rosto, fundo e pet"* | **corrigido** — são quatro |
+| §1, linha 181 | *"os outros cinco"* | **quatro** |
+| §1.3, trava 1 | conta *"~6 fundos"* nas ~32 peças da v1 | **morta** — a v1 tem ~26 |
+| §3.2 | o CHECK de slot com 5 valores, e as 5 colunas em `users` | **quatro** — `users.avatar_fundo` foi apagada |
+| §3.4, linha Fundo | *"fora — componente irmão `<FundoAvatar>`"* | **morta** — o componente nunca existiu e não vai existir |
+| §5.1 | as abas `Cabelo \| Roupa \| Rosto \| Fundo \| Pet` | **sem a de Fundo** |
+| §5.2, linha Fundo | *"a cena sozinha"* | **morta** |
+| §6.2, linha Fundo | *"cenas simples nas regiões da Bíblia Tonal"* | **morta duas vezes** — o slot acabou, e aquelas 5 regiões já estavam revogadas pela §5b da Bíblia Tonal desde 2026-08-13 |
+| **§7, Bloco 3 inteiro** | ~6 fundos, origem mista, vitrine | **ENCERRADO SEM ENTREGA** |
+| §8 | `fundo` na conferência de slots | **sai** |
+
+⚠️ **O que NÃO muda:** as menções a *"fundo claro `#FBF8F5`"* nas §0.4 e §6.1 são a
+**cor do card de arte**, não o slot. Ficam.
+
+### 0-A.3 O que foi executado
+
+Uma migration (`20260813180000_matar_slot_fundo.sql`), duas linhas de código
+(`catalogo.ts`), dois gates e quatro comentários. **O slot foi apagado, não
+congelado:** slot dormente no banco é a semente exata do erro que matou a v2 — 8
+uniformes semeados, 0 renderáveis.
+
+O molde é o do próprio projeto: `20260731100000_remover_slot_hand.sql` já removeu um
+slot, e a seção 6 dele nomeia a armadilha — **a segunda cópia do CHECK**, que aqui é
+a lista literal dentro de `equipar_peca`.
+
+A bateria de negação de `verify:catalogo-slots` usava `fundo` como cobaia e **passou
+a usar `pet`**: a conferência (a) precisa de dois slots distintos (planta num, tenta
+gravar no outro), e com `pet` ela continua sendo `pet→chapeu` sem mudar de forma.
+
+> **Ensaio a seco antes de aplicar** (transação → migration → gates → `ROLLBACK`):
+> `catalogo-slots` **33/0**, `perfil-publico` **33/0**, `identidade-nas-listas`
+> **73/0**; `users.avatar_fundo` apagada, a matview de volta com os **6 índices**, o
+> `UNIQUE` presente e o `REVOKE` refeito (0 grants a `anon`/`authenticated`).
 
 ---
 
@@ -178,7 +256,7 @@ nenhuma linha no banco. Depois do seed custa migration de dados.
 ## 1. A decisão, e o que ela reverte
 
 O avatar kokeshi tem **um** item vestível: cabelo. Este plano dá a ele os
-outros cinco — **traje, chapéu, rosto (óculos/bigode/barba), fundo e pet** —
+outros quatro — **traje, chapéu, rosto (óculos/bigode/barba) e pet** —
 com desbloqueio **misto**: parte por marco (nível, patente), parte por **baú com
 raridade**.
 
@@ -215,7 +293,8 @@ Reverter a decisão não é apagar o que ela custou a aprender. Quatro travas
 nascem deste plano, não do arrependimento futuro:
 
 1. **Arte por demanda, nunca estoque.** A v1 dos slots tem **~32 peças** (11
-   trajes, ~6 fundos, ~6 rostos, 4-6 chapéus, 4 pets), não as 39 do Bloco 8 do
+   trajes, ~6 rostos, 4-6 chapéus, 4 pets — os ~6 fundos saíram com o slot,
+   §0-A), não as 39 do Bloco 8 do
    doc 15. Cada uma passa pela folha de contato antes de a seguinte começar.
 2. **Peça sem arte não pode ser semeada** — e isso vira **gate**, não
    disciplina. O pecado da v2 (8 uniformes no banco, 0 renderáveis) fica
@@ -321,8 +400,8 @@ e uma linha por peça que o aluno ganhou de baú.
 
 | coluna | o que é |
 |---|---|
-| `slug` | PK global, ex. `traje-soldado-a`, `fundo-vila`, `rosto-oculos-redondo` |
-| `slot` | CHECK: `traje` · `chapeu` · `rosto` · `fundo` · `pet` |
+| `slug` | PK global, ex. `traje-soldado-a`, `chapeu-boina`, `rosto-oculos-redondo` |
+| `slot` | CHECK: `traje` · `chapeu` · `rosto` · `pet` — eram cinco até a §0-A |
 | `origem` | CHECK: `marco_nivel` · `marco_patente` · `bau` |
 | `raridade` | CHECK: `common` · `rare` · `epic` · `legendary`. **Só quando `origem = 'bau'`** |
 | `min_level` | só quando `origem = 'marco_nivel'` |
@@ -338,8 +417,9 @@ fonte)`, UNIQUE em `(user_id, slug)`. **Peça de marco não tem linha aqui** —
 direito se verifica ao vivo contra nível ou patente, exatamente como o cabelo
 faz hoje. A tabela guarda só o que o acaso deu.
 
-**5 colunas em `users`** — `avatar_traje`, `avatar_chapeu`, `avatar_rosto`,
-`avatar_fundo`, `avatar_pet`, todas FK para `avatar_catalogo(slug)` e `NULL` =
+**4 colunas em `users`** — `avatar_traje`, `avatar_chapeu`, `avatar_rosto` e
+`avatar_pet` (`avatar_fundo` foi apagada na §0-A), todas FK para
+`avatar_catalogo(slug)` e `NULL` =
 sem a peça. Mesmo molde de `users.avatar_hair`.
 
 **1 RPC `equipar_peca(p_slot text, p_slug text)`** — `SECURITY DEFINER`,
@@ -381,7 +461,6 @@ vestir fica de fora.
 | **Traje** | dentro de `compor()` — o caminho **já existe**: `tintaTronco()` (`compositor.ts:368-395`) tem os três estados, e sem traje cai em `TRAJE_BASE.roupa` (`palette.ts:131-135`) | é tinta clipada no tronco, tem de respeitar a silhueta |
 | **Chapéu** | dentro de `compor()`, como **peça sobreposta** | disputa o crânio; é o mecanismo escolhido na bancada A×B do Bloco 3/4 justamente por servir chapéu sem invenção nova (`ESTADO-DA-ROTA.md:546-548`) |
 | **Rosto** | dentro de `compor()`, como **peça sobreposta** | lente maior que o rosto não cabe em clip nenhum |
-| **Fundo** | **fora** — componente irmão `<FundoAvatar>`, atrás do SVG | não toca a geometria; e mantém o recorte de cabeça (navbar, rankings) livre de fundo por engano |
 | **Pet** | **fora** — componente irmão `<PetKokeshi>`, ao lado | idem; zero risco ao orçamento do boneco |
 
 `EstadoAvatar` (`tipos.ts:92-179`) ganha `traje` já existente mais `chapeu?` e
@@ -430,7 +509,7 @@ cor do cabelo, cor da pele). Cinco slots novos por esse molde dariam **oito
 seções num rolo comprido** — e isso aconteceria sozinho, um bloco de cada vez,
 sem ninguém ter escolhido que a tela fosse assim.
 
-**Decidido: abas por slot** — `Cabelo | Roupa | Rosto | Fundo | Pet` (+ Chapéu
+**Decidido: abas por slot** — `Cabelo | Roupa | Rosto | Pet` (+ Chapéu
 quando chegar). A casca nasce no **Bloco 2**, já com duas abas; cada bloco
 seguinte só acrescenta a sua.
 
@@ -444,7 +523,6 @@ peça ocupa.**
 |---|---|---|
 | Cabelo, Chapéu, Rosto | **só a cabeça**, sem corpo | `<AvatarCabeca>`, que **já existe** desde a V1 (`src/components/avatar/AvatarCabeca.tsx`, recorte por `viewBox` via `recortarNaCabeca`) |
 | Roupa | **só o tronco**, cabeça de fora | **recorte de tronco, novo** — mesma técnica de janela, derivada de `TRONCO` (`geometria.ts:596-622`, `yTopo: 320` a `yBase: 634`) |
-| Fundo | a cena sozinha | — |
 | Pet | o pet sozinho | — |
 
 **O palco grande continua mostrando o conjunto montado** — é ali que o aluno vê
@@ -559,7 +637,7 @@ o contrário do que pedia.
 | Slot | Como se desenha | Por quê assim |
 |---|---|---|
 | **Traje** | ~~Código: `tinta.cor` = o pano medido da patente + decoração~~ → **MORTO (§0.5).** A arte chega em **cor final (RGBA)** pela esteira do doc 19 §12, com a rota de extração do Bloco B4 | A lei do mesmo pano por patente caiu com o vínculo patente→traje. O pipeline `avatar:garment` continua **não** ressuscitado, pelo motivo de sempre: mede contra as máscaras do macacão da base antiga e fica verde por vacuidade no kokeshi (`16:3-29`) |
-| **Fundo** | Código: cenas simples nas regiões da Bíblia Tonal (acampamento, vila, fortaleza, cidade, cidadela), cor fixa | Não toca a geometria do boneco, não disputa espaço, não depende da Frente B. **O mais barato de todos**, e por isso é quem estreia a esteira de baú |
+| ~~**Fundo**~~ | ~~Código: cenas simples nas regiões da Bíblia Tonal~~ | **MORTO DUAS VEZES (§0-A).** O slot acabou em 2026-08-13; e as 5 regiões que esta linha mandava usar já estavam revogadas antes disso, pela §5b da Bíblia Tonal |
 | **Rosto** | Código: paramétrico ancorado em `OLHO` e `BOCA` (`geometria.ts:420-449`, `:537`), como **camada sobreposta** | **Sem haste, lente pode exceder o rosto** (decisão do Doug). A rota de arte não entra: o rosto é região protegida do Gate −1 (`ESTADO-DA-ROTA.md:186`) — e não precisa entrar |
 | **Chapéu** | **Um chapéu de prova em código primeiro**; os demais pela rota que a peça pedir | A rota de arte foi desenhada para servir chapéu (`ESTADO-DA-ROTA.md:546-548`), mas **nunca foi exercitada com um** — e o teto disponível é zero. O de prova mede o teto real antes da Frente B |
 | **Pet** | Código: SVG animado por CSS — o protótipo "Peãozinho de Madeira" já existe (`src/lib/avatar/prototipo/pet.ts`) | Não toca o boneco. Tema: peças de xadrez vivas. 4 pets iniciais, não os 20 do Bloco 8 |
@@ -878,21 +956,35 @@ aparece" (roda o Doug).
 > navbar, onde eles **são** desenhados pelo `<AvatarCabeca>`. Invisível hoje (catálogo
 > vazio), morde no bloco do chapéu: é o **G22**, aberto e não consertado.
 
-### Bloco 3 — Fundo
+### Bloco 3 — Fundo ⛔ ENCERRADO SEM ENTREGA (2026-08-13)
 
-> ⚠️ **Deixou de ser quem estreia a esteira de baú** (§0.5). Quem estreia agora é o
-> **traje**, nos blocos B5 e B6 da §0.6. O resto deste bloco continua de pé, e ele
-> passa a vir depois do B6.
+> **O slot `fundo` foi removido do produto — ver a §0-A, que vence este texto.** O
+> que está abaixo fica como história: era o plano, e ele foi testado com uma peça
+> antes de virar seis. O teste reprovou a premissa, não a peça.
+>
+> **O que o teste deixou medido, e continua verdadeiro:**
+>
+> | | |
+> |---|---|
+> | o halo do disco funciona | contorno preto a **311,6** de contraste sobre o disco, contra **75,1** sobre o céu chapado — pixel a pixel, a 104 px |
+> | e não basta | o disco salva a cabeça e abandona o tronco: **1,25** na base, onde o traje encosta |
+> | **o achado G23** | as seis patentes proíbem faixas de luminância cuja união cobre **[0 , 1] inteiro** — nenhum fundo faz os seis anéis lerem |
+> | já morde hoje | o anel do **Mestre** está em **1,82** contra o card marfim, em produção |
+>
+> Duas réguas minhas erraram e os controles pegaram, e as duas ficam escritas: eu
+> media o marfim e a pele contra a **paleta inteira**, e quem reprovava era a cor
+> das *estrelas* — pontos de 2 unidades. A régua passou a perguntar pelas cores que
+> **tocam a borda** e pelo que está **atrás da cabeça**. E a régua da moldura estava
+> em **RGB**, com o piso 40 de `MIN_CONTRA_FUNDO`: as três variantes passavam com
+> folga (51 a 144) enquanto cinco dos seis anéis sumiam na tela. O doc 21 §7 já
+> tinha escrito essa lição em 2026-08-12 — *"dois tons podem estar longe em matiz e
+> colados em valor"* — e eu medi em RGB assim mesmo.
 
 O slot mais barato estreia a esteira de baú.
 
 ~6 fundos em código, origem mista (2 por nível, 4 por baú); `<FundoAvatar>` no
 palco do perfil e do perfil público; aba "Fundo" com a **vitrine** (silhueta/"?"
 na cor da raridade).
-
-⚠️ Entre este bloco e o 4, peça de `origem = 'bau'` está semeada mas o baú
-ainda não a dá — **vitrine sem porta**. Janela curta e aceita conscientemente;
-o Bloco 4 vem logo atrás.
 
 **Parada:** folha aprovada; **contraste boneco × fundo medido** — o contorno
 preto tem de ler sobre cada um dos seis.

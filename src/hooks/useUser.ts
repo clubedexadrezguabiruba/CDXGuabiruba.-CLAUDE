@@ -32,9 +32,10 @@ export interface UserProfile {
    * Server Component, que é o caminho certo (menos uma ida ao banco depois da
    * hidratação). Ele está aqui porque este hook é o retrato do aluno no cliente, e
    * a coluna existir no banco e faltar no retrato foi justamente a dívida que o
-   * doc 21 registrou. Os outros quatro slots — `avatar_chapeu`, `avatar_rosto`,
-   * `avatar_fundo`, `avatar_pet` — existem na mesma tabela desde a migration
-   * `20260811160000` e entram aqui nos blocos que lhes derem arte.
+   * doc 21 registrou. Os outros três slots — `avatar_chapeu`, `avatar_rosto`,
+   * `avatar_pet` — existem na mesma tabela desde a migration `20260811160000` e
+   * entram aqui nos blocos que lhes derem arte. Eram quatro: `avatar_fundo` foi
+   * **apagada** em 2026-08-13, quando o slot `fundo` morreu (achado G23).
    */
   avatar_traje: string | null;
   rush_3min_record: number;

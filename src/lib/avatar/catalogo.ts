@@ -19,29 +19,42 @@
  *
  * Nenhum dos dois quebra o `apply`. Os dois quebram na cara da criança.
  *
- * POR QUE QUATRO DOS CINCO SLOTS AINDA NASCEM VAZIOS
- * --------------------------------------------------
+ * POR QUE TRÊS DOS QUATRO SLOTS AINDA NASCEM VAZIOS
+ * -------------------------------------------------
  * Porque o Bloco 1 era encanamento e **não desenhou uma peça sequer** — o boneco
  * tinha de sair byte a byte igual ao de então. **O traje deixou de ser vazio em
  * 2026-08-13** (bloco B5 da virada): duas peças, `traje-farda` (a inicial) e
- * `traje-gambesao` (a primeira de baú). Os outros quatro chegam nos blocos deles —
- * fundo, rosto, chapéu, pet.
+ * `traje-gambesao` (a primeira de baú). Os outros três chegam nos blocos deles —
+ * rosto, chapéu, pet.
+ *
+ * ERAM CINCO. O `fundo` MORREU EM 2026-08-13, e não por falta de arte
+ * ------------------------------------------------------------------
+ * A peça de teste do Bloco 3 (`fundo-observatorio`, 3 variantes renderizadas e
+ * criticadas) matou a premissa em vez da peça. O que a folha achou é o **G23**: a
+ * `<MolduraPatente>` é um anel desenhado SOBRE o fundo do avatar, cada patente
+ * proíbe uma faixa de luminância de fundo, e **as seis faixas cobrem [0 , 1]
+ * inteiro** — não existe cor de fundo, clara ou escura, que faça os seis anéis
+ * lerem. O Doug decidiu: fundo único, igual para todo aluno, e é o marfim que os
+ * palcos já usam. Sem slot, sem catálogo, sem escolha, sem baú.
+ *
+ * O slot foi apagado do banco na mesma data, e não congelado: slot dormente é a
+ * semente exata do erro que matou a v2 — 8 uniformes semeados, 0 renderáveis.
  *
  * A LISTA É DERIVADA ONDE JÁ EXISTE REGISTRO, E ISSO É DE PROPÓSITO
  * -----------------------------------------------------------------
  * `chapeu` e `rosto` já saem de `Object.keys()` dos seus registros: o slug é
  * consequência de existir a peça, não uma segunda declaração que pode discordar
- * dela. Os outros três ainda são lista escrita à mão porque o registro deles
- * nasce no bloco que os desenha — traje no 2, fundo no 3, pet no 8 —, e inventar
- * o formato do registro antes de haver uma peça é adivinhar. Cada um vira
- * derivado no seu bloco. O gate não muda: ele já compara conjuntos.
+ * dela. Só `pet` ainda é lista escrita à mão, porque o registro dele nasce no
+ * bloco que o desenha (o 8) — e inventar o formato do registro antes de haver uma
+ * peça é adivinhar. Ele vira derivado no bloco dele. O gate não muda: ele já
+ * compara conjuntos.
  */
 
 import { TRAJES_DA_ARTE } from "./estilo/trajes-da-arte";
 import type { PecaSobreposta } from "./estilo/tipos";
 
-/** Os cinco slots do guarda-roupa. Iguais ao CHECK de `avatar_catalogo.slot`. */
-export const SLOTS = ["traje", "chapeu", "rosto", "fundo", "pet"] as const;
+/** Os quatro slots do guarda-roupa. Iguais ao CHECK de `avatar_catalogo.slot`. */
+export const SLOTS = ["traje", "chapeu", "rosto", "pet"] as const;
 
 export type Slot = (typeof SLOTS)[number];
 
@@ -69,7 +82,6 @@ export const CATALOGO: Record<Slot, readonly string[]> = {
   traje: Object.keys(TRAJES_DA_ARTE),
   chapeu: Object.keys(CHAPEUS),
   rosto: Object.keys(ROSTOS),
-  fundo: [],
   pet: [],
 };
 

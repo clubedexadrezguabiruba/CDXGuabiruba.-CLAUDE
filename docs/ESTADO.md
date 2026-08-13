@@ -245,9 +245,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **10 arquivos sujos** |
-| **Último commit** | 6abf05b · 2026-08-13 · fix(avatar): o colega vê a farda — o G21 não era migration, era um `as` que jogava a peça fora |
+| **Commits à frente de `origin/main`** | 2 |
+| **Árvore** | **12 arquivos sujos** |
+| **Último commit** | 14f8343 · 2026-08-13 · fix(avatar): o G22 fecha antes de morder — a régua sai do próprio componente, e o `as` para de comer chapéu e rosto |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -296,7 +296,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 87 |
+| **Migrations** | 88 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 19 |
 | **Primitivos de UI** | 4 |

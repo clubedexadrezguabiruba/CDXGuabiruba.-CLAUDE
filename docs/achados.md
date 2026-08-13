@@ -566,6 +566,68 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
+### G23 — `verify:paleta-patentes` mede em RGB, e o anel do Mestre some no marfim
+
+**Prova:** `MEDIDO` — 2026-08-13, pela folha de teste do Bloco 3 (fundo). Achado
+pelo Claude. Registrado e **não consertado**, pela regra do `CLAUDE.md`.
+
+> **Nasceu 🟠 e foi rebaixado no mesmo dia.** Ele travava o Bloco 3 — desenhar 6
+> fundos sob uma régua já sabidamente falsa. O Doug **matou o slot `fundo`** em
+> resposta, então não há mais nada travado. **Mas o achado não morreu com o bloco:**
+> a metade dele que morde está em produção hoje, sem fundo nenhum.
+
+**O que a régua não vê.** `verify:paleta-patentes` mede distância **RGB**, com o
+piso 40 de `MIN_CONTRA_FUNDO` (`scripts/avatar/patentes.ts:214`). O B3 mediu *"anel
+mais apagado contra o marfim **103,7**"* e ficou verde. Em **luminância**, contra o
+card de hoje (`#FAF8F3`, L 0,939), o anel do **Mestre `#AEBCCE`** dá razão de
+contraste **1,82** — abaixo do piso 3 da WCAG para objeto gráfico não-textual.
+Prata sobre marfim.
+
+O projeto já tinha escrito essa lição, no doc 21 §7, em 2026-08-12: *"dois tons
+podem estar longe em matiz e colados em valor: `#5E5442` × `#4F5A46` distam 17 em
+RGB e **1** em valor"*. A régua da moldura mede em RGB assim mesmo.
+
+**A metade estrutural, que fica registrada mesmo sem uso imediato.** Para uma patente
+de luminância `Lp`, um fundo de luminância `Lb` só dá CR ≥ 3 fora da faixa
+`((Lp+0,05)/3 − 0,05 ; 3·(Lp+0,05) − 0,05)`. Medidas as seis:
+
+| patente | L | proíbe `Lb` em |
+|---|---|---|
+| Aspirante `#384966` | 0,066 | [0,000 · 0,297] |
+| General `#7A3168` | 0,073 | [0,000 · 0,320] |
+| Comandante `#3A55B5` | 0,107 | [0,002 · 0,422] |
+| Soldado `#78833B` | 0,205 | [0,035 · 0,716] |
+| Capitão `#3E8C81` | 0,214 | [0,038 · 0,741] |
+| **Mestre `#AEBCCE`** | **0,494** | **[0,131 · 1,000]** |
+
+**A união cobre [0 , 1] inteiro: não existe cor de superfície que faça as seis
+patentes lerem.** O intervalo de luminância das próprias seis cores (0,066 a 0,494)
+é largo demais para um fundo só. Não é escolha de arte — é aritmética das cores que
+já estão no produto, e é reproduzível a partir desta tabela sem nenhum script.
+
+Hoje o marfim é a única superfície sob o anel, e ele reprova **uma** patente. Toda
+superfície nova que apareça atrás de um avatar reprova outras.
+
+**As saídas, sem recomendação — a decisão é do Doug:**
+
+1. **O anel ganha fio próprio** — contorno neutro de 1 px por fora do anel de
+   patente, como carta de baralho faz. É CSS, e resolve qualquer superfície futura.
+2. **A moldura sai de cima da superfície** e vira pílula com nome ao lado do avatar.
+   A `DESIGN.md` já pede o nome junto no badge (*"nunca a cor sozinha"*).
+3. **As 6 cores se reescalonam por valor** para caber num intervalo estreito. Mexe
+   na régua de patente, medida por `verify:paleta-patentes`, e vale o doc 17
+   inteiro. O mais caro.
+4. **Só o Mestre se ajusta** — é a única que reprova hoje. O mais barato, e o que
+   deixa a lei intacta para a próxima superfície.
+
+**A régua que falta, se alguma saída for escolhida:** `verify:paleta-patentes` ganha
+a medição em razão de contraste ao lado da de RGB. As duas, não uma no lugar da
+outra — a de RGB continua servindo para a distância **entre** patentes.
+
+**O que NÃO está medido:** se CR 3 é o piso certo para um anel de 2–3 px (a WCAG
+fala de objeto gráfico, não de anel fino), e como cada saída se comporta no celular
+barato sob luz de sala, que é o critério de elevação da `DESIGN.md`.
+
 ### G22 — ~~as listas descartam chapéu e rosto pelo mesmo `as` que descartava o traje~~ ✅ FECHADO
 
 > **CONSERTADO em 2026-08-13**, na sessão seguinte à do G21, por decisão do Doug de
@@ -658,9 +720,12 @@ o banco já entrega, como no G21. A régua é a conferência 7 de `verify:perfil
 generalizada para `<AvatarCabeca>` × as RPCs de lista, ou uma irmã dela em
 `verify:identidade-nas-listas`.
 
-**O que NÃO está medido:** se `avatar_fundo` e `avatar_pet` têm consumidor previsto
-em alguma lista. Eles são componentes irmãos, fora do SVG (doc 21 §3.4), e nenhuma
-tela os desenha hoje.
+**O que NÃO está medido:** se `avatar_pet` tem consumidor previsto em alguma lista.
+Ele é componente irmão, fora do SVG (doc 21 §3.4), e nenhuma tela o desenha hoje.
+
+> **Metade disto ficou respondida em 2026-08-13:** `avatar_fundo` **não tem
+> consumidor e não vai ter** — o slot `fundo` foi removido do produto (doc 21 §0-A,
+> achado G23), e a coluna foi apagada junto. Sobra `avatar_pet`.
 
 ### G20 — ~~o gambesão tem PELE no pescoço, e este boneco não tem pescoço~~ ✅ FECHADO
 

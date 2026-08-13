@@ -3,10 +3,10 @@
   "check_daily_missions": 9,
   "claim_chest": 9,
   "grant_xp": 9,
+  "get_public_profile": 7,
   "bot_result": 6,
   "end_rush": 6,
   "complete_lesson_step": 6,
-  "get_public_profile": 6,
   "get_class_ranking": 6,
   "check_achievements": 5,
   "get_ranking": 4,
@@ -25,6 +25,7 @@
   "is_teacher_of_class": 2,
   "hatch_egg": 2,
   "update_avatar_identity": 2,
+  "equipar_peca": 2,
   "update_updated_at": 1,
   "refresh_public_profiles": 1,
   "is_teacher_of": 1,
@@ -53,6 +54,5 @@
   "update_avatar_base": 1,
   "recompute_user_title": 1,
   "set_preferencias": 1,
-  "set_task_active": 1,
-  "equipar_peca": 1
+  "set_task_active": 1
 }
