@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useClassFeed } from "@/hooks/useClassFeed";
 import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
+import MolduraPatente from "@/components/avatar/MolduraPatente";
 import type { FeedEvent, FeedEventType } from "@/types/class";
 
 interface MuralClientProps {
@@ -118,7 +119,7 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
                   <span className="text-2xl" aria-hidden>
                     {config.icon}
                   </span>
-                  <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                  <MolduraPatente tier={event.achieved_tier}>
                     <AvatarCabeca
                       skin={event.avatar_skin}
                       hair={event.avatar_hair}
@@ -126,7 +127,7 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
                       lado={32}
                       ns={`mu-${event.id}`}
                     />
-                  </span>
+                  </MolduraPatente>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{formatEvent(event)}</p>
                     <p className="mt-0.5 text-xs opacity-60">

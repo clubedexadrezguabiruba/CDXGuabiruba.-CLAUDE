@@ -13,6 +13,8 @@ export interface ProfileData {
   puzzleRating: number;
   puzzleBestStreak: number;
   title: string;
+  /** O NÚMERO da patente, para a <MolduraPatente> do palco. 0 = Aprendiz. */
+  achievedTier: number;
   currentStreak: number;
   longestStreak: number;
   memberSince: string;
@@ -50,9 +52,11 @@ export default async function PerfilPage() {
     .from("avatar_hair_catalog")
     .select("slug, min_level");
 
+  // `achieved_tier` entra no SELECT que já existia — a consulta continua sendo UMA.
+  // É ele que a <MolduraPatente> lê no palco de 168 px.
   const { data: titleData } = await supabase
     .from("user_titles")
-    .select("current_title")
+    .select("current_title, achieved_tier")
     .eq("user_id", user.id)
     .single();
 
@@ -90,6 +94,9 @@ export default async function PerfilPage() {
     puzzleRating: profile?.puzzle_rating ?? 1000,
     puzzleBestStreak: profile?.puzzle_best_streak ?? 0,
     title: titleData?.current_title ?? "Aprendiz",
+    // Sem linha em `user_titles` o aluno é Aprendiz, tier 0 — o mesmo default que
+    // o COALESCE da matview aplica. As duas fontes têm de concordar.
+    achievedTier: titleData?.achieved_tier ?? 0,
     currentStreak: streakData?.current_streak ?? 0,
     longestStreak: streakData?.longest_streak ?? 0,
     memberSince: profile?.created_at ?? user.created_at ?? "",

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAchievements } from "@/hooks/useAchievements";
 import Chocadeira from "@/components/avatar/Chocadeira";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
+import MolduraPatente from "@/components/avatar/MolduraPatente";
 import EditorDeAparencia, {
   type Aparencia,
   type CabeloDoCatalogo,
@@ -43,6 +44,12 @@ interface ProfileData {
   puzzleRating: number;
   puzzleBestStreak: number;
   title: string;
+  /**
+   * O NÚMERO da patente, para a moldura do palco. 0 é Aprendiz, e é degrau real —
+   * não ausência de dado. Sai da mesma consulta a `user_titles` que já buscava o
+   * nome, então não custa ida a mais ao banco.
+   */
+  achievedTier: number;
   currentStreak: number;
   longestStreak: number;
   memberSince: string;
@@ -398,16 +405,22 @@ export default function PerfilClient({
                 único boneco grande da tela — o editor não tem prévia própria, de
                 propósito, para não existirem dois bonecos disputando o papel de
                 "quem eu sou". */}
+            {/* A moldura tem 3 px aqui, como no perfil público: um fio de 2 px
+                sumiria contra um boneco de 168. É a mesma cor de patente que a
+                navbar e o ranking desenham — o degrau é um só, e ele não pode
+                mudar de tom de tela para tela. */}
             <div className="mt-3 grid place-items-center">
-              <AvatarKokeshi
-                skin={emProva.skin}
-                hair={emProva.hair}
-                hairColor={emProva.hairColor}
-                altura={168}
-                animado
-                ns="palco"
-                rotulo={`Avatar de ${profile.displayName}`}
-              />
+              <MolduraPatente tier={profile.achievedTier} espessura={3}>
+                <AvatarKokeshi
+                  skin={emProva.skin}
+                  hair={emProva.hair}
+                  hairColor={emProva.hairColor}
+                  altura={168}
+                  animado
+                  ns="palco"
+                  rotulo={`Avatar de ${profile.displayName}`}
+                />
+              </MolduraPatente>
             </div>
 
             {/* --- Quick stats ---

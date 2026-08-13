@@ -232,9 +232,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 7 |
-| **Árvore** | **4 arquivos sujos** |
-| **Último commit** | 070ef74 · 2026-08-13 · docs(avatar): a lei da Academia 64 — a patente vira moldura e a cor do traje fica livre |
+| **Commits à frente de `origin/main`** | 8 |
+| **Árvore** | **14 arquivos sujos** |
+| **Último commit** | c596c3b · 2026-08-13 · feat(avatar): o banco aprende a moldura — achieved_tier nas listas, e o CHECK do traje cai |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

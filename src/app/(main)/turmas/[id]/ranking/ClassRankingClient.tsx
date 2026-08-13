@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
+import MolduraPatente from "@/components/avatar/MolduraPatente";
 import type { RankingEntry, RankingType } from "@/types/ranking";
 
 const TABS: { key: RankingType; label: string }[] = [
@@ -157,7 +158,7 @@ export default function ClassRankingClient({
                       >
                         {/* 40 px, como o ranking global — as duas listas são a
                             mesma leitura e não têm por que discordar de tamanho. */}
-                        <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                        <MolduraPatente tier={entry.achieved_tier}>
                           <AvatarCabeca
                             skin={entry.avatar_skin}
                             hair={entry.avatar_hair}
@@ -165,7 +166,7 @@ export default function ClassRankingClient({
                             lado={40}
                             ns={`cr-${entry.user_id}`}
                           />
-                        </span>
+                        </MolduraPatente>
                         <span className="truncate">{entry.public_name}</span>
                         {entry.is_teacher && (
                           <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">

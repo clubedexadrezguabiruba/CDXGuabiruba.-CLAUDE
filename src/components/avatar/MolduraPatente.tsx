@@ -1,0 +1,105 @@
+import { corDaMoldura } from "../../../scripts/avatar/patentes";
+import { cn } from "@/lib/cn";
+
+/**
+ * O ANEL DE PATENTE EM VOLTA DO AVATAR — o único lugar onde a patente é cor.
+ *
+ * POR QUE ELE EXISTE
+ * ------------------
+ * Até 2026-08-13 a patente vestia o boneco: cada degrau tinha um uniforme, e o
+ * slot de traje inteiro era gasto num eixo de 6 valores. A troca (doc 21 §0) foi
+ * pôr a patente **em volta** do avatar e libertar a roupa. A moldura ganha três
+ * coisas de uma vez:
+ *
+ *  - **custo de arte zero.** É CSS, fora do SVG. Uma moldura que precisasse de
+ *    asset por patente seriam seis assets para manter, e não valeria.
+ *  - **ela lê onde o boneco é pequeno.** No ranking o avatar tem 40 px e o traje
+ *    não aparece (a lista mostra o recorte de CABEÇA). O anel aparece.
+ *  - **a promoção fica visível em toda tela**, e não só no perfil.
+ *
+ * AUTOMÁTICA, E ISSO É A DECISÃO
+ * ------------------------------
+ * Ela sai de `achieved_tier` e de nada mais. **Sem slot, sem escolha, sem estado
+ * novo, sem coluna nova.** Se a moldura fosse escolhível, ela seria uma sétima peça
+ * de guarda-roupa — e deixaria de dizer o que diz, porque o aluno poderia vestir a
+ * cor de um degrau que não alcançou.
+ *
+ * AS DUAS LINGUAGENS DE COR NÃO SE MISTURAM
+ * -----------------------------------------
+ * Moldura = cor de **patente**, só em volta do avatar. Cores de **raridade** só na
+ * vitrine e nos cards do editor. As duas no mesmo elemento ensinam o aluno que cor
+ * não significa nada (DESIGN.md, "The Two Color Languages Rule").
+ *
+ * O APRENDIZ TEM MOLDURA, E ELA NÃO TEM COR DE PATENTE
+ * ----------------------------------------------------
+ * `corDaMoldura(0)` é `null`: o Aprendiz não está na escada de cores e nunca
+ * esteve. Mas o anel é desenhado assim mesmo, num fio neutro de token — porque a
+ * alternativa é o avatar do aluno novo ter tamanho diferente do dos outros na mesma
+ * lista, e uma lista que pula de altura por causa de patente é pior que um anel
+ * discreto. O neutro também é honesto: ele diz "ainda não há degrau", não "erro".
+ *
+ * O ANEL NÃO OCUPA ESPAÇO
+ * -----------------------
+ * `box-shadow` nunca entra no layout. Isso é de propósito: as cinco listas do
+ * produto já estavam medidas e alinhadas, e um anel que empurrasse o vizinho faria
+ * a promoção de um aluno mexer na posição do nome de outro.
+ *
+ * A cor vem de `scripts/avatar/patentes.ts`, medida por `verify:paleta-patentes`.
+ * **Importada, nunca copiada** — é o incidente que o design-lab pagou uma vez,
+ * quando copiou a tabela à mão e a cópia divergiu em silêncio.
+ */
+
+/** Fio neutro do Aprendiz. Token, não cor crua: é `ink` a 12%. */
+const NEUTRO = "rgb(27 36 50 / 0.12)";
+
+export interface MolduraPatenteProps {
+  /**
+   * `achieved_tier` do aluno, como o banco o devolve. `0` = Aprendiz, `null` ou
+   * `undefined` = a tela ainda não sabe — e os três caem no fio neutro.
+   */
+  tier: number | null | undefined;
+  /** O avatar. `<AvatarCabeca>` nas listas, `<AvatarKokeshi>` nos perfis. */
+  children: React.ReactNode;
+  /**
+   * Espessura do anel, em px.
+   *
+   * Não é derivada do tamanho do avatar porque o avatar não se declara aqui — e
+   * chutar a partir do `children` seria adivinhar. Os dois valores em uso: **2**
+   * nas listas (32–40 px) e **3** nos palcos (104–168 px).
+   */
+  espessura?: number;
+  /**
+   * O raio do recorte. `lg` é o do produto inteiro, e é **medido**: um círculo
+   * inscrito num recorte de cabeça de 32 px tem só 46 unidades de largura na altura
+   * em que o moicano começa, contra as 335 que a crista ocupa — `rounded-full`
+   * comeria o topo de todo cabelo alto.
+   */
+  raio?: "lg" | "xl";
+  className?: string;
+}
+
+export default function MolduraPatente({
+  tier,
+  children,
+  espessura = 2,
+  raio = "lg",
+  className,
+}: MolduraPatenteProps) {
+  const cor = corDaMoldura(tier);
+
+  return (
+    <span
+      // `overflow-hidden` clipa o SVG do avatar no raio; o box-shadow é desenhado
+      // FORA desse clip (overflow corta filhos, não a própria sombra), então o anel
+      // fica inteiro sem precisar de um segundo elemento.
+      className={cn(
+        "inline-flex shrink-0 overflow-hidden",
+        raio === "lg" ? "rounded-lg" : "rounded-xl",
+        className,
+      )}
+      style={{ boxShadow: `0 0 0 ${espessura}px ${cor ?? NEUTRO}` }}
+    >
+      {children}
+    </span>
+  );
+}

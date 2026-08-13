@@ -120,4 +120,13 @@ export interface FeedEvent {
   avatar_skin: number;
   avatar_hair: string | null;
   avatar_hair_color: number;
+  /**
+   * O número da patente, para a `<MolduraPatente>`. Desde o B2 da moldura.
+   *
+   * O mural é a única das cinco telas que NÃO lê da matview — ele junta `users`
+   * fresco —, então o tier vem de um LEFT JOIN em `user_titles` dentro da RPC, com
+   * o mesmo `COALESCE(..., 0)` da view. As duas fontes concordam: sem linha de
+   * título, o aluno é Aprendiz, tier 0.
+   */
+  achieved_tier: number;
 }

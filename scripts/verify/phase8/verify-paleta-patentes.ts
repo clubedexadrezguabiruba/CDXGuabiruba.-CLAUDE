@@ -1,49 +1,73 @@
 /**
- * GATE: a paleta das patentes — a cor do uniforme como dado, não como texto
+ * GATE: a paleta das patentes — agora a régua da MOLDURA
  *
- * O QUE ESTE GATE EXISTE PARA IMPEDIR
- * -----------------------------------
- * Pela emenda à D27, só pele e cabelo recolorem. A cor do uniforme é assada na
- * arte de origem, e **nada a harmoniza depois**. Duas consequências, as duas já
- * pagas nesta fase:
+ * O QUE MUDOU EM 2026-08-13, E POR QUE O GATE ENCOLHEU
+ * ----------------------------------------------------
+ * Este gate nasceu para o pipeline de recoloração de SVG: as seis cores pintavam o
+ * UNIFORME do boneco, e três das suas conferências existiam por causa do pipeline,
+ * não por causa da cor.
  *
- *   1. Uma cor fora da lei do pipeline **some** do asset. `ehPano` é um corte só
- *      (`matiz >= 45`), e forma descartada não muda de cor: ela desaparece. Um
- *      galão branco neutro (matiz 0°) ou um cinto dourado `#C9B37E` (42,4°)
- *      simplesmente não entram na peça, e ninguém antevê isso.
- *   2. Duas patentes em cores próximas ficam indistinguíveis a 56 px, onde o
- *      uniforme é só massa de cor. O conserto é redesenhar a peça inteira.
+ * A patente deixou de vestir. Ela passa a dar uma **moldura** — um anel em CSS,
+ * fora do SVG, em volta do avatar (doc 21 §0). O suporte mudou, e com ele o que
+ * ainda é lei:
  *
- * O runbook §10.2 já pedia que a cor de cada peça fosse registrada antes da
- * próxima. Em texto. Texto não reprova nada — e a regra do §10.1 é justamente
- * "escreva o gate antes da correção, e confira que ele reprova".
+ * **CAÍRAM, e as três pelo mesmo motivo — eram leis do pipeline, não da cor:**
+ *
+ *   1. **Matiz ≥ 45°.** `ehPano` (uniforme.ts) é um corte só, e forma descartada
+ *      não muda de cor: ela SOME do asset. Um dourado `#C9B37E` (42,4°) não entrava
+ *      na peça. Em CSS não há corte e não há o que sumir — **a moldura pode usar
+ *      dourado**, e essa é uma liberdade nova, não um relaxamento.
+ *   2. **Delta de canal ≥ 20.** Cinza neutro tem matiz 0° e sumia junto. Um anel
+ *      cinza em CSS desenha perfeitamente.
+ *   3. **Tabela × SVG commitado.** Ela prendia a tabela à arte de
+ *      `fonte/uniformes/`, que a moldura não usa. E prendia junto `bota` e
+ *      `detalhe`, que eram partes do uniforme e não têm equivalente num anel.
+ *
+ * **FICARAM as distâncias, e elas ficaram MAIS importantes.** Duas patentes em
+ * cores próximas continuam indistinguíveis — e agora num elemento bem menor do que
+ * o uniforme era: um anel de 2 px em volta de um recorte de 32 px. Se havia motivo
+ * para 40/60 no pano, há mais aqui.
+ *
+ * **ENTRARAM duas, e as duas nasceram do suporte novo:**
+ *
+ *   4. **A moldura contra o fundo em que ela vive.** O anel é desenhado sobre
+ *      `warm-ivory`, o fundo de card do produto inteiro. A moldura de um Mestre é
+ *      prata `#AEBCCE` — clara —, e anel claro sobre marfim é a mesma família de
+ *      defeito que a lei nº 4 da arte de traje descreve. Aqui ela vira número.
+ *   5. **`corDaMoldura()` é total sobre os tiers do banco.** O banco tem **8 tiers**
+ *      contra as 6 cores desta tabela (achado **D11**, aberto). A função satura na
+ *      última, e a saturação é medida — para que o dia em que o D11 for decidido
+ *      não passe em branco.
  *
  * POR QUE ELE RODA OFFLINE
  * ------------------------
- * Nenhuma consulta ao banco: a régua é a tabela em `scripts/avatar/patentes.ts`
- * mais os SVGs commitados. Assim ele roda no CI sem credencial, junto dos outros.
+ * Nenhuma consulta ao banco: a régua é a tabela em `scripts/avatar/patentes.ts`.
+ * Assim ele roda no CI sem credencial, junto dos outros.
  *
  * Uso: npm run verify:paleta-patentes
  */
 
-import { existsSync, readFileSync } from "fs";
-import { LINHA, MIN_CONTORNO } from "../../../src/lib/avatar/palette";
-import { MATIZ_PANO, corBota, corDominante, hsl, lerUniforme } from "../../avatar/uniforme";
+import { existsSync } from "fs";
 import {
-  MIN_DELTA_CANAL,
+  FUNDO_DA_MOLDURA,
+  MIN_CONTRA_FUNDO,
   MIN_ENTRE_PATENTES,
   MIN_ENTRE_VIZINHAS,
   PATENTES,
-  TOLERANCIA_MEDIDA,
-  caminhoSvg,
-  coresDe,
-  deltaCanal,
+  corDaMoldura,
   distancia,
   pares,
   vizinhas,
 } from "../../avatar/patentes";
 
 const REFERENCIA = "scripts/avatar/fonte/referencia-base.png";
+
+/**
+ * Os tiers que `title_tiers` tem hoje. Escrito à mão de propósito: o gate roda
+ * OFFLINE, e a graça da conferência 3 é justamente que ela reprova quando a escada
+ * do banco crescer sem a paleta acompanhar.
+ */
+const TIERS_DO_BANCO = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
 const violacoes: string[] = [];
 const linhas: string[] = [];
@@ -53,54 +77,23 @@ function checar(ok: boolean, rotulo: string, detalhe: string) {
   if (!ok) violacoes.push(`${rotulo} — ${detalhe}`);
 }
 
+function despejar() {
+  console.log(linhas.join("\n"));
+  linhas.length = 0;
+}
+
 function main() {
   console.log("========================================");
-  console.log("GATE: paleta das patentes");
+  console.log("GATE: paleta das patentes (a régua da moldura)");
   console.log("========================================\n");
 
   // -------------------------------------------------------------------------
-  // 1. Toda cor precisa ser PANO para o pipeline. Abaixo do corte, ela some.
+  // 1. A 32 px o anel é só cor. Patentes vizinhas exigem mais folga porque são
+  //    as que o aluno compara quando é promovido.
   // -------------------------------------------------------------------------
-  console.log("1. Matiz — abaixo de", MATIZ_PANO, "a forma SOME do asset\n");
-  let piorMatiz = { cor: "", h: 999, onde: "" };
-  for (const p of PATENTES) {
-    for (const { papel, cor } of coresDe(p)) {
-      const { h } = hsl(cor);
-      if (h < piorMatiz.h) piorMatiz = { cor, h, onde: `${p.patente}/${papel}` };
-      checar(
-        h >= MATIZ_PANO,
-        `${p.patente} · ${papel}`,
-        `${cor} matiz ${h.toFixed(1)}° (mínimo ${MATIZ_PANO}°)`,
-      );
-    }
-  }
-  console.log(linhas.join("\n"));
   console.log(
-    `\n  menor matiz: ${piorMatiz.h.toFixed(1)}° em ${piorMatiz.onde} (${piorMatiz.cor})`,
+    `1. Distância entre patentes — ${MIN_ENTRE_PATENTES} geral, ${MIN_ENTRE_VIZINHAS} entre vizinhas\n`,
   );
-  linhas.length = 0;
-
-  // -------------------------------------------------------------------------
-  // 2. Cinza neutro tem matiz 0° e some junto. Todo claro precisa ser tingido.
-  // -------------------------------------------------------------------------
-  console.log(`\n2. Delta de canal — 0 é cinza neutro, e cinza neutro SOME\n`);
-  let piorDelta = { cor: "", d: 999, onde: "" };
-  for (const p of PATENTES) {
-    for (const { papel, cor } of coresDe(p)) {
-      const d = deltaCanal(cor);
-      if (d < piorDelta.d) piorDelta = { cor, d, onde: `${p.patente}/${papel}` };
-      checar(d >= MIN_DELTA_CANAL, `${p.patente} · ${papel}`, `${cor} delta ${d} (mínimo ${MIN_DELTA_CANAL})`);
-    }
-  }
-  console.log(linhas.join("\n"));
-  console.log(`\n  menor delta: ${piorDelta.d} em ${piorDelta.onde} (${piorDelta.cor})`);
-  linhas.length = 0;
-
-  // -------------------------------------------------------------------------
-  // 3. A 56 px o uniforme é só cor. Patentes vizinhas exigem mais folga porque
-  //    são as que o aluno compara quando é promovido.
-  // -------------------------------------------------------------------------
-  console.log(`\n3. Distância entre patentes — ${MIN_ENTRE_PATENTES} geral, ${MIN_ENTRE_VIZINHAS} entre vizinhas\n`);
   const ehVizinha = new Set(vizinhas().map(([a, b]) => `${a.tier}-${b.tier}`));
   let piorPar = { par: "", d: 999, piso: 0 };
   for (const [a, b] of pares()) {
@@ -114,95 +107,104 @@ function main() {
       `distância ${d.toFixed(1)} (mínimo ${piso})`,
     );
   }
-  console.log(linhas.join("\n"));
+  despejar();
   console.log(
     `\n  par mais apertado: ${piorPar.par} — ${piorPar.d.toFixed(1)} contra piso ${piorPar.piso}` +
       ` (folga ${(piorPar.d - piorPar.piso).toFixed(1)})`,
   );
-  linhas.length = 0;
 
   // -------------------------------------------------------------------------
-  // 4. Dentro da peça: bota e detalhe precisam ler contra o pano, e o pano
-  //    contra o contorno — perto do contorno a silhueta some antes da cor.
-  // -------------------------------------------------------------------------
-  console.log(`\n4. Dentro da peça — bota, detalhe e contorno\n`);
-  for (const p of PATENTES) {
-    const dBota = distancia(p.pano, p.bota);
-    checar(dBota >= MIN_ENTRE_PATENTES, `${p.patente} · pano × bota`, `${dBota.toFixed(1)} (mínimo ${MIN_ENTRE_PATENTES})`);
-    if (p.detalhe) {
-      const dDet = distancia(p.pano, p.detalhe);
-      checar(
-        dDet >= MIN_ENTRE_PATENTES,
-        `${p.patente} · pano × detalhe`,
-        `${dDet.toFixed(1)} (mínimo ${MIN_ENTRE_PATENTES})`,
-      );
-    }
-    const dLinha = distancia(p.pano, LINHA);
-    checar(dLinha >= MIN_CONTORNO, `${p.patente} · pano × contorno`, `${dLinha.toFixed(1)} (mínimo ${MIN_CONTORNO})`);
-  }
-  console.log(linhas.join("\n"));
-  linhas.length = 0;
-
-  // -------------------------------------------------------------------------
-  // 5. O que prende a tabela à arte real.
+  // 2. O anel tem de ler contra o cartão em que é desenhado.
   //
-  //    Sem isto a tabela volta a ser opinião no instante em que a primeira peça
-  //    for gerada: alguém desenha em outra cor, e nada acusa.
+  //    É a conferência que NASCEU com a moldura. Um anel que se confunde com o
+  //    fundo não reprova em lugar nenhum e não aparece na tela — o defeito mais
+  //    barato de cometer e o mais caro de perceber.
   // -------------------------------------------------------------------------
-  console.log(`\n5. A tabela contra a arte commitada\n`);
+  console.log(`\n2. A moldura contra o fundo ${FUNDO_DA_MOLDURA} — mínimo ${MIN_CONTRA_FUNDO}\n`);
+  let piorFundo = { patente: "", d: 999 };
   for (const p of PATENTES) {
-    const svg = caminhoSvg(p);
-    if (p.estado === "medido") {
-      if (!existsSync(svg)) {
-        checar(false, `${p.patente} · fonte`, `marcada "medido" mas o SVG não existe: ${svg}`);
-        continue;
-      }
-      const u = lerUniforme(readFileSync(svg, "utf-8"));
-      const dPano = distancia(p.pano, corDominante(u.pano));
+    const d = distancia(p.pano, FUNDO_DA_MOLDURA);
+    if (d < piorFundo.d) piorFundo = { patente: p.patente, d };
+    checar(
+      d >= MIN_CONTRA_FUNDO,
+      `${p.patente} · anel × fundo`,
+      `${p.pano} contra ${FUNDO_DA_MOLDURA} · distância ${d.toFixed(1)} (mínimo ${MIN_CONTRA_FUNDO})`,
+    );
+  }
+  despejar();
+  console.log(
+    `\n  anel mais apagado: ${piorFundo.patente} — ${piorFundo.d.toFixed(1)} contra o marfim`,
+  );
+
+  // -------------------------------------------------------------------------
+  // 3. `corDaMoldura` responde para TODO tier que o banco pode devolver.
+  //
+  //    Sem isto, o dia em que a escada crescer produz um avatar sem moldura em
+  //    silêncio — e ele seria justamente o do aluno mais avançado do produto.
+  // -------------------------------------------------------------------------
+  console.log(`\n3. corDaMoldura() cobre os ${TIERS_DO_BANCO.length} tiers de title_tiers\n`);
+  const ultima = PATENTES[PATENTES.length - 1]!;
+
+  for (const tier of TIERS_DO_BANCO) {
+    const cor = corDaMoldura(tier);
+    if (tier === 0) {
+      // O Aprendiz não está na escada de cores e nunca esteve. O `null` aqui é o
+      // contrato com a <MolduraPatente>, que desenha o fio neutro.
       checar(
-        dPano <= TOLERANCIA_MEDIDA,
-        `${p.patente} · pano medido`,
-        `tabela ${p.pano} · SVG ${corDominante(u.pano)} · distância ${dPano.toFixed(1)} (máximo ${TOLERANCIA_MEDIDA})`,
+        cor === null,
+        "tier 0 (Aprendiz) · sem cor de patente",
+        cor === null
+          ? "null, como esperado — o componente desenha o fio neutro"
+          : `devolveu ${cor}; inventar cor para o Aprendiz é dizer que ele é uma patente`,
       );
-      const dBota = distancia(p.bota, corBota(u));
+      continue;
+    }
+    const naEscada = PATENTES.find((p) => p.tier === tier);
+    if (naEscada) {
       checar(
-        dBota <= TOLERANCIA_MEDIDA,
-        `${p.patente} · bota medida`,
-        `tabela ${p.bota} · SVG ${corBota(u)} · distância ${dBota.toFixed(1)} (máximo ${TOLERANCIA_MEDIDA})`,
+        cor === naEscada.pano,
+        `tier ${tier} (${naEscada.patente}) · cor exata`,
+        `${cor} === ${naEscada.pano}`,
       );
     } else {
-      // O esquecimento que este ramo pega: a peça foi gerada e commitada, e
-      // ninguém voltou para registrar a cor MEDIDA na tabela.
       checar(
-        !existsSync(svg),
-        `${p.patente} · alvo sem arte`,
-        existsSync(svg)
-          ? `${svg} existe, mas a tabela ainda diz "alvo" — registre a cor medida`
-          : "sem arte ainda, como esperado",
+        cor === ultima.pano,
+        `tier ${tier} · acima da escada, satura em ${ultima.patente}`,
+        cor === ultima.pano
+          ? `${cor} — a saída conservadora do D11 (8 tiers no banco, ${PATENTES.length} cores aqui)`
+          : `devolveu ${cor}; sem saturação o aluno mais avançado perderia a moldura ao subir`,
       );
     }
   }
-  console.log(linhas.join("\n"));
-  linhas.length = 0;
+
+  // Os dois extremos que não vêm do banco, mas chegam pelo tipo: `null` e negativo.
+  checar(corDaMoldura(null) === null, "tier null · sem cor", "dado ausente não inventa degrau");
+  checar(
+    corDaMoldura(-1) === null,
+    "tier negativo · sem cor",
+    "fora da escada para baixo não é degrau nenhum",
+  );
+  despejar();
 
   // -------------------------------------------------------------------------
-  // 6. A referência que vai anexada em todo pedido de arte nova (doc 18).
+  // 4. A referência que vai anexada em todo pedido de arte nova (doc 18).
   //
   //    Ela já viveu fora do repositório e sumiu duas vezes nesta fase. Sem ela o
-  //    gerador desenha outro personagem em vez de editar o nosso.
+  //    gerador desenha outro personagem em vez de editar o nosso. Não é sobre
+  //    moldura — é sobre a esteira de arte, que continua de pé.
   // -------------------------------------------------------------------------
-  console.log(`\n6. A imagem de referência\n`);
+  console.log(`\n4. A imagem de referência\n`);
   checar(existsSync(REFERENCIA), "referência da base", `${REFERENCIA}`);
-  console.log(linhas.join("\n"));
+  despejar();
 
   console.log("\n========================================");
   if (violacoes.length > 0) {
     console.log(`RESULTADO: ${violacoes.length} violações`);
     console.log("========================================\n");
     for (const v of violacoes) console.log(`  [FAIL] ${v}`);
-    console.log("\nCor abaixo de 45° de matiz, ou cinza neutro, NÃO fica feia:");
-    console.log("ela some do asset. E duas patentes perto demais só aparecem");
-    console.log("como problema no ranking, quando a arte já está pronta.");
+    console.log("\nDuas patentes perto demais, ou um anel perto demais do marfim,");
+    console.log("só aparecem como problema no ranking — e ali o aluno vê a turma");
+    console.log("inteira com a mesma moldura sem saber por quê.");
     process.exit(1);
   }
   console.log("RESULTADO: 0 violações");

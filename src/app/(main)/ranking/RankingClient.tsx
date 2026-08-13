@@ -4,6 +4,7 @@ import Link from "next/link";
 import Card from "@/components/ui/Card";
 import FaixaDeComando from "@/components/layout/FaixaDeComando";
 import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
+import MolduraPatente from "@/components/avatar/MolduraPatente";
 import { useRanking } from "@/hooks/useRanking";
 import type { RankingData, RankingType } from "@/types/ranking";
 
@@ -122,8 +123,12 @@ export default function RankingClient({ initialData, userId }: Props) {
                         {/* O lugar mais social do produto é onde o trabalho da
                             criança mais precisa aparecer. 40 px, `animado`
                             desligado: 30 bonecos animados numa lista pagam 30
-                            animações por nada. */}
-                        <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
+                            animações por nada.
+
+                            A moldura é o que faz a patente aparecer AQUI, e o
+                            ranking é onde ela mais rende: é a única tela em que o
+                            aluno vê o próprio degrau ao lado do dos outros. */}
+                        <MolduraPatente tier={entry.achieved_tier}>
                           <AvatarCabeca
                             skin={entry.avatar_skin}
                             hair={entry.avatar_hair}
@@ -131,7 +136,7 @@ export default function RankingClient({ initialData, userId }: Props) {
                             lado={40}
                             ns={`rk-${entry.user_id}`}
                           />
-                        </span>
+                        </MolduraPatente>
                         <span className="block max-w-40 truncate sm:max-w-none">
                           {entry.public_name}
                         </span>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { PublicProfileData } from "@/types/ranking";
 import { xpForLevel } from "@/lib/gamification/xp";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
+import MolduraPatente from "@/components/avatar/MolduraPatente";
 
 interface Props {
   profile: PublicProfileData;
@@ -46,16 +47,21 @@ export default function PublicProfileClient({ profile }: Props) {
         {/* O marfim atrás do boneco é o mesmo do palco do próprio perfil: o
             contorno preto do kokeshi precisa de fundo claro para manter a
             silhueta, e o branco puro do card o deixaria recortado demais. */}
-        <div className="grid shrink-0 place-items-center rounded-lg bg-warm-stone px-2 py-2">
-          <AvatarKokeshi
-            skin={profile.avatar_skin}
-            hair={profile.avatar_hair}
-            hairColor={profile.avatar_hair_color}
-            altura={104}
-            ns="perfil-publico"
-            rotulo={`Avatar de ${profile.public_name}`}
-          />
-        </div>
+        {/* A moldura é 3 px aqui, não 2: o boneco tem 104 px e um fio de 2 sumiria
+            contra a área que ele ocupa. É o mesmo anel das listas, dimensionado
+            para o palco. */}
+        <MolduraPatente tier={profile.achieved_tier} espessura={3}>
+          <span className="grid place-items-center bg-warm-stone px-2 py-2">
+            <AvatarKokeshi
+              skin={profile.avatar_skin}
+              hair={profile.avatar_hair}
+              hairColor={profile.avatar_hair_color}
+              altura={104}
+              ns="perfil-publico"
+              rotulo={`Avatar de ${profile.public_name}`}
+            />
+          </span>
+        </MolduraPatente>
 
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold text-zinc-900">

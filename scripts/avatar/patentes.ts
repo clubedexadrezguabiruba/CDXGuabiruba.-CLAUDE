@@ -11,7 +11,15 @@
  *
  * Aqui a régua vira dado, e `verify:paleta-patentes` a mede.
  *
- * A LEI DAS CORES, EM UMA LINHA
+ * ⚠️ **PARA ONDE ESTA PALETA MIGROU EM 2026-08-13.** A patente deixou de vestir o
+ * boneco: ela passou a dar uma **moldura** em volta do avatar (doc 21 §0). As seis
+ * cores continuam sendo a régua — mudou o suporte, de SVG para CSS. A consequência
+ * está em `corDaMoldura()` mais abaixo, e ela apaga metade das leis deste
+ * cabeçalho: **o parágrafo seguinte descreve o pipeline de SVG, que não é mais o
+ * destino destas cores.** Ele fica porque `avatar:garment` e os SVGs de
+ * `fonte/uniformes/` ainda existem no repositório.
+ *
+ * A LEI DAS CORES DO PIPELINE DE SVG (não vale para a moldura)
  *
  * `ehPano` (uniforme.ts) é um corte só: `matiz >= 45`. Abaixo disso a forma não é
  * pano — e **forma descartada não muda de cor, ela SOME**. Por isso:
@@ -163,6 +171,75 @@ export const PATENTES: readonly Patente[] = [
     estado: "alvo",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// A MOLDURA — para onde esta paleta migrou em 2026-08-13
+// ---------------------------------------------------------------------------
+//
+// Esta tabela nasceu para pintar o UNIFORME do boneco, e essa era a lei que caiu:
+// a patente deixou de vestir e passou a dar uma **moldura** em volta do avatar
+// (doc 21 §0). As seis cores medidas não se perdem — elas mudam de suporte.
+//
+// O QUE MUDA COM O SUPORTE, e é por isso que o gate encolheu:
+//
+//  - **A faixa proibida de matiz 0°–44° NÃO se aplica.** Ela era lei do pipeline
+//    de recoloração do SVG: `ehPano` é um corte só (`matiz >= 45`), e forma
+//    descartada não muda de cor, ela SOME. Em CSS, fora do SVG, não há corte e não
+//    há o que sumir — **a moldura pode usar dourado**.
+//  - **`MIN_DELTA_CANAL` também cai** pelo mesmo motivo: cinza neutro tinha matiz
+//    0° e desaparecia do asset. Um anel cinza em CSS desenha perfeitamente.
+//  - **`bota` e `detalhe` deixam de ter uso.** A moldura é uma cor só por degrau.
+//    Elas ficam na tabela como registro da arte que existiu, não como régua.
+//
+// O QUE **NÃO** MUDA: as distâncias. Duas patentes em cores próximas continuam
+// indistinguíveis, e agora num elemento MENOR que o uniforme era — um anel de 2 px
+// em volta de um recorte de 32 px. Se havia motivo para 40/60 no pano, há mais aqui.
+
+/**
+ * A superfície em que a moldura é desenhada, e contra a qual ela tem de ler.
+ *
+ * `warm-ivory` é o fundo de card do produto inteiro (DESIGN.md, Colors). A moldura
+ * de um Mestre é prata `#AEBCCE` — clara —, e um anel claro sobre marfim é a
+ * mesma família de defeito que a lei nº 4 da arte de traje descreve ("peça bege
+ * some no card marfim"). Aqui ela vira número.
+ */
+export const FUNDO_DA_MOLDURA = "#FAF8F3";
+
+/**
+ * Distância mínima entre a moldura e o fundo em que ela vive.
+ *
+ * O mesmo 40 dos outros pisos desta tabela, pelo mesmo motivo: abaixo disso duas
+ * cores deixam de ser duas cores.
+ */
+export const MIN_CONTRA_FUNDO = 40;
+
+/**
+ * A cor do anel de patente de um `achieved_tier`. `null` = sem cor de patente.
+ *
+ * TRÊS CASOS, E OS TRÊS SÃO DECISÃO:
+ *
+ *  - **tier 0 (Aprendiz) → `null`.** O Aprendiz não tem cor nesta tabela e nunca
+ *    teve (ver "O TIER 0 NÃO ESTÁ AQUI" acima). A moldura dele é um fio neutro,
+ *    desenhado pelo componente com token, não com cor de patente. Inventar um
+ *    sétimo degrau aqui seria dizer que Aprendiz é uma patente, e não é.
+ *  - **tier acima do último → SATURA na última.** O banco tem **8 tiers**
+ *    (0 Aprendiz … 6 Grão-Mestre, 7 Lenda) contra as 6 cores desta tabela — é o
+ *    achado **D11**, e ele continua aberto. Saturar é a saída conservadora: um
+ *    Lenda vê o anel de Mestre, que é caro e não é errado. Devolver `null` faria
+ *    o aluno mais avançado do produto perder a moldura ao ser promovido, que é o
+ *    oposto do ponto.
+ *  - **tier negativo ou não-número → `null`.** Dado ausente não inventa degrau.
+ *
+ * A saturação é medida por `verify:paleta-patentes`, para que o dia em que o D11
+ * for decidido não passe em branco.
+ */
+export function corDaMoldura(tier: number | null | undefined): string | null {
+  if (typeof tier !== "number" || !Number.isFinite(tier) || tier < 1) return null;
+  const exata = PATENTES.find((p) => p.tier === tier);
+  if (exata) return exata.pano;
+  const ultima = PATENTES[PATENTES.length - 1]!;
+  return tier > ultima.tier ? ultima.pano : null;
+}
 
 // ---------------------------------------------------------------------------
 // Os pisos

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
 import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
+import MolduraPatente from "@/components/avatar/MolduraPatente";
 
 export default async function MainLayout({
   children,
@@ -24,6 +25,11 @@ export default async function MainLayout({
     avatar_chosen: boolean;
   } | null = null;
   let title: string = "Aprendiz";
+  // O NÚMERO da patente, para a moldura. 0 é Aprendiz, e é degrau real: quem não
+  // tem linha em `user_titles` continua vendo um anel — o neutro, desenhado pela
+  // <MolduraPatente>. Sai da MESMA consulta que já buscava o nome; nenhuma ida a
+  // mais ao banco.
+  let tier = 0;
 
   if (user) {
     // As três colunas da identidade entram no SELECT que já existia — a consulta
@@ -43,12 +49,13 @@ export default async function MainLayout({
 
     const { data: titleData } = await supabase
       .from("user_titles")
-      .select("current_title")
+      .select("current_title, achieved_tier")
       .eq("user_id", user.id)
       .single();
     if (titleData?.current_title) {
       title = titleData.current_title;
     }
+    tier = titleData?.achieved_tier ?? 0;
   }
 
   const displayName = profile?.display_name || user?.email || "Usuário";
@@ -93,6 +100,13 @@ export default async function MainLayout({
                 na altura em que o moicano começa (contra as 335 que a crista
                 ocupa). O círculo comeria o topo de todo cabelo alto. `rounded-lg`
                 também é o raio padrão do DESIGN.md.
+
+                DOIS ANÉIS NÃO DISPUTAM O MESMO BONECO. Quem ainda não montou o
+                personagem vê o anel de OURO — o convite —, e não a moldura de
+                patente: a "One Gold Rule" do DESIGN.md diz que numa tela o ouro
+                marca uma coisa, e aqui ele marca a ação que falta fazer. A moldura
+                aparece assim que o aluno monta o boneco, que é quando ela passa a
+                ter o que emoldurar.
               */}
               {profile?.avatar_chosen === false ? (
                 <Link
@@ -103,9 +117,7 @@ export default async function MainLayout({
                   <span className="sr-only">Monte seu personagem</span>
                 </Link>
               ) : (
-                <span className="inline-flex shrink-0 overflow-hidden rounded-lg">
-                  {boneco}
-                </span>
+                <MolduraPatente tier={tier}>{boneco}</MolduraPatente>
               )}
               <div className="min-w-0 text-sm">
                 <span className="block max-w-30 truncate font-medium sm:max-w-none">

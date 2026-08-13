@@ -19,6 +19,18 @@ export interface RankingEntry {
   level: number;
   metric_value: number;
   title: string;
+  /**
+   * O NÚMERO da patente, que a `<MolduraPatente>` mapeia para cor. Desde o B2 da
+   * moldura (`20260813120000_b2_moldura_estrutural.sql`).
+   *
+   * Vai como número, e não como nome, porque a moldura indexa a paleta pelo tier:
+   * derivar a cor de `title` seria uma segunda tabela de patentes em TypeScript, e
+   * o banco tem **8 tiers** contra as 6 cores de `scripts/avatar/patentes.ts`
+   * (achado D11) — os nomes já não são mapa confiável.
+   *
+   * `0` é Aprendiz, que é degrau real e não ausência de dado.
+   */
+  achieved_tier: number;
   position: number;
   is_teacher?: boolean;
 }
@@ -52,6 +64,8 @@ export interface PublicProfileData {
   rush_5min_record: number;
   rush_resistencia_record: number;
   title: string;
+  /** O número da patente, para a moldura do palco de 104 px. Ver `RankingEntry`. */
+  achieved_tier: number;
   current_streak: number;
   member_since: string;
   bots_defeated: number;
