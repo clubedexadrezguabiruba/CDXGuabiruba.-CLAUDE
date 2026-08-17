@@ -444,8 +444,15 @@ const FORA = 60;
 // Os construtores de extensão
 // ---------------------------------------------------------------------------
 
-/** Um ponto `{t, y}` virando coordenada, perguntando a borda ao contorno da cabeça. */
-function ponto(p: PontoFranja, dy: number): { x: number; y: number } {
+/**
+ * Um ponto `{t, y}` virando coordenada, perguntando a borda ao contorno da cabeça.
+ *
+ * **Exportada** porque o slot de rosto (`rosto.ts`) nasce no mesmo espaço `{t, y}`
+ * e pelo mesmo motivo — é assim que o `GIRO` chega na peça sem ninguém somar
+ * deslocamento. Uma segunda cópia aqui seria uma segunda leitura de `bordasEm`,
+ * livre para divergir desta na primeira vez que o contorno mudar.
+ */
+export function ponto(p: PontoFranja, dy = 0): { x: number; y: number } {
   const y = p.y + dy;
   const { esq, dir } = bordasEm(y);
   return { x: esq + p.t * (dir - esq), y };
@@ -469,8 +476,15 @@ function pontosElipse(cx: number, cy: number, rx: number, ry: number): Ponto[] {
   });
 }
 
-/** Uma forma livre em coordenada absoluta, fechada por spline. */
-function laco(pts: readonly Ponto[]): string {
+/**
+ * Uma forma livre em coordenada absoluta, fechada por spline.
+ *
+ * **Exportada pelo mesmo motivo de `ponto`**: `rosto.ts` fecha os laços dele com
+ * esta spline centrípeta, e não com uma segunda. Duas parametrizações da mesma
+ * curva emitem `C` diferentes, e a emenda entre duas peças do mesmo boneco
+ * apareceria.
+ */
+export function laco(pts: readonly Ponto[]): string {
   return `M ${n(pts[0].x)} ${n(pts[0].y)} ` + spline(pts, true) + `Z`;
 }
 

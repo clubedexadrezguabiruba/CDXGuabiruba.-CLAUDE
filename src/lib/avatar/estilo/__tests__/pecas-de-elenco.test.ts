@@ -83,3 +83,60 @@ describe("peças sobrepostas (chapéu e rosto)", () => {
     expect(conferirSvg(compor({ ...BASE, chapeu: FALSA, rosto: FALSA }))).toEqual([]);
   });
 });
+
+/**
+ * `semTraco` — E AS TRÊS ASSERÇÕES QUE O IMPEDEM DE PASSAR POR VACUIDADE.
+ *
+ * É o mesmo perigo que o docstring do topo nomeia, um andar abaixo: um campo
+ * opcional cujo caminho verdadeiro nunca é exercido está "verde" e não existe.
+ * Aqui a peça de duas camadas é o caso real — a barba do Bloco 5 —, e o que
+ * quebraria em silêncio é o traço voltando para o núcleo: uma linha preta de 12 u
+ * atravessando o meio da peça, que nenhum gate de forma, byte ou contrato acusa.
+ *
+ * A terceira asserção parece pedante e não é: `false` e ausente terem caminhos
+ * diferentes seria a peça mudar de aparência ao ganhar um campo que declara o
+ * comportamento de sempre.
+ */
+describe("semTraco — a forma que vive dentro de outra", () => {
+  const MISTA: PecaSobreposta = {
+    id: "zz-mista",
+    nome: "Mista",
+    formas: [
+      { d: "M0 0 L100 0 L100 100 Z", cor: "var(--av-linha)" },
+      { d: "M10 10 L80 10 L80 80 Z", cor: "#5A4632", semTraco: true },
+    ],
+  };
+
+  it("a forma com semTraco pinta, mas não ganha o `kk-traco`", () => {
+    const svg = compor({ ...BASE, rosto: MISTA });
+
+    expect(svg).toContain(`<path d="M10 10 L80 10 L80 80 Z" fill="#5A4632"/>`);
+    expect(svg).not.toContain(`<path class="kk-traco" d="M10 10 L80 10 L80 80 Z"/>`);
+  });
+
+  it("na peça mista sobra exatamente um traço — o da forma que tem borda externa", () => {
+    const svg = compor({ ...BASE, rosto: MISTA });
+    const traçosDaPeca = MISTA.formas.filter(
+      (f) => svg.includes(`<path class="kk-traco" d="${f.d}"/>`),
+    );
+
+    expect(traçosDaPeca).toHaveLength(MISTA.formas.filter((f) => !f.semTraco).length);
+    expect(traçosDaPeca[0].d).toBe("M0 0 L100 0 L100 100 Z");
+
+    // E a ordem de `sobrepor()` continua sendo TODO fill antes de TODO traço: o
+    // filtro tira uma linha da segunda passada, não muda de passada.
+    expect(svg.indexOf(`fill="#5A4632"`)).toBeLessThan(
+      svg.indexOf(`<path class="kk-traco" d="M0 0 L100 0 L100 100 Z"/>`),
+    );
+  });
+
+  it("`semTraco: false` é byte a byte igual ao campo ausente", () => {
+    const ausente = compor({ ...BASE, rosto: FALSA });
+    const explicito = compor({
+      ...BASE,
+      rosto: { ...FALSA, formas: FALSA.formas.map((f) => ({ ...f, semTraco: false })) },
+    });
+
+    expect(explicito).toBe(ausente);
+  });
+});

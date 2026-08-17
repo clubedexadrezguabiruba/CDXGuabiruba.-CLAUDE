@@ -244,10 +244,10 @@ de alunos menores de idade.
 <!-- VOLATIL:inicio -->
 | | |
 |---|---|
-| **Branch** | `avatar/vtracer` |
-| **Commits à frente de `origin/main`** | 2 |
-| **Árvore** | **12 arquivos sujos** |
-| **Último commit** | 14f8343 · 2026-08-13 · fix(avatar): o G22 fecha antes de morder — a régua sai do próprio componente, e o `as` para de comer chapéu e rosto |
+| **Branch** | `avatar/bloco5-rosto` |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **7 arquivos sujos** |
+| **Último commit** | 7c05f07 · 2026-08-13 · feat(avatar): o fundo deixa de ser guarda-roupa — um só para todos, e o slot sai do banco |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

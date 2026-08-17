@@ -97,6 +97,13 @@ export interface Traje {
  * espessura de todo o resto. É o que impede uma peça de chegar com traço de 1 px
  * ao lado de um boneco de traço 12.
  *
+ * **O que a peça escolhe é ONDE há contorno, nunca com que espessura** — é o que
+ * `semTraco` diz, e ele não contradiz o parágrafo acima: é a versão booleana do
+ * `FormaDaPeca.linhas` do cabelo (`cabelo.ts:128-141`), que existe pela razão
+ * idêntica — *nem toda borda do laço é borda externa de alguma coisa*. Uma forma
+ * que mora DENTRO de outra não tem borda externa para desenhar, e traçá-la põe
+ * uma linha preta no meio da peça que ninguém desenhou.
+ *
  * A cor é **assada no desenho** (`cor`, hex literal), e isso é a emenda à D27:
  * só pele e cabelo recolorem. O escopo `camada` de custom properties está vazio
  * em `palette.ts:281`, e mexer nele esbarra na trava de `svgContrato.ts`.
@@ -106,8 +113,15 @@ export interface PecaSobreposta {
   id: string;
   /** Nome que o aluno lê. */
   nome: string;
-  /** As formas, de trás para a frente. Preenchimento; o traço é do compositor. */
-  formas: { d: string; cor: string }[];
+  /**
+   * As formas, de trás para a frente. Preenchimento; o traço é do compositor.
+   *
+   * `semTraco` tira ESTA forma da passada de contorno, e só dela. Ver o parágrafo
+   * sobre ele no docstring da interface: é para a forma que vive dentro de outra —
+   * o núcleo cuja borda é a banda preta da forma de baixo, não uma borda externa.
+   * Ausente e `false` são o mesmo, e o mesmo de sempre.
+   */
+  formas: { d: string; cor: string; semTraco?: boolean }[];
 }
 
 /**

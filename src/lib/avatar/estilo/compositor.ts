@@ -626,6 +626,13 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
  * e do tronco). Uma peça que trouxesse o próprio traço chegaria com espessura
  * própria, e o boneco ganharia uma borda de 1 px ao lado de outra de 12.
  *
+ * **A peça escolhe ONDE há traço, e é só isso que `semTraco` faz.** A segunda
+ * passada pula as formas que o declaram — a espessura continua sendo a mesma para
+ * todo mundo. Sem ele, uma peça de duas camadas é impossível de desenhar: o
+ * núcleo de uma barba ganharia uma linha preta de 12 u no meio da massa, e uma
+ * mecha de 6 u viraria blob. É o `FormaDaPeca.linhas` do cabelo em booleano, pela
+ * razão idêntica que `cabelo.ts:128-141` já escreve.
+ *
  * AUSENTE devolve string vazia — sem `<g>` vazio, sem nada. É a condição para o
  * SVG de hoje continuar saindo byte a byte, e o teste `pecas-de-elenco.test.ts`
  * cobra as duas pontas: ausente não muda um byte, presente aparece.
@@ -634,7 +641,10 @@ function sobrepor(peca: PecaSobreposta | undefined): string {
   if (!peca?.formas.length) return "";
   return (
     peca.formas.map((f) => `<path d="${attr(f.d)}" fill="${f.cor}"/>`).join("") +
-    peca.formas.map((f) => `<path class="kk-traco" d="${attr(f.d)}"/>`).join("")
+    peca.formas
+      .filter((f) => !f.semTraco)
+      .map((f) => `<path class="kk-traco" d="${attr(f.d)}"/>`)
+      .join("")
   );
 }
 

@@ -1325,6 +1325,99 @@ mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em ve
 
 ## 🔵 Decisão ou divergência
 
+### D17 — a barba e o cabelo traçado disputam a mesma região, e são pintados pelas MESMAS duas cores
+**Prova:** `MEDIDO` — 2026-08-13, no Bloco 5 (rosto), etapa 1.
+`.scratch/estilo/_criticas-medidas.ts`. Achado pelo Claude, executando a etapa.
+Registrado e **não consertado**, pela regra 9.
+
+As três direções candidatas de barba **sobrepõem a massa da `chanel`**, medido
+ponto a ponto contra o laço dela: −11,6 u na 1ª versão e −12,0 na 2ª. Não é falha
+de desenho — é onde as duas peças moram. A cortina da `chanel` desce até **y 397**
+do lado esquerdo e o lóbulo dela ocupa **x 421 em y 245**, que é exatamente o
+corredor da costeleta direita. Até a `cunha`, que vive inteira abaixo do queixo,
+colide em (181, 397).
+
+**E as duas são a mesma tinta.** Massa de cabelo e massa de barba são
+`var(--av-linha)`; núcleo de cabelo e núcleo de barba são `var(--av-cabelo)` — a
+barba recolorir junto com o cabelo foi decisão de produto (doc 21). Onde encostam,
+não há fronteira: viram uma peça só. A crítica renderizada nomeou isso antes de a
+régua medir — *"o usuário perde a leitura do cabelo que escolheu"*.
+
+**A gravidade é 🔵 e não 🟡 porque nenhuma régua mente**, e porque não está claro
+que seja defeito: barba e cabelo se encontrarem é anatomicamente correto. É uma
+decisão de produto que ninguém tomou, e ela tem pelo menos três saídas:
+
+1. **aceitar** — barba e cabelo se fundem, como numa ilustração de verdade;
+2. **cortar o escopo** — barba só existe abaixo do queixo (só a `cunha` sobrevive),
+   e a folga à massa do cabelo vira gate com piso de 24 u;
+3. **separar por tinta** — dar à barba uma cor própria, o que quebra a decisão de
+   ela recolorir com o cabelo.
+
+`avatar:variantes` já **mede e imprime** o número como aviso, com as três saídas
+citadas. Gatear hoje cortaria toda barba de bochecha por decreto, e isso é escolha
+do Doug, não régua de legibilidade.
+
+**O que NÃO está medido:** o mesmo contra `espetado` e `assimetrico`. Só a `chanel`
+foi medida, por ser o composto mais pesado — mas a `assimetrico` tem massa que
+cobre 97,6% de uma sobrancelha, então a colisão dela tende a ser pior, não melhor.
+
+### D16 — o bigode não pode existir sem virar nariz, e a causa é o corredor, não o desenho
+**Prova:** `MEDIDO` — 2026-08-13, sondas P0 + crítica renderizada da 1ª folha.
+`.scratch/estilo/sondas-rosto.ts` e `_corredor.ts`. Achado pelo Claude. Registrado
+e **não consertado**, pela regra 9.
+
+Medido altura a altura, a **única** região onde tinta pode existir acima da boca é
+uma ilha de **57 u** (x 262–319, y ≤ 264), espremida entre a folga de 24 u aos dois
+olhos e a folga de 26 u à boca. Isso não é escolha: os dois vetos se tocam entre y
+265 e 300, dos dois lados.
+
+O que cabe ali é uma barra de ~57 × 20 u, a **1,36× a largura da boca** e **32 u
+acima dela** — que a 32 px é 3,5 px flutuando 2 px acima do sorriso, sem tocá-lo.
+A crítica renderizada leu as seis células com bigode do mesmo jeito: **nariz**. E
+tem razão pela regra do próprio estilo — `geometria.ts:456` declara *"o nariz
+continua não existindo"*, então toda mancha escura entre olhos e boca é lida como o
+que falta ali.
+
+**Não há conserto por desenho.** Mais largo esbarra nos olhos; mais baixo esbarra na
+boca; mais fino some a 32 px. A decisão do Doug de fazer *"duas versões, com bigode
+e sem"* continua de pé como **escolha na folha** — o que este achado registra é que
+a versão com bigode não tem espaço para ficar boa nesta base, e que a saída, se ele
+quiser bigode, é mexer na base (aproximar os olhos, ou baixar a boca), não na peça.
+
+**O que NÃO está medido:** se um bigode que **encosta** na boca — abrindo mão da
+folga de 26 u — lê melhor que um flutuante. A sonda P1 mediu que aos 12–20 u de
+espessura a pele só sobrevive com o preto parando em y 270; abaixo disso as duas
+marcas fundem. Fundir pode ser melhor que flutuar, e ninguém olhou.
+
+### D15 — não existe teto declarado para o composto de TRÊS camadas
+**Prova:** `MEDIDO` — 2026-08-13, sonda P3 do Bloco 5. Achado pelo Claude.
+Registrado e **não consertado**, pela regra 9.
+
+`ORCAMENTO_COMPOSTO` (`cabelo.ts:388`) vale **26 formas / 10 240 bytes** e o
+docstring dele diz o que ele mede: *base mais UM cabelo, que é o que um aluno de
+verdade carrega*. Deixou de ser verdade quando o slot de rosto nasceu.
+
+Medido: base + `chanel` = **23 formas**; a receita da barba custa **3 `<path>`**
+(massa cheia + massa traçada + núcleo sem traço) e leva o composto a **26 exatos**.
+Passa raspando, com zero folga — e o chapéu do Bloco 7 não cabe. É o **G16**
+chegando na conta de outro slot, agora com número.
+
+Em bytes é pior e a natureza é outra: base + `chanel` já sai a **11 895 B** sozinha,
+acima do teto, e isso é tolerado sob a regra do doc 15:463 (*teto de bytes não veta
+arte aprovada*), marcado *"▲ registrado"* em `avatar:folha-base`. Com a barba vai a
+**14 000–15 900 B**. Cobrar o teto de cabelo de um composto de três camadas
+reprovaria a barba por uma conta que a `chanel` sozinha já estoura, então
+`avatar:variantes` **rebaixou para aviso** na variante de rosto — dizendo em voz
+alta que **não há teto declarado**, em vez de virar um gate que se aprende a ignorar.
+
+**O conserto, se o Doug mandar:** declarar `ORCAMENTO_COM_ROSTO` e
+`ORCAMENTO_COM_CHAPEU` com a conta do ranking refeita (30 bonecos a 56 px), e o
+`avatar:folha-base` medindo os dois. É o mesmo movimento que fez o teto de cabelo
+sair de três cópias para uma.
+
+**O que NÃO está medido:** o custo real no ranking. A conta de 10 240 B saiu de 30
+bonecos; ninguém remediu com 15,9 KB por boneco.
+
 ### D14 — `arte:trajes` imprime, ao fim de toda rodada, que o catálogo está vazio — e ele não está
 **Prova:** `MEDIDO` — 2026-08-13, ao mudar o endereço do PNG de traje. Achado pelo
 Claude. Registrado e **não consertado**, pela regra 9.
