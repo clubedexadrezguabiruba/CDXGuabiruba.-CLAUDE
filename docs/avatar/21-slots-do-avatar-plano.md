@@ -1109,6 +1109,56 @@ contra a fonte nova.
 
 ## 10. Changelog
 
+- **2026-08-17 — as sete decisões do plano "até pronto para ir ao ar", e o G23
+  fechado.** O plano de execução vive em `~/.claude/plans/`; aqui ficam as
+  decisões, que são o que envelhece mal fora de um documento.
+
+  **As sete do Doug, na abertura:**
+
+  1. **Escopo: tudo.** Os 4 slots (traje, rosto, chapéu, pet) mais a Chocadeira.
+     Nada de recortar para caber.
+  2. **Vetorizar uma roupa detalhada como PROVA, e ela manda na ordem do resto.**
+     Se uma peça aerografada sobreviver ao VTracer, **todos** os itens passam ao
+     processo do cabelo (um só caminho de arte no projeto); se não, o PNG fica. A
+     cobaia é o `traje-gambesao` — a mais detalhada que existe, já aprovada pelo
+     Doug (portanto com verdade de referência), e sem custo de desenho novo.
+  3. **D17 (barba × cabelo): a fusão está ACEITA.** Onde barba e cabelo encostam,
+     viram uma massa só, como numa ilustração de verdade. A barba segue
+     recolorindo junto com o cabelo. As saídas 2 (cortar o escopo) e 3 (tinta
+     própria) morrem aqui — **não repropor**.
+  4. **D16 (bigode): MORTO por medição, sem rodada de teste.** A ilha de 57 u que
+     sobra entre os vetos dos olhos e da boca produz uma barra lida como nariz, e
+     `geometria.ts:456` declara que nariz não existe neste boneco. Quem quiser
+     bigode mexe na base, não na peça.
+  5. **Trajes: +4 a 6 novos**, total 6–8, **estilo misto pela raridade** — comuns
+     chapadas (as que o aluno mais vê), raras e épicas podendo ser aerografadas. O
+     resto do catálogo do doc 22 fica por demanda.
+  6. **Rosto: barbas + óculos**, e só. O bigode saiu pela decisão 4.
+  7. **Peso de asset: teto + otimizar — mas só se o PNG sobreviver à decisão 2.**
+     Não se investe em raster antes de saber se ele fica.
+
+  **E as duas decisões técnicas tomadas na execução do P0:**
+
+  8. **G23 — o anel de patente ganha FIO PRÓPRIO (saída nº 1 do achado).** A régua
+     de `verify:paleta-patentes` media distância RGB e dava 103,7 para o Mestre
+     `#AEBCCE` contra o marfim, verde com folga de 2,6×; em razão de contraste o
+     mesmo par dá **1,82**, abaixo do piso 3 da WCAG 1.4.11. Medidas as seis
+     contra as duas superfícies do produto, trocar a cor não resolvia: no navy
+     quem reprova são Aspirante (1,92), General (2,04) e Comandante (2,61), e o
+     Mestre passa em 9,01. **Nenhuma superfície única cobre a faixa de luminância
+     0,066–0,494 nas duas pontas** — é aritmética, não gosto. O anel passa a levar
+     **1 px de `ink` por fora**, as seis cores ficam intactas, e a conferência 2
+     virou duas: o fio contra o fundo em contraste, cada patente contra o fio em
+     RGB. As saídas 2, 3 e 4 do achado morrem — **não repropor**.
+  9. **D15 — os tetos de composto de 3 e 4 camadas estão declarados**, derivados
+     de um `CUSTO_DE_SOBREPOSTA` único para não voltarem a divergir em cópias. A
+     conta do ranking foi refeita e mudou o que o teto de bytes significa: 30
+     bonecos com tudo ligado dão **482 KB crus e 56 KB comprimidos**, e a razão de
+     compressão MELHORA com as camadas (6,6× → 8,6×). Byte cru nunca foi o custo
+     do fio; **forma é que é teto de verdade**, porque é nó de DOM pintado 30
+     vezes. O de 4 camadas está declarado e **não medido contra arte real** — não
+     existe chapéu no catálogo.
+
 - **2026-08-13 — emenda §0: a patente sai da roupa e vira moldura.** Quatro
   decisões definitivas do Doug: (1) traje deixa de ser por patente — a patente dá
   **moldura** em volta do avatar; (2) o tema afrouxa de reino medieval para

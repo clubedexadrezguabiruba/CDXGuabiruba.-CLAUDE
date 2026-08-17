@@ -388,6 +388,93 @@ export interface Cabelo {
 export const ORCAMENTO_COMPOSTO = { formas: 26, bytes: 10240 } as const;
 
 // ---------------------------------------------------------------------------
+// OS COMPOSTOS DE TRÊS E QUATRO CAMADAS — o D15, fechado em 2026-08-17
+// ---------------------------------------------------------------------------
+//
+// `ORCAMENTO_COMPOSTO` diz de si mesmo que mede "base mais UM cabelo, que é o que
+// um aluno de verdade carrega". **Deixou de ser verdade quando o slot de rosto
+// nasceu**, e o número mostrou isso sem folga nenhuma: base + `chanel` dá 23
+// formas, a receita da barba custa 3 `<path>` (massa cheia + massa traçada +
+// núcleo sem traço) e o composto bate **26 exatos**. Passava raspando, e o chapéu
+// não cabia. Era o G16 chegando na conta de outro slot.
+//
+// A CONTA DO RANKING, REFEITA — e ela mudou o que o teto de bytes significa.
+//
+// O ranking mostra o RECORTE DE CABEÇA, que não leva traje: o pior composto que
+// uma lista pode montar é base + cabelo + rosto + chapéu. Medidos 30 bonecos
+// distintos, com pele, cabelo e barba variando (`.scratch/estilo/medir-ranking.ts`):
+//
+//   cenário                          formas     cru      gzip    razão
+//   base + cabelo                      654    322 KB   48,9 KB   6,6×
+//   base + cabelo + rosto              744    394 KB   51,1 KB   7,7×
+//   base + cabelo + rosto + chapéu     834    482 KB   56,0 KB   8,6×
+//
+// **Os 10 240 B prometiam 300 KB de marcação para a lista inteira, e a lista com
+// só cabelo já está em 322 KB.** O teto estava furado antes de o rosto existir. E
+// o que o docstring sempre disse sem medir — *"que comprime como texto"* — é o que
+// salva a conta: 482 KB crus são **56 KB no fio**, e a razão de compressão MELHORA
+// com as camadas (6,6× → 8,6×), porque cada peça nova repete estrutura que o
+// dicionário do gzip já tem. Trinta avatares com tudo ligado custam menos que uma
+// foto. **Byte cru nunca foi o custo real; ele é registro de regressão, e é só
+// isso que estes números são.**
+//
+// O QUE CONTINUA SENDO TETO DE VERDADE É FORMA, e por outro motivo: cada forma é
+// um nó de DOM que o navegador do celular barato pinta 30 vezes. Aí o número
+// morde.
+
+/**
+ * O que UMA peça sobreposta pode custar ao composto.
+ *
+ * **Medido: 3 formas.** `sobrepor()` emite um `<path>` de preenchimento por forma
+ * mais um de traço por forma que não declare `semTraco` — a receita de duas formas
+ * cheias (massa + núcleo) dá 2 + 1 = 3, e as duas barbas custam exatamente isso.
+ *
+ * **Declarado: 5.** A folga não é arredondamento: é a peça de três formas com um
+ * núcleo sem traço (3 + 2 = 5), que é o próximo degrau de complexidade real — um
+ * chapéu com copa, aba e fita. Orçar o medido seria calibrar o teto pelo desenho
+ * que ele deveria julgar, que é o erro que `PISO_DISTINCAO` nomeia em
+ * `folha-base.ts`.
+ *
+ * Em bytes, a barba mais cara custou 3 010 B; os 4 500 declarados dão a mesma
+ * ordem de folga. Vale a regra de sempre (doc 15:463): **byte não veta arte
+ * aprovada** — ele registra.
+ */
+export const CUSTO_DE_SOBREPOSTA = { formas: 5, bytes: 4500 } as const;
+
+/**
+ * BASE + CABELO + ROSTO — três camadas, e é o que o produto renderiza hoje.
+ *
+ * Derivado, nunca escrito à mão: se o custo de uma sobreposta mudar, os dois
+ * compostos abaixo acompanham juntos. É o mesmo movimento que tirou o teto do
+ * cabelo de três cópias para uma.
+ *
+ * O pior medido hoje é `vertical` × `chanel`, com **26 formas** — exatamente o teto
+ * antigo. Contra este, sobram 5.
+ */
+export const ORCAMENTO_COM_ROSTO = {
+  formas: ORCAMENTO_COMPOSTO.formas + CUSTO_DE_SOBREPOSTA.formas,
+  bytes: ORCAMENTO_COMPOSTO.bytes + CUSTO_DE_SOBREPOSTA.bytes,
+} as const;
+
+/**
+ * BASE + CABELO + ROSTO + CHAPÉU — quatro camadas, o pior caso que uma lista monta.
+ *
+ * **O nome diz "com chapéu" e a conta inclui o rosto de propósito:** quem usa
+ * chapéu pode usar barba, e o ranking mostra as duas. Orçar o chapéu sozinho seria
+ * orçar uma composição que o produto não impede.
+ *
+ * ⚠️ **DECLARADO, AINDA NÃO MEDIDO CONTRA ARTE REAL.** Não existe chapéu no
+ * catálogo (Bloco 6/7). A procuração usada na conta do ranking foi a barba mais
+ * cara, e ela é defensável porque `sobrepor()` é a MESMA função para rosto e
+ * chapéu — o compositor não sabe qual slot está desenhando. Assim que o primeiro
+ * chapéu existir, `avatar:folha-base` passa a medir este número em vez de anunciá-lo.
+ */
+export const ORCAMENTO_COM_CHAPEU = {
+  formas: ORCAMENTO_COM_ROSTO.formas + CUSTO_DE_SOBREPOSTA.formas,
+  bytes: ORCAMENTO_COM_ROSTO.bytes + CUSTO_DE_SOBREPOSTA.bytes,
+} as const;
+
+// ---------------------------------------------------------------------------
 // As amarras
 // ---------------------------------------------------------------------------
 

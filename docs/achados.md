@@ -566,7 +566,145 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
-### G23 — `verify:paleta-patentes` mede em RGB, e o anel do Mestre some no marfim
+### G25 — os dois PNGs de traje no deploy NÃO são os que a esteira produz hoje
+**Prova:** `MEDIDO` — 2026-08-17, de carona na medição do G24.
+`.scratch/estilo/medir-traje-disco.ts`. Achado pelo Claude. Registrado e **não
+consertado**, pela regra do `CLAUDE.md`.
+
+Rodando `construir()` sobre a mesma arte de origem e comparando com o arquivo
+versionado em `public/items/traje/`:
+
+| peça | a esteira produz | está no deploy | diferença |
+|---|---|---|---|
+| `traje-farda` | 8 997 B | 10 775 B | **+1 778 B — 19,8%** |
+| `traje-gambesao` | 251 342 B | 254 187 B | +2 845 B — 1,1% |
+
+**Nenhum gate vê isso, e o motivo é preciso.** `arte:trajes --check` termina
+dizendo *"confere com a esteira de hoje, caractere a caractere"*, e a frase é
+verdadeira sobre o que ele confere: o **arquivo TypeScript gerado**
+(`trajes-da-arte.ts`), que carrega só o caminho do PNG e a cor. Sobre o PNG ele
+faz uma coisa só — `existsSync` (`trajes.ts:130`). Existir e estar correto não são
+a mesma pergunta, e o `pngDaPecaNoDeploy.test.ts` também só cobra presença.
+
+**Por que isso importa mais do que parece.** O PNG é o que a criança vê; a arte de
+origem é o que o Doug aprovou. Se os dois se soltarem, o produto mostra uma peça
+que ninguém aprovou e **todos os gates ficam verdes** — é exatamente a família do
+G23 (a régua existe, mede outra coisa, e o defeito atravessa o deploy).
+
+**O que NÃO está medido, e é o que decide a gravidade:** *por que* diferem. As
+hipóteses, em ordem de probabilidade e sem nenhuma verificada — (a) os arquivos
+foram escritos por uma versão anterior do `sharp` ou da esteira, e a diferença é só
+de compressão, com pixel idêntico; (b) a esteira mudou de parâmetro depois de o
+arquivo ser escrito, e o pixel mudou junto. **A distinção é barata**: comparar os
+dois raster a raster, não os arquivos. Enquanto ninguém fizer isso, não dá para
+dizer se o deploy está com arte velha ou só com PNG velho da arte certa — e é por
+isso que este achado é 🟡 e não 🟠.
+
+**O conserto, se o Doug mandar:** o `--check` passa a comparar o PNG raster a raster
+(não byte a byte, que reprovaria por versão de compressor), e a esteira reescreve o
+arquivo quando divergir. **Mas isto pode morrer junto com o G24**: se a prova de
+vetorização do P1 passar, o traje deixa de ser PNG e não há arquivo para divergir.
+
+### G24 — nenhum gate mede peso de asset, e o gambesão pesa 24× a farda
+**Prova:** `MEDIDO` — 2026-08-17, no P0 do plano "até pronto para ir ao ar". Achado
+pelo Claude. Registrado e **deliberadamente não consertado** — ver "por que este fica
+parado", abaixo.
+
+`public/items/traje/`, ambos 600×840 RGBA, medidos com `ls`:
+
+| peça | estilo | peso |
+|---|---|---|
+| `traje-farda` | chapada | **10,5 KB** (10 775 B) |
+| `traje-gambesao` | aerografada, 725 tons | **248,2 KB** (254 187 B) — **23,6×** |
+
+`scripts/avatar/arte/trajes.ts:135-139` **imprime** um KB por peça em toda rodada, e
+é só isso que ele faz com o número: não há comparação, não há teto, e nenhum dos 30
+scripts de `verify:all` mede peso de asset. Um número impresso que ninguém confere
+não é régua — é a mesma família do G23, onde a régua existia e media a coisa errada.
+
+**E o KB que ele imprime não é o do arquivo que vai ao ar** — é `p.bytes`, o buffer
+que `construir()` acabou de montar em memória (8,8 KB e 245,5 KB). Os do deploy são
+os do disco, na tabela acima. Ver **G25**.
+
+**A escala em que isso morde.** O catálogo-alvo do doc 22 é de **~40 trajes**. A 248
+KB cada, são mais de **9 MB** de download; o Quadro de Honra mostra 30 bonecos juntos.
+E a natureza do custo é outra que a do composto SVG: PNG não comprime de novo no fio,
+enquanto 30 avatares em marcação dão 482 KB crus e **56 KB comprimidos** (D15). O
+peso do raster é o peso do raster.
+
+**A medição de carona, no mesmo diretório**, e ela é de outro assunto — fica aqui
+porque saiu da mesma régua e ninguém a tinha feito:
+
+| arquivo | peso | quem usa |
+|---|---|---|
+| `public/items/base/avatar-base-neutro.svg` | **487,6 KB** | só `scripts/` e um spec de e2e |
+| `public/items/base/avatar-base-sem-traje.svg` | **239,7 KB** | só `scripts/` |
+| `public/items/base/avatar-base-female.png` | 35,2 KB | nenhum código do app |
+| `public/items/base/avatar-base-male.png` | 32,9 KB | nenhum código do app |
+
+São **795 KB em `public/`** — portanto no deploy, portanto servíveis — que nenhum
+componente do produto referencia. Sobra da pilha v2/v3, que o compositor paramétrico
+substituiu. **Não confundir com o G24 propriamente**: um é teto que falta, o outro é
+lastro que sobra.
+
+**POR QUE ESTE FICA PARADO, e é decisão e não esquecimento.** A decisão nº 2 do Doug
+(doc 21, changelog de 2026-08-17) manda **provar a vetorização de uma roupa detalhada
+antes de qualquer outra coisa**. Se a prova passar, o traje deixa de ser PNG: os
+arquivos saem do deploy e **este achado morre sem conserto**, que é o melhor destino
+dele. Otimizar o gambesão agora seria investir em raster antes de saber se raster
+fica — e a primeira versão do plano fazia exatamente isso, numa etapa anterior à
+prova.
+
+**O que fazer, e SÓ se o PNG sobreviver à prova:** medir o gambesão em paleta
+reduzida e em WebP, folha comparativa para o olho do Doug escolher a qualidade, e
+então teto por peça com ratchet em `trajes.ts` — mais a restrição de estilo no
+`PEDIDO-TRAJE.md`, para as 38 próximas nascerem leves em vez de o conserto virar
+retrabalho de 40 arquivos.
+
+**O que NÃO está medido:** quanto o gambesão perde de qualidade em paleta reduzida
+(é aerógrafo com 725 tons — o caso mais hostil à quantização), e quanto do peso é
+alfa contra cor.
+
+### G23 — ~~`verify:paleta-patentes` mede em RGB, e o anel do Mestre some no marfim~~ ✅ FECHADO
+
+> **CONSERTADO em 2026-08-17**, no P0 do plano "até pronto para ir ao ar", pela
+> **saída nº 1**: o anel ganhou fio próprio. A escolha é do Doug, sobre folha
+> renderizada (`.scratch/estilo/folha-g23.png`), e o que a decidiu foi a coluna que
+> o achado só tinha em tabela — os seis anéis medidos contra **as duas** superfícies
+> do produto:
+>
+> | patente | marfim `#FAF8F3` | navy `#0F1A2E` |
+> |---|---|---|
+> | Soldado | 3,87 | 4,23 |
+> | Aspirante | 8,55 | **1,92 ✗** |
+> | Capitão | 3,75 | 4,37 |
+> | Comandante | 6,29 | **2,61 ✗** |
+> | General | 8,02 | **2,04 ✗** |
+> | Mestre | **1,82 ✗** | 9,01 |
+>
+> **As que reprovam num fundo passam no outro.** Isso mata as saídas 3 e 4 sem
+> discussão: escurecer o Mestre (`#6B7C93` daria 4,01 / 4,08) consertaria o marfim
+> de hoje e deixaria três reprovando na primeira superfície escura — além de custar
+> a intenção do doc 17 de ele ser a única peça clara da escada. O que resolve é
+> tirar a questão do eixo da COR e pô-la no da FORMA.
+>
+> **O que ficou:** `FIO_DA_MOLDURA` (o token `ink`, 1 px por fora) e
+> `MIN_DA_PATENTE_AO_FIO` em `scripts/avatar/patentes.ts`; a conferência 2 do gate
+> partida em **2a** (o fio contra a superfície, em contraste ≥ 3 — é o que faz a
+> forma existir; uma medição, não seis) e **2b** (cada patente contra o fio, em RGB
+> ≥ 40 — é o que faz a cor ainda ser cor; a mais apertada é o Aspirante em 70,1);
+> as duas camadas na `box-shadow` de `<MolduraPatente>`; e a regra em `DESIGN.md`.
+>
+> **A negação, nas duas pontas.** Com fio claro `#E8E4DC`, a 2a reprova em 1,19.
+> Sem o fio no componente, os 10 casos de `moldura-fio.test.ts` falham — o primeiro
+> com `expected [ '0 0 0 2px #AEBCCE' ] to have a length of 2 but got 1`. Esse teste
+> existe porque o gate mede a TABELA, e foi a distância entre a régua e o render que
+> deixou o Mestre invisível em produção com tudo verde.
+>
+> **Não repropor** as saídas 2, 3 e 4. O que continua aberto e é de outro assunto:
+> se 3,0 é o piso certo para um anel de 2 px (a WCAG fala de objeto gráfico, sem
+> tamanho mínimo) — a norma tende a ser generosa demais para um fio tão fino, então
+> 3,0 é o mínimo do mínimo.
 
 **Prova:** `MEDIDO` — 2026-08-13, pela folha de teste do Bloco 3 (fundo). Achado
 pelo Claude. Registrado e **não consertado**, pela regra do `CLAUDE.md`.
@@ -1325,7 +1463,24 @@ mais baixo da faixa — a pergunta vira *"há tinta SOBRE a sobrancelha?"* em ve
 
 ## 🔵 Decisão ou divergência
 
-### D17 — a barba e o cabelo traçado disputam a mesma região, e são pintados pelas MESMAS duas cores
+### D17 — ~~a barba e o cabelo traçado disputam a mesma região~~ ✅ DECIDIDO: a fusão está aceita
+> **DECIDIDO pelo Doug em 2026-08-17**, na abertura do plano "até pronto para ir ao
+> ar": **saída 1 — aceitar.** Onde barba e cabelo encostam, viram uma massa só, como
+> numa ilustração de verdade, e a barba segue recolorindo junto com o cabelo.
+>
+> Isso mata as outras duas com todas as letras, e elas **não se repropõem**: a saída
+> 2 (barba só abaixo do queixo, com piso de 24 u virando gate) cortaria toda barba de
+> bochecha por decreto; a saída 3 (tinta própria para a barba) quebraria a decisão de
+> produto de ela recolorir com o cabelo, que é do doc 21.
+>
+> **O que muda no código: nada.** `avatar:variantes` já mede e imprime a sobreposição
+> como aviso, e é assim que ela fica — aviso é o registro certo de uma fusão
+> intencional. Não vira gate, porque não há o que reprovar.
+>
+> **O que NÃO foi medido continua não medido**, e agora é sabidamente aceito: a
+> colisão contra `espetado` e `assimetrico` (só a `chanel` foi medida). Se um dia
+> alguma delas ficar feia, é caso de desenho, não de régua.
+
 **Prova:** `MEDIDO` — 2026-08-13, no Bloco 5 (rosto), etapa 1.
 `.scratch/estilo/_criticas-medidas.ts`. Achado pelo Claude, executando a etapa.
 Registrado e **não consertado**, pela regra 9.
@@ -1361,7 +1516,25 @@ do Doug, não régua de legibilidade.
 foi medida, por ser o composto mais pesado — mas a `assimetrico` tem massa que
 cobre 97,6% de uma sobrancelha, então a colisão dela tende a ser pior, não melhor.
 
-### D16 — o bigode não pode existir sem virar nariz, e a causa é o corredor, não o desenho
+### D16 — ~~o bigode não pode existir sem virar nariz~~ ⛔ MORTO por medição
+> **MORTO pelo Doug em 2026-08-17**, na abertura do plano "até pronto para ir ao ar",
+> e **sem rodada de teste** — a decisão foi explícita nisso. O bigode sai do escopo
+> do slot de rosto, que fica em **barbas + óculos**.
+>
+> O motivo é o que o achado já media, e nenhum desenho o contorna: a única região
+> onde tinta pode existir acima da boca é uma ilha de **57 u**, espremida entre a
+> folga de 24 u aos dois olhos e a de 26 u à boca. O que cabe ali é uma barra lida
+> como **nariz** — pela regra do próprio estilo, já que `geometria.ts:456` declara
+> que o nariz não existe neste boneco, e toda mancha escura entre olhos e boca ocupa
+> o lugar do que falta.
+>
+> **Quem quiser bigode um dia mexe na BASE** — aproximar os olhos, ou baixar a boca —
+> e isso é outro trabalho, com outro custo: a base é a silhueta compartilhada por
+> todas as peças. Não é conserto do slot de rosto.
+>
+> `pecaDeRosto(b, comBigode)` mantém o parâmetro porque as sondas e as réguas o
+> usam para medir os dois cenários; em produção ele nunca é ligado.
+
 **Prova:** `MEDIDO` — 2026-08-13, sondas P0 + crítica renderizada da 1ª folha.
 `.scratch/estilo/sondas-rosto.ts` e `_corredor.ts`. Achado pelo Claude. Registrado
 e **não consertado**, pela regra 9.
@@ -1389,7 +1562,51 @@ folga de 26 u — lê melhor que um flutuante. A sonda P1 mediu que aos 12–20 
 espessura a pele só sobrevive com o preto parando em y 270; abaixo disso as duas
 marcas fundem. Fundir pode ser melhor que flutuar, e ninguém olhou.
 
-### D15 — não existe teto declarado para o composto de TRÊS camadas
+### D15 — ~~não existe teto declarado para o composto de TRÊS camadas~~ ✅ FECHADO
+> **CONSERTADO em 2026-08-17**, no P0 do plano "até pronto para ir ao ar", pelo
+> conserto que o próprio achado propôs — e a conta do ranking, que ele apontava como
+> não medida, foi refeita e **mudou o significado do teto de bytes**.
+>
+> **O que ficou declarado**, em `cabelo.ts`, derivado de uma constante só para não
+> voltar a virar três cópias que discordam:
+>
+> - `CUSTO_DE_SOBREPOSTA` = **5 formas / 4 500 B** por slot. Medido são 3 formas
+>   (`sobrepor()` emite um preenchimento por forma mais um traço por forma sem
+>   `semTraco`: massa + núcleo = 2 + 1); os 5 são a peça de três formas com núcleo
+>   sem traço (3 + 2), que é o próximo degrau real — um chapéu com copa, aba e fita.
+>   Orçar o medido seria calibrar o teto pelo desenho que ele deveria julgar.
+> - `ORCAMENTO_COM_ROSTO` = **31 formas / 14 740 B** (3 camadas). O pior medido hoje
+>   é `vertical × chanel`, com 26 — exatamente o teto antigo. Sobram 5.
+> - `ORCAMENTO_COM_CHAPEU` = **36 formas / 19 240 B** (4 camadas, o pior caso que
+>   uma lista monta: quem tem chapéu pode ter barba, e o recorte de cabeça mostra
+>   as duas). **Declarado e NÃO medido contra arte real** — não há chapéu no
+>   catálogo. A procuração da conta foi a barba mais cara, defensável porque
+>   `sobrepor()` é a mesma função para os dois slots: o compositor não sabe qual
+>   está desenhando.
+>
+> **A conta do ranking, refeita** (`.scratch/estilo/medir-ranking.ts`, 30 bonecos
+> distintos, com pele, cabelo e barba variando):
+>
+> | cenário | formas | cru | gzip | razão |
+> |---|---|---|---|---|
+> | base + cabelo | 654 | 322 KB | 48,9 KB | 6,6× |
+> | base + cabelo + rosto | 744 | 394 KB | 51,1 KB | 7,7× |
+> | base + cabelo + rosto + chapéu | 834 | 482 KB | **56,0 KB** | 8,6× |
+>
+> Os 10 240 B prometiam 300 KB de marcação para a lista inteira, e **a lista só com
+> cabelo já está em 322 KB**: o teto estava furado antes de o rosto existir. O que
+> salva a conta é justamente o que o docstring sempre disse sem nunca medir — *"que
+> comprime como texto"*. E a razão de compressão **melhora** com as camadas, porque
+> cada peça nova repete estrutura que o dicionário do gzip já tem. Trinta avatares
+> com tudo ligado custam menos que uma foto.
+>
+> **A consequência, e é ela que importa daqui para a frente: byte cru nunca foi o
+> custo real, é registro de regressão.** Teto de verdade é **forma**, porque forma é
+> nó de DOM que o celular barato pinta 30 vezes. `avatar:folha-base` agora mede o
+> composto de 3 camadas e **veta por forma**, registrando bytes — a mesma decisão A
+> de 2026-08-06 que já valia para o cabelo traçado. Baixado o custo por slot de 5
+> para −2 (teto 24), a folha reprova 8 combinações; é a negação.
+
 **Prova:** `MEDIDO` — 2026-08-13, sonda P3 do Bloco 5. Achado pelo Claude.
 Registrado e **não consertado**, pela regra 9.
 

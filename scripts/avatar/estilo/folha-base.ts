@@ -57,9 +57,12 @@ import {
   FOLGA_ROSTO,
   MODELOS_CABELO,
   ORCAMENTO_COMPOSTO,
+  ORCAMENTO_COM_CHAPEU,
+  ORCAMENTO_COM_ROSTO,
   folgaDoRosto,
   type ModeloCabelo,
 } from "../../../src/lib/avatar/estilo/cabelo";
+import { BARBAS, pecaDeRosto } from "../../../src/lib/avatar/estilo/rosto";
 import { conferirSvg } from "../../../src/lib/avatar/svgContrato";
 import { CABELO, LINHA, PELE } from "../../../src/lib/avatar/palette";
 
@@ -448,6 +451,50 @@ async function main() {
         `${curta ? (tracada ? "   ⚠ é a folga DA ARTE" : "   ✗") : ""}`,
     );
   }
+
+  // ---- o composto de TRÊS camadas: base + cabelo + rosto (D15) ----------------
+  //
+  // Ele não existia aqui, e essa ausência era o achado: `ORCAMENTO_COMPOSTO` diz de
+  // si mesmo que mede "base mais UM cabelo", e o slot de rosto tornou isso falso.
+  // Base + `chanel` dá 23 formas, a barba custa 3, e o composto batia nos 26 exatos
+  // do teto antigo — passava raspando, sem folga para o chapéu.
+  //
+  // As formas VETAM aqui, e os bytes não: é a mesma decisão A de 2026-08-06 que já
+  // vale para o cabelo traçado (doc 15:463). Forma é nó de DOM pintado 30 vezes no
+  // ranking; byte cru não é o custo do fio — a lista inteira com tudo ligado dá
+  // 482 KB crus e **56 KB comprimidos**, medido em `.scratch/estilo/medir-ranking.ts`.
+  console.log(
+    `\ncomposto de 3 camadas — base + cabelo + rosto ` +
+      `(teto ${ORCAMENTO_COM_ROSTO.formas} formas / ${ORCAMENTO_COM_ROSTO.bytes} bytes):`,
+  );
+  const nomesDeBarba = Object.keys(BARBAS);
+  for (const nome of nomesDeBarba) {
+    for (const m of MODELOS_CABELO) {
+      const tres = compor({
+        pele: PELE_COMPARACAO,
+        cabelo: CABELO_COMPARACAO,
+        modeloCabelo: m,
+        rosto: pecaDeRosto(BARBAS[nome], false),
+        animado: true,
+        ns: "kk",
+      });
+      const f = contarFormas(tres);
+      const b = Buffer.byteLength(tres, "utf-8");
+      if (f > ORCAMENTO_COM_ROSTO.formas) estourou.push(`${nome} × ${m}: ${f} formas`);
+      const ruim = conferirSvg(tres);
+      if (ruim.length) estourou.push(`${nome} × ${m}: ${ruim.length} problema(s) de contrato`);
+      console.log(
+        `  ${`${nome} × ${m}`.padEnd(30)} ${String(f).padStart(2)} formas` +
+          `   ${String(b).padStart(5)} bytes` +
+          `${b > ORCAMENTO_COM_ROSTO.bytes ? " ▲ registrado" : "            "}`,
+      );
+    }
+  }
+  console.log(
+    `\n  o de 4 camadas (${ORCAMENTO_COM_CHAPEU.formas} formas / ${ORCAMENTO_COM_CHAPEU.bytes} bytes) está ` +
+      `DECLARADO e não medido:\n  não há chapéu no catálogo. A conta do ranking usou a barba mais cara como ` +
+      `procuração,\n  porque sobrepor() é a mesma função para os dois slots.`,
+  );
 
   // A referência entra na folha uma vez POR PAINEL, e são treze. O PNG original
   // tem 964 KB, e treze cópias em base64 passam de 16 MB de HTML — o

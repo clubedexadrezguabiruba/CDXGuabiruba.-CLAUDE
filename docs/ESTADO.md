@@ -245,9 +245,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 0 |
+| **Commits à frente de `origin/main`** | 2 |
 | **Árvore** | **7 arquivos sujos** |
-| **Último commit** | 7c05f07 · 2026-08-13 · feat(avatar): o fundo deixa de ser guarda-roupa — um só para todos, e o slot sai do banco |
+| **Último commit** | 870ac6d · 2026-08-17 · fix(avatar): o anel do Mestre volta a existir — a régua troca de instrumento, e o fio resolve o que a cor não resolvia |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -298,7 +298,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 88 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 19 |
+| **Arquivos de teste** | 20 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes

@@ -28,7 +28,13 @@ function render(tier: number | null, espessura?: number): string {
   // `children` vai DENTRO das props, e não como terceiro argumento: a interface o
   // declara obrigatório, e a sobrecarga variádica de `createElement` não o
   // satisfaz — o `tsc --noEmit` reprova.
+  //
+  // O `react/no-children-prop` existe para impedir `<div children={x}/>` em JSX,
+  // onde há a forma óbvia de escrever. Aqui não há JSX (a suíte roda em `node`
+  // com `include: *.test.ts`), e as duas regras se contradizem: obedecer o lint
+  // quebra o typecheck. O typecheck ganha, e a exceção fica com o motivo escrito.
   return renderToStaticMarkup(
+    // eslint-disable-next-line react/no-children-prop
     createElement(MolduraPatente, {
       tier,
       ...(espessura === undefined ? {} : { espessura }),
