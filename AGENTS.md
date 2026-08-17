@@ -34,6 +34,13 @@ além desta folha.
   que ignora toda a segurança por linha do banco.
 - **Nunca** editar uma migration já aplicada. Cria-se outra — regra do
   `CLAUDE.md`, e o histórico do banco depende dela.
+- **Nunca** fazer nada do avatar recolorir além de **pele e cabelo**. O aluno
+  escolhe duas cores, e são essas duas; todo o resto — traje, chapéu, rosto,
+  óculos, pet, fundo, moldura — tem **cor final assada no desenho**. Isso proíbe
+  coluna `avatar_*_color` nova, seletor de cor na interface para outro slot, e
+  propriedade `--av-*` nova no SVG. Entra aqui porque a trava que existe
+  (`svgContrato.ts`) só pega o terceiro caso: banco e interface passariam.
+  A barba recolore, e **não é exceção** — ela é cabelo.
 
 A ausência de `.env.local` numa cópia de trabalho é uma **camada, não uma
 garantia**: variável de ambiente tem precedência sobre o arquivo. Não teste estas
@@ -48,6 +55,6 @@ travas executando a operação proibida.
   no briefing da tarefa, não deste arquivo — escopo de tarefa envelhece, regra
   durável não.
 - **Nunca afirmar que banco, teste ou render funcionou sem ter executado.** O
-  projeto chama isso de Regra de Evidência (`CLAUDE.md`, §4 das Regras
+  projeto chama isso de Regra de Evidência (`CLAUDE.md`, §5 das Regras
   Invioláveis): reproduzir, apontar causa com arquivo e linha, fix mínimo, e um
   gate que falha antes e passa depois. Relatório não é verificação.

@@ -33,7 +33,29 @@ O client envia tentativas. O servidor valida e decide.
 - Mínimo de complexidade necessária para a tarefa atual
 - Não criar helpers/utils para operações usadas uma única vez
 
-#### 4. Regra de Evidência (anti-hallucination)
+### 4. O aluno escolhe DUAS cores, e são estas: pele e cabelo
+**Nada mais no avatar recolore. Nunca.** Traje, chapéu, rosto, óculos, pet,
+fundo, moldura, item de baú — todos têm **cor final, assada no desenho**.
+É a *emenda à D27*, decidida e permanente; ela já revogou a cor de fundo
+(`avatar_bg_color` não existe) e a recolorização do traje por patente.
+
+Na prática, isto proíbe quatro coisas que já foram tentadas:
+- **coluna nova de cor** no banco (`avatar_*_color` além de `avatar_hair_color`);
+- **custom property nova** `--av-*` no SVG — tem trava: `svgContrato.ts` reprova
+  qualquer propriedade fora do contrato, e o escopo `camada` está **vazio**;
+- **seletor de cor** na interface para qualquer slot que não seja pele ou cabelo;
+- **pedir arte em cor instrumental** para repintar depois (o ciano morreu em
+  2026-08-13; a arte chega em **cor final**).
+
+A barba é a única exceção aparente, e não é exceção: ela recolore **junto com o
+cabelo** (`var(--av-cabelo)`, decisão D17), porque é cabelo.
+
+**Consequência de esteira, e é o que decide o formato de toda peça nova:** quem
+tem cor assada vira `.svg` avulso pela rota do traje; quem recolore (cabelo e
+barba) fica na geometria declarada com token de cor. É a única pergunta que
+bifurca a esteira de arte — ver doc 19 §12.
+
+#### 5. Regra de Evidência (anti-hallucination)
 Antes de alterar qualquer bug/fluxo:
 1) Reproduzir (passos).
 2) Apontar 1 causa provável com **arquivo+linhas** e/ou **query SQL**.

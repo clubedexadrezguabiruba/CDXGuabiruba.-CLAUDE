@@ -19,31 +19,39 @@ referência de estilo.
    `#AEBCCE`. Usar uma delas por gosto apaga o único sinal de progressão do
    produto. E **`#C9B37E` é proibido** — reprovado pelo gate por 3° de matiz.
 
-2. **Cinzel só em título de tela e de bloco.** Todo o resto é Inter. Cinzel em
+2. **O aluno escolhe DUAS cores no avatar: pele e cabelo. Mais nada recolore.**
+   Traje, chapéu, rosto, óculos, pet, fundo, moldura — **cor final, assada no
+   desenho** (emenda à D27, permanente). Isso proíbe seletor de cor para qualquer
+   outro slot, coluna `avatar_*_color` nova, e `--av-*` nova no SVG (esta última
+   tem trava: `svgContrato.ts` reprova). A barba não é exceção — ela é cabelo, e
+   recolore com ele. Se um desenho novo "só funciona se der para escolher a cor",
+   o desenho está errado, não a regra.
+
+3. **Cinzel só em título de tela e de bloco.** Todo o resto é Inter. Cinzel em
    corpo, botão ou rótulo some no celular. Marfim `#FAF8F3` é o branco do
    produto, não `#FFFFFF`.
 
-3. **375px é o alvo de projeto, não o caso degradado.** Coluna única que cresce,
+4. **375px é o alvo de projeto, não o caso degradado.** Coluna única que cresce,
    nunca grade de desktop que encolhe. Toque de 44px mínimo. Zero overflow
    horizontal. Em tela de prática, ver a posição e fazer o lance **sem rolar**.
 
-4. **Vocabulário da Bíblia Tonal §8 é obrigatório** em título e bloco:
+5. **Vocabulário da Bíblia Tonal §8 é obrigatório** em título e bloco:
    Quartel-General, Trilhas de Formação, Desafios Táticos, Ordens do Dia, Revisão
    de Batalha, Quadro de Honra, Sequência de Campanha, Insígnias, Equipamentos,
    Companhias. A navegação principal fica em palavra clara — o tema entra dentro
    da tela, não no menu.
 
-5. **Recompensa só depois do servidor.** XP, baú, level-up e insígnia são reação a
+6. **Recompensa só depois do servidor.** XP, baú, level-up e insígnia são reação a
    um fato já concedido por RPC. Nunca animação otimista.
 
-6. **Cor nunca sozinha.** Acerto, erro, bloqueado e concluído levam forma ou
+7. **Cor nunca sozinha.** Acerto, erro, bloqueado e concluído levam forma ou
    ícone junto. Produto de xadrez, para crianças; daltonismo é comum.
 
-7. **Prestígio, nunca humilhação** no Quadro de Honra. E **nada de prova social
+8. **Prestígio, nunca humilhação** no Quadro de Honra. E **nada de prova social
    fabricada** — não há depoimento, número de usuário nem prêmio. Só contas de
    teste existem.
 
-8. **A direção é "Continuidade"** (decidida em 2026-07-31): navy `#0F1A2E` de
+9. **A direção é "Continuidade"** (decidida em 2026-07-31): navy `#0F1A2E` de
    comando, ouro `#C9A84C` raro, marfim `#FAF8F3` de fundo, Cinzel nos títulos.
    Separação por **fio de 1px tingido**, não por sombra — sombra difusa sobre
    marfim some em celular barato. `rounded-lg` padrão, `rounded-xl` em bloco.
