@@ -34,6 +34,18 @@
  *      `warm-ivory`, o fundo de card do produto inteiro. A moldura de um Mestre é
  *      prata `#AEBCCE` — clara —, e anel claro sobre marfim é a mesma família de
  *      defeito que a lei nº 4 da arte de traje descreve. Aqui ela vira número.
+ *
+ *      **EM 2026-08-17 ELA TROCOU DE INSTRUMENTO E DEPOIS DE SUJEITO (G23).**
+ *      Media distância RGB: o Mestre dava 103,7 e passava com folga de 2,6×. Em
+ *      razão de contraste o mesmo par dá **1,82**, abaixo do piso 3 da WCAG — o
+ *      anel do aluno mais avançado do produto era o único invisível, e a régua
+ *      dizia que estava ótimo. Medidas as seis contra as DUAS superfícies do
+ *      produto, ficou claro que trocar a cor não resolvia: as que reprovam no
+ *      marfim passam no navy e vice-versa. O Doug escolheu a saída nº 1 — **o
+ *      anel ganhou um fio de 1 px por fora**, e o sujeito da medição passou a ser
+ *      o fio. Daí a conferência 2 ter virado 2a (o fio contra a superfície, em
+ *      contraste — é o que faz a forma existir) e 2b (cada patente contra o fio,
+ *      em RGB — é o que faz a cor ainda ser cor). Nenhuma das seis mudou.
  *   5. **`corDaMoldura()` é total sobre os tiers do banco.** O banco tem **8 tiers**
  *      contra as 6 cores desta tabela (achado **D11**, aberto). A função satura na
  *      última, e a saturação é medida — para que o dia em que o D11 for decidido
@@ -49,13 +61,17 @@
 
 import { existsSync } from "fs";
 import {
+  FIO_DA_MOLDURA,
   FUNDO_DA_MOLDURA,
-  MIN_CONTRA_FUNDO,
+  MIN_CONTRASTE_FUNDO,
+  MIN_DA_PATENTE_AO_FIO,
   MIN_ENTRE_PATENTES,
   MIN_ENTRE_VIZINHAS,
   PATENTES,
+  contraste,
   corDaMoldura,
   distancia,
+  luminancia,
   pares,
   vizinhas,
 } from "../../avatar/patentes";
@@ -119,21 +135,52 @@ function main() {
   //    É a conferência que NASCEU com a moldura. Um anel que se confunde com o
   //    fundo não reprova em lugar nenhum e não aparece na tela — o defeito mais
   //    barato de cometer e o mais caro de perceber.
+  //
+  //    ⚠️ ELA MEDIA EM RGB ATÉ 2026-08-17, E POR ISSO NÃO PEGAVA NADA (G23).
+  //    O Mestre `#AEBCCE` contra o marfim dá **103,7** de distância RGB — verde
+  //    com folga de 2,6× — e **1,82** de razão de contraste. Prata sobre marfim.
+  //    A régua agora é a luminância; o RGB continua impresso ao lado, como
+  //    diagnóstico, porque ele responde outra pergunta e responde bem. O porquê
+  //    inteiro está em `scripts/avatar/patentes.ts`, no bloco "A RÉGUA DO ANEL".
   // -------------------------------------------------------------------------
-  console.log(`\n2. A moldura contra o fundo ${FUNDO_DA_MOLDURA} — mínimo ${MIN_CONTRA_FUNDO}\n`);
-  let piorFundo = { patente: "", d: 999 };
+  console.log(
+    `\n2a. O FIO ${FIO_DA_MOLDURA} contra o fundo ${FUNDO_DA_MOLDURA}` +
+      ` — contraste mínimo ${MIN_CONTRASTE_FUNDO.toFixed(1)} (WCAG 1.4.11)\n`,
+  );
+  const crFio = contraste(FIO_DA_MOLDURA, FUNDO_DA_MOLDURA);
+  checar(
+    crFio >= MIN_CONTRASTE_FUNDO,
+    "fio × fundo",
+    `contraste ${crFio.toFixed(2)} (mínimo ${MIN_CONTRASTE_FUNDO.toFixed(1)})` +
+      `  ·  L ${luminancia(FIO_DA_MOLDURA).toFixed(3)} contra ${luminancia(FUNDO_DA_MOLDURA).toFixed(3)}`,
+  );
+  despejar();
+  console.log(
+    "\n  é UMA medição, não seis: o fio é o mesmo para as seis patentes, e é ele que\n" +
+      "  responde pela forma existir. Superfície nova = mais uma linha aqui, e nenhuma\n" +
+      "  cor de patente se mexe.",
+  );
+
+  console.log(
+    `\n2b. Cada patente contra o fio — distância RGB mínima ${MIN_DA_PATENTE_AO_FIO}\n`,
+  );
+  let piorFio = { patente: "", d: 999 };
   for (const p of PATENTES) {
-    const d = distancia(p.pano, FUNDO_DA_MOLDURA);
-    if (d < piorFundo.d) piorFundo = { patente: p.patente, d };
+    const d = distancia(p.pano, FIO_DA_MOLDURA);
+    if (d < piorFio.d) piorFio = { patente: p.patente, d };
     checar(
-      d >= MIN_CONTRA_FUNDO,
-      `${p.patente} · anel × fundo`,
-      `${p.pano} contra ${FUNDO_DA_MOLDURA} · distância ${d.toFixed(1)} (mínimo ${MIN_CONTRA_FUNDO})`,
+      d >= MIN_DA_PATENTE_AO_FIO,
+      `${p.patente} · anel × fio`,
+      `${p.pano} contra ${FIO_DA_MOLDURA} · distância ${d.toFixed(1)}` +
+        ` (mínimo ${MIN_DA_PATENTE_AO_FIO})` +
+        `  ·  contra o fundo: contraste ${contraste(p.pano, FUNDO_DA_MOLDURA).toFixed(2)} [diagnóstico]`,
     );
   }
   despejar();
   console.log(
-    `\n  anel mais apagado: ${piorFundo.patente} — ${piorFundo.d.toFixed(1)} contra o marfim`,
+    `\n  mais perto do fio: ${piorFio.patente} — ${piorFio.d.toFixed(1)} contra piso ${MIN_DA_PATENTE_AO_FIO}` +
+      `  (o Mestre, que reprovava contra o fundo em 1,82, aqui está em ` +
+      `${distancia("#AEBCCE", FIO_DA_MOLDURA).toFixed(1)} — a cor dele não precisou mudar)`,
   );
 
   // -------------------------------------------------------------------------

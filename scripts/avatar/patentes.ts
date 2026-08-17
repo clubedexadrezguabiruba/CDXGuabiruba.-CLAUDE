@@ -206,12 +206,144 @@ export const PATENTES: readonly Patente[] = [
 export const FUNDO_DA_MOLDURA = "#FAF8F3";
 
 /**
- * Distância mínima entre a moldura e o fundo em que ela vive.
+ * Distância RGB mínima entre a moldura e o fundo em que ela vive.
  *
- * O mesmo 40 dos outros pisos desta tabela, pelo mesmo motivo: abaixo disso duas
- * cores deixam de ser duas cores.
+ * O mesmo 40 dos outros pisos desta tabela. **Ele continua aqui, e continua
+ * medido — mas deixou de ser a régua que decide**, pelo motivo do bloco abaixo.
+ * Fica como diagnóstico: distância RGB responde "são duas cores diferentes?", que
+ * é uma pergunta de verdade, só não é a pergunta que um anel faz.
  */
 export const MIN_CONTRA_FUNDO = 40;
+
+// ---------------------------------------------------------------------------
+// A RÉGUA DO ANEL CONTRA O FUNDO — por que ela deixou de ser RGB (G23)
+// ---------------------------------------------------------------------------
+//
+// A conferência 2 nasceu certa na intenção e errada no instrumento. Ela mediu o
+// anel do **Mestre `#AEBCCE`** contra o marfim e leu **103,7** de distância RGB,
+// contra um piso de 40: verde com folga de 2,6×. Em razão de contraste o mesmo
+// par dá **1,82** — prata sobre marfim, abaixo do piso 3 da WCAG 1.4.11 para
+// objeto gráfico não-textual. O anel do aluno mais avançado do produto é o único
+// que não se vê, e a régua dizia que estava ótimo.
+//
+// A causa é conhecida e o projeto já a tinha escrito, no doc 21 §7, um dia antes:
+// **"dois tons podem estar longe em matiz e colados em valor"** — `#5E5442` e
+// `#4F5A46` distam 17 em RGB e **1** em valor. Distância RGB soma os três canais
+// como se os três pesassem igual para o olho, e eles não pesam: o verde responde
+// por 71,5% da luminância e o azul por 7,2%. Duas cores podem estar longe no cubo
+// e à mesma altura na única dimensão que faz uma forma aparecer sobre um fundo.
+//
+// AS DUAS FICAM, E NÃO SÃO A MESMA PERGUNTA:
+//
+//  - **entre patentes → RGB.** Ali a pergunta é *"o aluno distingue os dois
+//    degraus?"*, e matiz distingue: verde-oliva e azul-marinho na mesma altura de
+//    valor continuam sendo duas patentes diferentes, lado a lado no ranking.
+//  - **contra o fundo → luminância.** Aqui a pergunta é *"a forma existe?"*, e
+//    forma sobre fundo aparece por diferença de valor, não de matiz. Um anel de
+//    2 px sem contraste de valor não é um anel discreto: é um anel ausente.
+//
+// O QUE ESTA RÉGUA **NÃO** RESOLVE, e fica dito: a WCAG 1.4.11 fala de objeto
+// gráfico, sem tamanho mínimo. Se 3,0 é o piso certo para um anel de **2 px** é
+// coisa que este número não sabe — a norma tende a ser generosa demais para um fio
+// tão fino, não rigorosa demais. O piso 3,0 é, portanto, o mínimo do mínimo.
+
+/**
+ * Razão de contraste mínima entre o anel e a superfície sob ele.
+ *
+ * **3,0** é a WCAG 2.1, critério 1.4.11 (Non-text Contrast) — o piso para um
+ * componente de interface ser percebido. Não é 4,5: 4,5 é piso de **texto**, e o
+ * anel não se lê, se enxerga.
+ */
+export const MIN_CONTRASTE_FUNDO = 3;
+
+// ---------------------------------------------------------------------------
+// O FIO — a saída nº 1 do G23, escolhida pelo Doug em 2026-08-17
+// ---------------------------------------------------------------------------
+//
+// Medidas as seis contra as duas superfícies do produto, a folha
+// (`.scratch/estilo/folha-g23.png`) mostrou o que a tabela do achado já dizia:
+//
+//   patente      marfim #FAF8F3   navy #0F1A2E
+//   Soldado           3,87            4,23
+//   Aspirante         8,55            1,92 ✗
+//   Capitão           3,75            4,37
+//   Comandante        6,29            2,61 ✗
+//   General           8,02            2,04 ✗
+//   Mestre            1,82 ✗          9,01
+//
+// **As que reprovam num fundo passam no outro, e vice-versa.** Não é coincidência
+// e não é escolha de arte: a luminância das seis vai de 0,066 a 0,494, e nenhuma
+// superfície única cobre uma faixa dessa largura com CR 3 nas duas pontas. Trocar
+// a cor do Mestre (saída nº 4) consertaria o marfim de hoje e deixaria as outras
+// três reprovando na primeira superfície escura que aparecesse.
+//
+// A saída escolhida tira o problema do eixo da COR e o põe no da FORMA: o anel
+// ganha um **fio de 1 px por fora**, e é o fio que responde pela existência da
+// forma contra o fundo. As seis cores ficam intactas — inclusive a intenção do
+// doc 17 de o Mestre ser a única clara da escada. É o que carta de baralho faz.
+//
+// COM O FIO, A RÉGUA VIRA DUAS, E CADA UMA MEDE UMA COISA DIFERENTE:
+//
+//   a) **o fio contra a superfície, em contraste.** É o que faz a forma existir.
+//      Uma medição por superfície, não por patente — o fio é o mesmo para as seis.
+//   b) **a patente contra o fio, em distância RGB.** Aqui a forma já existe: a
+//      pergunta é se a cor da patente ainda se lê COMO COR ao lado do fio, e cor
+//      se distingue por matiz também. É a mesma pergunta de "entre patentes", e
+//      por isso o mesmo piso.
+
+/**
+ * O fio de contorno do anel — 1 px, por fora, sob todas as seis patentes.
+ *
+ * É o token **`ink`** do produto (`globals.css:30`, espelhado em
+ * `scripts/design/tokens.ts:36` e medido por `verify:design-tokens`), não uma cor
+ * nova: a direção A da `DESIGN.md` é literalmente *"fio de contorno finíssimo em
+ * vez de peso"*, e o boneco já tem contorno preto próprio — um fio de tinta em
+ * volta dele é a continuação do desenho, não um enfeite.
+ *
+ * ⚠️ **ELE É TOKEN DA SUPERFÍCIE, NÃO DA PATENTE.** Hoje o marfim é o único fundo
+ * sob um anel, e por isso a constante é uma só. No dia em que um avatar aparecer
+ * sobre o navy, o fio ali tem de ser claro — e o que muda é ESTA constante virando
+ * um par, mais uma linha na conferência 2a. As seis cores de patente continuam
+ * sem se mexer, que é o ponto inteiro da saída nº 1.
+ */
+export const FIO_DA_MOLDURA = "#1B2432";
+
+/**
+ * Distância RGB mínima entre a cor de uma patente e o fio que a contorna.
+ *
+ * O mesmo 40 de `MIN_ENTRE_PATENTES`, e pelo mesmo motivo: abaixo disso as duas
+ * bandas viram uma banda só, e o anel de 2 px + fio de 1 px lê como um traço de
+ * 3 px sem cor de patente nenhuma. A folga hoje é confortável — a mais apertada é
+ * o Aspirante, em 70,1 —, mas ela existe para o dia em que alguém propuser uma
+ * patente cor de tinta.
+ */
+export const MIN_DA_PATENTE_AO_FIO = 40;
+
+/**
+ * Luminância relativa de um hex, pela fórmula da WCAG 2.1.
+ *
+ * Os dois passos que a distância RGB pula, e que são exatamente o que faltava:
+ * **linearizar** o canal (sRGB é codificado com gama, e 128 não é meia luz) e
+ * **pesar** os três canais pela resposta do olho — 0,7152 no verde contra 0,0722
+ * no azul.
+ */
+export function luminancia(hex: string): number {
+  const canais = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = canais.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Razão de contraste entre duas cores, de 1 (idênticas) a 21 (preto × branco).
+ *
+ * Simétrica de propósito: quem chama não precisa saber qual das duas é a mais
+ * clara, e trocar a ordem dos argumentos não pode mudar um veredito.
+ */
+export function contraste(a: string, b: string): number {
+  const [la, lb] = [luminancia(a), luminancia(b)];
+  const [claro, escuro] = la >= lb ? [la, lb] : [lb, la];
+  return (claro + 0.05) / (escuro + 0.05);
+}
 
 /**
  * A cor do anel de patente de um `achieved_tier`. `null` = sem cor de patente.

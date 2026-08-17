@@ -168,6 +168,26 @@ aparece só na moldura.
 Custo de arte zero, e é por isso que ela cabe. Uma moldura que precisasse de asset
 por patente seria seis assets para manter, e não valeria.
 
+**Ela tem duas camadas, e a de fora é a que a faz existir** (2026-08-17, achado
+G23): o anel da patente, e um **fio de 1 px de `ink` por fora dele**. Sem o fio, o
+anel do Mestre `#AEBCCE` fica em razão de contraste **1,82** contra o marfim —
+abaixo do piso 3 da WCAG 1.4.11, e portanto invisível justamente no aluno mais
+avançado do produto. Trocar a cor dele não resolve: contra o navy quem reprova são
+Aspirante (1,92), General (2,04) e Comandante (2,61), e o Mestre passa em 9,01. A
+luminância das seis vai de 0,066 a 0,494, e **nenhuma superfície única cobre essa
+faixa nas duas pontas** — é aritmética, não gosto. O fio tira a questão do eixo da
+cor e a põe no da forma, que é a regra 8 da direção Continuidade aplicada ao
+avatar: *separação por fio tingido, não por sombra*.
+
+O fio é **token da superfície, não da patente**: sobre o marfim ele é `ink`; sobre
+uma superfície escura ele terá de ser claro. Quando isso acontecer, o que muda é o
+fio — as seis cores da escada não se mexem. `verify:paleta-patentes` mede as duas
+metades separadamente: o **fio contra o fundo** em razão de contraste (≥ 3 — faz a
+forma existir) e cada **patente contra o fio** em distância RGB (≥ 40 — faz a cor
+ainda ser cor). E `moldura-fio.test.ts` renderiza o componente para provar que as
+duas camadas chegam à tela, porque foi a distância entre régua e render que deixou
+o Mestre invisível com o gate verde.
+
 A **faixa proibida de matiz 0°–44°** (doc 17) era lei do pipeline de recoloração do
 SVG, onde matiz quente colidia com a pele do boneco. Fora do SVG não há colisão: **a
 moldura pode usar dourado.** As distâncias mínimas — ≥40 entre patentes quaisquer,

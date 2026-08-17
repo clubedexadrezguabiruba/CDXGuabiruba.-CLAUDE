@@ -1,4 +1,4 @@
-import { corDaMoldura } from "../../../scripts/avatar/patentes";
+import { FIO_DA_MOLDURA, corDaMoldura } from "../../../scripts/avatar/patentes";
 import { cn } from "@/lib/cn";
 
 /**
@@ -44,12 +44,41 @@ import { cn } from "@/lib/cn";
  * produto já estavam medidas e alinhadas, e um anel que empurrasse o vizinho faria
  * a promoção de um aluno mexer na posição do nome de outro.
  *
+ * O FIO POR FORA — e por que ele não é enfeite (G23, 2026-08-17)
+ * -------------------------------------------------------------
+ * O anel de patente vinha desenhado direto sobre o card marfim, e o do **Mestre**
+ * é prata `#AEBCCE`: razão de contraste **1,82** contra o `warm-ivory`, abaixo do
+ * piso 3 da WCAG 1.4.11. O anel do aluno mais avançado do produto era o único que
+ * não se via. A régua não pegava porque media distância RGB, que dá 103,7 para o
+ * mesmo par — dois tons podem estar longe em matiz e colados em valor.
+ *
+ * **Trocar a cor do Mestre não resolveria**, e isso está medido: contra o navy da
+ * landing quem reprova são Aspirante (1,92), General (2,04) e Comandante (2,61), e
+ * o Mestre passa em 9,01. A luminância das seis vai de 0,066 a 0,494, e nenhuma
+ * superfície única cobre essa faixa nas duas pontas.
+ *
+ * Então o problema saiu do eixo da cor e foi para o da forma: **1 px de `ink` por
+ * fora do anel**, como carta de baralho faz. As seis cores ficam intactas —
+ * inclusive a intenção do doc 17 de o Mestre ser a única clara da escada —, e a
+ * próxima superfície que aparecer já nasce resolvida. `verify:paleta-patentes`
+ * mede as duas metades: o fio contra o fundo (contraste ≥ 3, faz a forma existir)
+ * e cada patente contra o fio (RGB ≥ 40, faz a cor ainda ser cor).
+ *
+ * Ele cabe na mesma `box-shadow` — duas camadas, e a segunda 1 px maior. Continua
+ * fora do layout, e continua custando zero asset.
+ *
  * A cor vem de `scripts/avatar/patentes.ts`, medida por `verify:paleta-patentes`.
  * **Importada, nunca copiada** — é o incidente que o design-lab pagou uma vez,
  * quando copiou a tabela à mão e a cópia divergiu em silêncio.
  */
 
-/** Fio neutro do Aprendiz. Token, não cor crua: é `ink` a 12%. */
+/**
+ * Fio neutro do Aprendiz. Token, não cor crua: é `ink` a 12%.
+ *
+ * Ele é o ANEL do Aprendiz, não o fio do G23 — os dois convivem, e é o que faz o
+ * avatar do aluno novo ter a mesma espessura de moldura que o dos outros. O que
+ * muda entre eles é só que a banda de dentro não tem cor de degrau.
+ */
 const NEUTRO = "rgb(27 36 50 / 0.12)";
 
 export interface MolduraPatenteProps {
@@ -97,7 +126,15 @@ export default function MolduraPatente({
         raio === "lg" ? "rounded-lg" : "rounded-xl",
         className,
       )}
-      style={{ boxShadow: `0 0 0 ${espessura}px ${cor ?? NEUTRO}` }}
+      // Duas camadas na mesma sombra: o anel de patente, e o fio de 1 px por fora
+      // dele. A ordem importa — a primeira é a de cima, e a segunda tem de ser
+      // `espessura + 1` porque `box-shadow` de spread desenha do elemento para
+      // fora, não uma sobre a outra.
+      style={{
+        boxShadow:
+          `0 0 0 ${espessura}px ${cor ?? NEUTRO}, ` +
+          `0 0 0 ${espessura + 1}px ${FIO_DA_MOLDURA}`,
+      }}
     >
       {children}
     </span>
