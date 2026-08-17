@@ -1,5 +1,5 @@
 /**
- * Gate do endereço: todo `tinta.png` do catálogo tem de VIAJAR até o deploy.
+ * Gate do endereço: toda `tinta.arte` do catálogo tem de VIAJAR até o deploy.
  *
  * O defeito que este teste fecha é o mais silencioso desta rota, e custou uma
  * sessão inteira para ser visto: a peça nascia em `public/dev/traje/`, que a
@@ -26,9 +26,9 @@ import { describe, expect, it } from "vitest";
 
 import { TRAJES_DA_ARTE } from "../estilo/trajes-da-arte";
 
-/** Os `tinta.png` do catálogo, como caminho de disco a partir da raiz. */
-const PNGS = Object.values(TRAJES_DA_ARTE)
-  .map((t) => t.tinta.png)
+/** As `tinta.arte` do catálogo, como caminho de disco a partir da raiz. */
+const ARTES = Object.values(TRAJES_DA_ARTE)
+  .map((t) => t.tinta.arte)
   .filter((p): p is string => !!p)
   .map((url) => `public${url}`);
 
@@ -42,21 +42,21 @@ function rastreado(caminho: string): boolean {
   }
 }
 
-describe("o PNG de cada peça chega ao deploy", () => {
+describe("a arte de cada peça chega ao deploy", () => {
   it("o catálogo declara pelo menos uma peça com arte", () => {
     // Sem esta linha o teste passaria vazio no dia em que o literal regredisse.
-    expect(PNGS.length).toBeGreaterThan(0);
+    expect(ARTES.length).toBeGreaterThan(0);
   });
 
-  it.each(PNGS)("%s existe no disco", (caminho) => {
+  it.each(ARTES)("%s existe no disco", (caminho) => {
     expect(existsSync(caminho)).toBe(true);
   });
 
-  it.each(PNGS)("%s é rastreado pelo git — logo, viaja", (caminho) => {
+  it.each(ARTES)("%s é rastreado pelo git — logo, viaja", (caminho) => {
     expect(rastreado(caminho)).toBe(true);
   });
 
-  it.each(PNGS)("%s mora na prateleira, não na oficina", (caminho) => {
+  it.each(ARTES)("%s mora na prateleira, não na oficina", (caminho) => {
     // `public/dev/` é a área de conferência: o que mora lá é rascunho por
     // definição, e uma criança pedindo `/dev/...` é a dívida se anunciando na
     // barra de endereço. A prateleira do produto é `public/items/`.

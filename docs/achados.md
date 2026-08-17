@@ -566,7 +566,22 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
-### G25 — os dois PNGs de traje no deploy NÃO são os que a esteira produz hoje
+### G25 — ~~os dois PNGs de traje no deploy NÃO são os que a esteira produz hoje~~ ✅ FECHADO
+> ✅ **Fechado em 2026-08-17 SEM CONSERTO — o objeto do achado deixou de existir.**
+> A P1 do plano passou, o Doug escolheu o vetor, e `public/items/traje/*.png` saiu
+> do deploy: o que viaja agora é o `.svg` que a esteira escreve na mesma passada em
+> que mede a peça. Não há mais um raster versionado para divergir da arte. O
+> parágrafo abaixo previa exatamente esta morte — *"isto pode morrer junto com o
+> G24: se a prova de vetorização do P1 passar, o traje deixa de ser PNG e não há
+> arquivo para divergir"* —, e é o melhor destino que ele podia ter.
+>
+> **O que substituiu a garantia:** o raster continua existindo como verdade de
+> referência, mas **em memória**, devolvido por `construir()` a cada rodada a
+> partir da arte. `arte:folha-traje` mede a colagem contra ele e deu **(0, 0) nas
+> duas peças**, com o transbordo do gambesão em 17,64% — o mesmo número que o Doug
+> aceitou em 2026-08-13. Arte velha no deploy virou impossível por construção: não
+> há arquivo intermediário para envelhecer.
+
 **Prova:** `MEDIDO` — 2026-08-17, de carona na medição do G24.
 `.scratch/estilo/medir-traje-disco.ts`. Achado pelo Claude. Registrado e **não
 consertado**, pela regra do `CLAUDE.md`.
@@ -605,7 +620,22 @@ isso que este achado é 🟡 e não 🟠.
 arquivo quando divergir. **Mas isto pode morrer junto com o G24**: se a prova de
 vetorização do P1 passar, o traje deixa de ser PNG e não há arquivo para divergir.
 
-### G24 — nenhum gate mede peso de asset, e o gambesão pesa 24× a farda
+### G24 — ~~nenhum gate mede peso de asset, e o gambesão pesa 24× a farda~~ ✅ FECHADO
+> ✅ **Fechado em 2026-08-17 SEM CONSERTO, e este era o destino declarado dele.**
+> O achado dizia *"a 248 KB, 40 peças passam de 9 MB"*, e a P1 do plano mediu a
+> saída: o gambesão vetorizado pesa **60,6 KB no fio** contra 248,2 KB do raster —
+> **4,1× menos** — e a farda, **7,9 KB contra 8,8**. O teto que faltava deixou de
+> ser urgente porque o número que ele vigiaria caiu de patamar, e a escala de 40
+> peças sai de ~9 MB para ~2 MB no pior caso, com a peça aerografada sendo a
+> exceção e não a regra.
+>
+> **O que NÃO foi feito, e é decisão consciente:** continua não existindo gate de
+> teto de peso. O que existe é a esteira imprimindo o peso no fio a cada rodada
+> (`arte:trajes`), e o `--check` dentro de `verify:arte`. **Se uma peça futura
+> voltar a inchar, ninguém reprova** — o achado morreu pelo tamanho, não pela
+> régua. Reabrir como teto com ratchet continua sendo uma opção barata, e a hora é
+> do Doug.
+
 **Prova:** `MEDIDO` — 2026-08-17, no P0 do plano "até pronto para ir ao ar". Achado
 pelo Claude. Registrado e **deliberadamente não consertado** — ver "por que este fica
 parado", abaixo.

@@ -49,7 +49,7 @@ import { abrirNavegador, renderizarHtml, renderizarSvg } from "../render-svg";
 import { ESCALA, FUNDO, LADO, PASTA, embrulhar } from "./base";
 import { mascarasDoCampo } from "./base-tronco";
 import { dilatar, erodir } from "./pixels";
-import { RECORTE } from "./traje";
+import { RECORTE, construir } from "./traje";
 
 const b64 = (p: string) => `data:image/png;base64,${readFileSync(p).toString("base64")}`;
 
@@ -73,8 +73,12 @@ const PNG_VAZIO =
 
 /** O caminho vira data-URI. Ver o cabeçalho: sem isto a folha mente. */
 function paraFolha(t: Traje): Traje {
-  if (!t.tinta.png) return t;
-  return { ...t, tinta: { ...t.tinta, png: b64(`public${t.tinta.png}`) } };
+  if (!t.tinta.arte) return t;
+  const disco = `public${t.tinta.arte}`;
+  const dado = t.tinta.arte.endsWith(".svg")
+    ? `data:image/svg+xml;base64,${readFileSync(disco).toString("base64")}`
+    : b64(disco);
+  return { ...t, tinta: { ...t.tinta, arte: dado } };
 }
 
 /** Os pixels em que dois PNGs RGBA diferem, sobre os que alguma das duas pinta. */
@@ -125,11 +129,21 @@ async function principal() {
   const slugs = pedidos.length
     ? pedidos.map((p) => p.split(/[\\/]/).pop()!.replace(/\.png$/i, ""))
     : Object.keys(TRAJES_DA_ARTE);
-  const pecas = slugs.map((s) => {
-    const t = TRAJES_DA_ARTE[s];
-    if (!t) throw new Error(`${s} não está em trajes-da-arte.ts — rode \`npm run arte:trajes\``);
-    return { slug: s, traje: paraFolha(t), cru: t };
-  });
+  // O RASTER DE REFERÊNCIA É REGENERADO, NÃO LIDO DO DISCO.
+  //
+  // Ele foi arquivo em `public/items/traje/` até 2026-08-17, quando a peça virou
+  // `.svg` e o PNG saiu do deploy (P1 do plano). A régua da colagem continua
+  // precisando dele — é contra o desenho no raster que se pergunta "a peça caiu no
+  // pixel certo?" —, e `construir()` o devolve em memória, byte a byte igual ao que
+  // era commitado, porque a esteira é determinística.
+  const pecas = await Promise.all(
+    slugs.map(async (s) => {
+      const t = TRAJES_DA_ARTE[s];
+      if (!t) throw new Error(`${s} não está em trajes-da-arte.ts — rode \`npm run arte:trajes\``);
+      const { raster } = await construir(`${PASTA}/${s}.png`);
+      return { slug: s, traje: paraFolha(t), cru: t, raster };
+    }),
+  );
 
   mkdirSync(`${PASTA}/traje`, { recursive: true });
   const nav = await abrirNavegador();
@@ -217,7 +231,7 @@ async function principal() {
     const svgSem = embrulhar(
       compor({
         ...est,
-        traje: { ...p.traje, tinta: { cor: p.cru.tinta.cor, png: PNG_VAZIO } },
+        traje: { ...p.traje, tinta: { cor: p.cru.tinta.cor, arte: PNG_VAZIO } },
         ns: "z2",
         escala: 1,
       }),
@@ -245,7 +259,7 @@ async function principal() {
     }
 
     // O mesmo desenho, no PNG que entrou: tudo que não é o pano chapado.
-    const { data: cru } = await sharp(`public${p.cru.tinta.png}`)
+    const { data: cru } = await sharp(p.raster)
       .raw()
       .toBuffer({ resolveWithObject: true });
     const pano = [

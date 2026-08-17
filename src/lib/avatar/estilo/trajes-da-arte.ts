@@ -10,9 +10,10 @@
  *
  * O QUE CADA CAMPO É, E O QUE ELE NÃO É:
  *
- *  - `tinta.png` — o INTERIOR da peça, clipado no `pathTronco()`. Nunca a
- *    fronteira: o que excede a silhueta é `extensoes`, e extensão é vetor
- *    (doc 21 §6.1, e `tipos.ts:51`);
+ *  - `tinta.arte` — o `.svg` da peça, colado por `<image>` sobre a silhueta.
+ *    **Era um `.png` até 2026-08-17**, quando a P1 do plano mediu os dois e o Doug
+ *    escolheu o vetor: mesma colagem, mesmo pixel, um quarto do peso e nítido em
+ *    qualquer tamanho (doc 21, entrada de 2026-08-17);
  *  - `tinta.cor` — a cor dominante MEDIDA na arte (moda em baldes de 8 níveis por
  *    canal, com a média dentro do balde vencedor). É o fallback chapado se o PNG
  *    faltar, e é o que o compositor escurece para a sombra do queixo e o plano
@@ -31,12 +32,12 @@ export const TRAJES_DA_ARTE: Record<string, Traje> = {
   "traje-farda": {
     id: "traje-farda",
     nome: "Farda da Academia",
-    tinta: { png: "/items/traje/traje-farda.png", cor: "#78833B" },
+    tinta: { arte: "/items/traje/traje-farda.svg", cor: "#78833B" },
   },
   "traje-gambesao": {
     id: "traje-gambesao",
     nome: "Gambesão Acolchoado",
-    tinta: { png: "/items/traje/traje-gambesao.png", cor: "#13ABB3" },
+    tinta: { arte: "/items/traje/traje-gambesao.svg", cor: "#13ABB3" },
   },
 };
 

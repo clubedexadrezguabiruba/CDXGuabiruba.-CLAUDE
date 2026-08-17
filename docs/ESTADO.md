@@ -245,9 +245,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 2 |
-| **Árvore** | **7 arquivos sujos** |
-| **Último commit** | 870ac6d · 2026-08-17 · fix(avatar): o anel do Mestre volta a existir — a régua troca de instrumento, e o fio resolve o que a cor não resolvia |
+| **Commits à frente de `origin/main`** | 3 |
+| **Árvore** | **18 arquivos sujos** |
+| **Último commit** | 906aebc · 2026-08-17 · feat(avatar): o composto de três camadas ganha teto, e a conta do ranking sai do texto para a medição |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

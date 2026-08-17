@@ -1,9 +1,37 @@
 /**
- * P4-T — A ARTE DO TRAJE VIRA PNG DE PEÇA: recortar. **E só recortar.**
+ * P4-T — A ARTE DO TRAJE VIRA PEÇA: recortar e **vetorizar**.
  *
  * É o passo 4 da esteira do traje, e o análogo do trio
- * `arte:contorno` → `arte:converter` → `arte:espessura` do cabelo. Onde o cabelo
- * vira geometria `{t,y}`, o traje vira **raster recortado**.
+ * `arte:contorno` → `arte:converter` → `arte:espessura` do cabelo.
+ *
+ * ---------------------------------------------------------------------------
+ * O RASTER VIROU INTERMEDIÁRIO EM 2026-08-17, E O QUE VAI AO AR É O `.svg`
+ * ---------------------------------------------------------------------------
+ *
+ * Até esta data o passo terminava no recorte: um RGBA de 600 × 840 escrito em
+ * `public/items/traje/`, que o compositor colava por `<image>`. A P1 do plano
+ * mediu a alternativa e o Doug decidiu por ela — o runbook da decisão é a entrada
+ * de 2026-08-17 no doc 21, e `npm run arte:prova-vetor` refaz a medição inteira.
+ *
+ * **O que mudou, e o que NÃO mudou.** O recorte continua igual, byte a byte: a
+ * máscara, a colagem 1 : 1 e o controle negativo são os mesmos. O que ele
+ * alimenta é que mudou — em vez de virar arquivo, ele vira entrada do traçador, e
+ * quem chega em `public/items/traje/` é um `.svg`.
+ *
+ * **O `<image>` do compositor não mudou de forma nenhuma.** Ele já aceitava SVG;
+ * a P1 mediu os dois caminhos de render do navegador e eles pintam o mesmo pixel
+ * (0,00–0,01% de diferença, com controle no laudo). A mudança de código no produto
+ * foi a extensão do arquivo e o nome do campo — nada mais.
+ *
+ * **Os três números que a decisão comprou** (gambesão, a peça mais detalhada):
+ * 248,2 KB → 60,6 KB comprimidos; nitidez em qualquer tamanho, com o vetor lendo
+ * MELHOR que o raster a 56 px, que é o tamanho do ranking; e zero forma nova no
+ * DOM, porque o `.svg` avulso é baixado uma vez e cacheado como o PNG era.
+ *
+ * **O que ela custou, dito com todas as letras:** o aerógrafo. Numa peça pintada
+ * com gradiente, as canaletas deixam de ser vinco com volume e viram linha escura
+ * sobre chapado (9 691 cores distintas no recorte viram 4 975). Em arte CHAPADA a
+ * perda é indistinguível a 14× de zoom. O Doug viu as duas folhas e aprovou.
  *
  * ---------------------------------------------------------------------------
  * A RECOLORIZAÇÃO MORREU EM 2026-08-13, E O QUE SOBROU É MAIS SIMPLES
@@ -71,12 +99,15 @@
  * (0,607 px/u). O PNG fica ~2× supersampleado, que é o que DPR 2 pede.
  */
 
-import { mkdirSync } from "fs";
+import { mkdirSync, writeFileSync } from "fs";
 import { basename } from "path";
+import { gzipSync } from "zlib";
 
 import sharp from "sharp";
+import { ColorMode, Hierarchical, PathSimplifyMode, vectorize } from "@neplex/vectorizer";
 
 import { escurecer } from "../../../src/lib/avatar/palette";
+import { prepararSvg } from "../estilo/vtracer";
 import { ESCALA, LADO, ORIGEM, PNG_BASE } from "./base";
 import { extrairTraje } from "./extrair";
 import { luz } from "./pixels";
@@ -112,6 +143,127 @@ export const RECORTE = {
   w: Math.round(500 * ESCALA),
   h: Math.round(700 * ESCALA),
 } as const;
+
+/**
+ * A CONFIGURAÇÃO DO TRAÇADOR PARA TRAJE — e ela **não** é a do cabelo.
+ *
+ * `estilo/vtracer.ts` traz `colorPrecision 5 · layerDifference 24 · filterSpeckle 8`,
+ * com contra-exemplo medido para cada escolha, e a P1 do plano previa reaproveitá-la.
+ * **A medição reprovou o reaproveitamento**, e o motivo é que as duas calibrações
+ * respondem a perguntas diferentes:
+ *
+ *  - a do cabelo foi calibrada para **encolher a curadoria** — 235 fragmentos viram
+ *    46, e cada um precisa de um papel humano (`massa` ou `clara`) porque o cabelo
+ *    recolore. Menos fragmento é menos trabalho;
+ *  - o traje **não recolore** (emenda à D27): a cor de cada forma sai medida do
+ *    pixel e ninguém rotula nada. Sem curadoria, fragmento não custa trabalho — e a
+ *    única coisa que o número de fragmentos compra é **fidelidade**.
+ *
+ * Aplicada à `traje-farda`, a calibração do cabelo **apaga o pesponto tracejado da
+ * carcela** (27 px escuros na coluna do tracejado viram 3) e inventa dois retalhos
+ * de matiz errado na bainha. Com os valores abaixo, a mesma peça sai
+ * indistinguível do raster a 14× de zoom: 13,7% dos pixels diferem, e depois de
+ * duas erosões sobram 9 px — ou seja, **100% da diferença é linha de borda**,
+ * assinatura de antialiasing e não de desenho perdido.
+ *
+ * `Hierarchical.Stacked` e não `Cutout`: em `Cutout` as camadas se recortam, o que
+ * serve para *isolar* uma forma (é o que o cabelo precisa, e o docstring de lá
+ * explica). Aqui a pergunta é reconstruir a imagem, e camada sobre camada
+ * reconstrói; camada recortada deixa costura entre regiões vizinhas.
+ *
+ * `pathPrecision: 0` sobrevive intacto do cabelo, e pelo mesmo motivo: o traço veio
+ * de um raster, e sub-pixel ali não descreve informação que o raster tinha.
+ */
+export const CONFIG_TRAJE = {
+  colorMode: ColorMode.Color,
+  hierarchical: Hierarchical.Stacked,
+  filterSpeckle: 4,
+  colorPrecision: 6,
+  layerDifference: 12,
+  mode: PathSimplifyMode.Spline,
+  cornerThreshold: 60,
+  lengthThreshold: 4,
+  maxIterations: 10,
+  spliceThreshold: 45,
+  pathPrecision: 0,
+} as const;
+
+/**
+ * A COR SENTINELA — porque o traçador não enxerga alfa.
+ *
+ * O recorte é RGBA de alfa binário: ou o pixel é da peça, ou é vazio com RGB zerado.
+ * O VTracer ignora o canal alfa e leria aquilo como **preto puro** — a peça sairia
+ * dentro de uma mancha preta do tamanho do `viewBox`.
+ *
+ * Então o vazio é achatado num magenta que arte de traje não tem, e as formas que
+ * saem nessa cor são descartadas pelo nome. Como o alfa é binário, o achatamento
+ * não inventa borda: não existe pixel meio-transparente para misturar com o magenta.
+ *
+ * O descarte é conferido, nunca presumido — ver `vetorizarRecorte`.
+ */
+const SENTINELA = { r: 255, g: 0, b: 255 } as const;
+
+/** Perto da sentinela dentro da quantização do traçador. */
+function eSentinela(fill: string): boolean {
+  if (!/^#[0-9a-f]{6}$/i.test(fill)) return false;
+  const [r, g, b] = paraRgb(fill);
+  return r > 200 && g < 60 && b > 200;
+}
+
+/**
+ * O recorte RGBA virando `.svg` — a peça que vai ao ar.
+ *
+ * O `viewBox` é o do recorte (600 × 840), e é ele que faz a colagem continuar sendo
+ * conta e não ajuste: o `<image>` do compositor ocupa o `viewBox` inteiro (500 × 700,
+ * 5:7), e 600 × 840 é a MESMA proporção, então `preserveAspectRatio` encaixa 1 : 1
+ * sem sobra em nenhum eixo.
+ */
+export async function vetorizarRecorte(
+  rgba: Buffer,
+  w: number,
+  h: number,
+): Promise<{ svg: string; formas: number; descartadas: number }> {
+  const chapado = await sharp(rgba, { raw: { width: w, height: h, channels: 4 } })
+    .flatten({ background: SENTINELA })
+    .png()
+    .toBuffer();
+
+  const pronto = prepararSvg(await vectorize(chapado, { ...CONFIG_TRAJE }), w, h);
+
+  const formas: string[] = [];
+  let descartadas = 0;
+  for (const m of pronto.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*\sfill="([^"]*)"[^>]*>/g)) {
+    if (eSentinela(m[2])) descartadas++;
+    else formas.push(`<path d="${m[1]}" fill="${m[2]}"/>`);
+  }
+
+  // O casamento acima exige `d` antes de `fill`. Se o traçador inverter a ordem dos
+  // atributos, a peça sairia VAZIA e o boneco apareceria de macacão com todos os
+  // gates verdes — o modo de falha nº 1 desta rota, e o único jeito de fechá-lo é
+  // conferir a conta em vez de confiar no regex.
+  const total = (pronto.match(/<path/g) ?? []).length;
+  if (formas.length + descartadas !== total) {
+    throw new Error(
+      `li ${formas.length + descartadas} de ${total} <path> do traçador. A ordem dos ` +
+        `atributos mudou — o extrator precisa ser reescrito antes de confiar na peça.`,
+    );
+  }
+  if (!descartadas) {
+    throw new Error(
+      `nenhuma forma na cor sentinela foi descartada. O fundo magenta não virou forma ` +
+        `própria, o que quer dizer que ele se fundiu com a peça — a peça sairia com um ` +
+        `retângulo magenta em volta.`,
+    );
+  }
+
+  return {
+    svg:
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" ` +
+      `width="${w}" height="${h}">${formas.join("")}</svg>`,
+    formas: formas.length,
+    descartadas,
+  };
+}
 
 /**
  * A convenção de slug, desde 2026-08-13: **`traje-<nome>`**, sem patente.
@@ -223,8 +375,24 @@ function tresTons(lums: number[]): [number, number] {
 
 export interface Peca {
   slug: string;
-  png: string;
-  /** A cor dominante MEDIDA no PNG de saída. Vai para `tinta.cor`, o fallback chapado. */
+  /** O `.svg` que vai ao ar — o caminho de disco, a partir da raiz. */
+  arte: string;
+  /**
+   * O recorte RGBA como PNG, **em memória e de propósito**.
+   *
+   * Ele foi arquivo em `public/items/traje/` até 2026-08-17, e deixou de ser quando
+   * o `.svg` virou a peça do produto: um raster de 248 KB no deploy que ninguém
+   * pede é peso morto, e foi ele o achado de peso que o P1 matou sem conserto.
+   *
+   * Continua existindo porque é a **verdade de referência** — é contra este buffer
+   * que a `arte:folha-traje` mede a colagem e a `arte:prova-vetor` mede a
+   * fidelidade. Não precisa ser commitado para isso: a saída é determinística, e
+   * quem quiser o raster roda a esteira e o tem de volta idêntico.
+   */
+  raster: Buffer;
+  /** Quantas formas o traçador produziu. É o custo da peça, e ele é medido. */
+  formas: number;
+  /** A cor dominante MEDIDA no recorte. Vai para `tinta.cor`, o fallback chapado. */
   cor: string;
   /** A cor declarada em `COR_FINAL_DECLARADA`, ou `null` se a arte já veio final. */
   recolorida: string | null;
@@ -237,7 +405,19 @@ export interface Peca {
   caixaUnidades: { x0: number; y0: number; x1: number; y1: number };
   /** O controle negativo: quantos pixels a régua acha na PRÓPRIA base. */
   controleNaBase: number;
+  /** O peso do `.svg` que vai ao ar, cru. */
   bytes: number;
+  /**
+   * O peso do `.svg` COMPRIMIDO, e é este que se compara com o PNG.
+   *
+   * PNG já é um formato comprimido; SVG é texto, e todo servidor o entrega em gzip
+   * ou brotli. Pôr o SVG cru ao lado do PNG seria comparar maçã com laranja — e a
+   * conta sairia ao contrário na peça chapada, onde o cru é 3× MAIOR e o comprimido
+   * é menor.
+   */
+  bytesGzip: number;
+  /** O peso que o raster teria — o que a decisão do vetor economizou. */
+  bytesRaster: number;
 }
 
 export async function construir(caminhoArte: string): Promise<Peca> {
@@ -326,11 +506,13 @@ export async function construir(caminhoArte: string): Promise<Peca> {
   }
 
   mkdirSync(PASTA_TRAJE, { recursive: true });
-  const png = `${PASTA_TRAJE}/${slug}.png`;
-  const buf = await sharp(saida, { raw: { width: W, height: H, channels: 4 } })
+  const raster = await sharp(saida, { raw: { width: W, height: H, channels: 4 } })
     .png({ compressionLevel: 9 })
     .toBuffer();
-  await sharp(buf).toFile(png);
+
+  const vetor = await vetorizarRecorte(saida, W, H);
+  const arte = `${PASTA_TRAJE}/${slug}.svg`;
+  writeFileSync(arte, vetor.svg, "utf-8");
 
   // ------------------------------- o controle negativo: a base contra si mesma
   const naBase = await extrairTraje(PNG_BASE);
@@ -369,7 +551,9 @@ export async function construir(caminhoArte: string): Promise<Peca> {
 
   return {
     slug,
-    png,
+    arte,
+    raster,
+    formas: vetor.formas,
     cor: hex(dominante),
     recolorida,
     pixels,
@@ -379,7 +563,9 @@ export async function construir(caminhoArte: string): Promise<Peca> {
     foraDoRecorte,
     caixaUnidades: e.caixaUnidades,
     controleNaBase,
-    bytes: buf.length,
+    bytes: Buffer.byteLength(vetor.svg),
+    bytesGzip: gzipSync(Buffer.from(vetor.svg)).length,
+    bytesRaster: raster.length,
   };
 }
 
@@ -413,6 +599,15 @@ async function principal() {
         `   (o viewBox inteiro, 5:7)`,
     );
     console.log(`  escalaMedida        ausente de propósito → k = 1 no compositor`);
+    console.log(
+      `\n  A PEÇA VETORIAL — o que vai ao ar desde 2026-08-17 (P1 do plano)\n` +
+        `    formas              ${p.formas}\n` +
+        `    peso NO FIO         ${(p.bytesGzip / 1024).toFixed(1)} KB comprimido   ` +
+        `contra ${(p.bytesRaster / 1024).toFixed(1)} KB do raster que ela substituiu ` +
+        `(${(p.bytesRaster / p.bytesGzip).toFixed(1)}× menor)\n` +
+        `    peso em disco       ${(p.bytes / 1024).toFixed(1)} KB crus — SVG é texto e viaja\n` +
+        `                        comprimido; PNG já vem comprimido. A régua honesta é a de cima.`,
+    );
 
     console.log(`\n  A MÁSCARA — diferença contra a base, dentro do campo do traje`);
     console.log(`    pixels da peça      ${p.pixels.toLocaleString("pt-BR")}`);
@@ -439,7 +634,7 @@ async function principal() {
       `\n  fora do recorte     ${p.foraDoRecorte} px` +
         (p.foraDoRecorte ? `   ✗ a peça sai do viewBox — seria cortada` : `   · nada perdido`),
     );
-    console.log(`  escrito             ${p.png}   ${(p.bytes / 1024).toFixed(1)} KB`);
+    console.log(`  escrito             ${p.arte}`);
     if (p.foraDoRecorte) reprovou = true;
     if (p.pixels === 0) {
       reprovou = true;

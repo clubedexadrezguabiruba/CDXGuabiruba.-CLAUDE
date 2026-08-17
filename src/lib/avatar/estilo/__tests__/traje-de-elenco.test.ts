@@ -16,7 +16,7 @@
  * roupa"* —, e está certa: uma arte de traje traz o próprio volume, e pintar os
  * dois por cima dobra o sombreado.
  *
- * E o compositor decide isso olhando **o campo `tinta.png` declarado**, nunca o
+ * E o compositor decide isso olhando **o campo `tinta.arte` declarado**, nunca o
  * arquivo existindo — porque, do lado do servidor, ele não tem como saber. Essa é a
  * escolha certa e é também a lâmina do defeito de 2026-08-13: a peça nascia numa
  * pasta que o `.gitignore` barrava, o navegador da criança levava 404, e o
@@ -24,7 +24,7 @@
  * mais chapado que o aluno pelado** — 17 formas contra 19 —, e nada em código
  * reclamou.
  *
- * O endereço foi consertado e `pngDaPecaNoDeploy.test.ts` guarda a porta. O que
+ * O endereço foi consertado e `arteDaPecaNoDeploy.test.ts` guarda a porta. O que
  * este arquivo guarda é o outro lado: que a supressão é **do campo**, não do
  * arquivo. Se alguém um dia "consertar" isso testando o disco, o compositor deixa
  * de ser puro e a folha de contato passa a mentir junto com o produto.
@@ -52,7 +52,7 @@ const CHAPADO: Traje = {
 /** A mesma peça, agora com arte. O caminho é o que o browser pediria. */
 const COM_ARTE: Traje = {
   ...CHAPADO,
-  tinta: { ...CHAPADO.tinta, png: "/items/traje/zz-traje-de-teste.png" },
+  tinta: { ...CHAPADO.tinta, arte: "/items/traje/zz-traje-de-teste.svg" },
 };
 
 /**
@@ -103,7 +103,7 @@ describe("traje ausente", () => {
   });
 
   it("desenha o macacão de treino COM volume — as duas formas do compositor", () => {
-    // O controle da supressão testada adiante. Sem isto, o teste do `png` passaria
+    // O controle da supressão testada adiante. Sem isto, o teste da arte passaria
     // por vacuidade no dia em que as duas formas sumissem por outro motivo.
     const semNada = compor(BASE);
     expect(semNada).toContain(pathSombraQueixoTronco());
@@ -127,7 +127,7 @@ describe("traje presente", () => {
   it("com arte: a arte entra e o compositor abre mão das duas formas", () => {
     const svg = compor({ ...BASE, traje: COM_ARTE });
 
-    expect(svg).toContain(`<image href="/items/traje/zz-traje-de-teste.png"`);
+    expect(svg).toContain(`<image href="/items/traje/zz-traje-de-teste.svg"`);
     expect(svg).not.toContain(pathSombraQueixoTronco());
     expect(svg).not.toContain(pathPlanoLateralTronco());
     // −2 formas contra o boneco sem traje, e o `<image>` não repõe nenhuma. É o
@@ -143,13 +143,13 @@ describe("traje presente", () => {
     // boneco sem volume em silêncio, em vez de erro.
     const inexistente = compor({
       ...BASE,
-      traje: { ...COM_ARTE, tinta: { ...COM_ARTE.tinta, png: "/nao/existe.png" } },
+      traje: { ...COM_ARTE, tinta: { ...COM_ARTE.tinta, arte: "/nao/existe.svg" } },
     });
 
     expect(inexistente).toBe(
       compor({ ...BASE, traje: COM_ARTE }).replace(
-        "/items/traje/zz-traje-de-teste.png",
-        "/nao/existe.png",
+        "/items/traje/zz-traje-de-teste.svg",
+        "/nao/existe.svg",
       ),
     );
   });

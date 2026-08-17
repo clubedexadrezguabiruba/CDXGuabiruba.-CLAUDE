@@ -54,8 +54,8 @@ const NOMES: Record<string, string> = {
   "traje-gambesao": "Gambesão Acolchoado",
 };
 
-/** `public/items/traje/x.png` → `/items/traje/x.png`, que é a URL que o browser pede. */
-const urlDoPng = (caminho: string) => caminho.replace(/^public/, "");
+/** `public/items/traje/x.svg` → `/items/traje/x.svg`, que é a URL que o browser pede. */
+const urlDaArte = (caminho: string) => caminho.replace(/^public/, "");
 
 const CABECALHO = `/**
  * ARQUIVO GERADO — não edite à mão.
@@ -69,9 +69,10 @@ const CABECALHO = `/**
  *
  * O QUE CADA CAMPO É, E O QUE ELE NÃO É:
  *
- *  - \`tinta.png\` — o INTERIOR da peça, clipado no \`pathTronco()\`. Nunca a
- *    fronteira: o que excede a silhueta é \`extensoes\`, e extensão é vetor
- *    (doc 21 §6.1, e \`tipos.ts:51\`);
+ *  - \`tinta.arte\` — o \`.svg\` da peça, colado por \`<image>\` sobre a silhueta.
+ *    **Era um \`.png\` até 2026-08-17**, quando a P1 do plano mediu os dois e o Doug
+ *    escolheu o vetor: mesma colagem, mesmo pixel, um quarto do peso e nítido em
+ *    qualquer tamanho (doc 21, entrada de 2026-08-17);
  *  - \`tinta.cor\` — a cor dominante MEDIDA na arte (moda em baldes de 8 níveis por
  *    canal, com a média dentro do balde vencedor). É o fallback chapado se o PNG
  *    faltar, e é o que o compositor escurece para a sombra do queixo e o plano
@@ -89,12 +90,12 @@ const RODAPE = `
 export const TOTAL_TRAJES_DA_ARTE = Object.keys(TRAJES_DA_ARTE).length;
 `;
 
-function corpoDaPeca(slug: string, nome: string, png: string, cor: string): string {
+function corpoDaPeca(slug: string, nome: string, arte: string, cor: string): string {
   return (
     `  ${JSON.stringify(slug)}: {\n` +
     `    id: ${JSON.stringify(slug)},\n` +
     `    nome: ${JSON.stringify(nome)},\n` +
-    `    tinta: { png: ${JSON.stringify(png)}, cor: ${JSON.stringify(cor)} },\n` +
+    `    tinta: { arte: ${JSON.stringify(arte)}, cor: ${JSON.stringify(cor)} },\n` +
     `  },`
   );
 }
@@ -127,17 +128,19 @@ async function gerar(): Promise<string> {
       faltou = true;
       continue;
     }
-    if (!existsSync(p.png)) {
-      console.error(`  ✗ ${p.png} não foi escrito — rode \`npm run arte:traje\` antes.`);
+    if (!existsSync(p.arte)) {
+      console.error(`  ✗ ${p.arte} não foi escrito — rode \`npm run arte:traje\` antes.`);
       faltou = true;
       continue;
     }
     console.log(
       `  ${p.slug.padEnd(20)} ${nome.padEnd(22)} cor ${p.cor} · ` +
-        `${p.pixels.toLocaleString("pt-BR")} px · ${(p.bytes / 1024).toFixed(1)} KB` +
+        `${p.pixels.toLocaleString("pt-BR")} px · ${p.formas} formas · ` +
+        `${(p.bytesGzip / 1024).toFixed(1)} KB no fio ` +
+        `(o raster eram ${(p.bytesRaster / 1024).toFixed(1)})` +
         `   controle na base ${p.controleNaBase} px`,
     );
-    blocos.push(corpoDaPeca(p.slug, nome, urlDoPng(p.png), p.cor));
+    blocos.push(corpoDaPeca(p.slug, nome, urlDaArte(p.arte), p.cor));
   }
   if (faltou) process.exit(1);
 
@@ -188,8 +191,8 @@ async function principal(): Promise<void> {
       `  até a seed do banco entrar junto (verify:catalogo-slots compara os dois).`,
   );
   console.log(
-    `  os PNGs estão em ${PASTA_TRAJE}/ — versionados de propósito: é o que os leva\n` +
-      `  ao deploy (\`pngDaPecaNoDeploy.test.ts\`). Não esqueça o \`git add\` deles.`,
+    `  os SVGs estão em ${PASTA_TRAJE}/ — versionados de propósito: é o que os leva\n` +
+      `  ao deploy (\`arteDaPecaNoDeploy.test.ts\`). Não esqueça o \`git add\` deles.`,
   );
 }
 

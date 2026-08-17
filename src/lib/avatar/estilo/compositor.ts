@@ -386,9 +386,9 @@ function tintaTronco(ns: string, traje: Traje | undefined): string {
   // de luz, medidos —, e pintar os dois por cima **dobra o sombreado**: some o
   // que a artista desenhou e aparece um degrau que não é de ninguém.
   //
-  // Então quem tem `tinta.png` responde pelo próprio volume, inclusive pela
+  // Então quem tem `tinta.arte` responde pelo próprio volume, inclusive pela
   // sombra sob o queixo. É o que o `PEDIDO-TRAJE.md` passa a pedir.
-  if (!traje?.tinta.png) {
+  if (!traje?.tinta.arte) {
     out +=
       `<path d="${pathSombraQueixoTronco()}" ` +
       `fill="${escurecer(cor, fatorDeTom(FACETAS.sombraQueixo.delta, FACETAS.PLATO_TRONCO))}"/>`;
@@ -417,19 +417,19 @@ function tintaTronco(ns: string, traje: Traje | undefined): string {
  * enuncia para capa e ombreira. A diferença é só o formato — ali vetor, aqui
  * raster —, e a regra de composição é a mesma.
  *
- * O que NÃO muda: sem `tinta.png` esta função devolve string vazia, e o SVG sai
+ * O que NÃO muda: sem `tinta.arte` esta função devolve string vazia, e o SVG sai
  * byte a byte igual ao de sempre. É o que mantém os 19 formas / 7 468 bytes da
  * `folha-base` e os 11 selos parados.
  */
 function arteDoTraje(traje: Traje | undefined): string {
-  if (!traje?.tinta.png) return "";
+  if (!traje?.tinta.arte) return "";
   const k = traje.escalaMedida ?? 1;
   const w = VIEWBOX.w * k;
   const h = VIEWBOX.h * k;
   const dx = (VIEWBOX.w - w) / 2;
   const dy = (VIEWBOX.h - h) / 2;
   return (
-    `<image href="${attr(traje.tinta.png)}" x="${dx.toFixed(2)}" y="${dy.toFixed(2)}" ` +
+    `<image href="${attr(traje.tinta.arte)}" x="${dx.toFixed(2)}" y="${dy.toFixed(2)}" ` +
     `width="${w.toFixed(2)}" height="${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`
   );
 }
@@ -951,7 +951,7 @@ export function compor(estado: EstadoAvatar): string {
     // borda externa; antes da cabeça porque a cabeça é opaca, vem por cima, e é o
     // que faz a gola sumir atrás do queixo em vez de flutuar sobre ele.
     //
-    // Vazia quando não há `tinta.png` — nenhum byte muda no boneco de sempre.
+    // Vazia quando não há `tinta.arte` — nenhum byte muda no boneco de sempre.
     arteDoTraje(traje) +
     extensoesCabelo(modeloCabelo, true) +
     `<use href="#${ns}-p-cabeca" class="kk-pele"/>` +

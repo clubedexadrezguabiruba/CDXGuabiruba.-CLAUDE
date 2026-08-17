@@ -48,11 +48,17 @@ export interface Traje {
   /**
    * A tinta do interior, clipada no `pathTronco()`.
    *
-   * `png` é o caminho da imagem gerada pelo Doug — o interior, nunca a fronteira.
+   * `arte` é o caminho da imagem gerada pelo Doug — o interior, nunca a fronteira.
    * `cor` é o fallback chapado para quando ainda não há imagem, e é o que faz o
    * boneco nunca aparecer pelado (a lição do 5.9).
+   *
+   * **O campo se chamava `png` e passou a `arte` em 2026-08-17**, quando a peça
+   * virou `.svg` (P1 do plano, doc 21). O nome velho descrevia o formato, e um
+   * campo chamado `png` guardando um `.svg` é a espécie de mentira que este
+   * arquivo inteiro existe para não deixar acontecer. O compositor nunca soube o
+   * formato: ele emite `<image href>`, e o navegador é quem decide como desenhar.
    */
-  tinta: { png?: string; cor: string };
+  tinta: { arte?: string; cor: string };
   /**
    * Escala que o AUTO-AJUSTE mediu para essa tinta cobrir o clip mais a sangria.
    * Nunca escrita à mão: é saída do pipeline (doc 15, §4), com teto de 1,15.

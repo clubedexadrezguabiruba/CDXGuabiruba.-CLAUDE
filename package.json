@@ -76,6 +76,7 @@
     "arte:traje": "tsx scripts/avatar/arte/traje.ts",
     "arte:trajes": "tsx scripts/avatar/arte/trajes.ts",
     "arte:trajes-check": "tsx scripts/avatar/arte/trajes.ts --check",
+    "arte:prova-vetor": "tsx scripts/avatar/arte/prova-do-vetor.ts",
     "arte:espessura": "tsx scripts/avatar/arte/espessura.ts",
     "arte:silhueta": "tsx scripts/avatar/arte/silhueta.ts",
     "arte:coroa": "tsx scripts/avatar/arte/coroa.ts",

@@ -331,6 +331,39 @@ conversor** cai no `--check`. Nenhum dos dois exige render.
 
 ## 12. A rota do TRAJE — o que muda, e o que não muda
 
+> ### ⚠️ EMENDA DE 2026-08-17 — o passo 4 deixou de terminar em raster
+>
+> **A peça que vai ao ar é um `.svg`.** Onde o resto desta seção disser PNG,
+> `tinta.png` ou "raster", esta caixa vence.
+>
+> | | antes (raster) | **agora (vetor)** |
+> |---|---|---|
+> | o que o passo 4 escreve | `public/items/traje/<slug>.png` | **`public/items/traje/<slug>.svg`** |
+> | o campo do literal | `tinta.png` | **`tinta.arte`** |
+> | o recorte | 600 × 840 RGBA, arquivo | **o mesmo recorte, agora em memória** — entrada do traçador |
+> | o traçador | — | `CONFIG_TRAJE`, em `traje.ts` — **NÃO é a do cabelo** |
+> | peso no fio (gambesão) | 248,2 KB | **60,6 KB** |
+>
+> **Por que:** a P1 do plano mediu o gambesão (aerografado, o caso difícil) e a
+> farda (chapada) nas duas rotas, e o Doug escolheu o vetor olhando as folhas. O
+> laudo inteiro, com os quatro números e o que cada variante perde, está na entrada
+> de 2026-08-17 do doc 21. `npm run arte:prova-vetor [slug]` refaz a medição.
+>
+> **O que NÃO mudou, e é o que fez a troca ser barata:** a colagem. O `<image>` do
+> compositor já aceitava SVG, e a peça continua ocupando o `viewBox` inteiro com
+> `k = 1`. A régua da colagem (`arte:folha-traje`) mede o desenho na tela contra o
+> raster que a esteira regenera, e deu **(0, 0) nas duas peças** depois da troca.
+>
+> **A configuração do traçador é OUTRA, e isso é medido, não gosto.** A do cabelo
+> foi calibrada para encolher a curadoria — 235 fragmentos viram 46 —, porque cabelo
+> recolore e cada fragmento pede um papel humano. Traje não recolore: fragmento não
+> custa trabalho, e a única coisa que ele compra é fidelidade. Aplicada à farda, a
+> calibração do cabelo **apaga o pesponto tracejado da carcela**. Ver `CONFIG_TRAJE`.
+>
+> **O raster não morreu — saiu do deploy.** Ele é a verdade de referência das
+> réguas, e `construir()` o devolve em memória a cada rodada. Não é commitado porque
+> a esteira é determinística: quem quiser o raster roda a esteira e o tem de volta.
+
 > ### ⚠️ EMENDA DE 2026-08-13 — o ciano saiu, e com ele metade do passo 4
 >
 > **O passo 3 e o passo 4 mudaram, e a tabela abaixo ainda descreve os antigos.**

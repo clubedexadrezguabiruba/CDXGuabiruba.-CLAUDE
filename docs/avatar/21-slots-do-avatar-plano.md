@@ -1109,6 +1109,102 @@ contra a fonte nova.
 
 ## 10. Changelog
 
+- **2026-08-17 — P1, a PROVA DO VETOR: PASSOU, e o traje virou `.svg`.**
+
+  > ## ✅ A DECISÃO DO DOUG, na folha: **o vetor entra, na configuração FIEL, como arquivo avulso**
+  >
+  > As `CALIBRADO` e `LEVE` estão **descartadas** — as duas perdem desenho, e a
+  > medição de cada perda está abaixo. **Não repropor** nenhuma das duas, nem
+  > reaproveitar a calibração do cabelo em arte de traje.
+  >
+  > **O que isso fechou:** o traje deixou de ser PNG; `public/items/traje/*.png`
+  > saiu do deploy; os achados **G24** e **G25** morreram sem conserto, que era o
+  > destino declarado dos dois; e o projeto passou a ter **um só caminho de arte**
+  > — a pergunta que abriu o P1.
+  >
+  > **O que isso custou, e o Doug aceitou vendo:** o aerógrafo. Ver "o que o vetor
+  > perde", abaixo.
+
+  `npm run arte:prova-vetor [slug]` (`scripts/avatar/arte/prova-do-vetor.ts`) refaz
+  a medição inteira, e passou a ser a régua permanente do P2a: ele compara a peça
+  vetorial que está no ar contra o raster que a mesma arte produz.
+
+  **O experimento.** O `traje-gambesao` — aerógrafo, 725 tons, aprovado por ele em
+  2026-08-13 — passa pelo VTracer em três configurações, e o `<image>` que
+  `arteDoTraje()` emite é trocado pelos paths **no mesmo lugar da pilha**. Nada do
+  compositor muda: a única variável é raster × vetor. O registro foi medido em
+  **(0, 0) nas três**, com 9,2–9,5% de separação na busca — a peça vetorial cai no
+  mesmo pixel, então toda diferença que sobra é de tom, não de posição.
+
+  | | formas na peça | composto | difere >8 | >64 | avulso `.svg` gzip | ranking ×30 gzip |
+  |---|---|---|---|---|---|---|
+  | PNG (hoje) | **0** (é `<image>`) | 21 | — | — | **246,2 KB** | 246,2 KB |
+  | vetor FIEL | 530 | 551 | 19,69% | 1,01% | 60,6 KB | 1 944,6 KB |
+  | vetor CALIBRADO | 97 | 118 | 23,48% | 1,12% | 19,8 KB | 720,6 KB |
+  | vetor LEVE | 15 | 36 | 26,80% | 1,53% | **4,3 KB** | 18,0 KB |
+
+  **A segunda cobaia, e ela não estava no plano: a `traje-farda`, CHAPADA.** Foi
+  medida porque o gambesão sozinho responde "sim ou não", e as duas juntas
+  respondem **por estilo de arte** — que é o eixo em que o catálogo já foi decidido
+  (comuns chapadas, raras/épicas aerografadas). O contraste é o resultado:
+
+  | | formas (FIEL) | difere >8 | médio | avulso `.svg` gzip | PNG gzip |
+  |---|---|---|---|---|---|
+  | gambesão (aerografado) | 530 | 19,69% | 5,4 | 60,6 KB | 246,2 KB |
+  | farda (chapada) | **52** | **6,51%** | **2,8** | 7,9 KB | 9,3 KB |
+
+  Dez vezes menos forma e um terço da diferença — **e o ganho de peso some**, porque
+  um PNG chapado já comprime. O vetor ganha peso justamente na peça em que ele
+  custa mais aparência, e é quase de graça na peça em que ele não paga nada.
+
+  **Na farda, a configuração `FIEL` é indistinguível do PNG**, e isso foi procurado
+  a 14× de zoom: o pesponto tracejado da carcela sai com os mesmos tracinhos e as
+  mesmas falhas entre eles (12/19/27/24/13 px escuros no PNG contra 9/17/24/25/12),
+  o X do cordão mantém o miolo creme, o nó da faixa mantém as dobras internas. No
+  mapa de diferença, **100% do vermelho é linha de borda**: 13,7% dos pixels
+  diferem, e depois de duas erosões sobram 9 px — nenhuma mancha de 15 px sequer.
+
+  **E a calibração do cabelo REPROVOU na farda**, o que o plano não previa: em
+  `CALIBRADO` o pesponto tracejado **some** (27 px escuros viram 3) e aparecem dois
+  retalhos de matiz errado na bainha. `LEVE` piora tudo isso e ainda escurece o X
+  do cordão. **A configuração medida em arte chapada de CABELO não serve para arte
+  de TRAJE** — ela foi calibrada para 46 fragmentos rotuláveis, não para fidelidade.
+
+  **Os quatro números do plano, e o que cada um respondeu:**
+
+  1. **Curadoria: ZERO por peça.** O cabelo custa 46 fragmentos rotulados à mão
+     porque ele **recolore** — cada fragmento precisa ser `massa` ou `clara`. O
+     traje não recolore (emenda à D27: só pele e cabelo), a cor de cada forma sai
+     medida do pixel, e ninguém rotula nada. **O custo que multiplicaria por 40 não
+     existe neste slot.**
+  2. **Formas: é aqui que dói.** Hoje o traje custa 0 forma. Qualquer vetor é teto
+     novo, e forma é o custo que o P0 mediu como o que importa de verdade (nó de
+     DOM pintado 30 vezes no ranking).
+  3. **Peso: são TRÊS colunas, não uma, e essa é a descoberta que muda o P2a.**
+     "Vetor" e "embutido no HTML" pareciam uma decisão e são duas. Como **arquivo
+     avulso** — baixado uma vez e cacheado, exatamente o que o PNG faz hoje — o
+     vetor ganha de 4× a 57×, **sem pagar forma nenhuma no DOM**. Embutido, ele
+     paga as 30 cópias do ranking. E a coluna não é suposição: o `<image>` do
+     compositor já aceita `.svg`, e o render pelo arquivo bate com o render
+     embutido em **0,00–0,01%** de pixel — medido, com controle no laudo. Trocar
+     a extensão em `trajes-da-arte.ts` é **a mudança de código inteira**.
+  4. **Fidelidade: nada saiu do lugar.** A régua de 8 níveis que a esteira usa para
+     dizer "duas peças separam" acende com tom reagrupado num aerógrafo de 725
+     tons — por isso o laudo saiu em degraus. O que passa de 64 níveis (desenho
+     perdido de verdade, não tom deslocado) fica em **~1% em todas as três**.
+
+  **O QUE O VETOR PERDE, medido na folha do gambesão: o aerógrafo, e só ele.** As
+  canaletas estão todas lá, na mesma coluna de pixel — mas deixam de ser vinco com
+  volume e viram linha escura sobre chapado. Cores distintas no recorte: **9 691
+  (PNG) → 4 975 (fiel) → 2 746 (calibrado) → 1 350 (leve)**; níveis de cinza num
+  corte do painel: 36 → 12 → 9 → 7. O `FIEL` guarda os 8 ilhoses dourados, os 4 X do
+  cordão e a barra da bainha, e erra em traço fantasma ao lado de algumas canaletas.
+  O `CALIBRADO` perde a modelagem da barra. O **`LEVE` perde desenho** — os ilhoses
+  ficam sem o dourado e viram bloco, a barra some, a peça inteira desce de tom
+  (pico de luminância 141,8 → 117,2). A 32 px as quatro colunas são
+  indistinguíveis; a 56 px `fiel` e `calibrado` ficam **melhores** que o PNG, e
+  `leve` fica pior.
+
 - **2026-08-17 — as sete decisões do plano "até pronto para ir ao ar", e o G23
   fechado.** O plano de execução vive em `~/.claude/plans/`; aqui ficam as
   decisões, que são o que envelhece mal fora de um documento.
