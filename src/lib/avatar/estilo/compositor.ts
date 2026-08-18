@@ -423,13 +423,33 @@ function tintaTronco(ns: string, traje: Traje | undefined): string {
  */
 function arteDoTraje(traje: Traje | undefined): string {
   if (!traje?.tinta.arte) return "";
-  const k = traje.escalaMedida ?? 1;
+  return colarArte(traje.tinta.arte, traje.escalaMedida ?? 1);
+}
+
+/**
+ * A COLAGEM DE UMA PEÇA DE ARTE — e há **uma** descrição dela, para todos os slots.
+ *
+ * Ela era o corpo de `arteDoTraje()` e saiu de lá em 2026-08-17, quando chapéu,
+ * óculos e pet passaram a colar do mesmo jeito. Duas cópias desta conta é o defeito
+ * que a `interface Traje` (`tipos.ts`) inteira existe para não deixar acontecer: a
+ * segunda divergiria da primeira no dia em que uma delas fosse ajustada, e o
+ * sintoma seria uma peça caindo alguns pixels fora do lugar — o tipo de coisa que
+ * ninguém vê a 56 px e todo mundo vê a 425.
+ *
+ * **A colagem é conta, não ajuste.** Com `k = 1` — que é o caso de toda peça de
+ * hoje, porque nenhuma declara `escalaMedida` — o `<image>` ocupa `x=0 y=0 w=500
+ * h=700`: o `viewBox` inteiro. E o `viewBox` inteiro é exatamente o retângulo em que
+ * a esteira recortou a arte (px 212→812 × 92→932, 600 × 840, a MESMA proporção 5:7),
+ * então `preserveAspectRatio="xMidYMid meet"` encaixa 1 : 1 sem sobra em eixo nenhum.
+ * Sem registro, sem ajuste e sem número escolhido a olho.
+ */
+function colarArte(href: string, k: number): string {
   const w = VIEWBOX.w * k;
   const h = VIEWBOX.h * k;
   const dx = (VIEWBOX.w - w) / 2;
   const dy = (VIEWBOX.h - h) / 2;
   return (
-    `<image href="${attr(traje.tinta.arte)}" x="${dx.toFixed(2)}" y="${dy.toFixed(2)}" ` +
+    `<image href="${attr(href)}" x="${dx.toFixed(2)}" y="${dy.toFixed(2)}" ` +
     `width="${w.toFixed(2)}" height="${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`
   );
 }
@@ -622,9 +642,37 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
  * forma a forma deixaria o traço de uma peça por baixo do preenchimento da
  * seguinte — e é justamente onde duas formas se encostam que a borda tem de ler.
  *
- * **O traço é do compositor, não da peça** (`kk-traco`, a mesma classe do crânio
- * e do tronco). Uma peça que trouxesse o próprio traço chegaria com espessura
- * própria, e o boneco ganharia uma borda de 1 px ao lado de outra de 12.
+ * ---------------------------------------------------------------------------
+ * SÃO DOIS MODOS, E O QUE ESCOLHE ENTRE ELES É SE A PEÇA RECOLORE
+ * ---------------------------------------------------------------------------
+ *
+ * **`arte`** — um `.svg` de cor assada, colado por `<image>` como o traje já faz.
+ * **Nenhuma passada de traço**, e isso não é esquecimento: a peça foi desenhada por
+ * cima de um render do próprio boneco, na escala dele, então o traço que ela traz
+ * **é** o traço do boneco. Emitir `kk-traco` por cima dela poria uma segunda borda
+ * sobre a que já existe. É o caminho de chapéu, óculos e pet.
+ *
+ * **`formas`** — paths declarados, com o traço do compositor. É o caminho de quem
+ * **recolore**, e hoje isso é a barba e mais ninguém: um traço assado num `.svg` é
+ * preto fixo, e uma peça que muda de cor com o cabelo precisa da borda emitida aqui,
+ * junto com o resto.
+ *
+ * ⚠️ **O traço de uma peça de `arte` fica sem rede, e por isso ele é medido.** No
+ * traje, o contorno da própria peça saiu com p50 7,5 u contra os 12 u do boneco (o
+ * achado **G17**: a extração entrega o miolo do traço onde ele coincide com o
+ * contorno preto do tronco), e o que salva ali é o `<use class="kk-traco"/>` do
+ * tronco, desenhado sempre. Chapéu, óculos e pet **não têm silhueta do compositor
+ * por baixo** — a esteira mede a espessura de cada peça contra `TRACO` antes de ela
+ * chegar ao catálogo.
+ *
+ * ---------------------------------------------------------------------------
+ * NO MODO `formas`: DUAS PASSADAS, E O TRAÇO VEM DEPOIS DE TODO PREENCHIMENTO
+ * ---------------------------------------------------------------------------
+ *
+ * Exatamente como `extensoes()` faz com a capa do traje: primeiro todos os
+ * preenchimentos, depois todos os traços. Fazer as duas forma a forma deixaria o
+ * traço de uma peça por baixo do preenchimento da seguinte — e é justamente onde
+ * duas formas se encostam que a borda tem de ler.
  *
  * **A peça escolhe ONDE há traço, e é só isso que `semTraco` faz.** A segunda
  * passada pula as formas que o declaram — a espessura continua sendo a mesma para
@@ -635,10 +683,15 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
  *
  * AUSENTE devolve string vazia — sem `<g>` vazio, sem nada. É a condição para o
  * SVG de hoje continuar saindo byte a byte, e o teste `pecas-de-elenco.test.ts`
- * cobra as duas pontas: ausente não muda um byte, presente aparece.
+ * cobra as TRÊS pontas: ausente não muda um byte, `formas` sai como sempre saiu, e
+ * `arte` emite `<image>` sem um único `kk-traco`.
  */
 function sobrepor(peca: PecaSobreposta | undefined): string {
-  if (!peca?.formas.length) return "";
+  if (!peca) return "";
+  // `k = 1` explícito: a peça de cabeça não tem `escalaMedida` e não vai ter — ela
+  // ocupa o `viewBox` inteiro, que é o retângulo em que a esteira a recortou.
+  if (peca.arte) return colarArte(peca.arte, 1);
+  if (!peca.formas?.length) return "";
   return (
     peca.formas.map((f) => `<path d="${attr(f.d)}" fill="${f.cor}"/>`).join("") +
     peca.formas

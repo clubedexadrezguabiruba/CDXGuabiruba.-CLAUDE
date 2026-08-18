@@ -85,6 +85,78 @@ describe("peças sobrepostas (chapéu e rosto)", () => {
 });
 
 /**
+ * O MODO `arte` — a peça de COR ASSADA, e as três coisas que ele precisa honrar.
+ *
+ * Ele nasceu em 2026-08-17, quando o passo 4 da esteira deixou de ser do traje e
+ * chapéu, óculos e pet passaram a sair como `.svg` avulso. O que o distingue do modo
+ * `formas` não é o formato: é **quem desenha o contorno preto**.
+ *
+ * A asserção que carrega o peso é a do meio, e ela é o contrário do que o modo
+ * `formas` cobra. Uma peça de arte que ganhasse `kk-traco` sairia com DUAS bordas —
+ * a que a artista desenhou e a que o compositor pôs por cima —, e o sintoma seria
+ * uma linha grossa demais que ninguém nota a 56 px e todo mundo nota a 425. Nenhum
+ * gate de forma, byte ou contrato acusa isso: só esta linha.
+ *
+ * A terceira existe porque a colagem tem de ser a MESMA do traje. Se as duas
+ * divergissem, a peça de cabeça cairia alguns pixels fora do lugar — e `colarArte`
+ * existe justamente para não haver duas contas.
+ */
+describe("o modo `arte` — peça de cor assada, colada por <image>", () => {
+  const DE_ARTE: PecaSobreposta = {
+    id: "zz-chapeu-de-arte",
+    nome: "Chapéu de arte",
+    arte: "/items/chapeu/zz-chapeu-de-arte.svg",
+  };
+
+  it("emite <image> apontando para o .svg da peça", () => {
+    const svg = compor({ ...BASE, chapeu: DE_ARTE });
+
+    expect(svg).not.toBe(compor(BASE));
+    expect(svg).toContain(`<image href="/items/chapeu/zz-chapeu-de-arte.svg"`);
+  });
+
+  it("NÃO emite traço nenhum — a arte traz o próprio", () => {
+    const semNada = compor(BASE);
+    const comArte = compor({ ...BASE, chapeu: DE_ARTE });
+
+    // O boneco já tem os seus `kk-traco` (crânio, tronco). A peça não pode somar um.
+    const conta = (s: string) => (s.match(/kk-traco/g) ?? []).length;
+    expect(conta(comArte)).toBe(conta(semNada));
+  });
+
+  it("cola no MESMO lugar que o traje — `colarArte` é uma conta só", () => {
+    const comChapeu = compor({ ...BASE, chapeu: DE_ARTE });
+    const comTraje = compor({
+      ...BASE,
+      traje: { id: "zz", nome: "Zz", tinta: { arte: "/items/traje/zz.svg", cor: "#123456" } },
+    });
+
+    const caixa = (s: string) =>
+      s.match(/<image href="[^"]*" (x="[^"]*" y="[^"]*" width="[^"]*" height="[^"]*")/)?.[1];
+
+    expect(caixa(comChapeu)).toBeDefined();
+    expect(caixa(comChapeu)).toBe(caixa(comTraje));
+  });
+
+  it("não quebra o contrato do SVG", () => {
+    expect(conferirSvg(compor({ ...BASE, chapeu: DE_ARTE, rosto: FALSA }))).toEqual([]);
+  });
+
+  it("a peça não pode declarar os dois modos — a união é a trava", () => {
+    // @ts-expect-error `arte` e `formas` são mutuamente exclusivos por construção.
+    // Se este erro DEIXAR de existir, a união virou interface e a trava caiu — o
+    // typecheck quebra aqui, que é o jeito certo de descobrir isso.
+    const ambos: PecaSobreposta = {
+      id: "zz-ambos",
+      nome: "Ambos",
+      arte: "/items/chapeu/zz.svg",
+      formas: [{ d: "M0 0 L1 0 L1 1 Z", cor: "#000000" }],
+    };
+    expect(ambos.id).toBe("zz-ambos");
+  });
+});
+
+/**
  * `semTraco` — E AS TRÊS ASSERÇÕES QUE O IMPEDEM DE PASSAR POR VACUIDADE.
  *
  * É o mesmo perigo que o docstring do topo nomeia, um andar abaixo: um campo

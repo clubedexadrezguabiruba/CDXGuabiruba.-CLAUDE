@@ -115,7 +115,6 @@ import {
   LADO,
   PASTA,
   PNG_BASE,
-  noCampoDoTraje,
   paraUnidade,
   regiaoDoPixel,
   saidaDaArte,
@@ -433,8 +432,11 @@ export function mascaraDaPeca(
 }
 
 // ---------------------------------------------------------------------------
-// A ROTA DE CORES FINAIS — a peça de TRAJE, desde 2026-08-13
+// A ROTA DE CORES FINAIS — toda peça de COR ASSADA, desde 2026-08-13
 // ---------------------------------------------------------------------------
+//
+// (Ela nasceu para o traje e o campo virou parâmetro em 2026-08-17, quando chapéu,
+// óculos e pet passaram a usar a mesma rota — ver `extrairPorCampo` abaixo.)
 //
 // Tudo acima desta linha reconhece a peça pela COR: o ciano instrumental em 180°,
 // que nada mais na base tem. Era o que permitia responder "quais pixels são a
@@ -474,12 +476,12 @@ export function mascaraDaPeca(
  */
 const NIVEL_TRAJE = 24;
 
-export interface ExtracaoDeTraje {
+export interface ExtracaoPorCampo {
   /** 1 onde há peça. */
   mascara: Uint8Array;
   mantidas: Componente[];
   descartadas: Componente[];
-  /** Candidatos que diferiam da base mas caíram FORA do campo do traje. */
+  /** Candidatos que diferiam da base mas caíram FORA do campo do slot. */
   foraDoCampo: number;
   /** Pixels que o filtro de salpico removeu. */
   salpico: number;
@@ -490,7 +492,22 @@ export interface ExtracaoDeTraje {
   base: Img;
 }
 
-export async function extrairTraje(caminhoArte: string): Promise<ExtracaoDeTraje> {
+/**
+ * O CAMPO É PARÂMETRO DESDE 2026-08-17, e a função deixou de se chamar `extrairTraje`.
+ *
+ * Ela nasceu para o traje e o corpo dela nunca soube disso: os três filtros
+ * (diferença > `NIVEL_TRAJE`, salpico, conectividade) valem para qualquer peça de
+ * cor assada. A única coisa específica era `noCampoDoTraje`, chamado no meio do
+ * laço — e um `if` com o nome de um slot dentro de uma função genérica é o começo da
+ * segunda cópia que diverge da primeira.
+ *
+ * Com o campo entrando por parâmetro, chapéu, óculos e pet passam por aqui sem uma
+ * linha nova. Quem passa `noCampoDoTraje` é o descritor de slot em `traje.ts`.
+ */
+export async function extrairPorCampo(
+  caminhoArte: string,
+  campo: (x: number, y: number) => boolean,
+): Promise<ExtracaoPorCampo> {
   const arte = await carregar(caminhoArte, FUNDO);
   const base = await carregar(PNG_BASE, FUNDO);
   if (arte.w !== base.w || arte.h !== base.h) {
@@ -508,7 +525,7 @@ export async function extrairTraje(caminhoArte: string): Promise<ExtracaoDeTraje
     for (let x = 0; x < arte.w; x++) {
       if (delta(base, arte, x, y) <= NIVEL_TRAJE) continue;
       const u = paraUnidade(x, y);
-      if (noCampoDoTraje(u.x, u.y)) cru[y * arte.w + x] = 1;
+      if (campo(u.x, u.y)) cru[y * arte.w + x] = 1;
       else foraDoCampo++;
     }
   }

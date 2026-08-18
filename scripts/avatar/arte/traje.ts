@@ -99,18 +99,25 @@
  * (0,607 px/u). O PNG fica ~2× supersampleado, que é o que DPR 2 pede.
  */
 
-import { mkdirSync, writeFileSync } from "fs";
 import { basename } from "path";
-import { gzipSync } from "zlib";
-
-import sharp from "sharp";
-import { ColorMode, Hierarchical, PathSimplifyMode, vectorize } from "@neplex/vectorizer";
 
 import { escurecer } from "../../../src/lib/avatar/palette";
-import { prepararSvg } from "../estilo/vtracer";
-import { ESCALA, LADO, ORIGEM, PNG_BASE } from "./base";
-import { extrairTraje } from "./extrair";
+import { noCampoDoTraje } from "./base";
+import type { ExtracaoPorCampo } from "./extrair";
+import {
+  type FabricaDeTinta,
+  type Peca,
+  RECORTE,
+  type Rgb,
+  type SlotDeArte,
+  construirPeca,
+  paraRgb,
+  slugDaArte,
+} from "./peca-de-arte";
 import { luz } from "./pixels";
+
+export { RECORTE } from "./peca-de-arte";
+export type { Peca } from "./peca-de-arte";
 
 /**
  * Onde os PNGs de peça nascem — **a prateleira do produto**, desde 2026-08-13.
@@ -136,144 +143,22 @@ import { luz } from "./pixels";
  */
 export const PASTA_TRAJE = "public/items/traje";
 
-/** O recorte: o `viewBox` inteiro, em pixels da base de edição. */
-export const RECORTE = {
-  x: ORIGEM.x,
-  y: ORIGEM.y,
-  w: Math.round(500 * ESCALA),
-  h: Math.round(700 * ESCALA),
-} as const;
-
 /**
- * A CONFIGURAÇÃO DO TRAÇADOR PARA TRAJE — e ela **não** é a do cabelo.
+ * O SLOT DE TRAJE, como o passo 4 genérico o enxerga — quatro linhas, e uma delas
+ * é a única que distingue este slot de chapéu, óculos ou pet: **o campo**.
  *
- * `estilo/vtracer.ts` traz `colorPrecision 5 · layerDifference 24 · filterSpeckle 8`,
- * com contra-exemplo medido para cada escolha, e a P1 do plano previa reaproveitá-la.
- * **A medição reprovou o reaproveitamento**, e o motivo é que as duas calibrações
- * respondem a perguntas diferentes:
- *
- *  - a do cabelo foi calibrada para **encolher a curadoria** — 235 fragmentos viram
- *    46, e cada um precisa de um papel humano (`massa` ou `clara`) porque o cabelo
- *    recolore. Menos fragmento é menos trabalho;
- *  - o traje **não recolore** (emenda à D27): a cor de cada forma sai medida do
- *    pixel e ninguém rotula nada. Sem curadoria, fragmento não custa trabalho — e a
- *    única coisa que o número de fragmentos compra é **fidelidade**.
- *
- * Aplicada à `traje-farda`, a calibração do cabelo **apaga o pesponto tracejado da
- * carcela** (27 px escuros na coluna do tracejado viram 3) e inventa dois retalhos
- * de matiz errado na bainha. Com os valores abaixo, a mesma peça sai
- * indistinguível do raster a 14× de zoom: 13,7% dos pixels diferem, e depois de
- * duas erosões sobram 9 px — ou seja, **100% da diferença é linha de borda**,
- * assinatura de antialiasing e não de desenho perdido.
- *
- * `Hierarchical.Stacked` e não `Cutout`: em `Cutout` as camadas se recortam, o que
- * serve para *isolar* uma forma (é o que o cabelo precisa, e o docstring de lá
- * explica). Aqui a pergunta é reconstruir a imagem, e camada sobre camada
- * reconstrói; camada recortada deixa costura entre regiões vizinhas.
- *
- * `pathPrecision: 0` sobrevive intacto do cabelo, e pelo mesmo motivo: o traço veio
- * de um raster, e sub-pixel ali não descreve informação que o raster tinha.
- */
-export const CONFIG_TRAJE = {
-  colorMode: ColorMode.Color,
-  hierarchical: Hierarchical.Stacked,
-  filterSpeckle: 4,
-  colorPrecision: 6,
-  layerDifference: 12,
-  mode: PathSimplifyMode.Spline,
-  cornerThreshold: 60,
-  lengthThreshold: 4,
-  maxIterations: 10,
-  spliceThreshold: 45,
-  pathPrecision: 0,
-} as const;
-
-/**
- * A COR SENTINELA — porque o traçador não enxerga alfa.
- *
- * O recorte é RGBA de alfa binário: ou o pixel é da peça, ou é vazio com RGB zerado.
- * O VTracer ignora o canal alfa e leria aquilo como **preto puro** — a peça sairia
- * dentro de uma mancha preta do tamanho do `viewBox`.
- *
- * Então o vazio é achatado num magenta que arte de traje não tem, e as formas que
- * saem nessa cor são descartadas pelo nome. Como o alfa é binário, o achatamento
- * não inventa borda: não existe pixel meio-transparente para misturar com o magenta.
- *
- * O descarte é conferido, nunca presumido — ver `vetorizarRecorte`.
- */
-const SENTINELA = { r: 255, g: 0, b: 255 } as const;
-
-/** Perto da sentinela dentro da quantização do traçador. */
-function eSentinela(fill: string): boolean {
-  if (!/^#[0-9a-f]{6}$/i.test(fill)) return false;
-  const [r, g, b] = paraRgb(fill);
-  return r > 200 && g < 60 && b > 200;
-}
-
-/**
- * O recorte RGBA virando `.svg` — a peça que vai ao ar.
- *
- * O `viewBox` é o do recorte (600 × 840), e é ele que faz a colagem continuar sendo
- * conta e não ajuste: o `<image>` do compositor ocupa o `viewBox` inteiro (500 × 700,
- * 5:7), e 600 × 840 é a MESMA proporção, então `preserveAspectRatio` encaixa 1 : 1
- * sem sobra em nenhum eixo.
- */
-export async function vetorizarRecorte(
-  rgba: Buffer,
-  w: number,
-  h: number,
-): Promise<{ svg: string; formas: number; descartadas: number }> {
-  const chapado = await sharp(rgba, { raw: { width: w, height: h, channels: 4 } })
-    .flatten({ background: SENTINELA })
-    .png()
-    .toBuffer();
-
-  const pronto = prepararSvg(await vectorize(chapado, { ...CONFIG_TRAJE }), w, h);
-
-  const formas: string[] = [];
-  let descartadas = 0;
-  for (const m of pronto.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*\sfill="([^"]*)"[^>]*>/g)) {
-    if (eSentinela(m[2])) descartadas++;
-    else formas.push(`<path d="${m[1]}" fill="${m[2]}"/>`);
-  }
-
-  // O casamento acima exige `d` antes de `fill`. Se o traçador inverter a ordem dos
-  // atributos, a peça sairia VAZIA e o boneco apareceria de macacão com todos os
-  // gates verdes — o modo de falha nº 1 desta rota, e o único jeito de fechá-lo é
-  // conferir a conta em vez de confiar no regex.
-  const total = (pronto.match(/<path/g) ?? []).length;
-  if (formas.length + descartadas !== total) {
-    throw new Error(
-      `li ${formas.length + descartadas} de ${total} <path> do traçador. A ordem dos ` +
-        `atributos mudou — o extrator precisa ser reescrito antes de confiar na peça.`,
-    );
-  }
-  if (!descartadas) {
-    throw new Error(
-      `nenhuma forma na cor sentinela foi descartada. O fundo magenta não virou forma ` +
-        `própria, o que quer dizer que ele se fundiu com a peça — a peça sairia com um ` +
-        `retângulo magenta em volta.`,
-    );
-  }
-
-  return {
-    svg:
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" ` +
-      `width="${w}" height="${h}">${formas.join("")}</svg>`,
-    formas: formas.length,
-    descartadas,
-  };
-}
-
-/**
- * A convenção de slug, desde 2026-08-13: **`traje-<nome>`**, sem patente.
- *
+ * A convenção de slug é de 2026-08-13: **`traje-<nome>`**, sem patente.
  * `traje-soldado-farda` virou `traje-farda`. O nome da patente saía do slug porque
  * era dele que a cor era derivada; sem recolorização, ele só sobreviveria como
  * lembrança de um vínculo que não existe mais. Renomear custou zero — nenhuma linha
  * no banco —, e depois do seed do B5 custaria migration de dados.
  */
-const SLUG = /^traje-[a-z0-9]+(-[a-z0-9]+)*$/;
+export const TRAJE: SlotDeArte = {
+  nome: "traje",
+  slug: /^traje-[a-z0-9]+(-[a-z0-9]+)*$/,
+  pasta: PASTA_TRAJE,
+  campo: noCampoDoTraje,
+};
 
 /**
  * ---------------------------------------------------------------------------
@@ -311,17 +196,6 @@ const COR_FINAL_DECLARADA: Record<string, string> = {
   // não tem mais nada a ver com isso.
   "traje-farda": "#78833B",
 };
-
-const hex = (c: [number, number, number]) =>
-  `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
-
-type Rgb = [number, number, number];
-
-const paraRgb = (h: string): Rgb => [
-  parseInt(h.slice(1, 3), 16),
-  parseInt(h.slice(3, 5), 16),
-  parseInt(h.slice(5, 7), 16),
-];
 
 /**
  * Clareia até a luminância alvo misturando com branco.
@@ -373,73 +247,25 @@ function tresTons(lums: number[]): [number, number] {
   return corte;
 }
 
-export interface Peca {
-  slug: string;
-  /** O `.svg` que vai ao ar — o caminho de disco, a partir da raiz. */
-  arte: string;
-  /**
-   * O recorte RGBA como PNG, **em memória e de propósito**.
-   *
-   * Ele foi arquivo em `public/items/traje/` até 2026-08-17, e deixou de ser quando
-   * o `.svg` virou a peça do produto: um raster de 248 KB no deploy que ninguém
-   * pede é peso morto, e foi ele o achado de peso que o P1 matou sem conserto.
-   *
-   * Continua existindo porque é a **verdade de referência** — é contra este buffer
-   * que a `arte:folha-traje` mede a colagem e a `arte:prova-vetor` mede a
-   * fidelidade. Não precisa ser commitado para isso: a saída é determinística, e
-   * quem quiser o raster roda a esteira e o tem de volta idêntico.
-   */
-  raster: Buffer;
-  /** Quantas formas o traçador produziu. É o custo da peça, e ele é medido. */
-  formas: number;
-  /** A cor dominante MEDIDA no recorte. Vai para `tinta.cor`, o fallback chapado. */
-  cor: string;
-  /** A cor declarada em `COR_FINAL_DECLARADA`, ou `null` se a arte já veio final. */
-  recolorida: string | null;
-  pixels: number;
-  /** Candidatos que diferiam da base mas caíram fora do campo do traje. */
-  foraDoCampo: number;
-  salpico: number;
-  descartadas: number;
-  foraDoRecorte: number;
-  caixaUnidades: { x0: number; y0: number; x1: number; y1: number };
-  /** O controle negativo: quantos pixels a régua acha na PRÓPRIA base. */
-  controleNaBase: number;
-  /** O peso do `.svg` que vai ao ar, cru. */
-  bytes: number;
-  /**
-   * O peso do `.svg` COMPRIMIDO, e é este que se compara com o PNG.
-   *
-   * PNG já é um formato comprimido; SVG é texto, e todo servidor o entrega em gzip
-   * ou brotli. Pôr o SVG cru ao lado do PNG seria comparar maçã com laranja — e a
-   * conta sairia ao contrário na peça chapada, onde o cru é 3× MAIOR e o comprimido
-   * é menor.
-   */
-  bytesGzip: number;
-  /** O peso que o raster teria — o que a decisão do vetor economizou. */
-  bytesRaster: number;
-}
+/**
+ * A FÁBRICA DE TINTA DO TRAJE — e ela existe para UMA peça, sem sucessora.
+ *
+ * O passo 4 genérico (`peca-de-arte.ts`) usa a identidade: a cor que sai é a que a
+ * artista pintou. Esta função é a exceção declarada, e ela fica AQUI de propósito —
+ * a recolorização é resíduo de uma transição, não mecanismo, e pô-la no módulo
+ * genérico seria oferecê-la a chapéu, óculos e pet, que nunca vão precisar dela.
+ */
+const tintaDoTraje =
+  (slug: string): FabricaDeTinta =>
+  (e: ExtracaoPorCampo) => {
+    const recolorida = COR_FINAL_DECLARADA[slug] ?? null;
+    if (!recolorida) {
+      return {
+        aplicar: (i) => [e.arte.data[i * 3], e.arte.data[i * 3 + 1], e.arte.data[i * 3 + 2]],
+        declarada: null,
+      };
+    }
 
-export async function construir(caminhoArte: string): Promise<Peca> {
-  const slug = basename(caminhoArte).replace(/\.png$/i, "");
-  if (!SLUG.test(slug)) {
-    throw new Error(
-      `slug "${slug}" fora da convenção traje-<nome> (2026-08-13). ` +
-        `A patente saiu do nome quando saiu da roupa — ver doc 21 §0.7`,
-    );
-  }
-
-  const e = await extrairTraje(caminhoArte);
-  const recolorida = COR_FINAL_DECLARADA[slug] ?? null;
-
-  // -------------------------------- a recolorização, SÓ para peça declarada
-  //
-  // Para toda peça que não está na tabela, `tinta` é a identidade: a cor que sai é a
-  // que a artista pintou, sem uma conta entre a leitura e a escrita.
-  let tinta: (i: number) => Rgb;
-  if (!recolorida) {
-    tinta = (i) => [e.arte.data[i * 3], e.arte.data[i * 3 + 1], e.arte.data[i * 3 + 2]];
-  } else {
     // O traço da peça — preto que a base não tinha — vira preto puro. Ele não entra
     // na partição: um contorno preto no histograma puxaria o corte de sombra para
     // baixo e comeria a classe.
@@ -455,12 +281,12 @@ export async function construir(caminhoArte: string): Promise<Peca> {
 
     const soma: Record<string, [number, number]> = { sombra: [0, 0], massa: [0, 0], luz: [0, 0] };
     for (const v of lums) {
-      const k = v < c1 ? "sombra" : v < c2 ? "massa" : "luz";
+      const k = v < c1 ? 'sombra' : v < c2 ? 'massa' : 'luz';
       soma[k]![0] += v;
       soma[k]![1]++;
     }
     const med = (k: string) => (soma[k]![1] ? soma[k]![0] / soma[k]![1] : 0);
-    const lMassa = med("massa") || 1;
+    const lMassa = med('massa') || 1;
 
     // Sombra e luz NÃO se escolhem: saem da razão de luminância que a artista já pôs
     // na arte. Aplicá-las à cor declarada preserva o volume desenhado.
@@ -468,105 +294,22 @@ export async function construir(caminhoArte: string): Promise<Peca> {
     const lPano = luz(pano[0], pano[1], pano[2]);
     const cores: Record<string, Rgb> = {
       massa: pano,
-      sombra: paraRgb(escurecer(recolorida, med("sombra") / lMassa)),
-      luz: clarearAte(pano, lPano * (med("luz") / lMassa)),
+      sombra: paraRgb(escurecer(recolorida, med('sombra') / lMassa)),
+      luz: clarearAte(pano, lPano * (med('luz') / lMassa)),
       traco: [0, 0, 0],
     };
-    tinta = (i) => {
-      if (ehTraco(i)) return cores.traco!;
-      const v = lumArte(i);
-      return v < c1 ? cores.sombra! : v < c2 ? cores.massa! : cores.luz!;
+    return {
+      aplicar: (i) => {
+        if (ehTraco(i)) return cores.traco!;
+        const v = lumArte(i);
+        return v < c1 ? cores.sombra! : v < c2 ? cores.massa! : cores.luz!;
+      },
+      declarada: recolorida,
     };
-  }
-
-  // ------------------------------------------------------------- o recorte
-  const { x: X0, y: Y0, w: W, h: H } = RECORTE;
-  const saida = Buffer.alloc(W * H * 4); // RGBA, tudo alfa 0 por padrão
-  let pixels = 0;
-  let foraDoRecorte = 0;
-
-  for (let y = 0; y < LADO; y++) {
-    for (let x = 0; x < LADO; x++) {
-      const i = y * LADO + x;
-      if (!e.mascara[i]) continue;
-      pixels++;
-      const xr = x - X0;
-      const yr = y - Y0;
-      if (xr < 0 || xr >= W || yr < 0 || yr >= H) {
-        foraDoRecorte++;
-        continue;
-      }
-      const c = tinta(i);
-      const k = (yr * W + xr) * 4;
-      saida[k] = c[0];
-      saida[k + 1] = c[1];
-      saida[k + 2] = c[2];
-      saida[k + 3] = 255;
-    }
-  }
-
-  mkdirSync(PASTA_TRAJE, { recursive: true });
-  const raster = await sharp(saida, { raw: { width: W, height: H, channels: 4 } })
-    .png({ compressionLevel: 9 })
-    .toBuffer();
-
-  const vetor = await vetorizarRecorte(saida, W, H);
-  const arte = `${PASTA_TRAJE}/${slug}.svg`;
-  writeFileSync(arte, vetor.svg, "utf-8");
-
-  // ------------------------------- o controle negativo: a base contra si mesma
-  const naBase = await extrairTraje(PNG_BASE);
-  let controleNaBase = 0;
-  for (let i = 0; i < naBase.mascara.length; i++) if (naBase.mascara[i]) controleNaBase++;
-
-  // A dominante é medida no PNG DE SAÍDA, não na arte: numa peça recolorida a
-  // dominante da arte é o ciano instrumental, que não chega à tela. `tinta.cor` é o
-  // fallback chapado que o produto desenha quando o PNG falta — ele tem de ser a
-  // cor que o aluno veria.
-  const balde = new Map<number, number>();
-  for (let i = 0; i < W * H; i++) {
-    if (saida[i * 4 + 3] === 0) continue;
-    const k =
-      ((saida[i * 4] >> 3) << 10) | ((saida[i * 4 + 1] >> 3) << 5) | (saida[i * 4 + 2] >> 3);
-    balde.set(k, (balde.get(k) ?? 0) + 1);
-  }
-  let melhorK = -1,
-    melhorN = -1;
-  for (const [k, c] of balde) if (c > melhorN) (melhorN = c), (melhorK = k);
-  let sr = 0,
-    sg = 0,
-    sb = 0,
-    sn = 0;
-  for (let i = 0; i < W * H; i++) {
-    if (saida[i * 4 + 3] === 0) continue;
-    const k =
-      ((saida[i * 4] >> 3) << 10) | ((saida[i * 4 + 1] >> 3) << 5) | (saida[i * 4 + 2] >> 3);
-    if (k !== melhorK) continue;
-    sr += saida[i * 4];
-    sg += saida[i * 4 + 1];
-    sb += saida[i * 4 + 2];
-    sn++;
-  }
-  const dominante: Rgb = sn ? [Math.round(sr / sn), Math.round(sg / sn), Math.round(sb / sn)] : [0, 0, 0];
-
-  return {
-    slug,
-    arte,
-    raster,
-    formas: vetor.formas,
-    cor: hex(dominante),
-    recolorida,
-    pixels,
-    foraDoCampo: e.foraDoCampo,
-    salpico: e.salpico,
-    descartadas: e.descartadas.length,
-    foraDoRecorte,
-    caixaUnidades: e.caixaUnidades,
-    controleNaBase,
-    bytes: Buffer.byteLength(vetor.svg),
-    bytesGzip: gzipSync(Buffer.from(vetor.svg)).length,
-    bytesRaster: raster.length,
   };
+
+export async function construir(caminhoArte: string): Promise<Peca> {
+  return construirPeca(caminhoArte, TRAJE, tintaDoTraje(slugDaArte(caminhoArte)));
 }
 
 async function principal() {

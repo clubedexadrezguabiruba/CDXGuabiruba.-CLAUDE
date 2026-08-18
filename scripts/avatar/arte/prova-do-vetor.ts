@@ -77,7 +77,8 @@ import type { Traje } from "../../../src/lib/avatar/estilo/tipos";
 import { CABELO, PELE } from "../../../src/lib/avatar/palette";
 import { abrirNavegador, renderizarHtml, renderizarSvg } from "../render-svg";
 import { CONFIG, prepararSvg } from "../estilo/vtracer";
-import { CONFIG_TRAJE, construir } from "./traje";
+import { CONFIG_ARTE } from "./peca-de-arte";
+import { construir } from "./traje";
 import { PASTA } from "./base";
 
 /**
@@ -114,12 +115,16 @@ const VARIANTES: Variante[] = [
   {
     chave: "fiel",
     rotulo: "vetor FIEL",
-    // NÃO é uma cópia: é a `CONFIG_TRAJE` que a esteira usa de verdade. Se as duas
+    // NÃO é uma cópia: é a `CONFIG_ARTE` que a esteira usa de verdade. Se as duas
     // fossem escritas separado, a prova mediria uma peça e o produto desenharia
     // outra — que é o defeito nº 1 desta rota, o mesmo que `arte:trajes --check`
     // fecha do outro lado.
-    porque: "a configuração DE PRODUÇÃO (`CONFIG_TRAJE`, em traje.ts) — foi esta que o Doug aprovou",
-    cfg: { ...CONFIG_TRAJE },
+    //
+    // (Ela se chamava `CONFIG_TRAJE` e mudou de nome em 2026-08-17, quando o passo 4
+    // deixou de ser do traje. O valor não mudou — a prova continua sendo a mesma.)
+    porque:
+      "a configuração DE PRODUÇÃO (`CONFIG_ARTE`, em peca-de-arte.ts) — foi esta que o Doug aprovou",
+    cfg: { ...CONFIG_ARTE },
   },
   {
     chave: "calibrado",

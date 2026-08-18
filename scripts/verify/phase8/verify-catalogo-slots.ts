@@ -448,6 +448,12 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     );
   }
 
+  // O TRAJE **ANTES** DOS DOIS EQUIPAMENTOS — e é este valor que a conferência (g)
+  // compara depois. Ver o bloco de comentário dela: a versão anterior afirmava um
+  // valor literal (`=== null`) em vez de comparar, e por isso media outra coisa.
+  const [antes] = await db<{ traje: string | null }[]>`
+    select avatar_traje as traje from public.users where id = ${cobaia.id}`;
+
   // (e) peça a que se tem direito por NÍVEL — aceita E persistida.
   //     Um gate que só nega passa por vacuidade se a RPC negar tudo.
   const errLivre = await tentar(db, "sp_livre", () =>
@@ -480,13 +486,64 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     );
   }
 
-  // (g) um slot por chamada: os outros três não podem ter sido zerados.
-  if (gravado?.traje === null) {
-    ok("equipar um slot não mexeu nos outros três (avatar_traje segue NULL)");
+  // ------------------------------------------------------------------------
+  // (g) UM SLOT POR CHAMADA: a coluna dos outros slots tem de CONTINUAR A MESMA
+  // ------------------------------------------------------------------------
+  //
+  // Ela afirmava `gravado?.traje === null`, e isso é o achado **G26** (2026-08-17):
+  // a conferência prometia *"equipar um slot não mexeu nos outros"* e testava *"o
+  // traje está vazio"*, que é outra coisa. Errava nas duas direções:
+  //
+  //  - **falso VERDE**, o silencioso: com a coluna nula — o estado durante toda a
+  //    vida deste gate — uma RPC que ZERASSE o traje passaria igual. Era aprovação
+  //    por vacuidade, o modo de falha nº 1 desta base de código;
+  //  - **falso VERMELHO**: bastou o Doug equipar um traje na cobaia em produção
+  //    para a conferência reprovar uma RPC que estava certa.
+  //
+  // Comparar antes × depois mata os dois: não existe estado do guarda-roupa da
+  // cobaia que faça esta linha mentir, e ela passa a medir o que o nome dela diz.
+  if (gravado?.traje === antes?.traje) {
+    ok(
+      `equipar um slot não mexeu nos outros três ` +
+        `(avatar_traje era ${JSON.stringify(antes?.traje)} e continua)`,
+    );
   } else {
     nok(
-      `equipar pet/rosto mexeu em avatar_traje (virou ${JSON.stringify(gravado?.traje)})`,
+      `equipar pet/rosto mexeu em avatar_traje ` +
+        `(era ${JSON.stringify(antes?.traje)}, virou ${JSON.stringify(gravado?.traje)})`,
       "o CASE do UPDATE tem de preservar as colunas dos outros slots",
+    );
+  }
+
+  // (g2) A NEGAÇÃO MEDIDA — a comparação acima sabe reprovar?
+  //
+  // Régua nova entra com controle negativo ao lado, e aqui ele não é opcional: a
+  // régua que esta substitui passava por vacuidade, e trocar uma vacuidade por
+  // outra seria o mesmo erro com outra roupagem. Então a coluna é mexida de
+  // propósito e a MESMA comparação é refeita — ela tem de acusar.
+  //
+  // É seguro: tudo isto vive na transação que o `finally` desfaz com ROLLBACK, a
+  // mesma que já planta e apaga as 4 peças de fixture.
+  await db`set local role postgres`;
+  await db`update public.users set avatar_traje = null where id = ${cobaia.id}`;
+  const [sabotado] = await db<{ traje: string | null }[]>`
+    select avatar_traje as traje from public.users where id = ${cobaia.id}`;
+  await db`update public.users set avatar_traje = ${antes?.traje ?? null} where id = ${cobaia.id}`;
+  await db`set local role authenticated`;
+
+  if (antes?.traje === null) {
+    // Cobaia sem traje equipado: zerar não muda nada, e o controle não teria o que
+    // provar. Dizer isso em voz alta é melhor que imprimir um verde que não mediu.
+    info(
+      "controle negativo NÃO RODOU: a cobaia está sem traje, então zerar a coluna não " +
+        "produz diferença. Equipe um traje nela para o controle ter o que medir.",
+    );
+  } else if (sabotado?.traje !== antes?.traje) {
+    ok("controle negativo: a comparação ACUSA quando a coluna muda — ela não é vácua");
+  } else {
+    nok(
+      "controle negativo falhou: zerar avatar_traje não produziu diferença",
+      "a comparação de (g) está lendo algo que não muda — ela aprovaria qualquer coisa",
     );
   }
 

@@ -629,12 +629,28 @@ vetorização do P1 passar, o traje deixa de ser PNG e não há arquivo para div
 > peças sai de ~9 MB para ~2 MB no pior caso, com a peça aerografada sendo a
 > exceção e não a regra.
 >
-> **O que NÃO foi feito, e é decisão consciente:** continua não existindo gate de
-> teto de peso. O que existe é a esteira imprimindo o peso no fio a cada rodada
-> (`arte:trajes`), e o `--check` dentro de `verify:arte`. **Se uma peça futura
-> voltar a inchar, ninguém reprova** — o achado morreu pelo tamanho, não pela
-> régua. Reabrir como teto com ratchet continua sendo uma opção barata, e a hora é
-> do Doug.
+> **O que NÃO foi feito, e era decisão consciente:** continuava não existindo gate
+> de teto de peso. **Isso mudou no mesmo dia** — ver a caixa abaixo.
+>
+> ✅ **O TETO EXISTE DESDE 2026-08-17, e a hora foi do Doug**, ao aprovar que a
+> esteira genérica de arte (`peca-de-arte.ts`) nascesse com a régua junto. O
+> argumento que decidiu: enquanto a rota fazia traje o buraco tinha duas peças; ao
+> servir chapéu, óculos e pet ele passa a valer para 4 slots e ~40 peças, e instalar
+> a régua depois seria retrabalho de 40 arquivos.
+>
+> `npm run arte:peso` (`scripts/avatar/arte/peso.ts`), dentro de `verify:arte`:
+>
+>  - mede o **gzip**, não o arquivo cru — SVG é texto e viaja comprimido, e a conta
+>    sai ao contrário na peça chapada (farda: 28,7 KB crus, **7,9 KB no fio**);
+>  - **teto por peça**, gerado das peças que existem e nunca escolhido: uma média
+>    entre a farda chapada e o gambesão aerografado não descreveria nenhuma das duas;
+>  - **ratchet** — só encolhe sozinho, com `--update`, no idioma do `rpc-baseline.json`;
+>  - **peça nova não reprova**: sai listada como *nova*, sem teto, e entra no baseline
+>    quando o Doug aprovar a peça. Régua não atrapalha desenho;
+>  - **negação medida** (`--provar`): infla um asset e mostra o teto reprovando.
+>
+> O baseline de nascimento, em `scripts/avatar/arte/peso-baseline.json`: farda
+> **7,9 KB**, gambesão **60,6 KB**, mais os dois de lastro da tabela abaixo.
 
 **Prova:** `MEDIDO` — 2026-08-17, no P0 do plano "até pronto para ir ao ar". Achado
 pelo Claude. Registrado e **deliberadamente não consertado** — ver "por que este fica
@@ -1020,6 +1036,100 @@ vê a contradição; quem lê só o terminal, não.
 **O conserto, quando for a hora:** o bloco tem de bifurcar — o que o sistema repõe
 **sem** arte (as duas camadas) e **com** arte (só o contorno de 12 u, desenhado
 depois). Uma tela, nenhuma régua nova.
+
+### G26 — ~~`verify:catalogo-slots` promete "um slot não mexe nos outros" e testa "o traje está NULL"~~ ✅ FECHADO em 2026-08-17
+
+**Prova:** `MEDIDO` — 2026-08-17, rodando `verify:all` no Bloco A/B da esteira de
+arte. Achado pelo Claude, ao investigar uma reprovação **que não era da mudança em
+curso** (o diff da branch não toca uma linha de SQL nem de RPC).
+
+**FECHADO no mesmo dia, por decisão do Doug** — ele escolheu consertar a régua em
+vez de remover a concessão, com o argumento de que apagar a luz não transforma o
+aparelho num detector de fumaça. A RPC **nunca esteve errada**: ela preservou o
+traje o tempo todo, que é o comportamento que a conferência existe para provar.
+
+**O conserto**, em `verify-catalogo-slots.ts`, conferência (g):
+
+| | antes | depois |
+|---|---|---|
+| a asserção | `gravado.traje === null` | `gravado.traje === antes.traje` |
+| lê o valor prévio | não | **sim**, antes dos dois `equipar_peca` |
+| controle negativo | nenhum | **(g2)**, novo — zera a coluna de propósito e exige que a MESMA comparação acuse |
+
+**As duas saídas do terminal, antes e depois:**
+
+```
+antes   [FAIL] equipar pet/rosto mexeu em avatar_traje (virou "traje-gambesao")
+depois  [PASS] equipar um slot não mexeu nos outros três (avatar_traje era "traje-gambesao" e continua)
+        [PASS] controle negativo: a comparação ACUSA quando a coluna muda — ela não é vácua
+```
+
+O gate foi de **32 passed | 1 failed** para **34 passed | 0 failed**.
+
+⚠️ **O controle negativo (g2) só mede de verdade com um traje equipado na cobaia.**
+Sem ele, zerar a coluna não produz diferença e não há o que provar — nesse caso ele
+**não imprime verde**, imprime um `[INFO]` dizendo que não rodou e por quê. É a
+lição do `cobertos = 0` de `silhueta.ts` aplicada a ele mesmo: um controle que
+aprova por vacuidade é pior que controle nenhum. Hoje ele roda porque a concessão do
+`traje-gambesao` ao `teacherdoug001` existe — **a pendência declarada do P1 virou a
+condição de o controle ter o que medir.**
+
+Tudo dentro da transação que o `finally` desfaz: a produção foi conferida depois de
+duas rodadas e o `avatar_traje` do Doug continua `traje-gambesao`.
+
+---
+
+<details>
+<summary>O diagnóstico original, preservado</summary>
+
+**Registrado e não consertado**, pela regra do "achar não é consertar".
+
+**O que se vê:**
+
+```
+[FAIL] equipar pet/rosto mexeu em avatar_traje (virou "traje-gambesao")
+       o CASE do UPDATE tem de preservar as colunas dos outros slots
+```
+
+**A causa, com arquivo e linha:** `scripts/verify/phase8/verify-catalogo-slots.ts:484`
+faz `if (gravado?.traje === null)`. A conferência (g) equipa uma peça de `pet` e uma
+de `rosto` e depois afirma que **o `avatar_traje` da cobaia é NULL** — mas o que ela
+diz medir é outra coisa: *"equipar um slot não mexeu nos outros três"*.
+
+**Por que ela reprovou agora, sem nada ter quebrado:** a cobaia é o
+`teacherdoug001`, e o Doug concedeu e equipou `traje-gambesao` nele **em produção**,
+de propósito, para conferir a peça na tela (pendência declarada do P1). A coluna
+deixou de ser nula. A RPC continua correta — ela preservou o traje, que é
+exatamente o comportamento que a conferência existe para provar.
+
+**A gravidade real está no outro lado, e é por isso que isto é 🟡 e não ruído.** A
+régua erra nas DUAS direções, e a direção silenciosa é a perigosa:
+
+| estado da coluna | RPC preserva | RPC zera |
+|---|---|---|
+| `avatar_traje` NULL | ✅ passa | ✅ **passa — falso verde** |
+| `avatar_traje` preenchido | ❌ **falso vermelho** (é o de hoje) | ❌ reprova |
+
+Com a coluna nula — que foi o estado durante toda a vida deste gate — ela passava
+**por vacuidade**: uma RPC que zerasse o traje teria passado igual. É o modo de
+falha nº 1 desta base de código, o mesmo do `cobertos = 0` de `silhueta.ts` e do
+denominador zero do controle 5 de `arte:revisao`.
+
+**O conserto mínimo, quando for a hora:** ler `avatar_traje` **antes** dos dois
+`equipar_peca` e afirmar que o valor é o mesmo depois — em vez de afirmar um valor
+literal. Passa a medir preservação de verdade, e sobrevive a qualquer estado do
+guarda-roupa da cobaia.
+
+**As duas saídas, e as duas são decisão do Doug:**
+
+1. **remover a concessão** —
+   `npx tsx .scratch/p1/guarda-roupa.ts teacherdoug001 traje-gambesao --remover` —
+   devolve o `verify:all` ao verde **sem consertar a régua**, que volta a passar por
+   vacuidade;
+2. **consertar a régua** (antes/depois), e aí ela fica verde com ou sem traje
+   equipado, e passa a medir o que promete. ← **foi esta.**
+
+</details>
 
 ### G17 — a extração entrega o MIOLO do traço, não o traço: o contorno da peça chega com metade do perímetro abaixo do legível
 

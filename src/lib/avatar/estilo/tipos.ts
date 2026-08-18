@@ -98,10 +98,42 @@ export interface Traje {
  * pode ser maior que o rosto (decisão do Doug, doc 21 §2c) e um chapéu pode
  * passar da cabeça; nenhum dos dois é cortado por clip nenhum.
  *
- * **O contorno continua sendo do compositor.** `d` é preenchimento, não traço —
- * quem emite a borda preta é `sobrepor()`, na mesma passada e com a mesma
- * espessura de todo o resto. É o que impede uma peça de chegar com traço de 1 px
- * ao lado de um boneco de traço 12.
+ * ---------------------------------------------------------------------------
+ * SÃO DOIS MODOS, E A PERGUNTA QUE ESCOLHE ENTRE ELES É UMA SÓ: A PEÇA RECOLORE?
+ * ---------------------------------------------------------------------------
+ *
+ * Desde 2026-08-17 esta peça é uma **união**, e não um formato só. A bifurcação é a
+ * mesma que já parte a esteira de arte em duas, e é a Regra Inviolável nº 4 lida do
+ * lado do código:
+ *
+ * | | `arte` | `formas` |
+ * |---|---|---|
+ * | a cor | **assada no desenho** | `var(--av-cabelo)`, em tempo de execução |
+ * | o traço | **o da arte**, desenhado sobre a base | do compositor, `kk-traco`, 12 u |
+ * | quem | chapéu, óculos, pet | **a barba, e só ela** |
+ *
+ * **Por que a arte pode trazer o próprio traço, e isso não é exceção.** A peça de
+ * arte nasce desenhada POR CIMA de um render do próprio boneco, na escala dele — é
+ * o que a rota de arte inteira existe para garantir, e o que o Gate −1 prova. A
+ * caneta que desenhou a peça é a caneta do boneco. É o mesmo mecanismo que o traje
+ * usa em produção desde 2026-08-17, e a colagem é literalmente a mesma função.
+ *
+ * **Por que quem recolore NÃO pode.** Um traço assado num `.svg` é preto fixo; uma
+ * peça que muda de cor com o cabelo precisa que a borda seja emitida pelo
+ * compositor, junto com o resto. Daí a barba ficar no modo `formas`.
+ *
+ * **A união é a trava.** Uma peça que declare os dois campos **não compila** — o
+ * `never` do lado oposto de cada braço cobra isso do `typecheck`, que é a mesma
+ * trava estrutural da `interface Traje` no topo deste arquivo, pelo mesmo motivo:
+ * mecanismo em vez de disciplina.
+ *
+ * ---------------------------------------------------------------------------
+ * NO MODO `formas`, O CONTORNO É DO COMPOSITOR
+ * ---------------------------------------------------------------------------
+ *
+ * `d` é preenchimento, não traço — quem emite a borda preta é `sobrepor()`, na mesma
+ * passada e com a mesma espessura de todo o resto. É o que impede uma peça
+ * SINTETIZADA de chegar com traço de 1 px ao lado de um boneco de traço 12.
  *
  * **O que a peça escolhe é ONDE há contorno, nunca com que espessura** — é o que
  * `semTraco` diz, e ele não contradiz o parágrafo acima: é a versão booleana do
@@ -109,26 +141,45 @@ export interface Traje {
  * idêntica — *nem toda borda do laço é borda externa de alguma coisa*. Uma forma
  * que mora DENTRO de outra não tem borda externa para desenhar, e traçá-la põe
  * uma linha preta no meio da peça que ninguém desenhou.
- *
- * A cor é **assada no desenho** (`cor`, hex literal), e isso é a emenda à D27:
- * só pele e cabelo recolorem. O escopo `camada` de custom properties está vazio
- * em `palette.ts:281`, e mexer nele esbarra na trava de `svgContrato.ts`.
  */
-export interface PecaSobreposta {
+export type PecaSobreposta = {
   /** Slug do catálogo — a mesma chave que o banco guarda em `avatar_catalogo`. */
   id: string;
   /** Nome que o aluno lê. */
   nome: string;
-  /**
-   * As formas, de trás para a frente. Preenchimento; o traço é do compositor.
-   *
-   * `semTraco` tira ESTA forma da passada de contorno, e só dela. Ver o parágrafo
-   * sobre ele no docstring da interface: é para a forma que vive dentro de outra —
-   * o núcleo cuja borda é a banda preta da forma de baixo, não uma borda externa.
-   * Ausente e `false` são o mesmo, e o mesmo de sempre.
-   */
-  formas: { d: string; cor: string; semTraco?: boolean }[];
-}
+} & (
+  | {
+      /**
+       * As formas, de trás para a frente. Preenchimento; o traço é do compositor.
+       *
+       * `semTraco` tira ESTA forma da passada de contorno, e só dela. Ver o
+       * parágrafo sobre ele no docstring do tipo: é para a forma que vive dentro de
+       * outra — o núcleo cuja borda é a banda preta da forma de baixo, não uma borda
+       * externa. Ausente e `false` são o mesmo, e o mesmo de sempre.
+       */
+      formas: { d: string; cor: string; semTraco?: boolean }[];
+      arte?: never;
+    }
+  | {
+      /**
+       * O `.svg` da peça, colado por `<image>` — o caminho que o BROWSER pede.
+       *
+       * É o mesmo campo, o mesmo formato e a mesma colagem de `Traje.tinta.arte`:
+       * `colarArte()` no compositor serve os dois, porque duas descrições da mesma
+       * conta é o defeito que este arquivo inteiro existe para não deixar acontecer.
+       *
+       * A peça ocupa o `viewBox` inteiro com `k = 1`, que é exatamente o retângulo em
+       * que ela foi recortada (600 × 840, 5:7). A colagem é conta, não ajuste.
+       *
+       * ⚠️ **Ele precisa viajar até o deploy.** `arteDaPecaNoDeploy.test.ts` cobra
+       * `git ls-files`: arquivo em `public/dev/` não chega ao ar, e o compositor
+       * decide pelo campo declarado e não pelo arquivo existindo — a peça sumiria
+       * em silêncio, que é o defeito que aquele teste fecha.
+       */
+      arte: string;
+      formas?: never;
+    }
+);
 
 /**
  * O estado do boneco no momento de compor. Tudo que NÃO é forma.
