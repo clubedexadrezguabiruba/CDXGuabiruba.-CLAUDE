@@ -3161,3 +3161,240 @@ saída crua do Gemini continua no git, no commit anterior.
 5 do sidecar (decote 19 px fora do centro, seis canaletas em vez de cinco, contorno
 fino) continuam abertos e **continuam sendo caso de gerador ou de nada** — o Doug
 decidiu que ficam como estão.
+
+---
+
+## 2026-08-18 — a barba entrou pela rota, em seis rodadas, e a quarta saída fez metade do trabalho
+
+A primeira peça do slot `rosto`, e a primeira em que **o gerador e o programa
+dividiram a arte**: o Gemini deu a forma, a restauração por régua deu a cor e a
+limpeza. O arquivo aprovado é `.scratch/arte/barba-6-limpa.png`.
+
+### As seis rodadas, e o que cada uma ensinou
+
+| rodada | o que chegou | veredito | a lição |
+|---|---|---|---|
+| `barba-1` | JPEG do Gemini | REPROVADA — deslocamento (3, 8) px · escala 101,00% · rosto 50 ladrilhos · corpo 125 | **redesenho, não formato** |
+| `barba-2` | a mesma arte reexportada em PNG pelo Canva | REPROVADA com os **mesmos** números | reexportar não desfaz redesenho |
+| `barba-1-remoldada` | registro consertado por programa | REPROVADA — 0 px · 1 px · 100,00%, mas rosto 57 e corpo 59 | consertar registro não conserta desenho |
+| `barba-3` | PNG nativo do Gemini | REPROVADA — registro **perfeito**, mas 9 ladrilhos em `corpo` | a sombra projetada na túnica |
+| `barba-5` | pedido reescrito, forma copiada do modelo | REPROVADA — rosto 30 · corpo 75 | **a cor veio verde**, e o Gate −1 separa peça de redesenho pelo ciano |
+| `barba-6` | mesma arte, bigode apagado | REPROVADA por 9 ladrilhos → **APROVADA depois da restauração** | — |
+
+*(Não houve `barba-4`: a rodada 4 foi um pedido, não uma arte.)*
+
+### A CAUSA que quatro rodadas esconderam, e ela era do pedido
+
+O Doug anexava ao Gemini uma "imagem de modelo" pedindo que a barba dela fosse
+copiada. Medido: esse arquivo (`Downloads/barbas/Gemini_Generated_Image_rduci8….jpg`)
+é **byte a byte a própria `barba-1`** — diferença máxima **0** em 3 145 728 canais.
+Ou seja, pedia-se ao gerador que copiasse um desenho dele mesmo, que é exatamente a
+tarefa em que ele é pior.
+
+E o pedido da rodada 4 **exigia bigode**, com um ajuste inteiro em caixa alta, **num
+modelo que não tem bigode** — medido: 0 px de tinta nas colunas acima da boca, 0 px
+sobre a linha da boca. Instrução específica vence instrução genérica: o texto ganhou
+da imagem, e a barba voltou irreconhecível.
+
+**O conserto do pedido foi de moldura, não de adjetivo.** O modelo deixou de ser
+"referência de estilo" e passou a ser declarado pelo que é: *"as duas imagens são o
+MESMO boneco; a segunda é o resultado que eu quero, e o único problema dela é que o
+boneco por baixo saiu de lugar"*. A forma voltou fiel na primeira tentativa:
+
+| | modelo (`barba-1`) | `barba-6` |
+|---|---|---|
+| caixa | x 79,2→435,0 · y 250,8→421,7 | **x 79,2→435,0** · y 252,5→421,7 |
+| largura ÷ cabeça | 0,98× | **0,98×** |
+| desce abaixo do queixo | 74,5 u = 0,25 cabeça | **74,5 u = 0,25 cabeça** |
+| tinta sobre a linha da boca | 0 px | **0 px** |
+| folga de pele abaixo da boca | 30,2 u | **30,2 u** |
+| dentro das cápsulas dos olhos | 0 px | **0 px** |
+| componentes | 1 | 1 |
+
+### A quarta saída fez metade do trabalho, e a régua é o matiz
+
+`restaurar-barba5.ts` (em `.scratch/`, **ainda não promovido**) faz duas coisas, e
+só duas — as duas descritíveis em régua:
+
+1. **cor** — o gerador pintou a barba em verde (`#204020`, `#306040`, `#306030`;
+   zero pixel ciano na imagem inteira). A troca é de **matiz**: o pixel mantém
+   saturação e luminância e o matiz vai para 180°. Nenhum pixel muda de lugar.
+   **Provado isoladamente:** só a troca de cor derruba `rosto` de 30 ladrilhos para
+   **0** e `corpo` de 75 para 9 — a cor sozinha respondia por 66 dos 75.
+2. **sombra** — restaurar o pixel da base onde o gerador projetou degradê na túnica.
+   É o gesto do G20: *restaurar não é desenhar*.
+
+**A franja é o risco conhecido**, e o conserto é dilatar a máscara da peça em **3 u**
+antes de restaurar, para o antialias da borda sobreviver. A restauração devolveu
+**1 262 tons distintos** da base — não um chapado, que foi o erro da primeira
+tentativa do G20.
+
+**O que ela NÃO faz:** tocar na silhueta. O bigode que o gerador acrescentou contra o
+pedido ficou **exatamente como veio** — apagá-lo seria desenhar, e forma é do gerador
+ou de ninguém. Ele saiu na rodada 6, pelo gerador.
+
+### O bigode morreu de novo, agora com número no tamanho certo
+
+A D16 tinha matado o bigode por medição em 2026-08-13; a decisão de 2026-08-18
+reabriu ("barba cheia acompanha bigode"), e a medição fechou outra vez — desta vez
+sobre arte real, não sonda sintética.
+
+`.scratch/bigode-no-tamanho.ts` simula o `kk-traco` de 12 u que o compositor aplica
+(6 u para fora), reduz até o boneco ter 56 e 32 px, e conta pele intacta entre o
+preto do bigode e o preto do sorriso:
+
+| | 56 px | 32 px |
+|---|---|---|
+| `barba-5-limpa` (com bigode) | **0 px — funde** | **0 px — funde** |
+| base careca (**controle negativo**) | nada acima da boca | nada acima da boca |
+| `barba-6-limpa` (sem bigode) | **sobrevive** | **sobrevive** |
+
+O controle negativo é o que dá valor ao número: sem ele, o "escuro acima da boca"
+poderia ser a própria boca espalhada pela redução.
+
+**A extração não salvaria.** Testado: deixar a região `rosto` apagar o bigode remove
+só **36,4%** dele — as pontas laterais ficam, porque estão fora da caixa em x — e
+deixa uma **aresta horizontal de 63 u (5,7 px a 56 px)** na fronteira `ROSTO.y1`.
+
+### Os números da aprovação
+
+`npm run arte:gate .scratch/arte/barba-6-limpa.png`
+
+| | |
+|---|---|
+| deslocamento · escala · rodapé | **0 px · 0 px · 100,00% · 100,0%** |
+| `rosto` | **0** ladrilhos · 226 px |
+| `corpo` | **2** ladrilhos, maior grupo **1** (teto 1) · 15 592 px |
+| `sobrancelha` | 0 ladrilhos · **4 px** |
+| `permitida` | 1 ladrilho |
+| peça cobrindo o boneco | 14 811 px — **93,6%** |
+| não explicado | 998 px — 6,3% |
+| dentro de `ROSTO` (o que a extração zeraria) | **53 px** |
+
+**O parecer do Doug:** *"ficou perfeita"*.
+
+### O que isto muda no plano do bigode (aprovado em 2026-08-18)
+
+O **Bloco 2** — a barba consultando uma região própria em vez de `ROSTO`, por
+parâmetro — **sai do caminho crítico**. Ele existia porque a `barba-3` perdia
+2 697 px (7,5% da peça) na extração; a peça aprovada perde **53 px**. Continua sendo
+dívida boa da rota, e o achado permanece válido: `ROSTO` é uma caixa só, e o miolo da
+cara está protegido por acidente. Só não bloqueia mais nada.
+
+O **Bloco 1** (a sonda P1 dando um `PISO_DA_BOCA`) foi **substituído por medição
+melhor**: `bigode-no-tamanho.ts` mede a arte real com o traço do compositor
+simulado, em vez de barras sintéticas. Se um piso vier a ser declarado, é dessa
+régua que ele sai.
+
+### O que fica aberto
+
+- **`restaurar-barba5.ts` não está promovido.** A arte no disco é fruto de duas
+  etapas, e a procedência precisa de arquivo no repositório com asserção, como o
+  `reparo-g20.ts` — sobre a arte já limpa ele tem de contar **0 px** a trocar.
+- **A peça ainda não é peça:** falta o traçado para `formas[]`, a entrada em
+  `ROSTOS`, e a linha em `avatar_catalogo`.
+- **O elenco do slot `rosto` não tem número.** O doc 15 §9 declara *"rosto
+  composível, barba, micro-slots"* fora do plano, e a tabela dos 39 desenhos do
+  Bloco 8 não tem linha de rosto. Quantas barbas e quantos óculos o catálogo quer é
+  decisão do Doug, como o piso de 10 cabelos foi em 2026-08-07.
+
+---
+
+## 2026-08-19 — a segunda barba entrou, e três réguas minhas caíram no caminho
+
+O `cavanhaque` (common) foi aprovado pelo Doug. As artes das duas barbas estão
+**versionadas** em `scripts/avatar/arte/`: `barba-cheia.png` e `barba-cavanhaque.png`,
+com as saídas cruas do gerador ao lado (`-crua.png`) para procedência.
+
+### O elenco, decidido
+
+**5 barbas: 2 common · 1 rare · 1 epic · 1 legendary**, todas de baú — no banco,
+raridade só existe com `origem = 'bau'`. Duas prontas (`cheia`, `cavanhaque`), três
+a fazer (`aparada`, `quadrada`, `bipartida`). O elenco e os quatro pedidos prontos
+estão em [PEDIDO-BARBAS.md](PEDIDO-BARBAS.md).
+
+### O fluxo que se firmou, em duas ferramentas
+
+O Doug gera a barba no **ChatGPT** (o boneco redesenhado, com a forma que ele quer) e
+leva ao **Gemini** junto com a base oficial. O Gemini **transplanta**: fica com o
+boneco da primeira imagem e a barba da segunda. É o único gesto que seis rodadas
+provaram que ele faz bem — copiar um desenho, não.
+
+O que ele **não** obedece, medido em quatro rodadas: a paleta (veio verde na
+`barba-5`, castanho na `cavanhaque-1` e na `-3`) e a cláusula da sombra. As duas
+falhas são baratas — a quarta saída da rota resolve as duas sem tocar na silhueta.
+
+### `restaurar-peca.ts` promovido, com a limitação escrita
+
+Substitui o `restaurar-barba5.ts` de `.scratch/`, que reconhecia a peça pela COR e
+por isso precisava saber de antemão o que o gerador tinha pintado. O novo reconhece
+a peça como **o maior componente conexo que difere da base** e faz duas coisas: troca
+o matiz para 180° (preservando saturação e luminância) e restaura a base fora da
+peça dilatada.
+
+**Prova de procedência:** `barba-cavanhaque-crua.png` → o script → **byte a byte** a
+`barba-cavanhaque.png` versionada.
+
+⚠️ **Ele NÃO reproduz a `barba-cheia`.** A sombra que o gerador projetou na túnica
+dela **encosta na barba**, então cai no mesmo componente conexo e sobrevive. Aquela
+arte saiu da variante anterior, que separava por cor. Trocar o critério para **matiz**
+foi tentado e é pior, medido: aprova no Gate −1 mas apaga parte da peça — a `cheia`
+cai de 38 505 px para 16 022. Fica como dívida declarada, não como conserto.
+
+### Os números das duas peças
+
+| | `cheia` (legendary) | `cavanhaque` (common) |
+|---|---|---|
+| Gate −1 | APROVADA | APROVADA |
+| deslocamento · escala | 0 px · 100,00% | 0 px · 100,00% |
+| `rosto` | 0 ladrilhos · 226 px | 0 ladrilhos · **0 px** |
+| `corpo` | 2 ladrilhos, grupo 1 | 0 ladrilhos |
+| tinta | 38 505 px | 14 221 px |
+| largura ÷ cabeça | 0,96× | 0,42× |
+| desce do queixo | 81,7 u = 0,26 cabeça | 82,5 u = 0,27 cabeça |
+| eixo × boca | −34,6 u (ela cobre a cabeça: −2 u do eixo dela) | **−7,5 u = 0,68 px a 56** |
+| dentro de `ROSTO` | 53 px | 0 px |
+| traço da base sumido | 8 px | 21 px |
+
+**A observação de elenco que fica de pé:** as duas descem quase igual (0,26 e 0,27
+cabeça). Como common, o `cavanhaque` deveria ser visivelmente a curta; hoje a
+diferença entre as duas é só largura. **O Doug viu e aprovou** — fica como fato do
+elenco, não como defeito de arte.
+
+### As três réguas que caíram, e por que isso importa
+
+O Doug aprovou a olho uma peça que as minhas réguas reprovaram, e mandou revê-las.
+As três caíram, cada uma por um motivo diferente — e os quatro achados estão em
+[docs/achados.md](../../../docs/achados.md):
+
+- **G28** — o piso de "30 u de pele sob a boca" foi **calibrado na `cheia`**, a peça
+  que ele deveria julgar. É o defeito que `gates.md` nomeia. Ele reprovou três artes
+  e só a peça de origem passava, por construção. **Saiu do pedido.**
+- **G29** — a sonda da boca reprovou por um **parâmetro que eu escolhi**: os 6 u de
+  traço simulado. Varrendo limiar × dilatação, o veredito "o sorriso morre" existe em
+  **2 de 9 células**; nas outras 7 a peça empata com a aprovada. E os 6 u supõem uma
+  decisão de promoção **que ainda não foi tomada** (peça de arte emite `kk-traco` ou
+  usa o contorno pintado?).
+- **G27** — `CENTRO_X = 250` **não é o eixo do rosto**. Medido na base: olhos e boca
+  em **289,6**, silhueta da cabeça em 257,1 — o boneco é desenhado de lado, de
+  propósito. As sondas amostravam as colunas 238/250/262, e **nenhuma passa pela
+  boca**, que está em 269→310. A acusação de "41 u fora do eixo" era da régua.
+- **G30** — nenhuma régua mede **"o traço do boneco sumiu"**. Um passo de translação
+  apagou 279 px do contorno do queixo e o **Gate −1 aprovou** — ele mede forma por
+  ladrilhos de 16 px, e uma faixa de 2 u não move ladrilho. Quem pegou foi o olho do
+  Doug. `.scratch/traco-do-queixo.ts` é candidata a gate.
+
+### A rota por código foi tentada e reprovada
+
+O Doug pediu, depois de dois defeitos de traço nascidos de mexer em pixel: *"tente
+desenhar diretamente por código, pode usar o PNG como modelo"*. Feito — potrace sobre
+a máscara, `formas[]` com massa em `var(--av-linha)` e núcleo em
+`var(--av-cabelo, #5A4632)`, traço do compositor. Custou **3 paths / 4 037 bytes**,
+dentro do custo declarado de sobreposta (5 formas / 4 500 B), com IoU de **96,5%**.
+
+**Veredito do Doug: "ficou ruim."** A peça e os scripts foram apagados. O que fica
+registrado é o que se aprendeu: a rota é viável e cabe no orçamento; o que ela não
+entrega é a **sombra**, porque a barba recolore e a sombra exigiria `--av-cabelo-s`,
+que está vetado com número em `rosto.ts` (sem fallback declarado, o careca sai preto
+chapado). Se a sombra vier a ser exigida, o caminho é declarar o fallback — e isso é
+decisão, não conserto.

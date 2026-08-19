@@ -566,6 +566,109 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
+### G29 — a régua da boca reprovou uma peça pelo parâmetro que EU escolhi, não pela peça
+
+**Prova:** `MEDIDO` — 2026-08-19, `.scratch/auditar-regua-boca.ts`. Achado pelo
+Claude depois de o Doug aprovar a olho uma peça que a régua reprovou. Registrado e
+**não consertado**, pela regra 9.
+
+A sonda `boca-livre.ts` responde *"o sorriso sobrevive a 56 px?"* e reprovou a
+`cavanhaque-3`. Ela tem dois parâmetros escolhidos por mim e nunca justificados: o
+**limiar de luminância** que decide o que é escuro na imagem reduzida, e a
+**dilatação** que simula o traço do compositor. Varrendo os dois:
+
+| traço simulado | limiar 90 | 110 | 130 |
+|---|---|---|---|
+| **0 u** — base careca · cheia · cavanhaque | 3 · 7 · **1** | 2 · 1 · **1** | 2 · 1 · **1** |
+| **3 u** | 3 · 1 · **1** | 2 · 1 · **1** | 2 · 1 · **1** |
+| **6 u** | 3 · 1 · **1** | 2 · 1 · **0** | 2 · 1 · **0** |
+
+O veredito "o sorriso morre" existe em **2 das 9 células**, e em todas as outras a
+peça empata com a `cheia`, que o Doug aprovou.
+
+**O que os 6 u supõem:** que a barba será emitida com o `kk-traco` do compositor —
+stroke de 12 u, 6 para fora. É a receita de `pecaDeRosto`, escrita para forma
+paramétrica, que **não tem contorno próprio**. A arte tem: 5,2 u de preto pintado
+pelo gerador, medido. Se a peça vier da arte com `semTraco`, os 6 u não existem.
+
+**A decisão que falta, e é ela que fecha este achado:** peça de arte que recolore
+emite `kk-traco` ou não? Ela não foi tomada, e a régua a antecipou como se estivesse.
+Enquanto não for, esta sonda é **relatório, não gate**.
+
+---
+
+### G28 — o piso de 30 u de pele sob a boca foi calibrado na peça que ele deveria julgar
+
+**Prova:** `MEDIDO` — 2026-08-19. Achado pelo Claude, no mesmo dia em que o escreveu.
+Registrado e **não consertado**, pela regra 9.
+
+`PEDIDO-BARBAS.md` declarava, entre as amarras comuns às cinco barbas: *"pele nua
+abaixo da boca ≥ 30 u = 5,7× a espessura da linha da boca"*. Esse 30 saiu de **medir
+a `cheia`** — a peça que se queria aprovar — e virou piso para as outras quatro.
+
+É o defeito que `gates.md` nomeia: *"teto calibrado na peça que se quer aprovar
+aprova o defeito junto"*. Aqui deu o inverso: um piso que **só a peça de origem
+passa**, por construção. Ele reprovou a `cavanhaque-1` (11,9 u), a `cavanhaque-2`
+(16,1 u) e a `cavanhaque-3` (8,3 u), e a terceira foi aprovada pelo Doug a olho.
+
+**O que um piso com lastro exigiria:** a menor folga que ainda deixa pele visível a
+56 px numa peça **sintética**, não numa peça do catálogo — que é o que o Bloco 1 do
+plano do bigode pedia (`sondas-rosto.ts`, P1) e nunca rodou até o fim.
+
+---
+
+### G27 — `geometria.ts` e a base oficial discordam no eixo x, e toda régua de posição herda o erro
+
+**Prova:** `MEDIDO` — 2026-08-19, `.scratch/onde-esta-a-boca.ts`. Achado pelo Claude
+depois de o Doug dizer *"o alinhamento está certo"* sobre uma peça que a régua
+acusava de 41 u fora do eixo. Registrado e **não consertado**, pela regra 9.
+
+| | `geometria.ts` declara | a base oficial tem |
+|---|---|---|
+| boca | x 231,5→268,5 · centro **250** (`CENTRO_X`) | x 269,2→310,0 · centro **289,6** |
+| olhos | meio 290,0 | meio **289,6** ✓ |
+| cabeça | centro 257,2 | centro **257,1** ✓ |
+
+**`CENTRO_X = 250` não é o eixo do rosto.** O rosto — olhos e boca — está centrado em
+**289,6**; a silhueta da cabeça, em **257,1**. O boneco é desenhado levemente de
+lado, de propósito (o "efeito cubo" do doc 15), e as duas referências não coincidem.
+`BOCA` é declarada como largura em torno de `CENTRO_X`, e por isso erra 39,6 u.
+
+**O que herdou o erro, medido:** as sondas de alinhamento e as duas sondas da boca
+(`bigode-no-tamanho.ts`, `barba-abaixo.ts`) amostravam as colunas 238, 250 e 262 — a
+boca está em 269→310, então **nenhuma das três passava por ela**. Os vereditos delas
+sobre `barba-5` e `cavanhaque-1` foram medidos 30 u ao lado do alvo.
+
+**O que NÃO se sabe:** se alguma régua do `verify:all` deriva posição de `CENTRO_X`.
+As que erraram eram todas de `.scratch/`. Isso precisa ser varrido antes de o achado
+ser fechado.
+
+---
+
+### G30 — nenhuma régua da rota mede "o traço do boneco sumiu"
+
+**Prova:** `MEDIDO` — 2026-08-19, `.scratch/traco-do-queixo.ts`. Achado pelo Claude
+depois de o Doug ver a linha do queixo apagada numa arte **que o Gate −1 aprovou**.
+Registrado e **não consertado**, pela regra 9.
+
+Um passo de translação por programa apagou **279 px** do contorno do queixo, em
+y 343–345 · x 215→355, colando franja clara por cima dele. **O Gate −1 aprovou**: ele
+mede forma por ladrilhos de 16 px, e uma faixa de 2 u de altura não move ladrilho
+nenhum. Quem pegou foi o olho do Doug.
+
+A sonda escrita para diagnosticar existe e é barata — conta pixel que era preto na
+base e deixou de ser, descontando o que a peça legitimamente cobre. Os valores de
+calibração já medidos:
+
+| arte | traço da base que sumiu sem peça em cima |
+|---|---|
+| `barba-6-limpa` (legendary aprovada) | 8 px |
+| `cavanhaque-3-limpa` (common aprovada) | 21 px |
+| a versão com o defeito | **279 px** |
+
+**Ela é candidata natural a gate da rota** — e o piso tem de sair de peça sintética,
+não destas três, sob pena de repetir o G28.
+
 ### G25 — ~~os dois PNGs de traje no deploy NÃO são os que a esteira produz hoje~~ ✅ FECHADO
 > ✅ **Fechado em 2026-08-17 SEM CONSERTO — o objeto do achado deixou de existir.**
 > A P1 do plano passou, o Doug escolheu o vetor, e `public/items/traje/*.png` saiu

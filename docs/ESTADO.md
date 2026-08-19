@@ -245,9 +245,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 5 |
-| **Árvore** | **15 arquivos sujos** |
-| **Último commit** | 810f2ff · 2026-08-17 · docs: só pele e cabelo recolorem vira REGRA, e sai de dentro do ponteiro para o doc 12 |
+| **Commits à frente de `origin/main`** | 6 |
+| **Árvore** | **10 arquivos sujos** |
+| **Último commit** | 09e988e · 2026-08-18 · feat(avatar): a rota do vetor deixa de ser do traje — o campo vira parâmetro, e o peso ganha teto |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
