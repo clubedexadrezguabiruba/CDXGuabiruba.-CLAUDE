@@ -258,9 +258,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 13 |
+| **Commits à frente de `origin/main`** | 14 |
 | **Árvore** | **2 arquivos sujos** |
-| **Último commit** | 7717ae8 · 2026-08-20 · feat(avatar): a boca deixa de ser caixa e vira espinha — o bigode passa, e a pergunta do Doug redesenhou a régua |
+| **Último commit** | 52ed209 · 2026-08-20 · feat(avatar): os olhos também deixam de ser caixa — a região passa a ser a forma da feição |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

@@ -54,9 +54,9 @@ describe("peças sobrepostas (chapéu e rosto)", () => {
     expect(comChapeu).not.toBe(compor(BASE));
     expect(comChapeu).toContain(`fill="#FF00FF"`);
     // O contorno é do compositor, não da peça: mesma classe do crânio e do tronco.
-    expect(comChapeu).toContain(`<path class="kk-traco" d="M10 20 L30 20 L30 40 Z"/>`);
+    expect(comChapeu).toContain(`<path class="kk-traco" fill-rule="evenodd" d="M10 20 L30 20 L30 40 Z"/>`);
     expect(comChapeu.indexOf(`fill="#FF00FF"`)).toBeLessThan(
-      comChapeu.indexOf(`<path class="kk-traco" d="M10 20 L30 20 L30 40 Z"/>`),
+      comChapeu.indexOf(`<path class="kk-traco" fill-rule="evenodd" d="M10 20 L30 20 L30 40 Z"/>`),
     );
   });
 
@@ -182,14 +182,14 @@ describe("semTraco — a forma que vive dentro de outra", () => {
   it("a forma com semTraco pinta, mas não ganha o `kk-traco`", () => {
     const svg = compor({ ...BASE, rosto: MISTA });
 
-    expect(svg).toContain(`<path d="M10 10 L80 10 L80 80 Z" fill="#5A4632"/>`);
-    expect(svg).not.toContain(`<path class="kk-traco" d="M10 10 L80 10 L80 80 Z"/>`);
+    expect(svg).toContain(`<path d="M10 10 L80 10 L80 80 Z" fill-rule="evenodd" fill="#5A4632"/>`);
+    expect(svg).not.toContain(`<path class="kk-traco" fill-rule="evenodd" d="M10 10 L80 10 L80 80 Z"/>`);
   });
 
   it("na peça mista sobra exatamente um traço — o da forma que tem borda externa", () => {
     const svg = compor({ ...BASE, rosto: MISTA });
     const traçosDaPeca = MISTA.formas.filter(
-      (f) => svg.includes(`<path class="kk-traco" d="${f.d}"/>`),
+      (f) => svg.includes(`<path class="kk-traco" fill-rule="evenodd" d="${f.d}"/>`),
     );
 
     expect(traçosDaPeca).toHaveLength(MISTA.formas.filter((f) => !f.semTraco).length);
@@ -198,8 +198,52 @@ describe("semTraco — a forma que vive dentro de outra", () => {
     // E a ordem de `sobrepor()` continua sendo TODO fill antes de TODO traço: o
     // filtro tira uma linha da segunda passada, não muda de passada.
     expect(svg.indexOf(`fill="#5A4632"`)).toBeLessThan(
-      svg.indexOf(`<path class="kk-traco" d="M0 0 L100 0 L100 100 Z"/>`),
+      svg.indexOf(`<path class="kk-traco" fill-rule="evenodd" d="M0 0 L100 0 L100 100 Z"/>`),
     );
+  });
+
+  /**
+   * O BURACO DA PEÇA SOBREVIVE — e sem esta linha a barba APAGA A BOCA.
+   *
+   * O `d` de uma peça `formas` vem do potrace, que declara a regra na própria saída:
+   * `<path stroke="none" fill="black" fill-rule="evenodd"/>`. A esteira extrai só o
+   * `d`, então quem reemite a regra é `sobrepor()`.
+   *
+   * Sem ela o SVG cai no `nonzero`, o padrão — e `nonzero` **preenche os buracos**.
+   * Numa barba que CERCA a boca (bigode em ferradura mais queixo) a boca é um buraco
+   * no laço e some inteira. Medido em 2026-08-20, no render:
+   *
+   *   peça                traço da boca preto     pele em volta
+   *   antes (nonzero)              0%                  0%
+   *   depois (evenodd)            88%              85 a 93%
+   *
+   * **O defeito ficou latente até existir um bigode:** num laço SEM buraco as duas
+   * regras desenham igual, e por isso a `cheia` e a `cavanhaque` saem byte a byte
+   * iguais com a linha e sem ela. O Doug viu na folha antes de qualquer régua.
+   */
+  it("o buraco da peça sobrevive — a regra do potrace é reemitida", () => {
+    // Um anel: quadrado externo mais quadrado interno, os dois no MESMO sentido.
+    // Sob `nonzero` isso pinta um bloco cheio; sob `evenodd`, um anel com buraco.
+    const ANEL: PecaDeRosto = {
+      id: "zz-anel",
+      nome: "Anel de teste",
+      formas: [
+        { d: "M0 0 L100 0 L100 100 L0 100 Z M30 30 L70 30 L70 70 L30 70 Z", cor: "#5A4632", semTraco: true },
+      ],
+    };
+    const svg = compor({ ...BASE, rosto: ANEL });
+
+    // A ponta que falha ANTES: sem a regra, o `<path>` sai sem ela e o buraco fecha.
+    expect(svg).toContain(`fill-rule="evenodd"`);
+    expect(svg).toContain(
+      `<path d="M0 0 L100 0 L100 100 L0 100 Z M30 30 L70 30 L70 70 L30 70 Z" fill-rule="evenodd" fill="#5A4632"/>`,
+    );
+
+    // R10, e sem ela a asserção acima passaria por vacuidade: TODA forma de peça
+    // sobreposta carrega a regra, não só a primeira.
+    const paths = svg.match(/<path [^>]*d="M0 0 L100 0[^"]*"[^>]*>/g) ?? [];
+    expect(paths.length).toBeGreaterThan(0);
+    for (const t of paths) expect(t).toContain(`fill-rule="evenodd"`);
   });
 
   it("`semTraco: false` é byte a byte igual ao campo ausente", () => {
@@ -366,7 +410,7 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
     // dois juntos. Se alguém um dia juntar as passadas de traço das duas pontas "para
     // economizar", o contorno da barba volta para cima do cabelo e só isto acusa.
     const svg = compor({ ...COM_CHANEL, rosto: { ...FALSA, cabeloPorCima: true } });
-    const traco = svg.indexOf(`<path class="kk-traco" d="M10 20 L30 20 L30 40 Z"/>`);
+    const traco = svg.indexOf(`<path class="kk-traco" fill-rule="evenodd" d="M10 20 L30 20 L30 40 Z"/>`);
 
     expect(traco).toBeGreaterThan(-1);
     expect(traco).toBeLessThan(iNucleo(svg));

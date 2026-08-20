@@ -710,11 +710,27 @@ function sobrepor(peca: PecaSobreposta | undefined): string {
   // ocupa o `viewBox` inteiro, que é o retângulo em que a esteira a recortou.
   if (peca.arte) return colarArte(peca.arte, 1);
   if (!peca.formas?.length) return "";
+  // ⚠️ **`fill-rule="evenodd"`, e sem ele a peça APAGA O ROSTO.**
+  //
+  // O `d` de uma peça `formas` vem do potrace, e o potrace declara a regra na saída
+  // dele: `<path stroke="none" fill="black" fill-rule="evenodd"/>`. A esteira extrai
+  // só o `d` (`barba-para-formas.ts`), então quem tem de reemitir a regra é aqui.
+  //
+  // Sem ela o SVG cai no `nonzero`, que é o padrão — e `nonzero` **preenche os
+  // buracos**. Numa barba que cerca a boca (bigode em ferradura mais queixo) a boca é
+  // um buraco no laço, e ela some inteira: medido em 2026-08-20, **100% do traço do
+  // sorriso virava barba** em `bigode-ferradura`, `cheia-com-bigode` e `rala`, com a
+  // pele em volta indo de lum 183 a 77. O Doug viu na folha antes de qualquer régua.
+  //
+  // **O defeito ficou latente até existir um bigode:** `cheia` e `cavanhaque` não
+  // cercam nada, e num laço sem buraco `evenodd` e `nonzero` desenham igual — por
+  // isso as duas saem byte a byte iguais com esta linha e sem ela.
+  const REGRA = ` fill-rule="evenodd"`;
   return (
-    peca.formas.map((f) => `<path d="${attr(f.d)}" fill="${f.cor}"/>`).join("") +
+    peca.formas.map((f) => `<path d="${attr(f.d)}"${REGRA} fill="${f.cor}"/>`).join("") +
     peca.formas
       .filter((f) => !f.semTraco)
-      .map((f) => `<path class="kk-traco" d="${attr(f.d)}"/>`)
+      .map((f) => `<path class="kk-traco"${REGRA} d="${attr(f.d)}"/>`)
       .join("")
   );
 }
