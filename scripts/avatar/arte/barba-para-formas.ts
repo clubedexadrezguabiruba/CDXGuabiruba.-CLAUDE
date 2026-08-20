@@ -75,6 +75,15 @@ const PISO_SOLTA = 0.05;
 const LUM_CONTORNO = 60;
 
 /**
+ * Quantos passos de erosão a partição `erosao` aplica, em pixels.
+ *
+ * O contorno que o gerador pinta mede **5,2 u** (medido), e metade dele fica de
+ * cada lado da fronteira: 5,2 ÷ 2 × 1,2 px/u = 3,1 → **3 px**. Sai do desenho, não
+ * de nenhuma das peças — é a lição do G28.
+ */
+const RAIO_DA_EROSAO = 3;
+
+/**
  * A ILHA MÍNIMA — 50 px² no canvas de edição, e o número sai da SOBRANCELHA.
  *
  * `turdSize` do `potrace` descarta caminho menor que N px², de qualquer polaridade:
@@ -278,7 +287,7 @@ export const COR_MIOLO = "var(--av-cabelo, #262626)";
 /** Traça uma arte de barba já aprovada. Não repara nada — ver o topo. */
 export async function construirRosto(
   caminhoArte: string,
-  opcoes: { semLimite?: boolean } = {},
+  opcoes: { semLimite?: boolean; divisao?: "luminancia" | "erosao" } = {},
 ): Promise<RostoDeArte> {
   const { data: A, info } = await cru(caminhoArte);
   const { data: B } = await cru(PNG_BASE);
@@ -368,14 +377,57 @@ export async function construirRosto(
     );
   }
 
-  // --- 3. contorno x miolo, pela luminância ---
+  // --- 3. contorno x miolo ---
+  //
+  // ⚠️ **DUAS PARTIÇÕES, e a segunda é bancada aberta pelo achado G31.**
+  //
+  //  - `luminancia` (padrão) — contorno é o que é escuro (`lum < 60`). Funciona
+  //    quando o gerador entrega a peça com miolo mais claro que a borda, que é o
+  //    caso da `cheia` (83,4% de miolo) e do `bigode` (79,5%);
+  //  - `erosao` — contorno é a FAIXA EXTERNA da silhueta, da espessura que o
+  //    gerador pinta (5,2 u → 3 px de erosão), e miolo é o resto. É geometria, não
+  //    histograma.
+  //
+  // **Por que a segunda existe:** a `cavanhaque` chegou quase toda preta (moda em
+  // 40–49, 92,4% abaixo de lum 60) e a partição por luminância declara **7,6%** dela
+  // como recolorível — ela sai PRETA nas 8 cores de cabelo, e o aluno loiro recebe
+  // barba preta. É o achado **G31**, e mover o limiar não resolve: de 60 para 90
+  // recupera 1,4%.
+  //
+  // Medido em 2026-08-20 (`.scratch/estilo/g31-miolo-por-erosao.ts`), e o que a
+  // torna candidata a REGRA e não a caso especial é a coluna da direita:
+  //
+  //   peça                por luminância    por erosão
+  //   barba-cheia            83,4% miolo    88,0%
+  //   barba-bigode           79,5%          79,8%
+  //   barba-cavanhaque        7,6%          75,8%   ← a peça volta a recolorir
+  //
+  // Ela quase não move as duas que já funcionavam. **A troca do padrão espera o
+  // olho do Doug a 56 px**: engordar o miolo à custa do contorno pode apagar a
+  // separação entre a barba e o queixo, e isso é julgamento, não medição.
   const nucleo = new Uint8Array(n);
-  let pxContorno = 0;
-  for (let i = 0; i < n; i++) {
-    if (!pecaLimpa.m[i]) continue;
-    if (lum(i) < LUM_CONTORNO) pxContorno++;
-    else nucleo[i] = 1;
+  if (opcoes.divisao === "erosao") {
+    // Erosão por 4-vizinhança, `RAIO_DA_EROSAO` passos: sobra tudo que está a mais
+    // de meia espessura de contorno da borda.
+    let cur = pecaLimpa.m;
+    for (let passo = 0; passo < RAIO_DA_EROSAO; passo++) {
+      const nx = new Uint8Array(n);
+      for (let y = 1; y < H - 1; y++)
+        for (let x = 1; x < W - 1; x++) {
+          const i = y * W + x;
+          if (cur[i] && cur[i - 1] && cur[i + 1] && cur[i - W] && cur[i + W]) nx[i] = 1;
+        }
+      cur = nx;
+    }
+    for (let i = 0; i < n; i++) if (cur[i]) nucleo[i] = 1;
+  } else {
+    for (let i = 0; i < n; i++) {
+      if (!pecaLimpa.m[i]) continue;
+      if (lum(i) >= LUM_CONTORNO) nucleo[i] = 1;
+    }
   }
+  let pxContorno = 0;
+  for (let i = 0; i < n; i++) if (pecaLimpa.m[i] && !nucleo[i]) pxContorno++;
   // O MIOLO NÃO PASSA PELO FILTRO DE COMPONENTE, e a assimetria com a peça é
   // deliberada. Lá o filtro separa a barba do ruído de reencode do gerador; aqui
   // cada ilha de miolo é TEXTURA — o tufo de pelo claro entre duas mechas escuras.
