@@ -35,6 +35,8 @@ import {
   CAIXA_CABECA,
   ESPECULAR,
   CENTRO_X,
+  EIXO_CABECA,
+  EIXO_ROSTO,
   FACETAS,
   OLHO,
   OLHO_CX_DIR,
@@ -60,11 +62,41 @@ import {
   ORCAMENTO_COM_CHAPEU,
   ORCAMENTO_COM_ROSTO,
   folgaDoRosto,
+  sobrancelhaCoberta,
   type ModeloCabelo,
 } from "../../../src/lib/avatar/estilo/cabelo";
 import { BARBAS, pecaDeRosto } from "../../../src/lib/avatar/estilo/rosto";
 import { conferirSvg } from "../../../src/lib/avatar/svgContrato";
 import { CABELO, LINHA, PELE } from "../../../src/lib/avatar/palette";
+
+/**
+ * O QUE A FOLGA NEGATIVA DE UMA PEÇA TRAÇADA QUER DIZER — e são dois casos opostos.
+ *
+ * `folgaDoRosto` mede o `y` mais baixo na faixa de `x` da sobrancelha. Numa peça de
+ * laço fechado ela encontra a CORTINA lateral, ao lado da bochecha, e devolve um
+ * negativo enorme numa peça que não encosta no rosto. Mas às vezes o negativo é
+ * legítimo. Sem `sobrancelhaCoberta` os dois se imprimiam iguais — é o achado **G5**:
+ *
+ *   `chanel`      esq −233,9   sobrancelha  0/21  → é a cortina, o rosto está livre
+ *   `assimetrico` esq −373,6   sobrancelha 21/21  → a mecha cobre a sobrancelha
+ *
+ * Nenhum dos dois é reprovação — o `ROSTO` protegido exclui a sobrancelha de
+ * propósito, porque proteger-la reprovaria toda franja legítima. O que esta linha
+ * impede é o leitor concluir a coisa errada sobre qual dos dois está olhando.
+ */
+const vereditoDaSobrancelha = (
+  c: { esq: number; dir: number; de: number },
+  pior: number,
+): string => {
+  if (c.esq + c.dir > 0)
+    return `   ⚠ a franja COBRE a sobrancelha — ${c.esq}/${c.de} esq · ${c.dir}/${c.de} dir`;
+  // Livre, e o número curto quer dizer uma de duas coisas conforme o SINAL: positivo
+  // é a franja chegando perto de verdade; negativo é a cortina lateral, que a régua
+  // encontra porque passa na mesma faixa de `x` — e aí o número não é sobre o rosto.
+  return pior >= 0
+    ? `   · sobrancelha LIVRE (0/${c.de} · 0/${c.de}) — a franja chega perto e não cobre`
+    : `   · sobrancelha LIVRE (0/${c.de} · 0/${c.de}) — o negativo é a cortina, ao lado do rosto`;
+};
 
 /**
  * O contador de formas do orçamento. **`use` CONTA.**
@@ -268,7 +300,7 @@ function closes(): Close[] {
     {
       rotulo: "boca",
       origem: `${BOCA.larg}×${BOCA.espessura} · sagita ${BOCA.sagita} · centrada no ponto médio dos olhos`,
-      vb: caixa(CENTRO_X + 40, OLHO.cy + BOCA.abaixoDoOlho, 120),
+      vb: caixa(EIXO_ROSTO, OLHO.cy + BOCA.abaixoDoOlho, 120),
     },
     {
       rotulo: "aresta esquerda",
@@ -283,7 +315,7 @@ function closes(): Close[] {
     {
       rotulo: "queixo",
       origem: `faixa de ${FACETAS.queixo.altura} u a ${FACETAS.queixo.delta} níveis, acima de y=${CAIXA_CABECA.y1.toFixed(0)}`,
-      vb: caixa(CENTRO_X + 20, yQueixo, 200),
+      vb: caixa(EIXO_CABECA, yQueixo, 200),
     },
     {
       rotulo: "sombra abaixo do queixo",
@@ -413,6 +445,7 @@ async function main() {
     const f = contarFormas(comCabelo);
     const b = Buffer.byteLength(comCabelo, "utf-8");
     const folga = folgaDoRosto(m);
+    const coberta = sobrancelhaCoberta(m);
     const ruimSvg = conferirSvg(comCabelo);
     // O teto de FORMAS vale para as duas famílias: ele sai da conta do ranking, e uma
     // peça traçada não paga forma por ponto. Medido na promoção: 22 e 23 contra 26.
@@ -448,7 +481,13 @@ async function main() {
         `${String(b).padStart(5)} bytes (+${String(b - bytes).padStart(4)})` +
         `${acimaDoTeto ? (tracada ? " ▲ registrado" : " ✗") : "            "}   ` +
         `folga do rosto esq ${fmt(folga.esq)} dir ${fmt(folga.dir)}` +
-        `${curta ? (tracada ? "   ⚠ é a folga DA ARTE" : "   ✗") : ""}`,
+        // ⚠️ **O número negativo de uma peça TRAÇADA não quer dizer invasão** — é o
+        // achado G5. Numa peça de laço fechado a `folgaDoRosto` encontra a CORTINA
+        // lateral descendo ao lado da bochecha, não a franja sobre o olho, e quem lê
+        // "−233.9" entende que a arte enterrou o rosto. Por isso a linha passa a
+        // dizer, ao lado, a resposta da pergunta que de fato importa: quantas das 21
+        // amostras da sobrancelha estão SOB a massa. Zero é o resultado bom.
+        `${curta ? (tracada ? vereditoDaSobrancelha(coberta, pior) : "   ✗") : ""}`,
     );
   }
 

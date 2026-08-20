@@ -187,8 +187,11 @@ async function principal(): Promise<void> {
   mkdirSync("src/lib/avatar/estilo", { recursive: true });
   writeFileSync(SAIDA, texto, "utf-8");
   console.log(
-    `\n  escrito. A peça ainda NÃO está no catálogo: \`CATALOGO.traje\` continua vazio\n` +
-      `  até a seed do banco entrar junto (verify:catalogo-slots compara os dois).`,
+    `\n  escrito. \`CATALOGO.traje\` DERIVA deste arquivo (\`catalogo.ts\`, Object.keys),\n` +
+      `  então a peça entra no catálogo do código no ato — não há passo a fazer aqui.\n` +
+      `  O que falta, quando a peça é NOVA, é a linha dela em \`avatar_catalogo\`:\n` +
+      `  \`verify:catalogo-slots\` compara os dois conjuntos NOS DOIS SENTIDOS, e código\n` +
+      `  sem linha no banco reprova tanto quanto linha no banco sem código.`,
   );
   console.log(
     `  os SVGs estão em ${PASTA_TRAJE}/ — versionados de propósito: é o que os leva\n` +

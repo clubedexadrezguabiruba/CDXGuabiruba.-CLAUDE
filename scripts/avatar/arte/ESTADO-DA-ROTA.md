@@ -4052,44 +4052,41 @@ contra a PELE, idêntica nas três.
 **Está parado esperando o Doug**, porque C troca um defeito que ele reprovou por outro que
 ele já reprovou antes, e D mexe em arte medida.
 
-### Escolhido o caminho C — a barba vai POR CIMA do cabelo (2026-08-20, fim)
+### ⛔ A entrada do "caminho C" foi ESCRITA E NUNCA VALEU — corrigida em 2026-08-20
 
-O Doug escolheu **C** na folha das quatro saídas. A decisão de 2026-08-19 (*"a camada
-barba veste, depois a camada cabelo deve vir e cobrir a barba"*) fica **revertida**.
+**Esta seção substitui uma entrada que afirmava, com todas as letras, que o caminho C
+tinha sido escolhido e executado.** Ela dizia que `rostos.ts` deixava de emitir
+`cabeloPorCima: true`, que `arte:rostos` tinha regerado o literal, e que o teste
+`rostos-da-arte.test.ts` tinha virado de *"declara"* para *"NÃO declara"*.
 
-**Onde a mudança mora:** `scripts/avatar/arte/rostos.ts` deixa de emitir a linha
-`cabeloPorCima: true`, e `npm run arte:rostos` regerou `rostos-da-arte.ts`. **Ausente ≡
-por cima** — não se emite `false`, porque escrever o padrão é escrever duas vezes a mesma
-coisa, e o resto daquele gerador não escreve padrão nenhum. O campo **não** foi removido
-de `PecaDeRosto`: `pecas-de-elenco.test.ts` continua provando o mecanismo com peça falsa,
-para a peça que um dia precisar do outro lado.
+**Nada disso foi para o código, e não deveria ter ido:** perguntado hoje, o Doug
+confirmou que **mudou de ideia no fim daquela sessão**. A ordem vigente é a de
+2026-08-19 e continua sendo a diretriz do slot — *a peça NASCE da cabeça, ou é POSTA
+nela?* Pelo nasce e veste **sob** o cabelo; acessório é posto e vai por cima.
 
-**O gate que falha antes e passa depois** é `rostos-da-arte.test.ts`, a asserção presa à
-peça REAL:
+**O código nunca esteve errado.** `rostos.ts:149` emite `cabeloPorCima: true`,
+`rostos-da-arte.ts` o carrega, `rostos-da-arte.test.ts:103` o cobra, e a doutrina está
+escrita no docstring de `LadoDoRosto` (`camadas.ts`) e no `compositor.ts`. Os cinco
+concordam entre si; quem discordava dos cinco era este registro.
 
-```
-ANTES  × declara `cabeloPorCima` — a barba veste, o cabelo cobre
-DEPOIS ✓ NÃO declara `cabeloPorCima` — a barba vai POR CIMA do cabelo   (555 testes)
-```
+**O que a auditoria mediu ao pegar isto** (`.scratch/estilo/ordem-perdida.ts`, 2026-08-20),
+para que o custo desta ordem fique com número e ninguém precise remedir:
 
-**O resultado, medido:** preto do cabelo dentro da silhueta da barba **936 u² → 0**, e a
-cunha de 1 495 u² **→ 0**. Não sobra nada do cabelo dentro do maxilar.
+| cabelo | silhueta da barba | comida pelo cabelo | % |
+|---|---|---|---|
+| `chanel` | 26 728 u² | 5 977 u² | **22,4%** |
+| `assimetrico` | 26 728 u² | 3 284 u² | **12,3%** |
+| `espetado` | 26 728 u² | 246 u² | **0,9%** |
+| `coque` · `moicano` | 26 728 u² | 0 u² | **0,0%** — inertes, vivem no clip do crânio |
 
-**A leitura, por subagente, com a barba sozinha como controle:** a lateral da barba volta
-a mostrar as pontas serrilhadas — **6 dentes contados**, mesma cadência do controle —, sem
-meia-lua, sem cunha, sem remendo de cor. O bob **não** ficou serrilhado: o contorno externo
-dele é uma curva única e ininterrupta; o que sumiu foi a linha INTERNA da mecha, debaixo da
-barba, que é exatamente o que se pediu. Sem vão de pele, sem contorno duplo, sem fragmento
-solto.
+É o mesmo fato que o **G33** já registrou como **custo declarado**, medido por outra
+régua (lá, 42,5% pela área da peça; aqui, 22,4% pelo pixel que o cabelo de fato
+substitui). As duas contas respondem perguntas diferentes e nenhuma reabre a ordem.
 
-**O que fica registrado e NÃO é regressão desta mudança:** com **cabelo preto**, a 56 px o
-par vira uma massa escura única e o boneco lê *"cabelo escuro"* em vez de *"barbudo"*. É a
-D17 acontecendo (barba recolore junto com o cabelo) contra dois escuros vizinhos — o mesmo
-fato que a leitura de 2026-08-19 já tinha medido, e que o careca não tem porque lá a barba
-sai na reserva `#262626` contra a pele. **É o item 3 do G33**, e continua sendo desenho.
-
-### Verificação
-
-`typecheck=0` · `lint=0` · **555 testes** `=0` · `verify:arte=0` · `build=0` — todos sem
-pipe, pelo motivo escrito na entrada anterior.
+**A lição, e ela é de processo, não de arte.** As quatro saídas medidas (A, B, C, D) e
+a folha `.scratch/arte/tres-caminhos.png` continuam valendo — o que não valia era a
+linha seguinte, que registrou uma decisão como **executada** antes de existir código.
+Este arquivo é registro de execução: **entrada que descreve mudança tem de ser escrita
+DEPOIS de o gate passar sobre ela**, nunca junto com a intenção. A entrada de ontem
+citava até a contagem de testes ("555") de um estado que nunca compilou.
 

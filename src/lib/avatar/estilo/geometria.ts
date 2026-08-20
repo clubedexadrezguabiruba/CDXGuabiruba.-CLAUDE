@@ -441,8 +441,44 @@ export const OLHO = {
   separacao: 155,
 } as const;
 
-/** O ponto médio do par, que anda com o giro. */
-const OLHO_MEIO = EIXO_CABECA + GIRO.desvioOlhos; // 290
+/**
+ * O EIXO DO ROSTO — e ele é o TERCEIRO deste boneco, não o mesmo dos outros dois.
+ *
+ * ---------------------------------------------------------------------------
+ * SÃO TRÊS EIXOS, TODOS MEDIDOS, E CONFUNDI-LOS ERRA POR 40 UNIDADES
+ * ---------------------------------------------------------------------------
+ *
+ * | eixo | vale | é o eixo de quê |
+ * |---|---|---|
+ * | `CENTRO_X` | **250** | o TRONCO, que é simétrico nele |
+ * | `EIXO_CABECA` | **257** | a SILHUETA da cabeça (`+ GIRO.eixoCabeca`) |
+ * | `EIXO_ROSTO` | **290** | as FEIÇÕES — olhos, sobrancelhas e boca |
+ *
+ * O boneco é desenhado levemente de lado de propósito (o "efeito cubo"), e o giro
+ * empilha: a cabeça anda 7 u à direita do tronco, e as feições andam mais 33 dentro
+ * dela. Quem centrar uma régua de feição em `CENTRO_X` mede **40 u ao lado do alvo**.
+ *
+ * ⚠️ **Isto fecha o achado G27, e ele nasceu de o Doug estar certo a olho.** Ele
+ * disse *"o alinhamento está certo"* sobre uma peça que uma sonda acusava de 41 u
+ * fora do eixo; medida a base oficial, a boca está em x 269,2→310,0 (centro 289,6) e
+ * as sondas amostravam as colunas 238, 250 e 262 — **nenhuma das três passava por
+ * ela**. A régua errava, não a arte.
+ *
+ * **A varredura que o achado pedia foi feita em 2026-08-20 e deu limpo:** nenhum
+ * script de `scripts/verify/` importa `geometria.ts`, e `CENTRO_X` não aparece uma
+ * vez em `verify:all`. Todos os usos vivos dele são do TRONCO — `base.ts`,
+ * `recorte.ts`, `folha-traje.ts`, `prova-do-vetor.ts`, `linha-de-centro.ts` — e ali
+ * ele é o eixo certo. Os dois que erravam eram recortes de zoom da `folha-base`,
+ * escritos como `CENTRO_X + 40` e `CENTRO_X + 20`: números mágicos compensando o
+ * eixo errado à mão, hoje trocados por este e por `EIXO_CABECA`.
+ *
+ * `pathBoca()` e as `FEICOES` da rota de arte **sempre** ancoraram aqui — nunca
+ * houve defeito no desenho, só nas sondas que o julgavam.
+ */
+export const EIXO_ROSTO = EIXO_CABECA + GIRO.desvioOlhos; // 290
+
+/** O ponto médio do par de olhos. Alias histórico de `EIXO_ROSTO`. */
+const OLHO_MEIO = EIXO_ROSTO;
 export const OLHO_CX_ESQ = OLHO_MEIO - OLHO.separacao / 2; // 212,5
 export const OLHO_CX_DIR = OLHO_MEIO + OLHO.separacao / 2; // 367,5
 export const OLHO_CY_ESQ = OLHO.cy + GIRO.desnivelOlhos / 2;

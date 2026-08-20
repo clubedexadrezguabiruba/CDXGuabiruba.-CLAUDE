@@ -1170,6 +1170,82 @@ export function folgaDoRosto(modelo: CabeloOuModelo): { esq: number; dir: number
 }
 
 /**
+ * A SOBRANCELHA ESTÁ COBERTA? — a pergunta que `folgaDoRosto` NÃO responde.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ELA PRECISA EXISTIR AO LADO DA OUTRA — o achado G5
+ * ---------------------------------------------------------------------------
+ *
+ * `folgaDoRosto` devolve o `y` **mais baixo de qualquer trecho** da poligonal dentro
+ * da faixa de `x` da sobrancelha. Numa franja paramétrica isso é exatamente a franja,
+ * e o número quer dizer o que parece querer. Numa peça de **laço fechado** vinda de
+ * arte, a **cortina lateral** atravessa a mesma coluna de `x` bem mais abaixo — ao
+ * lado da bochecha, não sobre o olho — e é ela que o `Math.max` encontra.
+ *
+ * Medido na promoção de 2026-08-07, e é o par de números que nomeia o defeito:
+ *
+ * | peça | `folgaDoRosto` | sobrancelha coberta |
+ * |---|---|---|
+ * | `coque` | esq +53,4 · dir +43,6 | 0/21 · 0/21 |
+ * | `moicano` | esq +55,2 · dir — | 0/21 · 0/21 |
+ * | `espetado` | esq **+7,0** · dir **+3,7** | **0/21** · **0/21** |
+ * | `chanel` | esq **−233,9** · dir **−238,2** | **0/21** · **0/21** |
+ * | `assimetrico` | esq **−373,6** · dir +14,0 | **21/21** · 0/21 |
+ *
+ * ⚠️ **A última linha é o que a régua velha não sabia dizer, e ela vale a função
+ * inteira.** `chanel` e `assimetrico` saem os dois com um negativo enorme, e são
+ * casos OPOSTOS: no `chanel` é a cortina passando ao lado da bochecha, e a
+ * sobrancelha está livre; no `assimetrico` a mecha longa cobre a sobrancelha
+ * esquerda **inteira**. Isso não é defeito — é o que um corte assimétrico faz, e o
+ * `ROSTO` protegido exclui a sobrancelha de propósito pelo mesmo motivo (`base.ts`:
+ * proteger a sobrancelha reprovaria toda franja legítima). O ponto é que agora os
+ * dois casos são **distinguíveis**, e antes não eram.
+ *
+ * **Nenhuma das duas invade o rosto**, e o −233,9 do `chanel` é a borda interna da
+ * cortina do bob descendo ao lado da bochecha, a `y 392,9`. Quem lê a linha da
+ * `avatar:folha-base` — *"folga do rosto esq −233.9"* — entende *"a arte enterra o
+ * rosto"*, que é falso, e a leitura errada convida a "consertar" arte aprovada.
+ *
+ * **Esta função pergunta o que importa de verdade:** *há tinta SOBRE a sobrancelha?*
+ * Ela amostra 21 pontos ao longo do arco de cada uma e conta quantos caem dentro de
+ * alguma poligonal FECHADA da peça (`massa` e extensões da frente). `pontos` não
+ * entra: a franja paramétrica é uma linha aberta, não um laço, e "dentro" não tem
+ * sentido nela — para essa família a régua certa continua sendo `folgaDoRosto`.
+ *
+ * **`folgaDoRosto` fica intacta, e é decisão.** Doze lugares medem por ela e
+ * `FOLGA_ROSTO` é a amarra 1 do paramétrico; trocar a semântica dela por esta seria
+ * mexer numa régua viva para consertar um problema de LEITURA. As duas convivem, e é
+ * a segunda que desfaz o mal-entendido da primeira.
+ */
+export function sobrancelhaCoberta(modelo: CabeloOuModelo): { esq: number; dir: number; de: number } {
+  const m = resolverCabelo(modelo);
+  const lacos: Ponto[][] = [];
+  if (m.massa) lacos.push(m.massa.map((p) => ponto(p, 0)));
+  for (const e of m.extensoes ?? []) if (!e.atras) lacos.push([...e.forma]);
+
+  const AMOSTRAS = 21;
+  const conta = (cx: number, cyOlho: number): number => {
+    const cy = cyOlho - SOBRANCELHA.acimaDoOlho;
+    let dentro = 0;
+    for (let k = 0; k < AMOSTRAS; k++) {
+      const t = k / (AMOSTRAS - 1);
+      const x = cx - SOBRANCELHA.larg / 2 + SOBRANCELHA.larg * t;
+      // O arco: a sagita sobe no meio, e a subida inclina a corda. Mesmo desenho de
+      // `pathSobrancelha`, amostrado em vez de emitido.
+      const y = cy - SOBRANCELHA.subida * (t - 0.5) - SOBRANCELHA.sagita * 4 * t * (1 - t);
+      if (lacos.some((poli) => dentroDe(poli, { x, y }))) dentro++;
+    }
+    return dentro;
+  };
+
+  return {
+    esq: conta(OLHO_CX_ESQ, OLHO_CY_ESQ),
+    dir: conta(OLHO_CX_DIR, OLHO_CY_DIR),
+    de: AMOSTRAS,
+  };
+}
+
+/**
  * A ESPESSURA DA FAIXA DE SOMBRA, ponta a ponta — a amarra que o campo `sombra`
  * obriga a existir.
  *

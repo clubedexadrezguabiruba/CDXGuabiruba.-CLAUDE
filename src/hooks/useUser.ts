@@ -4,6 +4,26 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
+/**
+ * O PERFIL QUE TODA TELA DO PRODUTO CARREGA — e ele deixou de trazer dois mortos.
+ *
+ * ⚠️ **`avatar_config` e `avatar_base` saíram em 2026-08-20, e é o achado D12.**
+ * Eram as duas colunas da pilha v2: `avatar_config` guardava o cache dos 69 itens
+ * que o Bloco B apagou (é `'{}'` em 100% das contas desde então) e `avatar_base`, o
+ * caminho do PNG do boneco antigo, cujo componente (`AvatarDisplay`) não existe
+ * desde o F.2. Nenhum arquivo de `src/` lia qualquer uma das duas — só as próprias
+ * declarações daqui.
+ *
+ * Elas viajavam num `select` que este hook roda no dashboard, no perfil e em
+ * Configurações. Tirá-las é o passo que faltava para as colunas poderem cair de
+ * `users`: as três RPCs de ranking já pararam de citá-las no Bloco 6, e a
+ * conferência 6 do `verify:perfil-publico` já registra que `avatar_config` pode
+ * sair da matview.
+ *
+ * A identidade viva do avatar são `avatar_skin`, `avatar_hair`, `avatar_hair_color`
+ * e os quatro slots de guarda-roupa — e este hook não as busca de propósito: quem
+ * desenha o boneco lê da RPC de perfil, não daqui.
+ */
 export interface UserProfile {
   id: string;
   email: string;
@@ -19,8 +39,6 @@ export interface UserProfile {
   sound_muted: boolean;
   premove_enabled: boolean;
   auto_queen: boolean;
-  avatar_config: Record<string, unknown>;
-  avatar_base: string;
   /**
    * `users.avatar_traje` — slug de `avatar_catalogo`, ou `null`.
    *
@@ -68,7 +86,7 @@ export function useUser(): UseUserResult {
         const { data } = await supabase
           .from("users")
           .select(
-            "id, email, name, display_name, role, xp, level, puzzle_rating, puzzle_rd, puzzle_streak, puzzle_best_streak, sound_muted, premove_enabled, auto_queen, avatar_config, avatar_base, avatar_traje, rush_3min_record, rush_5min_record, rush_resistencia_record, ranking_visible"
+            "id, email, name, display_name, role, xp, level, puzzle_rating, puzzle_rd, puzzle_streak, puzzle_best_streak, sound_muted, premove_enabled, auto_queen, avatar_traje, rush_3min_record, rush_5min_record, rush_resistencia_record, ranking_visible"
           )
           .eq("id", user.id)
           .single();

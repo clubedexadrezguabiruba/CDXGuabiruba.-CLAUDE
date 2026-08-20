@@ -10,6 +10,19 @@
 ## Agora
 
 <!-- AGORA:inicio -->
+✅ **PASSE DE ACHADOS DO AVATAR — 2026-08-20.** Nove entradas fechadas com número
+medido: **D2 · D8 · D12 · D14 · G5 · G16 · G27 · G28 · G30**, mais o **G32**
+remedido (23,1% → **1,3%**). Um gate novo (`arte:traco`, 20º do `verify:arte`), uma
+régua nova (`sobrancelhaCoberta`), uma constante nova (`EIXO_ROSTO`) e duas colunas
+mortas fora do `useUser`. `verify:all=0` · 574 testes · `build=0`.
+
+⚠️ **E o passe achou uma coisa que não era achado: o `ESTADO-DA-ROTA` registrava o
+caminho C (barba por cima do cabelo) como EXECUTADO, e ele nunca foi para o código.**
+Perguntado, o Doug confirmou que mudou de ideia no fim daquela sessão — o código
+estava certo, o registro é que mentia. A entrada foi substituída por um corrigendum,
+e a lição virou regra escrita ali: **entrada de execução se escreve DEPOIS de o gate
+passar sobre ela**, nunca junto com a intenção.
+
 **Em execução:** avatar kokeshi, branch `avatar/vtracer`. Base visual aprovada no
 Bloco 1d.
 
@@ -245,9 +258,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 9 |
-| **Árvore** | **1 arquivos sujos** |
-| **Último commit** | 907ff6a · 2026-08-20 · feat(avatar): a pilha de camadas vira UMA tabela gateada — e dois defeitos que ninguém media caem junto |
+| **Commits à frente de `origin/main`** | 10 |
+| **Árvore** | **13 arquivos sujos** |
+| **Último commit** | e717f46 · 2026-08-20 · docs: `npm run estado` reconta — 9 commits, 33 scripts no verify:all, 22 arquivos de teste |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -263,9 +276,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **32 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **33 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:rostos-check` · `arte:peso`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:rostos-check` · `arte:traco` · `arte:peso`
 
 ## Frentes
 

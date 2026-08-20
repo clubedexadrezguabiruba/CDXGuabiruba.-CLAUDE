@@ -677,7 +677,35 @@ mexer numa peça aprovada. **Nenhuma régua do `verify:all` mede isto hoje.**
 
 ---
 
-### G32 — `ROSTO` é uma caixa só, e ela come 23% da `barba-bigode` na extração
+### G32 — `ROSTO` é uma caixa só ~~e come 23% da `barba-bigode`~~ ⚠️ 23,1% → **1,3%**
+> ⚠️ **Remedido em 2026-08-20: 94% dele já tinha sido consertado, e o que sobra é
+> outro problema com o mesmo endereço.**
+>
+> A caixa única virou **três caixas** (`FEICOES` em `scripts/avatar/arte/base.ts`),
+> uma por feição, e `barba-para-formas.ts` recorta por elas. `ROSTO` ficou intacto,
+> que é o certo: é o que o Gate −1 e a extração de cabelo medem desde sempre.
+>
+> Remedido rodando a esteira nas três artes aprovadas:
+>
+> | peça | tinta | descartado ANTES (`ROSTO`) | descartado HOJE (`FEICOES`) |
+> |---|---|---|---|
+> | `barba-cheia` | 38 505 px | 217 px · 0,56% | **0 px** |
+> | `barba-cavanhaque` | 14 221 px | 0 px | **0 px** |
+> | `barba-bigode` | 16 811 px | 3 877 px · **23,1%** | **221 px · 1,3%** |
+>
+> **O bigode continua sem passar, e a falha mudou de natureza — para melhor.**
+> Antes ele perdia 23% em silêncio; hoje a esteira **recusa em voz alta**:
+>
+> ```
+> Error: o recorte das feições cortou o MIOLO da peça: 27 px de aresta nua
+> ```
+>
+> Os 221 px caem na caixa da BOCA, que é onde um bigode mora por definição. Cortá-
+> los deixa massa terminando sem o contorno preto que o gerador pintou — o mesmo
+> defeito que o Doug pegou a olho em 2026-08-19. **O que falta não é régua mais
+> fina: é decidir se peça de rosto pode invadir a folga de meio traço em volta da
+> boca**, e isso muda o que uma peça tem direito de apagar. Uma saída defensável
+> não é uma só — vai ao Doug com o número, não daqui.
 
 **Prova:** `MEDIDO` — 2026-08-19, `scripts/avatar/arte/barba-para-formas.ts`, na
 promoção da `barba-cheia`. Registrado e **não consertado**, pela regra 9.
@@ -846,7 +874,34 @@ Enquanto não for, esta sonda é **relatório, não gate**.
 
 ---
 
-### G28 — o piso de 30 u de pele sob a boca foi calibrado na peça que ele deveria julgar
+### G28 — ~~o piso de 30 u de pele sob a boca foi calibrado na peça que ele julga~~ ✅ FECHADO
+> ✅ **Fechado em 2026-08-20 — e a resposta é que o piso NÃO EXISTE, medido.**
+>
+> O achado pedia *"a menor folga que ainda deixa pele visível a 56 px numa peça
+> SINTÉTICA"*. Feita a conta (`.scratch/estilo/g28-piso-sintetico.ts`), um piso
+> honesto é *meia boca (2,6 u) + o contorno que a peça traz (5,2 u) + pele que
+> sobreviva a um pixel renderizado* — e o terceiro termo depende de onde o boneco é
+> servido:
+>
+> | onde | 1 px vale | piso exigido | vão disponível |
+> |---|---|---|---|
+> | `/perfil`, corpo inteiro a 160 px | 3,1 u | **10,9 u** | 48,4 u |
+> | corpo inteiro a 56 px | 8,9 u | **16,7 u** | 48,4 u |
+> | recorte de cabeça a 40 px | 12,1 u | **19,9 u** | 48,4 u |
+> | recorte de cabeça a **32 px** | **15,1 u** | **22,9 u** | 48,4 u |
+>
+> Com **dois** pixels de pele — o mínimo para uma faixa parecer faixa e não
+> serrilha — o piso a 32 px vai a **38,0 u** dentro de 48,4 u: a barba inteira
+> teria de caber em 10 u. Impossível.
+>
+> **A conclusão bate com o que a rota já tinha registrado por outro caminho:** o
+> que sustenta a leitura *"barbudo"* a 32 px não é o vão sob a boca — é a silhueta
+> da barba contra a PELE, na linha do maxilar. Pedir faixa de pele visível dentro
+> de 3,2 px de vão é pedir o que o tamanho não dá.
+>
+> **Então a régua vira RELATO, como a `boca-livre.ts` virou depois do G29.** As
+> sondas medem e imprimem; nenhuma reprova. `PEDIDO-BARBAS.md` carrega a tabela
+> acima na §"As amarras comuns", para o piso não renascer por inércia.
 
 **Prova:** `MEDIDO` — 2026-08-19. Achado pelo Claude, no mesmo dia em que o escreveu.
 Registrado e **não consertado**, pela regra 9.
@@ -866,7 +921,39 @@ plano do bigode pedia (`sondas-rosto.ts`, P1) e nunca rodou até o fim.
 
 ---
 
-### G27 — `geometria.ts` e a base oficial discordam no eixo x, e toda régua de posição herda o erro
+### G27 — ~~`geometria.ts` e a base oficial discordam no eixo x~~ ✅ FECHADO
+> ✅ **Consertado em 2026-08-20, e a varredura que faltava deu LIMPO.**
+>
+> **A discordância não existia no desenho — existia na falta de um nome.** São
+> TRÊS eixos neste boneco, todos medidos, e o código só declarava dois:
+>
+> | eixo | vale | é o eixo de quê |
+> |---|---|---|
+> | `CENTRO_X` | **250** | o TRONCO, simétrico nele |
+> | `EIXO_CABECA` | **257** | a SILHUETA da cabeça |
+> | `EIXO_ROSTO` (**novo**) | **290** | as FEIÇÕES — olhos, sobrancelhas, boca |
+>
+> O terceiro existia como `OLHO_MEIO`, **privado** em `geometria.ts:445`. Quem
+> estava do lado de fora não tinha como centrar uma régua de feição sem inventar
+> um número, e foi exatamente o que aconteceu. Agora é `EIXO_ROSTO`, exportado,
+> com a tabela dos três no docstring.
+>
+> **A varredura que o achado pedia — *"se alguma régua do `verify:all` deriva
+> posição de `CENTRO_X`"* — foi feita e deu ZERO:** nenhum script de
+> `scripts/verify/` importa `geometria.ts`, e `CENTRO_X` não aparece uma única vez
+> em `verify:all`. Todos os usos vivos são do TRONCO (`base.ts`, `recorte.ts`,
+> `folha-traje.ts`, `prova-do-vetor.ts`, `linha-de-centro.ts`), e ali ele é o eixo
+> certo.
+>
+> **Os dois que erravam eram números mágicos**, os dois em `folha-base.ts`:
+> `caixa(CENTRO_X + 40, ...)` no zoom da boca e `caixa(CENTRO_X + 20, ...)` no do
+> queixo — o eixo errado compensado à mão. Trocados por `EIXO_ROSTO` e
+> `EIXO_CABECA`, e o `+ 40` some porque 250 + 40 era uma aproximação de 290.
+>
+> **O desenho nunca esteve errado:** `pathBoca()` sempre ancorou em `OLHO_MEIO` e
+> as `FEICOES` da rota de arte também. O Doug disse *"o alinhamento está certo"*
+> sobre a peça que a sonda acusava de 41 u fora — e estava. As sondas de `.scratch/`
+> amostravam as colunas 238, 250 e 262 numa boca que vive em 269→310.
 
 **Prova:** `MEDIDO` — 2026-08-19, `.scratch/onde-esta-a-boca.ts`. Achado pelo Claude
 depois de o Doug dizer *"o alinhamento está certo"* sobre uma peça que a régua
@@ -894,7 +981,48 @@ ser fechado.
 
 ---
 
-### G30 — nenhuma régua da rota mede "o traço do boneco sumiu"
+### G30 — ~~nenhuma régua da rota mede "o traço do boneco sumiu"~~ ✅ FECHADO
+> ✅ **Consertado em 2026-08-20: a régua existe, está em `verify:arte` e traz o
+> próprio controle.** `scripts/avatar/arte/traco-intacto.ts` · `npm run arte:traco`.
+>
+> **A separação, medida:**
+>
+> | alvo | apagado | ilhas | maior componente |
+> |---|---|---|---|
+> | as 6 artes aprovadas sobre a base oficial | 0 | 0 | **0** |
+> | `chanel` + queixo apagado **1 u** | 338 | 1 | **338** ✗ |
+> | `chanel` + queixo apagado **2 u** | 507 | 1 | **507** ✗ |
+>
+> **Três formulações falharam antes, e as três estão escritas no docstring** —
+> porque cada uma é uma armadilha que a próxima régua desta família vai encontrar:
+>
+> 1. **contar o total** não separa nada: as barbas dão ~0 e os cabelos estacionam
+>    em 12–27 px de antialiasing com qualquer raio de máscara. O que separa é a
+>    **contiguidade** — poeira × corrida;
+> 2. **máscara = tudo que difere da base** engoliu o próprio controle: apagar o
+>    contorno também difere. A máscara é o **maior componente conexo**;
+> 3. **"sumiu = deixou de ser preto"** reprovava a `entrada.png`, que está em
+>    produção, com 60 px numa lasca de 1 px × 50 u. Diagnosticado pixel a pixel:
+>    ali a base tem lum 0 e a arte tem lum **70** — o gerador redesenhou o traço em
+>    cinza, e só a borda de antialiasing (38 → 97) cruzou o limiar. Não é
+>    apagamento, é re-renderização.
+>
+> **Os dois números saem do BONECO, não das peças** (é a lição do G28): o piso é
+> `TRACO × ESCALA ÷ 2` = **8 px**, e `LUM_APAGADO` = **180**, abaixo dos três
+> materiais claros da base (sombra de pele 189, pele 205, fundo 249) e acima de
+> qualquer traço re-renderizado. Os zeros das seis artes são consequência, não
+> origem.
+>
+> **O controle é FIEL, não degenerado.** Base nua + apagamento é degenerado: sem
+> peça, o apagamento vira o maior componente, a máscara o adota e a régua se
+> aprova sozinha — foi o que a formulação 2 fez. O controle é arte **aprovada**
+> com o apagamento por cima, que é a forma exata do defeito de 2026-08-19. Ele
+> roda ANTES de tudo em toda rodada, e se passar a rodada inteira é invalidada.
+>
+> ⚠️ **O ponto cego está declarado e a própria rodada o imprime:** apagamento
+> DEBAIXO da peça é invisível — `barba-cheia` com o queixo apagado em 1, 2 e 4 u dá
+> **0** nas três, porque a barba cobre o queixo ali. É o que a régua promete no
+> nome: *o traço sumiu ONDE a peça não está*.
 
 **Prova:** `MEDIDO` — 2026-08-19, `.scratch/traco-do-queixo.ts`. Achado pelo Claude
 depois de o Doug ver a linha do queixo apagada numa arte **que o Gate −1 aprovou**.
@@ -1522,7 +1650,40 @@ A saída que ainda não foi tentada é **a montante**: pedir ao gerador um conto
 de peça mais escuro, ou alargar a máscara antes de classificar o papel. As duas
 mexem na extração, que é compartilhada com o cabelo — e o cabelo está aprovado.
 
-### G16 — nenhum gate mede o boneco COMPLETO: base + cabelo + traje
+### G16 — ~~nenhum gate mede o boneco COMPLETO: base + cabelo + traje~~ ✅ FECHADO
+> ✅ **Fechado em 2026-08-20 — metade foi consertada pelo D15, e a outra metade
+> era um medo apontado para o lado errado.**
+>
+> **A metade consertada (D15, 2026-08-17):** `ORCAMENTO_COM_ROSTO` (31 formas) e
+> `ORCAMENTO_COM_CHAPEU` (36) nasceram derivados de `ORCAMENTO_COMPOSTO`, e a
+> `avatar:folha-base` passou a medir o composto de 3 camadas contra o primeiro.
+>
+> **A metade que era medo:** o achado temia que *"um traje com uma forma a mais
+> passaria nos dois gates e estouraria na tela"*. Medido hoje
+> (`.scratch/estilo/g16-composto-com-traje.ts`), o traje faz o **contrário** — ele
+> negocia volume e o compositor abre mão de 2 formas:
+>
+> | cena | formas no SVG do boneco |
+> |---|---|
+> | `chanel` + barba, **sem** traje | **25** ← o pior de todos |
+> | `chanel` + barba + `traje-farda` | 23 |
+> | `chanel` + barba + `traje-gambesao` | 23 |
+>
+> O pior boneco real do produto está em **25 formas contra teto 31**. Vestir
+> ALIVIA a conta.
+>
+> **O que a medição achou de verdade, e foi escrito onde mente:** `contarFormas`
+> ignora `<image>`, e o docstring de `traje-de-elenco.test.ts` justificava isso com
+> *"não é forma, é raster colado"*. Vencido em 2026-08-17, quando o traje virou
+> vetor — o `href` aponta para um `.svg` e o navegador pinta o documento inteiro.
+> Em nós realmente pintados (`.scratch/estilo/g16-nos-pintados.ts`): sem traje
+> **25**, com a farda **75**, com o gambesão **553**. O docstring foi corrigido e
+> carrega a tabela.
+>
+> **Não vira achado novo, e o motivo é preciso:** o teto de formas existe pela
+> conta do ranking — 30 bonecos numa lista —, e a lista serve o RECORTE DE CABEÇA,
+> que não leva traje. O corpo inteiro aparece **uma vez por página**. Se o corpo
+> inteiro há de ter teto próprio, é número do Doug, não dedução minha.
 **Prova:** `MEDIDO` — 2026-08-12, ao orçar a arte do Bloco 2 dos slots. Achado
 pelo Claude, desenhando os trajes. Registrado e **não consertado**, pela regra 9.
 
@@ -1920,7 +2081,37 @@ laço decimado. **A causa escrita aqui é hipótese, não causa** — é a liç�
 ela vale para esta entrada também.
 **Quem decide se vale a pena:** Doug. Hoje nada depende da `faixa`.
 
-### G5 — `folgaDoRosto` não separa franja de cortina numa peça de laço fechado
+### G5 — ~~`folgaDoRosto` não separa franja de cortina numa peça de laço fechado~~ ✅ FECHADO
+> ✅ **Consertado em 2026-08-20 SEM tocar em `folgaDoRosto`** — e a régua nova
+> achou um caso que ninguém sabia distinguir.
+>
+> **O conserto:** `sobrancelhaCoberta()` em `cabelo.ts`, ao lado da outra. Ela
+> amostra 21 pontos do arco de cada sobrancelha e conta quantos caem **dentro** de
+> uma poligonal fechada da peça (`dentroDe`). A pergunta deixa de ser *"há tinta
+> abaixo dela nesta coluna?"* e passa a ser *"há tinta SOBRE ela?"* — que é a que
+> importa. A `avatar:folha-base` imprime o par, e a linha que dizia
+> `⚠ é a folga DA ARTE` agora diz `⚠ é a cortina, não a franja — sobrancelha
+> coberta 0/21 · 0/21`.
+>
+> **`folgaDoRosto` fica intacta, e é decisão, não preguiça:** doze lugares medem
+> por ela e `FOLGA_ROSTO` é a amarra 1 do paramétrico. O achado era de LEITURA;
+> trocar a semântica de uma régua viva para consertar leitura é preço errado.
+>
+> **O que a régua nova achou, e é o que a justifica:**
+>
+> | peça | `folgaDoRosto` | sobrancelha coberta |
+> |---|---|---|
+> | `chanel` | esq **−233,9** | **0/21** — a cortina, ao lado da bochecha |
+> | `assimetrico` | esq **−373,6** | **21/21** — a mecha cobre a sobrancelha INTEIRA |
+>
+> Os dois negativos enormes queriam dizer **coisas opostas**, e a régua velha os
+> imprimia iguais. O 21/21 do `assimetrico` **não é defeito** — é o que um corte
+> assimétrico faz, e o `ROSTO` protegido exclui a sobrancelha pelo mesmo motivo.
+> O ganho é que os dois casos agora são distinguíveis.
+>
+> **O gate:** `cabelo.test.ts`, *"folga negativa é a cortina, não a franja"* —
+> prende folga ≪ `FOLGA_ROSTO` **e** cobertura 0/21 na mesma peça, com R10 pela
+> peça empurrada 160 u sobre a testa, que sai > 0. **63 testes** no arquivo.
 **Prova:** `MEDIDO` — `src/lib/avatar/estilo/cabelo.ts`, `folgaDoRosto`
 
 A régua devolve o `y` **mais baixo de qualquer trecho** da poligonal dentro da faixa
@@ -2137,7 +2328,19 @@ sair de três cópias para uma.
 **O que NÃO está medido:** o custo real no ranking. A conta de 10 240 B saiu de 30
 bonecos; ninguém remediu com 15,9 KB por boneco.
 
-### D14 — `arte:trajes` imprime, ao fim de toda rodada, que o catálogo está vazio — e ele não está
+### D14 — ~~`arte:trajes` imprime que o catálogo está vazio — e ele não está~~ ✅ FECHADO
+> ✅ **Consertado em 2026-08-20.** A frase final de `scripts/avatar/arte/trajes.ts`
+> passou a dizer o que é verdade desde o B5: `CATALOGO.traje` **deriva** do arquivo
+> que o script acaba de escrever, então a peça entra no catálogo do código no ato;
+> o que falta, quando a peça é nova, é a linha dela em `avatar_catalogo`, e
+> `verify:catalogo-slots` compara os dois conjuntos **nos dois sentidos**.
+>
+> **A varredura que o achado pedia foi feita, e ela devolveu uma coisa só.**
+> `rostos.ts` — o análogo do slot `rosto`, escrito depois — já imprime a versão
+> correta; nenhuma outra mensagem da esteira de arte manda desconfiar de um passo
+> fechado (`grep` por "continua vazio" / "não está no catálogo" em `scripts/` e
+> `src/`: 3 acertos, os 3 sobre outro assunto). `arte:trajes --check` verde depois
+> da troca — a mensagem não entra no literal gerado.
 **Prova:** `MEDIDO` — 2026-08-13, ao mudar o endereço do PNG de traje. Achado pelo
 Claude. Registrado e **não consertado**, pela regra 9.
 
@@ -2193,7 +2396,19 @@ de 1 px.
 **Quem decide:** Doug — e o lugar natural é o pacote de acabamento antes do
 lançamento (fase 12), junto do PWA (fase 11), que **também** vai exigir ícone.
 
-### D12 — o `useUser` ainda busca duas colunas mortas em toda tela do produto
+### D12 — ~~o `useUser` ainda busca duas colunas mortas em toda tela do produto~~ ✅ FECHADO
+> ✅ **Consertado em 2026-08-20.** `avatar_config` e `avatar_base` saíram do
+> `select` e do tipo `UserProfile` (`src/hooks/useUser.ts`). O `select` foi de 20
+> para **18 colunas**, e o `tsc --noEmit` passa — que é a prova de que ninguém as
+> lia, porque qualquer leitor teria quebrado na hora.
+>
+> **A varredura que faltava foi feita:** `avatar_url` aparece uma vez em `src/`,
+> em `src/types/bot.ts:12`, e é o retrato do BOT — outra tabela, outro assunto.
+> Não é da família das duas.
+>
+> O docstring novo de `UserProfile` registra por que elas saíram e o que ficou
+> destravado: as colunas agora podem cair de `users`, porque nem as 3 RPCs de
+> ranking (desde o Bloco 6) nem o cliente as citam mais.
 **Prova:** `MEDIDO` — 2026-08-11, `grep` em `src/` ao fechar o Bloco 6. Achado
 pelo Claude. Registrado e **não consertado**, pela regra 9.
 
@@ -2270,7 +2485,17 @@ bloco: é a mesma dos 54 arquivos que o DESIGN.md nomeia como o débito a pagar.
 fila de migração para a direção A — junto do Bloco 6 (que já reescreve rankings e
 navbar) ou como commit próprio.
 
-### D8 — a migration do F.2 diz "as 19 no default integral", e já são 18
+### D8 — ~~a migration do F.2 diz "as 19 no default integral", e já são 18~~ ✅ FECHADO
+> ✅ **Consertado em 2026-08-20, e a metade que NÃO se conserta está declarada.**
+> A §4 do `docs/avatar/20-troca-de-pilha-plano.md` passou a dizer **18 das 19**,
+> nomeando a 19ª pelo que ela é (conta de teste com pele 7 e espetado).
+>
+> **O cabeçalho da migration `20260810220000` continua dizendo "as 19", e fica
+> assim de propósito.** Ela está aplicada, e este projeto não edita migration
+> aplicada — a regra vale para o comentário pelo mesmo motivo pelo qual vale para
+> o SQL: quem abre o arquivo tem de estar lendo o que foi executado. O corrigendum
+> mora no doc 20, ao lado da tabela do antes/depois, que é onde alguém que estude
+> aquela janela vai passar.
 **Prova:** `MEDIDO` — 2026-08-10, leitura só-leitura de `public.users` no F.2,
 **antes** do apply. Achado pelo Claude, executando o F.2. Registrado e **não
 consertado**, pela regra 9.
@@ -2348,7 +2573,15 @@ chocar um ovo, e isso é decisão de produto, não deleção. E tem um vizinho: 
 modais de recompensa querem uma passada junta, com o `design-recruta64`.
 **Quem decide:** Doug.
 
-### D2 — Por qual caminho a arte do cabelo volta
+### D2 — ~~Por qual caminho a arte do cabelo volta~~ ✅ FECHADO
+> ✅ **Fechado em 2026-08-20 SEM CONSERTO — ele já estava respondido, e por duas
+> vezes.** A decisão saiu em 2026-08-06/07 (a rota de arte) e o resultado dela está
+> no ar: **5 cabelos**, 3 deles vindos de arte pela rota. Desde então a mesma rota
+> produziu 2 trajes e a 1ª barba. O bloqueio técnico que o achado citava
+> (`15:574`) morreu com o runbook 19.
+>
+> A entrada seguia aberta só porque ninguém a fechou — que é a doença do **T3**
+> acontecendo dentro do próprio `achados.md`.
 **Prova:** `LIDO` — bloco AGORA do `ESTADO.md:22` × `15:558`
 
 Listado como decisão travada, mas **já foi tomada**: o plano 15 registra três

@@ -76,11 +76,43 @@ Todas medidas na peça que passou. Valem para toda barba nova, sem exceção.
 | cápsulas dos olhos | **0 px** de tinta |
 | linha da boca | **0 px** por cima |
 | miolo acima da boca | **vazio nas cinco; o `bigode` é a exceção medida** — com o contorno pintado pelo gerador sobra 1 px de vão a 56 e a 32 px, e o Doug aprovou a olho; com o `kk-traco` de 12 u ele funde. A segunda morte do bigode (2026-08-18) foi medida com colunas fora da boca (G27) e com o traço que não foi decidido (G29) |
-| pele nua abaixo da boca | **sem piso declarado** — o 30 u que estava aqui foi calibrado na `cheia` e reprovou três artes que o Doug aprovou (achado **G28**). Um piso com lastro sai de peça sintética, não do catálogo |
+| pele nua abaixo da boca | **NÃO TEM PISO, e agora está medido por que** — ver o bloco logo abaixo (achado **G28**, fechado em 2026-08-20) |
 | contorno | 12 u, igual ao do boneco |
 | menor detalhe | ≥ 11 u para existir · ≥ 33 u para ler |
 | tinta | 1 componente contínuo · ciano instrumental · sem sombra projetada |
 | o boneco | não se mexe: 0 px de deslocamento, escala 100,00% |
+
+### Por que a "pele nua abaixo da boca" não vira piso — medido, não abandonado
+
+O 30 u que morava na tabela acima foi calibrado **na `cheia`**, a peça que ele deveria
+julgar, e reprovou as três `cavanhaque` — uma das quais o Doug aprovou a olho. Isso já
+bastava para tirá-lo. O que faltava era responder de onde um piso com lastro sairia, e
+a resposta, medida em 2026-08-20 (`.scratch/estilo/g28-piso-sintetico.ts`), é que
+**ele não sai de lugar nenhum, porque os tamanhos não o comportam.**
+
+Um piso honesto seria: *meia boca + o contorno que a peça traz + pele que sobreviva a
+um pixel renderizado*. Os dois primeiros são fixos (2,6 u e 5,2 u). O terceiro depende
+de onde o boneco é servido:
+
+| onde | 1 px vale | piso que isso exigiria | cabe nos 48,4 u de boca-a-queixo? |
+|---|---|---|---|
+| corpo inteiro no `/perfil`, 160 px | 3,1 u | **10,9 u** | sim, com folga |
+| corpo inteiro a 56 px | 8,9 u | **16,7 u** | sim |
+| recorte de cabeça a 40 px | 12,1 u | **19,9 u** | sim, apertado |
+| recorte de cabeça a **32 px** | **15,1 u** | **22,9 u** | sobra 25 u para a barba inteira |
+
+E com **dois** pixels de pele — que é o mínimo para uma faixa parecer faixa e não
+serrilha — o piso a 32 px vai a **38,0 u** dentro de um vão de 48,4 u: a barba
+precisaria caber inteira em 10 u. Impossível.
+
+**A conclusão é a mesma que a rota já registrou por outro caminho:** o que sustenta a
+leitura *"barbudo"* a 32 px **não é o vão sob a boca** — é a silhueta da barba contra a
+PELE, na linha do maxilar. Pedir faixa de pele visível dentro de 3,2 px de vão é pedir
+o que o tamanho não dá.
+
+**Então a régua vira RELATO, como a `boca-livre.ts` virou depois do G29.** As sondas
+continuam medindo e imprimindo o vão; nenhuma reprova por ele. Quem reprova é o olho
+do Doug, e nas três vezes em que ele e um piso discordaram, o piso é que estava errado.
 
 ## O elenco, em número
 

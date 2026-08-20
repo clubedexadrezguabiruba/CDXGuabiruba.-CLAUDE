@@ -62,8 +62,27 @@ const COM_ARTE: Traje = {
  *
  * `use` CONTA: cabeça e tronco viraram `<path>` em `<defs>` referenciados por
  * `<use>`, e um contador que os ignorasse mentiria para menos justamente por causa
- * da mudança que fez o boneco caber. `<image>` NÃO conta — ele não é forma, é
- * raster colado, e é por isso que a peça com arte fecha em 17 e não em 18.
+ * da mudança que fez o boneco caber. `<image>` NÃO conta, e é por isso que a peça
+ * com arte fecha em 17 e não em 18.
+ *
+ * ⚠️ **A razão pela qual `<image>` não conta MUDOU, e o número que ela esconde está
+ * medido.** Este docstring dizia *"ele não é forma, é raster colado"*, e isso valeu
+ * até 2026-08-17: desde a prova do vetor o `href` aponta para um `.svg`, e o
+ * navegador pinta o documento inteiro que há dentro dele. Medido em 2026-08-20
+ * (`.scratch/estilo/g16-nos-pintados.ts`), em nós que o navegador de fato pinta:
+ *
+ * | cena | no SVG do boneco | dentro do `<image>` | pintados |
+ * |---|---|---|---|
+ * | `chanel` + barba, sem traje | 25 | 0 | **25** |
+ * | `chanel` + barba + `traje-farda` | 23 | 52 | **75** |
+ * | `chanel` + barba + `traje-gambesao` | 23 | 530 | **553** |
+ *
+ * O teto de 3 camadas é **31 formas**, e o gambesão vestido custa 553 nós. **Não é
+ * defeito hoje, e o motivo é preciso:** o teto de formas existe pela conta do
+ * ranking — 30 bonecos numa lista —, e a lista serve o RECORTE DE CABEÇA, que não
+ * leva traje. O boneco de corpo inteiro aparece **uma vez por página**. O que este
+ * bloco impede é alguém reler "não é forma" e concluir que a arte do traje é grátis.
+ * Fecha o **G16**; o teto para o corpo inteiro, se houver de existir, é do Doug.
  */
 const contarFormas = (svg: string) => (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
 

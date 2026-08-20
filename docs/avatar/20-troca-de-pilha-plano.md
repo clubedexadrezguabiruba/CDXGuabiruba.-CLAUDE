@@ -741,7 +741,9 @@ apagado no Bloco B —, nenhum baú cria ovo até haver arte. Daí:
 
   **A migration do F.2, e por que o `WHERE` largo se sustenta na ORDEM.** Medido:
   **8 de 19 contas** têm `avatar_chosen = true`, todas pela `update_avatar_base` da
-  v2, e as 19 estão no default integral da identidade nova. Não existe no banco
+  v2, e **18 das 19** estão no default integral da identidade nova — a 19ª é uma
+  conta de teste com identidade kokeshi real (pele 7, cabelo espetado), corrigido em
+  2026-08-20 pelo **D8**. Não existe no banco
   marca de *qual* identidade foi escolhida — as duas RPCs escrevem o mesmo booleano
   —, e o default integral não serve de prova, porque pele 2 + careca + cor 0 é uma
   escolha legítima. O que sustenta o `UPDATE ... WHERE avatar_chosen = true` é o
@@ -987,11 +989,16 @@ sessões o E levar.
   criação com a própria identidade pré-selecionada, por
   `criar-personagem/page.tsx:42-44`.
 
-  ⚠️ **O "as 19 no default integral" desta §4 e do cabeçalho da migration está
-  vencido — são 18.** Medido na releitura do F.2, registrado como **D8** em
-  `docs/achados.md` e **não consertado**, pela regra 9. Não afeta a aplicação: na
-  janela do F.2 o `WHERE` largo continua correto pelo motivo escrito, que é a
-  ordem, não a heurística.
+  ✅ **O "as 19 no default integral" era vencido — são 18 — e a §4 acima foi
+  corrigida em 2026-08-20 (achado **D8**).** Medido na releitura do F.2.
+
+  ⚠️ **O cabeçalho da migration `20260810220000` continua dizendo "as 19", e fica.**
+  Ela já está aplicada, e este projeto não edita migration aplicada (`CLAUDE.md`) —
+  a regra existe para que o arquivo e o que rodou no banco nunca discordem, e vale
+  para o comentário pelo mesmo motivo pelo qual vale para o SQL: quem lê o arquivo
+  tem de estar lendo o que foi executado. **Esta linha é o corrigendum dela.** Não
+  afeta a aplicação: na janela do F.2 o `WHERE` largo continua correto pelo motivo
+  escrito, que é a ordem, não a heurística.
 
   **A conferência manual do Doug aconteceu, e é o que fecha o F.2.** Duas contas,
   quatro telas, mais duas medições no banco que a tela não mostra:

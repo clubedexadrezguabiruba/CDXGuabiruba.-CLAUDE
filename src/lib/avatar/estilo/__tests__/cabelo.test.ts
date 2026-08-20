@@ -38,6 +38,7 @@ import {
   coberturaDaCoroa,
   contencaoDaClara,
   folgaDoRosto,
+  sobrancelhaCoberta,
   pathCabelo,
   pathCabeloClaro,
   sobrancelhaEscondida,
@@ -444,6 +445,38 @@ describe("o laço fechado", () => {
       massa: MASSA.map((p) => (p.y > 100 && p.y < 200 ? { ...p, y: p.y + 160 } : p)),
     };
     expect(Math.min(...Object.values(folgaDoRosto(invadindo)))).toBeLessThan(FOLGA_ROSTO);
+  });
+
+  /**
+   * O ACHADO G5, PRESO EM TESTE — a folga negativa de uma peça traçada NÃO é invasão.
+   *
+   * `folgaDoRosto` devolve o `y` mais baixo de qualquer trecho na faixa de `x` da
+   * sobrancelha. Numa peça de laço fechado quem está lá embaixo é a CORTINA lateral,
+   * ao lado da bochecha, e não a franja sobre o olho — e o número sai muito negativo
+   * numa peça que não encosta no rosto. `sobrancelhaCoberta` responde a pergunta que
+   * importa, e este teste prende as duas juntas para que ninguém "conserte" uma
+   * arte aprovada por causa da leitura errada da outra.
+   */
+  it("folga negativa é a cortina, não a franja — e a sobrancelha segue livre", () => {
+    const f = folgaDoRosto(tracado);
+    const c = sobrancelhaCoberta(tracado);
+
+    // A peça traçada tem folga MUITO negativa nas duas...
+    expect(Math.min(f.esq, f.dir)).toBeLessThan(FOLGA_ROSTO);
+    // ...e mesmo assim não põe um único ponto de tinta sobre nenhuma das duas.
+    expect(c.esq).toBe(0);
+    expect(c.dir).toBe(0);
+    expect(c.de).toBe(21);
+
+    // R10, e sem ela a asserção acima passaria por vacuidade: a MESMA peça com a
+    // borda de cima empurrada para baixo sobre a testa cobre a sobrancelha de
+    // verdade, e aí a régua tem de acusar.
+    const invadindo: Cabelo = {
+      ...tracado,
+      massa: MASSA.map((p) => (p.y > 100 && p.y < 200 ? { ...p, y: p.y + 160 } : p)),
+    };
+    const ci = sobrancelhaCoberta(invadindo);
+    expect(Math.max(ci.esq, ci.dir)).toBeGreaterThan(0);
   });
 
   it("sem região clara, a peça é chapada e o compositor não emite forma vazia", () => {
