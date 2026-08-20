@@ -79,6 +79,8 @@ import {
   OLHO,
   OLHO_CX_DIR,
   OLHO_CX_ESQ,
+  OLHO_CY_DIR,
+  OLHO_CY_ESQ,
   SOBRANCELHA,
   TRACO,
   TRONCO,
@@ -190,53 +192,83 @@ export const ROSTO: Caixa = {
 };
 
 /**
- * AS FEIÇÕES, UMA CAIXA CADA — e `ROSTO` acima é exatamente a caixa delas TODAS.
+ * AS FEIÇÕES PROTEGIDAS — os dois olhos, cada um pela PRÓPRIA FORMA.
  *
  * ---------------------------------------------------------------------------
- * POR QUE UMA CAIXA SÓ NÃO SERVE PARA A PEÇA QUE VESTE A CARA
+ * UMA CAIXA SÓ NUNCA SERVIU, E CAIXA NENHUMA SERVE
  * ---------------------------------------------------------------------------
  *
- * O conjunto que precisa ser protegido — dois olhos e uma boca — **não é convexo**:
- * a boca fica embaixo e no meio, os olhos em cima e nas pontas, e os quatro cantos
- * da caixa que os envolve estão vazios. Para o CABELO isso nunca importou, porque
- * cabelo não desce até ali. Para a BARBA importa, e custou um defeito:
+ * O conjunto a proteger — dois olhos e uma boca — **não é convexo**: a boca fica
+ * embaixo e no meio, os olhos em cima e nas pontas, e os quatro cantos da caixa que
+ * os envolve estão vazios. Para o CABELO isso nunca importou, porque cabelo não desce
+ * até ali. Para a BARBA importa, e custou dois defeitos em dois dias:
  *
- * a `barba-cheia` entra no canto inferior direito de `ROSTO` (u x 378,3→393,3 ·
- * y 300,8→308,3), que fica **84 px abaixo do olho direito** e **67 u à direita da
- * boca** — não encosta em feição nenhuma. Recortada pela caixa, a peça perdeu
- * 217 px e, pior, o corte passou pelo MIOLO dela: sobraram **27 px de aresta nua**,
- * massa terminando sem o contorno preto que o gerador pintou. O Doug viu a olho
- * ("falta um contorno no lado direito, abaixo do olho direito") antes de qualquer
- * régua — de novo.
+ *  - a `barba-cheia` entrava no canto inferior VAZIO do `ROSTO` — 84 px abaixo do
+ *    olho direito, 67 u à direita da boca — e o recorte passava pelo MIOLO dela,
+ *    deixando 27 px de aresta nua. O Doug viu a olho antes de qualquer régua;
+ *  - o `barba-bigode` caía com 167 px na caixa da BOCA, que era **80% ar**.
+ *
+ * A boca saiu em 2026-08-20 e virou `naEspinhaDaBoca`. Os olhos saíram no mesmo dia,
+ * e viram esta função. **As duas trocas são a mesma ideia:** proteger a FEIÇÃO, não
+ * o retângulo em volta dela.
  *
  * ---------------------------------------------------------------------------
- * ELAS SAEM DAS MESMAS CONSTANTES QUE `ROSTO`, E ISSO É A AMARRA
+ * POR QUE O OLHO NÃO MERECE FOLGA DE MEIO TRAÇO
  * ---------------------------------------------------------------------------
  *
- * Mesmos `OLHO`, `BOCA` e `FOLGA` de meio traço. Uma segunda descrição das feições
- * concordaria com a INTENÇÃO em vez de concordar com o código — é a lição que
- * `base-oficial.ts` já registra e o motivo de `base-barba.ts` ler estas constantes
- * em vez de redesenhar as caixas.
+ * As caixas antigas carregavam `FOLGA = TRACO / 2` = 6 u, que é meio traço do
+ * BONECO. Só que o olho não é desenhado com o traço do boneco: `compositor.ts:725`
+ * emite um `<rect class="kk-tinta kk-olho" rx>` — **fill puro, sem stroke nenhum**.
+ * Não há antialiasing de 6 u para acomodar, porque não há linha.
  *
- * **`ROSTO` fica como está, e é de propósito.** Ele é o que o Gate −1 e a extração
- * de cabelo medem desde sempre; trocá-lo moveria as peças já promovidas e o próprio
- * gate. Quem precisa da régua fina é a peça de rosto, e é ela que pede por estas.
- * O achado geral continua registrado como **G32**.
+ * Medido em 2026-08-20 (`.scratch/estilo/folha-regioes.ts`), em quanto de cada
+ * candidata a região realmente protege TINTA do rosto:
+ *
+ *   opção                                área      é feição   o resto
+ *   A  retângulo + 6 u (era)          9 658 u²        59%      41% AR
+ *   B  cápsula   + 6 u                8 492 u²        67%
+ *   C  cápsula   + 2,6 u              6 765 u²        84%
+ *   D  cápsula   + 0,8 u (é)          5 994 u²        95%
+ *
+ * **O Doug escolheu a D**, e a margem é a mesma constante que a espinha da boca já
+ * usa: `MARGEM_DO_RASTER`, 1 px do canvas de 1024². Sai do raster, não das peças —
+ * é a lição do **G28**, aplicada pela terceira vez.
+ *
+ * ⚠️ **A troca não destrava nada HOJE, e isso está medido:** das oito artes de barba
+ * que existem, só o `bigode-puro` encosta no olho, em qualquer das quatro opções
+ * (111 px na A, 12 px na D). As outras sete medem **zero** nas quatro. Ela destrava o
+ * PRÓXIMO bigode — qualquer peça que suba até a altura do lábio superior batia numa
+ * folga que era 41% ar.
+ *
+ * **`ROSTO` fica como está, e é de propósito.** Ele é o que o Gate −1 e a extração de
+ * cabelo medem desde sempre; trocá-lo moveria as peças já promovidas e o próprio
+ * gate. Quem precisa da régua fina é a peça de rosto.
  */
-export const FEICOES: readonly Caixa[] = [
-  {
-    x0: OLHO_CX_ESQ - OLHO.w / 2 - FOLGA,
-    y0: OLHO.cy - OLHO.h / 2 - FOLGA,
-    x1: OLHO_CX_ESQ + OLHO.w / 2 + FOLGA,
-    y1: OLHO.cy + OLHO.h / 2 + FOLGA,
-  },
-  {
-    x0: OLHO_CX_DIR - OLHO.w / 2 - FOLGA,
-    y0: OLHO.cy - OLHO.h / 2 - FOLGA,
-    x1: OLHO_CX_DIR + OLHO.w / 2 + FOLGA,
-    y1: OLHO.cy + OLHO.h / 2 + FOLGA,
-  },
-];
+export const OLHOS_PROTEGIDOS = [
+  { cx: OLHO_CX_ESQ, cy: OLHO_CY_ESQ },
+  { cx: OLHO_CX_DIR, cy: OLHO_CY_DIR },
+] as const;
+
+/**
+ * O ponto (em unidades do `viewBox`) cai sobre a cápsula de um dos olhos?
+ *
+ * A mesma forma que `compositor.ts:725` emite — `<rect rx>` com `OLHO.w × OLHO.h` e
+ * raio `OLHO.r` —, mais `MARGEM_DO_RASTER`, e centrada no `cy` DE CADA OLHO. As
+ * caixas antigas usavam `OLHO.cy` para os dois e perdiam o desnível de 3 u do giro.
+ */
+export const naCapsulaDoOlho = (ux: number, uy: number): boolean => {
+  const rx = OLHO.w / 2 + MARGEM_DO_RASTER;
+  const ry = OLHO.h / 2 + MARGEM_DO_RASTER;
+  const r = OLHO.r + MARGEM_DO_RASTER;
+  for (const { cx, cy } of OLHOS_PROTEGIDOS) {
+    const dx = Math.abs(ux - cx);
+    const dy = Math.abs(uy - cy);
+    if (dx > rx || dy > ry) continue;
+    if (dx <= rx - r || dy <= ry - r) return true;
+    if (Math.hypot(dx - (rx - r), dy - (ry - r)) <= r) return true;
+  }
+  return false;
+};
 
 /**
  * A ESPINHA DO SORRISO — e por que a boca saiu de `FEICOES` para virar isto.
@@ -283,7 +315,10 @@ export const FEICOES: readonly Caixa[] = [
  * Custo medido da troca: **zero** para as três barbas aprovadas, porque nenhuma delas
  * toca a espinha. Quem quiser pintar POR CIMA do sorriso continua reprovando.
  */
-export const MEIA_ESPINHA = 1 / ESCALA;
+export const MARGEM_DO_RASTER = 1 / ESCALA;
+
+/** Alias histórico: a espinha da boca usa a mesma margem que a cápsula do olho. */
+export const MEIA_ESPINHA = MARGEM_DO_RASTER;
 
 /** O arco do sorriso, amostrado — mesmo desenho de `pathBoca()`, medido em vez de emitido. */
 const ESPINHA: readonly { x: number; y: number }[] = Array.from({ length: 201 }, (_, k) => {

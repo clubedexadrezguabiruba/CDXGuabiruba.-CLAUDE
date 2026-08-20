@@ -258,9 +258,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 12 |
-| **Árvore** | **3 arquivos sujos** |
-| **Último commit** | 88d09f3 · 2026-08-20 · feat(avatar): a partição do miolo ganha uma segunda saída — geometria em vez de histograma |
+| **Commits à frente de `origin/main`** | 13 |
+| **Árvore** | **2 arquivos sujos** |
+| **Último commit** | 7717ae8 · 2026-08-20 · feat(avatar): a boca deixa de ser caixa e vira espinha — o bigode passa, e a pergunta do Doug redesenhou a régua |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
