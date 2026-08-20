@@ -3398,3 +3398,698 @@ entrega é a **sombra**, porque a barba recolore e a sombra exigiria `--av-cabel
 que está vetado com número em `rosto.ts` (sem fallback declarado, o careca sai preto
 chapado). Se a sombra vier a ser exigida, o caminho é declarar o fallback — e isso é
 decisão, não conserto.
+
+## 2026-08-19 (tarde) — o bigode voltou, com régua certa, e entrou como sexta barba
+
+O Doug perguntou por que o limite "miolo acima da boca vazio" existia e pediu para
+testar uma arte com bigode (`.scratch/arte/bigode-1.png`, Gemini sobre a base). A
+resposta mudou a conta: das duas mortes do bigode, a **segunda** (2026-08-18,
+`bigode-no-tamanho.ts`) estava medida com as colunas 238/250/262 — **nenhuma passa
+pela boca**, que fica em x 269→310 (G27) — e com os 6 u de traço de uma decisão que
+não tinha sido tomada (G29). A primeira (D16) era sobre bigode **flutuante**, e
+deixava escrito que o bigode **encostado** nunca foi olhado.
+
+### O que se mediu desta vez (`.scratch/perfil-boca.ts`)
+
+Peça = o que difere da base; pintada no pior caso (cabelo `#2B1B0E`); colunas
+**550/560/569**, que passam pela boca; controles: base careca e `cavanhaque`.
+Luminância (pele ≈ 189):
+
+| | bigode | vão | boca | |
+|---|---|---|---|---|
+| 56 px, contorno pintado | 102 · 55 | **149** | 122 | 1 px de cinza separa |
+| 32 px, contorno pintado | 63 | **144** | 105 | 1 px separa |
+| 56 px, `kk-traco` 6 u fora | 30 · 23 · 56 | — | 87 · 73 | **funde** |
+| 32 px, `kk-traco` 6 u fora | 16 | 69 | 50 | funde |
+
+Folha a 56 e 32 px: `.scratch/arte/folha-bigode-1.png`. **Leitura:** sem o traço do
+compositor a boca vira um furo claro dentro de um anel escuro — "barba em
+ferradura"; com o traço, mancha única. O motivo físico continua o da D16: entre a
+base dos olhos (y 416) e o topo da boca (y 452) há **36 px = 2,7 px a 56**; bigode,
+vão e boca têm de caber aí.
+
+**O parecer do Doug, sobre a folha completa** (`folha-bigode-completa.png`, ao lado
+das duas aprovadas): *"perfeita! pode adicionar no catálogo tb (mais uma opção de
+rare)"*.
+
+### Consequência que a peça impõe
+
+Aprovar o bigode **decide o contorno**: peça de arte que recolore usa o **contorno
+pintado pelo gerador** (5,2 u), não o `kk-traco` de 12 u — com o traço ela morre,
+medido acima. Vale para as três barbas de arte. O G29 fecha por esta decisão.
+
+### A esteira, e os números
+
+`arte:gate` na crua: REPROVADA por redesenho (rosto 24 ladrilhos, corpo 40 — cabeça
+quadrada e roupa), deslocamento 0 px, escala 100,00%; **olhos e boca idênticos à
+base pixel a pixel**. `restaurar-peca.ts` (franja 3 u): 16 811 px em 1 componente,
+957 px de ruído descartado, matiz → 180°, 19 751 px restaurados. `arte:gate` na
+limpa: **APROVADA** (rosto 0 ladrilhos, corpo 1). Largura 0,41× cabeça, desce 70 u
+do queixo, eixo × boca **6,7 u = 0,61 px a 56**, traço da base sumido **11 px**.
+
+Versionada: `barba-bigode.png` + `barba-bigode-crua.png`; a limpa se reproduz da crua
+**byte a byte** pelo `restaurar-peca.ts`.
+
+### O elenco agora
+
+**6 barbas — 2 common · 2 rare · 1 epic · 1 legendary.** Três prontas (`cheia`,
+`cavanhaque`, `bigode`), três a fazer (`aparada`, `quadrada`, `bipartida`). A
+promoção ao catálogo (extração, `ROSTOS`, migration com `origem='bau'`) continua
+por começar, agora para três peças.
+
+### A folha recolorida, e o que ela custou para ficar certa (2026-08-19, fim do dia)
+
+O Doug pediu para ver como as três barbas ficam recoloridas antes de promover. A
+folha é `.scratch/folha-recolorida.ts` → `.scratch/arte/folha-barbas-recoloridas.png`:
+**3 barbas × 9 colunas** (careca com a reserva, mais as 8 cores de cabelo da D27),
+cada célula em recorte grande e a 56 px ampliado 4×.
+
+**Aprovada** — *"está ótimo agora"*. A reserva do careca fica em **`#262626`**, preta,
+como o Doug pediu (*"a cor reserva será preta com tons de preto mais fraco"*).
+
+Três coisas se aprenderam, e duas foram erro meu:
+
+1. **A `cheia` tinha dois tons de verdade.** Medido: 10 876 px no tom de sombra
+   contra 15 747 de massa, e as linhas de baixo (y ≥ 540) com 60–90% no tom escuro —
+   o gerador pintou a metade inferior inteira como sombra. Recolorida, lê como barba
+   de duas cores. **Consertado por `scripts/avatar/arte/reparo-cheia-um-tom.ts`**
+   (versionado, com asserção de idempotência: rodar sobre a saída troca 0 px), Gate
+   −1 **APROVADA**. A arte anterior fica como `barba-cheia-dois-tons.png`.
+   **Este reparo roda na promoção**, por instrução do Doug (*"e já arrume quando
+   promover"*).
+2. **Metade do defeito era da minha folha, não da arte.** A máscara de recolorir
+   tinha uma caixa (x 380→740, y ≥ 380) e a `cheia` transborda dela — as laterais
+   ficavam em ciano cru. Sem caixa, ela recolore inteira. Régua com recorte arbitrário
+   errando sobre a peça é o mesmo erro do G27 e do G28, terceira vez na semana.
+3. **Tentei uma regra uniforme de contorno e piorei o que estava bom.** A ideia era
+   "silhueta = borda, 5 u para dentro = traço preto, miolo = cor do cabelo", para
+   resolver o G31 de tabela. Aplicada às três, comeu a textura do `bigode` e da
+   `cheia`. **Reprovada pelo Doug** (*"piorou, afetou as outras barbas que estavam
+   perfeitas"*) e revertida — a folha aprovada preserva a textura e o contorno
+   pintado de cada peça.
+
+**Fica aberto o G31:** a `cavanhaque` recolore só **8%** de si mesma (12 910 dos
+13 984 px são preto de contorno) e sai preta nas 8 cores de cabelo. É defeito da arte,
+não da régua, e está registrado em `docs/achados.md` — não consertado, pela regra 9.
+
+**A opção 1 continua necessária, e por quê:** o `bigode` (80% recolorível, com sombra
+e luz) e a `cavanhaque` têm mais de um tom, e a folha os simula multiplicando a cor do
+cabelo pela luminância de cada pixel — isso é **raster, e o compositor é SVG**. Para
+o SVG reproduzir a folha, a peça sai em caminhos separados: massa em `var(--av-cabelo)`,
+sombra em `var(--av-cabelo-s)` **com o fallback preto declarado**, luz em branco a 30%
+(`kk-luz`, que já existe). A `cheia`, agora de um tom só, precisa apenas da massa.
+
+---
+
+## 2026-08-19 (fim do dia) — a PRIMEIRA peça de arte deste projeto virou peça de catálogo
+
+A `barba-cheia` (legendary) saiu de PNG aprovado e entrou em `ROSTOS`. É a primeira
+vez que uma arte do Doug atravessa a rota inteira até o catálogo — o traje já tinha
+feito o caminho, mas por **outra esteira**, a de cor assada. Esta é a estreia do
+braço de quem **recolore**.
+
+### A bifurcação que decidiu o formato, e é a única pergunta que importa
+
+| | traje, chapéu, óculos, pet | **barba** |
+|---|---|---|
+| recolore? | não — cor assada | **sim, junto com o cabelo (D17)** |
+| formato | `.svg` avulso, `<image>` | **`formas[]` com token de cor** |
+| esteira | `peca-de-arte.ts` → `arte:trajes` | **`barba-para-formas.ts` → `arte:rostos`** |
+
+Não é outra configuração de traçador: é outro **destino de tipo**. Um `.svg` de cor
+assada seria preto fixo, e a Regra Inviolável nº 4 diz que a barba é cabelo.
+
+### A esteira nova, em dois programas
+
+`scripts/avatar/arte/barba-para-formas.ts` — a arte vira duas formas:
+
+1. a **silhueta inteira**, em `var(--av-linha)`. O que sobra dela à vista, com a
+   forma 2 por cima, é a banda de contorno que o gerador pintou;
+2. o **miolo**, em `var(--av-cabelo, #262626)`.
+
+O corte entre as duas é **luminância < 60** — não é régua nova, é exatamente a da
+folha recolorida que o Doug aprovou (`.scratch/folha-recolorida.ts`). Reproduzir no
+SVG a mesma partição que ele julgou no raster é o ponto inteiro.
+
+`scripts/avatar/arte/rostos.ts` gera `src/lib/avatar/estilo/rostos-da-arte.ts`, com
+`--check` em `verify:arte`, como `arte:trajes`. **Uma assimetria deliberada com o
+traje:** lá a lista sai do `readdir` e a arte sem nome reprova; aqui a lista sai dos
+`NOMES`, porque a pasta guarda de propósito arte aprovada que ainda não foi promovida.
+Descobrir por arquivo promoveria as três de uma vez.
+
+### As três decisões que a peça carrega, e cada uma tem gate
+
+- **`semTraco: true` nas duas formas** — o contorno é o **pintado pelo gerador**
+  (5,2 u), não o `kk-traco` de 12 u. Fecha o **G29**, e `rostos-da-arte.test.ts`
+  cobra do SVG emitido: o boneco com a peça tem o mesmo número de `kk-traco` que o
+  boneco sem ela;
+- **a reserva do careca é `#262626`, DECLARADA** — `--av-cabelo` só é emitido quando
+  há `modeloCabelo`; sem reserva o `fill` cai em preto e a barba vira mancha da cor
+  do próprio contorno, sem nenhuma régua acusar;
+- **o `reparo-cheia-um-tom.ts` rodou** — e a prova é de idempotência: rodá-lo sobre a
+  `barba-cheia.png` versionada troca **0 px**. A arte no repositório já é a de um tom.
+
+### O `turdSize` entrou, e ele tem número próprio
+
+O miolo da `cheia` são **389 ilhas**, e duas delas — 30 421 px e 846 px — somam
+**97,4%** da tinta. As outras 387 medem no máximo 33 px, que é **0,28 px de lado num
+boneco de 56 px**; o limite do legível ali é a sobrancelha inteira, 0,66 px, que dá
+**50 px² de área** no canvas de 1024. Traçá-las custava **25 274 bytes de `d` contra
+8 338** — quatro vezes o desenho, para pintar o que ninguém vê em tamanho nenhum.
+
+`turdSize = 50`. Em `estilo/rotas/potrace.ts` ele é 0, e o argumento de lá continua de
+pé: o destino ali é lista de pontos, e um `turdSize` "razoável" decapitava a ponta da
+coroa. Aqui o destino é o `d` que o navegador pinta. **Duas respostas diferentes para
+a mesma constante, cada uma com a sua medição.**
+
+### Os números da peça
+
+`npm run arte:gate` → **APROVADA** (0 px · 100,00% · rosto 0 ladrilhos · corpo 2,
+maior grupo 1).
+
+| | |
+|---|---|
+| tinta | **38 288 px** em 1 componente |
+| contorno pintado (`var(--av-linha)`) | 6 239 px · **16,3%** |
+| miolo (`var(--av-cabelo, #262626)`) | 32 049 px · **83,7%** |
+| descartado em `ROSTO` | **217 px · 0,56%** — ver **G32** |
+| `d` das duas formas | **13 608 bytes** · 3 + 4 subcaminhos |
+| ruído descartado | 104 px |
+
+`npm run arte:folha-rosto` desenha a folha de contato: cinco colunas — a arte, o
+traçado nas cores da arte, e o compositor em careca · chanel preto · chanel castanho
+—, cada uma grande, a 56 px e a 56 px ampliada 4×. As duas primeiras colunas são o
+**mesmo recorte** (px 212→812 × 92→932, que é o `viewBox` de 500 × 700), então a
+comparação é conta e não enquadramento.
+
+### A leitura da folha, por subagente
+
+- **arte × traçado: indistinguíveis.** Topo, pontas laterais, largura, o V do fundo, a
+  janela da boca, a contagem de tufos — todos no mesmo lugar. A única divergência é
+  qualidade de aresta: as pontas de tufo do traçado são mais angulosas que as do
+  raster. Banda preta na mesma espessura, e nenhuma linha preta a mais no miolo;
+- **careca**: a barba lê pela **silhueta**, não pelo desenho interno — `#262626` e o
+  contorno preto ficam perto demais e o miolo vira mancha. Foi o que o Doug aprovou na
+  folha recolorida, e fica **registrado como fato do elenco**, não como defeito;
+- **56 px**: a peça sobrevive sozinha (careca) e sobre a arte; com **chanel preto** ela
+  **funde com o cabelo** e o par lê como "cabelo comprido que fecha embaixo"; com
+  chanel castanho funde menos. É fato de par cabelo × barba, não da peça;
+- **a aresta reta no topo da barba existe na COLUNA 1 também** — ela é do gerador, não
+  da esteira.
+
+### O catálogo, e o que ficou vermelho de propósito
+
+- `src/lib/avatar/estilo/rostos-da-arte.ts` (gerado) · `ROSTOS` em `catalogo.ts`
+  passa a espalhá-lo · `CATALOGO.rosto` deriva, como o traje;
+- `supabase/migrations/20260819120000_bloco5_primeira_barba_no_catalogo.sql` —
+  `origem = 'bau'`, `raridade = 'legendary'`. **ESCRITA E NÃO APLICADA**: a peça
+  esperava o parecer do Doug sobre a folha, e semear no banco de produção uma peça de
+  baú antes disso é conceder o que ninguém aprovou;
+- por isso `verify:catalogo-slots` reprova em **1 de 34**, e a mensagem é exatamente a
+  certa: *"slot rosto: 1 peça(s) do código sem linha no banco — rosto-barba-cheia"*.
+  Ele volta ao verde no comando de aplicar a migration.
+
+### ⚠️ Os dois achados que a esteira trouxe, medidos e NÃO consertados
+
+- **G32 (novo)** — `ROSTO` é uma caixa só e come **23,1% da `barba-bigode`** (3 877 px)
+  na extração, contra 0,56% da `cheia` e 0% da `cavanhaque`. O bigode inteiro mora
+  acima da boca, que é o miolo da caixa. Traz de volta o **Bloco 2** do plano de
+  2026-08-18 (região própria por parâmetro), que tinha saído do caminho crítico;
+- **G31** — a hipótese *"a extração é onde isso se resolve"* foi medida e é **falsa**.
+  O histograma da `cavanhaque` é escuro de ponta a ponta (moda em 40–49, 92,4% abaixo
+  de 60, cauda de 1,4% entre 60 e 100). Não há massa para devolver: mover o limiar de
+  60 para 90 recupera **1,4%** da peça. As saídas continuam sendo regerar a arte ou
+  decidir tratar o preto interno como massa **só nela** — e nenhuma é da esteira.
+
+### O que fica aberto
+
+- **aplicar a migration**, depois do parecer;
+- o slug **`rosto-barba-cavanhaque` já está tomado** por uma barba paramétrica antiga
+  (`estilo/rosto.ts`, `BARBAS.vertical`) que nunca entrou em `ROSTOS`. Quando a arte
+  do cavanhaque for promovida, uma das duas troca de slug — é decisão, não conserto;
+- as outras **cinco barbas**: `cavanhaque` (presa ao G31), `bigode` (preso ao G32), e
+  `aparada`, `quadrada`, `bipartida`, que ainda não têm arte.
+
+---
+
+## 2026-08-19 (fim do dia, depois da folha) — a barba VESTE, e o cabelo cobre
+
+O Doug olhou a folha de contato e reprovou a ordem das camadas: *"a camada barba
+veste, depois a camada cabelo deve vir e cobrir a barba (se houver o que cobrir)"*.
+Até aqui o slot `rosto` inteiro saía **depois** do cabelo, e nas colunas com `chanel`
+a serrilha da barba cortava a curva lisa do cabelo — o avesso do que a vida faz.
+
+### O conflito era real, e tinha decisão dele dos dois lados
+
+O slot `rosto` guarda **barbas e óculos** (doc 21:1232), e os dois querem lados
+opostos da mesma camada:
+
+| peça | de que lado | por quê |
+|---|---|---|
+| **barba** | sob o cabelo | pedido de 2026-08-19, acima |
+| **óculos** | por cima do cabelo | decisão do Doug, doc 21 §2c — sem haste não há o que apoiar, a lente é livre para exceder o rosto, e a peça que a criança desbloqueou não pode depender de qual franja está por baixo |
+
+Mover o slot inteiro resolveria a barba **revogando** a decisão dos óculos. O Doug
+escolheu a outra saída: **bandeira por peça**. Quem escolhe é a peça; o compositor
+obedece. É o mesmo idioma do `atras` das extensões.
+
+**Isto não reabre a D17.** A fusão entre barba e cabelo continua aceita — o que a
+bandeira decide é **quem vence a sobreposição**, não se ela existe.
+
+### `cabeloPorCima`, e o nome custou uma troca
+
+O campo nasceu `sobOCabelo` e foi renomeado antes de sair do papel: ele fica a **uma
+letra** de `sobreOCabelo`, que significa o oposto exato — e é justamente essa
+distinção que o campo existe para codificar. `cabeloPorCima` nomeia o **mecanismo**
+(oclusão: o cabelo pinta depois e tapa) e não tem par mínimo invertido.
+
+`atras` foi recusado por já querer dizer duas coisas (*sob o tronco*, `Traje.extensoes`;
+*atrás da cabeça*, `Extensao` em `cabelo.ts`) — um terceiro sentido faz a palavra não
+significar nada.
+
+### A trava do chapéu é do TIPO, não de teste
+
+`PecaSobreposta` **não** ganhou o campo. Quem ganhou foi um par novo em `tipos.ts`:
+
+```
+export type PecaDeRosto  = PecaSobreposta & { cabeloPorCima?: boolean };
+export type PecaDeChapeu = PecaSobreposta & { cabeloPorCima?: never };
+```
+
+O motivo é que o chapéu é sempre o último e não tem lado a escolher. Se o campo
+morasse no tipo comum, um chapéu **poderia** declará-lo, e a única defesa seria um
+teste sobre `CHAPEUS` — que está **vazio**, ou seja, um teste vácuo, que é o modo de
+falha nº 1 desta casa. Com o `never`, o `typecheck` fecha os dois sentidos e nenhum
+deles depende de haver peça. `EstadoAvatar`, `ROSTOS` e `CHAPEUS` passaram a usar os
+tipos precisos; `pecas-de-elenco.test.ts` mantém a trava viva pelo caminho contrário,
+com um `@ts-expect-error` que fica sem erro para consumir se alguém tirar o `never`.
+
+### O que se moveu no compositor, e o que NÃO se moveu
+
+`sobreposta` — o cabelo traçado — **não saiu do lugar**, e é isso que mantém os 11
+selos byte a byte de `parametrico-congelado.ts` e o teste *"a massa sai depois da
+sobrancelha"* (`linhas-cabelo.test.ts`) intactos. O que se partiu em dois foi o rosto:
+
+```
+… boca …
+rosto(true)  +   ← a barba, sob o cabelo
+sobreposta   +   ← o cabelo traçado (parado)
+rosto(false) +   ← o óculos, por cima
+sobrepor(estado.chapeu) +
+```
+
+**O chapéu não passa pelo filtro, e é deliberado.** Se a partição fosse um segundo
+parâmetro de `sobrepor()`, a chamada dele viraria `sobrepor(estado.chapeu, false)` — e
+um chapéu que um dia declarasse a bandeira **sumiria do boneco em silêncio**, porque
+nenhuma das duas passadas o emitiria. Filtrando só do lado do rosto, a bandeira num
+chapéu é inerte em vez de fatal.
+
+**A lista de camadas do docstring foi corrigida de dois jeitos**: ela parava no item 9
+e **não mencionava rosto nem chapéu** desde que os dois slots nasceram — mentia por
+omissão. Agora vai até 13, com os dois lados do rosto numerados separadamente.
+
+### Os 9 testes novos, e as duas pernas da não-vacuidade
+
+Em `pecas-de-elenco.test.ts`, um bloco novo. O que carrega o peso são os **controles
+negativos**, não a régua positiva:
+
+- com a bandeira, a peça sai **antes** da massa do cabelo e depois da boca;
+- **sem** a bandeira, a MESMA peça sai **depois** da massa — a desigualdade *inverte*.
+  Sem esta linha o bloco passaria no dia em que alguém pusesse todo rosto sob o cabelo
+  e a bandeira virasse enfeite;
+- a peça é emitida **uma vez só**, nas 4 combinações de bandeira × família de cabelo.
+  A partição é sobre UMA peça, não sobre uma lista: emitir nas duas pontas sem filtro
+  desenharia a barba duas vezes, uma exatamente sobre a outra — **idêntico na tela**, e
+  dois `<path>` a mais × 30 bonecos no ranking;
+- careca: a bandeira **não muda um byte**;
+- paramétrico: a bandeira é **inerte**, e o teste prende isso como limitação em vez de
+  deixar alguém "consertar" por engano;
+- o chapéu continua sendo o último;
+- o **traço viaja junto** com o preenchimento — `sobrepor()` emite os dois na mesma
+  chamada, e se alguém juntar as passadas de traço "para economizar", o contorno da
+  barba volta para cima do cabelo e só esta linha acusa;
+- a trava de tipo do chapéu, por `@ts-expect-error`.
+
+Em `rostos-da-arte.test.ts`, a peça real declara a bandeira.
+
+### ⚠️ A limitação, declarada e não consertada
+
+**A bandeira só alcança o cabelo TRAÇADO** (`espetado`, `chanel`, `assimetrico`). Os
+paramétricos (`coque`, `moicano`) moram **dentro do clip do crânio** e são emitidos
+muito antes das feições, então a barba continua por cima deles com bandeira ou sem.
+
+Hoje isso não produz defeito, porque nenhum dos dois desce ao queixo — mas é
+**limitação, não garantia**, e nenhum gate mede isso: a régua `FOLGA_ROSTO` de
+`folha-base.ts` mede a **testa contra a sobrancelha**, não o alcance ao queixo. No dia
+em que um paramétrico descer, a causa está no compositor e não na peça.
+
+### Verificação
+
+`npm run typecheck` · `npm run lint` · **554 testes** (eram 545) · `npm run build` ·
+`npm run verify:arte` (com `arte:rostos --check` conferindo o literal regerado) ·
+`npm run avatar:folha-base` — os 11 selos parados, o teto da base em 7 468 intacto, e
+a contagem de formas do composto de 3 camadas igual: reordenar não cria nem apaga
+forma nenhuma.
+
+`npm run arte:folha-rosto` regerada para o parecer.
+
+### A leitura da folha depois da troca, por subagente
+
+**O efeito pedido aconteceu.** Nas duas colunas com `chanel`, a curva externa e a
+interna do cabelo passam **contínuas e lisas**; nenhuma ponta de tufo da barba
+interrompe ou serrilha a linha do cabelo. Antes era o avesso. A silhueta do conjunto
+virou a do cabelo sozinho, sem degrau e sem buraco: a barba passa por trás e emerge
+abaixo das pontas.
+
+**E ele tem um preço, que é do elenco e não da peça.** O cabelo cobre as pontas
+laterais da barba — o que sobra visível é a faixa do maxilar para baixo, ~55–60% da
+altura que ela tem no careca. A leitura muda de gênero: no careca a barba é uma moldura
+em U que sobe às bochechas; com `chanel` ela lê como massa presa ao queixo.
+
+**A 56 px, com cabelo, o par vira massa escura única** — o careca comunica "barba", os
+com cabelo comunicam "cabeça peluda". No preto (`#3A2F2A` × `#262626`) barba e cabelo
+são quase o mesmo valor e o único separador é o contorno pintado, que some na redução;
+no castanho o 4× ainda separa pelo sombreado interno.
+
+**Isto é a D17 acontecendo, não um defeito novo.** A fusão foi aceita em 2026-08-17,
+com as saídas 2 e 3 mortas por decisão, e ela deixa escrito que *"se um dia alguma
+delas ficar feia, é caso de desenho, não de régua"*. A leitura anterior — com a ordem
+antiga — já media a mesma fusão. **Não vira achado; vira fato do par cabelo × barba,
+para o Doug decidir se quer desenho diferente.**
+
+**Uma fresta a conferir:** no castanho, lateral esquerda, ~4–6 px de pele entre a
+serrilha da barba e a borda interna do cabelo (2–3 px no preto, e nada do lado
+direito). **Buraco na união é independente da ordem** — só existe onde nenhuma das duas
+peças pinta —, então ele não veio desta troca: vem da forma da arte contra a do
+`chanel`. Fica registrado para quando alguém olhar de perto.
+
+**As colunas 1 e 2 continuam indistinguíveis**, com as mesmas duas divergências de
+sempre: o ciano do traçado é chapado (a arte tem a variação tonal do gerador) e as
+pontas de tufo saem 1–2 px mais agudas.
+
+### O defeito que o Doug pegou na folha, e o conserto (2026-08-19, fim do dia)
+
+*"tem um problema na barba em si (falta um contorno no lado direito, abaixo do olho
+direito). e o chanel come a barba"* — dois problemas, e só um é bug.
+
+**O primeiro é bug, e reproduziu na primeira tentativa.** O recorte da região `ROSTO`
+cortava a peça **pelo miolo** e deixava **27 px de aresta nua**: massa terminando sem
+o contorno preto que o gerador pintou, em px x 666→684 · y 453→462 — **84 px abaixo do
+olho direito**, exatamente onde ele apontou.
+
+A causa é o **G32**: `ROSTO` é uma caixa só, e o conjunto que ela deveria proteger
+— dois olhos e uma boca — **não é convexo**. Os quatro cantos da caixa estão vazios, e
+a barba entrava pelo canto inferior direito, a 67 u da boca e 84 px abaixo do olho.
+
+**O conserto** é `FEICOES` em `base.ts`: as mesmas constantes de `ROSTO`, partidas em
+três caixas. A da boca inclui a **sagita** do sorriso, que `ROSTO` não incluía — a
+única fronteira em que a régua nova protege MAIS que a antiga. `ROSTO` fica intacto,
+porque é o que o Gate −1 e a extração de cabelo medem.
+
+| peça | descartado antes | depois |
+|---|---|---|
+| `barba-cheia` | 217 px · **27 de aresta nua** | **0 px** |
+| `barba-cavanhaque` | 0 px | 0 px |
+| `barba-bigode` | 3 877 px · 23,1% | **reprova** |
+
+**O gate mora em `barba-para-formas.ts` e reprova, não relata.** Ele conta a aresta nua
+antes e depois do recorte e cobra só a **diferença** — o número absoluto não serve de
+teto, porque a arte tem aresta nua legítima onde a peça sai pela borda do canvas.
+Aresta que **o recorte criou** é sempre defeito, porque o recorte corta por dentro.
+
+Rodado nos dois estados:
+
+```
+ANTES  Error: o recorte das feições cortou o MIOLO da peça: 27 px de aresta nua
+         caixa px x 666→684  y 453→462
+DEPOIS dentro das FEIÇÕES  0 px   ·  peça 38 505 px  ·  13 674 bytes de `d`
+```
+
+**Ele não é vácuo:** passa na `cheia` e na `cavanhaque`, e **reprova no `bigode`** —
+que de fato mora em cima da boca. Antes o descarte só era contado no laudo, e a peça
+saía amputada com todos os gates verdes.
+
+**O que este gate NÃO enxerga:** ele mede a fronteira da MÁSCARA, não o `d` traçado —
+se o `potrace` inventar uma aresta, ele não vê. Também não mede oclusão: uma peça
+inteira coberta por outra passa nele. E ele não sabe se a caixa que recorta é a certa;
+sabe apenas que ela não corta pelo miolo.
+
+**O segundo não é bug: o `chanel` come 42,5% da barba** — contra 24,2% do assimétrico
+e 1,2% do espetado. Medido: 0 px de barba por cima do cabelo, nenhum vão de pele, o
+contorno fecha na junção. A oclusão é legítima; o `chanel` é um bob que desce pelas
+bochechas e está fisicamente na frente. **É defeito de elenco, e vai ao Doug como
+decisão** — registrado em **G33**, com as quatro saídas e nenhuma delas de código.
+
+### A barra preta do chanel sobre a barba — consertada (2026-08-19, mais tarde)
+
+O Doug mandou um crop da lateral direita: *"isso ainda está errado"*, e depois
+*"erro é na sobreposição do cabelo chanel, bem nessa parte. está acima da barba"*.
+
+**Eu tinha errado o diagnóstico duas vezes antes de olhar.** A primeira hipótese
+(descasamento de tom entre `--av-cabelo` e `--av-cabelo-s`) caiu na medição: o corpo
+do chanel é **82% `--av-cabelo`**, a mesma cor da barba. A segunda (o recorte das
+feições) era um defeito real e foi consertada, mas não era a que ele estava vendo.
+Só o zoom renderizado mostrou.
+
+**A causa.** A peça traçada emite quatro camadas (`pecaSobreposta`):
+
+```
+1. kk-tinta     — a silhueta PRETA cheia
+2. kk-cabelo-m  — o núcleo colorido
+3. kk-cabelo    — a clara
+4. kk-tinta     — as pretas internas
+```
+
+O que se vê da camada 1 é só **o anel que o núcleo não cobre** — contra a pele isso é
+o contorno da peça, e é o certo. Com a barba desenhada logo ANTES do cabelo, esse anel
+passou a cair sobre a barba: uma **barra preta de ~18 u atravessando um campo de uma
+cor só**, porque as duas peças são da mesma cor. No loiro é um risco no meio do
+dourado; no preto some.
+
+**O conserto.** `pecaSobreposta()` devolve `{ fundo, frente }` — a camada 1 separada
+das outras três — e `compor()` intercala:
+
+```
+sobreposta.fundo  +   ← a silhueta preta do cabelo
+rosto(true)       +   ← a barba (preto e cor)
+sobreposta.frente +   ← núcleo, clara, pretas internas
+rosto(false)      +
+sobrepor(chapeu)
+```
+
+**As pretas de todo mundo primeiro, as coloridas depois.** É a mesma doutrina que
+`sobrepor()` já usa por dentro (*todo preenchimento antes de todo traço*) e que
+`extensoes()` usa. O resultado é exatamente a **D17**: onde barba e cabelo encostam,
+viram uma massa só — o núcleo do cabelo continua por cima da barba (o pedido dele
+continua valendo), mas o anel preto do cabelo é coberto pela cor da barba.
+
+A família **sintetizada** (`espetado`) não entra na partição: o preto dela é `stroke`
+(`kk-cabelo-l`), não laço cheio, e não há camada para separar. Custa pouco — ela cobre
+**1,2%** da barba.
+
+**A condição que mantém os selos:** sem peça de rosto, `fundo + frente` é a
+concatenação de sempre, **sem um caractere entre as duas**. Os 11 selos de
+`parametrico-congelado.ts` não se mexeram, a base careca continua em 19 formas, e o
+composto de 3 camadas tem a mesma contagem. `pecas-de-elenco.test.ts` ganhou uma
+asserção que cobra essa colagem byte a byte — um espaço a mais ali mataria os selos
+todos de uma vez, com a causa longe daqui.
+
+**Três testes meus caíram no conserto, e a régua deles é que estava grossa.** Eles
+mediam `search(/<path class="kk-(tinta|cabelo-m)"/)` — o mesmo marcador de
+`linhas-cabelo.test.ts` —, que casa com as DUAS camadas e devolve a primeira. Com a
+peça partida, ele dizia *"a barba saiu depois do cabelo"* quando ela tinha saído no
+meio dele. Agora são dois marcadores separados, e o contrato virou uma linha:
+**silhueta preta → barba → núcleo colorido**.
+
+### A barra preta não era barra — a partição de ontem caiu (2026-08-20)
+
+O Doug olhou o render de ontem: *"pirou do lado esquerdo (saiu o contorno preto do
+cabelo) e melhorou um pouco do lado direito, mas ainda é possível ver o tom diferente
+que sobrou do chanel"*.
+
+**Dois sintomas, uma causa, e a causa era minha.** `compositor.ts` emitia
+`sobreposta.fundo + rosto(true) + sobreposta.frente`: a forma colorida da barba
+pintada por cima da silhueta preta do cabelo apagava **12 733 px** de preto ao longo
+de toda a junção.
+
+**A premissa de ontem estava medida errada.** Eu escrevi que aquele anel era *"uma
+barra preta de ~18 u atravessando um campo de uma cor só"*. `.scratch/largura-do-anel.ts`
+mede a espessura como a menor corrida preta que passa por cada pixel, nas quatro
+direções:
+
+```
+TRACO do compositor = 12 u · contorno pintado da barba = 5,2 u
+
+anel APAGADO pela barba            n= 12733  p50 11.7 u  p90 12.2 u  máx 21.1 u
+anel que sobrevive (contra pele)   n= 16325  p50 10.6 u  p90 25.6 u  máx 35.0 u
+```
+
+**11,7 u é o `TRACO`.** Não era barra: era o contorno de oclusão do cabelo, na
+espessura de linha de todo o resto do boneco. Só **205 px (1,6%)** passam de 16 u, e
+ficam num trecho de queixo em u x 181→353 — nenhuma barra larga em lugar nenhum.
+
+**O segundo sintoma é consequência do primeiro, não um item separado.** A linha preta
+era o que separava o núcleo escuro do chanel (`--av-cabelo-s`) da massa clara da barba
+(`--av-cabelo`). Apagada, os dois tons passaram a encostar direto: **489 px de
+costura**, de u x 156 a 424 (`.scratch/degrau-onde.ts`). É o "tom diferente que sobrou
+do chanel", e ele **nasceu** do conserto de ontem.
+
+**O conserto:** reverter a partição. `pecaSobreposta()` volta a devolver uma string, e
+`compor()` volta a `rosto(true) + sobreposta`. **`cabeloPorCima` não caiu** — o pedido
+do Doug de 2026-08-19 (*a barba veste, o cabelo cobre*) continua exatamente de pé; o
+que voltou é o cabelo cobrir INTEIRO, contorno junto, em vez de só com as coloridas.
+
+| régua | antes | depois |
+|---|---|---|
+| preto do cabelo apagado pela barba | 12 733 px | **5 914 px** |
+| costura núcleo escuro × barba clara | 489 px | **269 px** |
+
+**Os 5 914 px que sobram não são do cabelo.** A mesma medição no CARECA dá o mesmo
+resultado (`.scratch/o-que-a-barba-apaga.ts`): é a barba cobrindo o contorno do
+**queixo do boneco**, numa faixa em u x 176→414 · y 319→364 — comportamento da arte,
+anterior a tudo isto. No careca o miolo cai na reserva `#262626` e continua escuro; com
+cabelo ele vira `--av-cabelo` e clareia. Os 269 px de costura que sobram são o **item 2
+do G33**, que segue aberto e é da arte, não da ordem.
+
+### O gate, e ele falha antes e passa depois
+
+`pecas-de-elenco.test.ts`, o contrato virou **barba → silhueta preta → núcleo colorido**
+(era o inverso desde ontem). Rodado nos dois estados:
+
+```
+ANTES  × com a bandeira, a peça entra ANTES do cabelo INTEIRO
+       AssertionError: a silhueta preta do cabelo saiu ANTES da barba:
+         expected 8083 to be less than 6917
+DEPOIS ✓ 21 tests passed
+```
+
+O comentário do teste guarda os números da medição, para que a próxima pessoa que
+quiser partir a peça de novo leia primeiro por que ela não se parte.
+
+### Verificação
+
+`npm run typecheck` · `npm run lint` (1 warning pré-existente em `GameReview.tsx`) ·
+**555 testes** · `npm run verify:arte` (exit 0) · `npm run build`. Os **11 selos** de
+`parametrico-congelado.ts` parados — `linhas-cabelo.test.ts` verde —, porque sem peça
+de rosto a string do cabelo nunca foi partida.
+
+`npm run arte:folha-rosto` e os dois zooms laterais regerados para o parecer.
+
+### A leitura dos zooms depois do conserto, por subagente
+
+**Lateral DIREITA — resolvido.** A linha preta acompanha toda a extensão da serrilha da
+barba contra o cabelo, contínua, na mesma espessura dos outros contornos da peça. Lê
+como contorno natural, não como barra sobre campo chapado. **Nenhum degrau de tom
+sobrou** ali dentro da massa.
+
+**Lateral ESQUERDA — o braço diagonal do defeito sumiu.** Na coluna do magenta (o preto
+que a barba apaga), o **braço diagonal longo** que descia pela mecha **não existe mais**;
+sobrou só a faixa horizontal, que é o contorno do queixo do boneco, e ela já aparece
+cortada ao meio pelo preto restaurado. Onde a mecha encontra a serrilha há agora um
+entalhe preto na espessura do desenho.
+
+**O que sobrou, e é o G33 item 2:** logo à direita desse entalhe, uma transição curta de
+tom entre o marrom do cabelo e o da barba, sem preto cobrindo. São os 269 px medidos.
+**Não é da ordem das camadas — é a arte da barba ter um tom só contra as duas do chanel.**
+
+### A cunha do chanel dentro da barba — diagnosticada, e o conserto REVERTIDO (2026-08-20)
+
+O Doug: *"o Chanel morde/recorta a silhueta lateral da barba. No castanho isso aparece
+claramente como uma cunha castanha entrando entre a bochecha e a barba, principalmente no
+lado direito"*.
+
+**O diagnóstico está certo e é uma unidade de duas camadas.** A mecha é o **lóbulo 2 de
+`nucleo`** da `chanel` (`pecas-da-arte.ts`, y 339,8–383,0), **85,0% dentro da silhueta da
+`barba-cheia`**, mais a **banda preta da `massa`** em volta dele.
+
+**O conserto que escrevi primeiro — `Cabelo.nucleoQueCedeAoRosto: [1]` — não consertou.**
+Ele cedia só o preenchimento colorido, e o A/B mediu o que isso faz:
+
+```
+pixels que a cessão mudou: 11 723 = 1 495 u²   bbox u x 358→409 y 339→383  (= o lóbulo 2)
+  --av-cabelo-s → --av-cabelo (a clara):        0
+  --av-cabelo-s → PRETO (a silhueta):      11 388
+```
+
+**Trocou a cunha castanha por uma cunha preta**, da mesma forma e no mesmo lugar. Pior:
+a lateral serrilhada da barba, que o controle mostra com 4–5 pontas, vira um bloco preto
+liso. **Revertido** — cabelo, compositor e teste voltaram ao estado da entrada anterior.
+
+**Erro meu de leitura, e vale registrar:** eu li o preto que sobrou como *"contorno
+contínuo que funde com a barba"* e chamei a massa externa de intacta. Não estava. A
+crítica que o Doug trouxe apontou isso antes da minha própria régua.
+
+**Isolação por camada** (`.scratch/isola-meia-lua.ts`, 6 colunas, uma camada desligada por
+vez): sem a **silhueta preta** a meia-lua some; sem `pretas` e sem `clara`, **nada muda**.
+Medido, o preto do cabelo dentro da barba acima de 16 u: **936 u², máx 26,1 u = 2,2× o
+`TRACO`**, todo do lado direito, em u x 348→395 · y 335→365. Não é contorno; é massa.
+
+### Por que não existe conserto por ordem, e as quatro saídas medidas
+
+A mecha é uma unidade visual de duas camadas, e a `massa` é **um laço fechado só**. Não
+há como dizer *"aqui o contorno vale, ali não"* dentro de um path — e é por isso que
+`nucleoQueCede...` + `pretoQueCede...` seriam duas metades da mesma peça, não uma
+abstração.
+
+| | o que faz | custo, medido |
+|---|---|---|
+| **A** cabelo por cima (estado de hoje) | — | cunha castanha de 1 495 u² dentro da barba; lateral serrilhada amputada |
+| **B** ceder só o núcleo | revertida | mesma forma, agora PRETA; pior das três |
+| **C** barba por cima (`cabeloPorCima: false`) | mata a cunha inteira, devolve as 4–5 pontas da barba | reabre 2026-08-19: perímetro da região visível do cabelo **+34%** (2 173 → 2 921 u) com área −5% — a serrilha da barba passa a morder a borda do bob |
+| **D** recortar a mecha em forma própria | única que atende tudo que o Doug pediu | geometria nova em `pecas-da-arte.ts`, que é **gerado**: seria a segunda descrição de uma borda medida, que é o defeito que aquele arquivo existe para evitar |
+
+**Uma medição minha que era vazia, e fica anotada:** cheguei a comparar a *silhueta
+externa* de A e C e achei 0 px de diferença nas três cores. Não prova nada — a silhueta
+de uma união não depende da ordem de desenho. O que a objeção de 2026-08-19 mede é
+fronteira INTERNA, e é a linha do perímetro na tabela acima.
+
+**A folha da decisão:** `.scratch/arte/tres-caminhos.png` — controle · A · B · C · C no
+preto, em três faixas (zoom da junção, rosto inteiro, 56 px ampliado 4×). Leitura por
+subagente: **C é a mais próxima do controle, com folga**; B é a pior; a 56 px nenhuma das
+três colapsa, porque o que sustenta a leitura *"barba"* naquele tamanho é a silhueta dela
+contra a PELE, idêntica nas três.
+
+**Está parado esperando o Doug**, porque C troca um defeito que ele reprovou por outro que
+ele já reprovou antes, e D mexe em arte medida.
+
+### Escolhido o caminho C — a barba vai POR CIMA do cabelo (2026-08-20, fim)
+
+O Doug escolheu **C** na folha das quatro saídas. A decisão de 2026-08-19 (*"a camada
+barba veste, depois a camada cabelo deve vir e cobrir a barba"*) fica **revertida**.
+
+**Onde a mudança mora:** `scripts/avatar/arte/rostos.ts` deixa de emitir a linha
+`cabeloPorCima: true`, e `npm run arte:rostos` regerou `rostos-da-arte.ts`. **Ausente ≡
+por cima** — não se emite `false`, porque escrever o padrão é escrever duas vezes a mesma
+coisa, e o resto daquele gerador não escreve padrão nenhum. O campo **não** foi removido
+de `PecaDeRosto`: `pecas-de-elenco.test.ts` continua provando o mecanismo com peça falsa,
+para a peça que um dia precisar do outro lado.
+
+**O gate que falha antes e passa depois** é `rostos-da-arte.test.ts`, a asserção presa à
+peça REAL:
+
+```
+ANTES  × declara `cabeloPorCima` — a barba veste, o cabelo cobre
+DEPOIS ✓ NÃO declara `cabeloPorCima` — a barba vai POR CIMA do cabelo   (555 testes)
+```
+
+**O resultado, medido:** preto do cabelo dentro da silhueta da barba **936 u² → 0**, e a
+cunha de 1 495 u² **→ 0**. Não sobra nada do cabelo dentro do maxilar.
+
+**A leitura, por subagente, com a barba sozinha como controle:** a lateral da barba volta
+a mostrar as pontas serrilhadas — **6 dentes contados**, mesma cadência do controle —, sem
+meia-lua, sem cunha, sem remendo de cor. O bob **não** ficou serrilhado: o contorno externo
+dele é uma curva única e ininterrupta; o que sumiu foi a linha INTERNA da mecha, debaixo da
+barba, que é exatamente o que se pediu. Sem vão de pele, sem contorno duplo, sem fragmento
+solto.
+
+**O que fica registrado e NÃO é regressão desta mudança:** com **cabelo preto**, a 56 px o
+par vira uma massa escura única e o boneco lê *"cabelo escuro"* em vez de *"barbudo"*. É a
+D17 acontecendo (barba recolore junto com o cabelo) contra dois escuros vizinhos — o mesmo
+fato que a leitura de 2026-08-19 já tinha medido, e que o careca não tem porque lá a barba
+sai na reserva `#262626` contra a pele. **É o item 3 do G33**, e continua sendo desenho.
+
+### Verificação
+
+`typecheck=0` · `lint=0` · **555 testes** `=0` · `verify:arte=0` · `build=0` — todos sem
+pipe, pelo motivo escrito na entrada anterior.
+

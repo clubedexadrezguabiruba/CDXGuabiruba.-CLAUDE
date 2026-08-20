@@ -566,6 +566,245 @@ segue com zero ocorrências no repositório.*
 
 ## 🟡 Promessa sem lastro
 
+### G33 — ~~o `chanel` come 42,5% da barba~~ ✅ FECHADO como CUSTO DECLARADO
+
+> **DECIDIDO em 2026-08-20.** Deixou de ser pendência: o número virou o custo escrito
+> da **diretriz do empilhamento** do slot `rosto` (docstring de `LadoDoRosto` em
+> `src/lib/avatar/estilo/camadas.ts`).
+>
+> A diretriz: *a peça de rosto NASCE da cabeça, ou é POSTA nela?* — pelo nasce e veste
+> sob o cabelo; acessório é posto e vai por cima. O Doug decidiu olhando os quatro
+> casos lado a lado (`.scratch/estilo/quatro-casos.png`).
+>
+> **Por que o custo é aceito, e não tolerado:** o que o cabelo cobre é a parte da barba
+> que ficaria encostada nele — mesma cor (D17), sem contraste, ilegível de qualquer
+> jeito. O arranjo oposto foi medido no mesmo dia: com a barba por cima ela sobrevive
+> 100%, e lê como cabeça peluda em vez de bob com barba, porque as duas massas se
+> fundem. **Área visível não é leitura**, e medir área foi o erro que fez esta ordem
+> virar duas vezes num só dia.
+>
+> A conclusão original deste achado — *"a ordem está certa e a oclusão é legítima; o
+> defeito é de ELENCO, não de código"* — **é a que prevaleceu**.
+>
+> O que sobra é a **mecha da bochecha do `chanel`**, e ela tem um limite medido:
+> encurtá-la NÃO resolve. Ela vive em u y 339,3→382,9 e o topo da `barba-cheia` naquela
+> faixa está em y 268,2 — ela não entra na barba, **nasce lá dentro**, 71 u abaixo do
+> topo (`.scratch/estilo/ate-onde-encurtar.ts`). Quem for mexer mexe na ARTE de uma das
+> duas peças, nunca na ordem.
+
+**Prova:** `MEDIDO` — 2026-08-19, `.scratch/quanto-cada-cabelo-come.ts`. Achado ao
+investigar o defeito que o Doug reportou.
+
+Desde que a barba passou a vestir SOB o cabelo (`cabeloPorCima`, pedido do Doug), o
+cabelo cobre o que estiver embaixo. Quanto cada modelo cobre da `barba-cheia`:
+
+| cabelo | sobra visível | **coberto** |
+|---|---|---|
+| `coque` | 100,0% | 0,0% |
+| `moicano` | 100,0% | 0,0% |
+| `espetado` | 98,8% | 1,2% |
+| `assimetrico` | 75,8% | 24,2% |
+| **`chanel`** | **57,5%** | **42,5%** |
+
+Com `chanel`, **acima de y 460 px a barba não aparece um pixel**: os braços que sobem
+pelas bochechas ficam integralmente enterrados, e o que sobra lê como remendo no
+queixo em vez de barba cheia. A 56 px o par vira massa escura única.
+
+**A ordem está certa e a oclusão é legítima** — medido: 0 px de barba por cima do
+cabelo, nenhum vão de pele, e o contorno fecha na junção (44 px de costura em 750
+linhas, puro antialias). O `chanel` é um bob que desce pelas bochechas; ele está
+fisicamente na frente. **O defeito é de ELENCO, não de código.**
+
+**Duas consequências medidas, que só aparecem com este par:**
+
+1. **o contorno interno do cabelo sobrevive dentro da massa unificada** — e a
+   medição de 2026-08-20 diz que ele **deve** sobreviver. ⛔ **O conserto de
+   2026-08-19 foi REVERTIDO**, porque a premissa dele estava errada.
+
+   Em 2026-08-19 `pecaSobreposta()` passou a devolver `{ fundo, frente }` e
+   `compor()` intercalava a barba entre a silhueta preta do cabelo e as camadas
+   coloridas, sob a premissa de que o anel que o núcleo não cobre era uma **barra
+   preta de ~18 u atravessando um campo de uma cor só**.
+
+   **Medido em 2026-08-20 (`.scratch/largura-do-anel.ts`): p50 11,7 u · p90 12,2 u**,
+   contra o `TRACO` de 12 u do compositor. Não é barra — é a espessura de linha de
+   todo o resto do boneco. Dos 12 733 px que a barba apagava, só **205 (1,6%)**
+   passam de 16 u, e ficam num trecho de queixo em u x 181→353. O que a partição
+   apagava era o **contorno de oclusão do cabelo**, na régua do próprio desenho.
+
+   O preço apareceu no render seguinte, e o Doug pegou os dois sintomas a olho:
+   *"pirou do lado esquerdo (saiu o contorno preto do cabelo) e melhorou um pouco do
+   lado direito, mas ainda é possível ver o tom diferente que sobrou do chanel"*. São
+   **um defeito só**: sem a linha preta, o núcleo escuro do chanel (`--av-cabelo-s`)
+   passou a encostar direto na massa clara da barba (`--av-cabelo`) — a linha era o
+   que separava os dois tons. Medido: **489 px de costura**, de u x 156 a 424.
+
+   Revertido em 2026-08-20: `pecaSobreposta()` volta a devolver uma string e a barba
+   volta a entrar antes do cabelo INTEIRO. **`cabeloPorCima` continua valendo** — o
+   pedido do Doug de 2026-08-19 (*a barba veste, o cabelo cobre*) nunca foi o que
+   caiu. Depois: contorno do cabelo apagado **12 733 → 5 914 px** (e os 5 914 que
+   sobram são a barba cobrindo o contorno do QUEIXO do boneco, medido igual no
+   careca, não o cabelo), costura de tom **489 → 269 px**. Os 11 selos parados,
+   555 testes, `verify:arte` verde;
+2. ~~**a mecha da bochecha do chanel abre uma cunha dentro da barba**~~ ✅
+   **CONSERTADO em 2026-08-20**, e o conserto foi **inverter a ordem do par**.
+
+   A mecha é o **lóbulo 2 de `nucleo`** da `chanel`, **85,0% dentro da silhueta da
+   `barba-cheia`**, mais a banda preta da `massa` em volta — uma cunha de 1 495 u², com
+   936 u² de preto acima de 16 u contra um `TRACO` de 12. Ela é uma **unidade de duas
+   camadas**, e a `massa` do chanel é um laço fechado só: ceder apenas o miolo colorido
+   **recolore em vez de consertar** (medido: 11 388 px de `--av-cabelo-s` viram PRETO,
+   0 viram a clara). Essa tentativa (`nucleoQueCedeAoRosto`) foi **revertida**.
+
+   O Doug escolheu, na folha das quatro saídas, pôr a **barba POR CIMA** do cabelo —
+   `rostos.ts` deixou de emitir `cabeloPorCima`. Depois: cunha **1 495 u² → 0**, preto
+   do cabelo dentro da barba **936 u² → 0**, e a lateral da barba volta às 6 pontas do
+   controle. **Preço medido e aceito:** o perímetro da região visível do cabelo sobe
+   **34%** (2 173 → 2 921 u) — a serrilha da barba morde a borda do bob, que é o defeito
+   de 2026-08-19 de volta, julgado a olho e aprovado;
+
+3. **a barba é chapada e o cabelo é sombreado** — o cabelo tem 2 tons (~10% de
+   sombra), a barba tem 1. Onde a sombra do cabelo encosta no tom claro da barba, o
+   degrau lê como remendo. **Continua aberto**, e com o conserto acima ele ficou mais
+   visível: sem a barra preta separando, o degrau de tom é a única coisa que marca a
+   fronteira.
+
+**As saídas, sem custo estimado, e nenhuma é conserto de bug:** (a) aceitar, como a
+D17 aceitou a fusão; (b) redesenhar a `cheia` com os braços mais baixos, para ela
+sobreviver ao `chanel`; (c) dar sombra à barba para casar com o cabelo — é a "opção 1",
+que exige `--av-cabelo-s` com reserva declarada; (d) o `chanel` cobrir menos, que é
+mexer numa peça aprovada. **Nenhuma régua do `verify:all` mede isto hoje.**
+
+---
+
+### G32 — `ROSTO` é uma caixa só, e ela come 23% da `barba-bigode` na extração
+
+**Prova:** `MEDIDO` — 2026-08-19, `scripts/avatar/arte/barba-para-formas.ts`, na
+promoção da `barba-cheia`. Registrado e **não consertado**, pela regra 9.
+
+A extração zera todo pixel de peça que caia dentro de `ROSTO` (`extrair.ts`,
+`mascaraDaPeca` com `limitar = true`). `ROSTO` é **um retângulo só**, de olho a olho
+e do topo do olho até abaixo da boca — o miolo da cara está protegido por acidente,
+porque a caixa é convexa e a cara não é. Medido nas três barbas aprovadas:
+
+| peça | tinta | **descartado em `ROSTO`** | onde |
+|---|---|---|---|
+| `barba-cheia` | 38 505 px | **217 px · 0,56%** | uma cunha no canto inferior direito, px x 659→683 · y 447→461 |
+| `barba-cavanhaque` | 14 221 px | **0 px** | — |
+| `barba-bigode` | 16 811 px | **3 877 px · 23,1%** | o bigode inteiro mora acima da boca, que é o miolo da caixa |
+
+Para a `cheia` o preço é irrelevante e a promoção seguiu. Para o **bigode** ele é
+proibitivo: 23% da peça, e o que sobra é cortado por uma aresta reta na fronteira
+`ROSTO.y1` — o mesmo defeito que o ESTADO-DA-ROTA já mediu em 2026-08-18 como
+*"aresta horizontal de 63 u (5,7 px a 56 px)"* quando testou usar a extração para
+apagar um bigode indesejado. Agora o bigode é peça aprovada, e a mesma aresta o
+mutila.
+
+**A causa é conhecida e o conserto foi desenhado:** é o **Bloco 2** do plano do
+bigode (2026-08-18) — a barba consultar uma **região própria** em vez de `ROSTO`,
+passada por parâmetro. Ele saiu do caminho crítico quando a `barba-6` passou a
+perder só 53 px; a aprovação do bigode o traz de volta.
+
+**O que NÃO se sabe:** que região é essa. Proteger só os olhos (soltando a boca)
+deixaria uma barba cobrir o sorriso; proteger os olhos mais uma caixa da boca
+resolveria o bigode encostado mas não um que atravessasse o lábio.
+
+> ### ✅ METADE FECHADA em 2026-08-19 — a esteira do ROSTO passou a recortar por FEIÇÃO
+>
+> O Doug pegou a olho o que a caixa custava: *"falta um contorno no lado direito,
+> abaixo do olho direito"*. Reproduzido e medido: o recorte cortava a peça **pelo
+> miolo**, deixando **27 px de aresta nua** — massa terminando sem o contorno preto
+> que o gerador pintou, em px x 666→684 · y 453→462, que é **84 px abaixo do olho
+> direito** e 67 u à direita da boca. Canto vazio da caixa; feição nenhuma ali.
+>
+> **O conserto:** `FEICOES` em `scripts/avatar/arte/base.ts` — as mesmas constantes
+> de `ROSTO`, partidas em **três caixas** (olho esquerdo, olho direito, boca). A da
+> boca inclui a **sagita**, que `ROSTO` não incluía. `barba-para-formas.ts` recorta
+> por elas.
+>
+> | peça | descartado antes | **depois** |
+> |---|---|---|
+> | `barba-cheia` | 217 px · 27 de aresta nua | **0 px** |
+> | `barba-cavanhaque` | 0 px | **0 px** |
+> | `barba-bigode` | 3 877 px · 23,1% | **ainda reprova** |
+>
+> **`ROSTO` NÃO se mexeu**, e é de propósito: ele é o que o Gate −1 e a extração de
+> cabelo medem desde sempre, e trocá-lo moveria as peças já promovidas e o próprio
+> gate.
+>
+> **O que passou a existir e não existia:** uma asserção em `barba-para-formas.ts`
+> que **reprova** quando o recorte cria aresta nua. Antes o descarte só era contado
+> no laudo — a peça saía amputada com todos os gates verdes, que é o que este achado
+> dizia. Ela não é vácua: passa em duas barbas e **reprova na terceira**.
+>
+> **O que continua aberto:** o `bigode`. Ele mora literalmente em cima da boca, então
+> a caixa da boca o corta com razão — e agora a esteira o **recusa** em vez de
+> amputá-lo em silêncio. Promovê-lo exige decidir se a boca pode ser coberta por peça
+> de rosto, e isso é decisão do Doug, não conserto.
+
+---
+
+### G31 — a `barba-cavanhaque` recolore 8% de si mesma: ela é preta, não ciano
+
+**Prova:** `MEDIDO` — 2026-08-19, `.scratch/quanto-recolore.ts`. Achado pelo Claude ao
+montar a folha das três barbas recoloridas. Registrado e **não consertado**, pela regra 9.
+
+| peça | tinta | contorno preto (fixo) | **recolore** |
+|---|---|---|---|
+| `barba-bigode` | 16 767 px | 3 402 (20%) | **13 365 (80%)** |
+| `barba-cheia` | 37 403 px | 6 186 (17%) | **31 217 (83%)** |
+| `barba-cavanhaque` | 13 984 px | **12 910 (92%)** | **1 074 (8%)** |
+
+Na folha das 8 cores de cabelo a `cavanhaque` sai **preta em todas as colunas** — o
+aluno de cabelo loiro, ruivo ou azul recebe a mesma barba preta. As outras duas
+mudam de cor como se espera.
+
+**A causa está na arte, não na régua:** o histograma da peça é `32,32,32` · `0,0,0` ·
+`32,48,48` — ela chegou do gerador quase toda em preto, não no ciano instrumental. O
+`restaurar-peca.ts` trocou o matiz do pouco que era colorido e não tinha o que
+trocar no resto. O Gate −1 aprovou porque ele mede **forma**, não saturação.
+
+**O que NÃO se sabe:** se a peça sobrevive a ter 92% do seu corpo declarado como
+massa recolorível — a silhueta dela é fina, e engordar o miolo à custa do contorno
+pode apagar a separação entre a barba e o queixo a 56 px. Isso é medição, não
+opinião, e não foi feita.
+
+**As saídas, sem custo estimado:** (a) regerar a arte pedindo ciano de verdade;
+(b) na promoção, tratar o preto interno como massa e reservar contorno só à borda
+externa — foi tentado em 2026-08-19 numa folha e o Doug reprovou (*"piorou, afetou as
+outras barbas que estavam perfeitas"*), porque a regra foi aplicada às três; aplicá-la
+**só a esta** não foi medido. **Nenhuma régua do `verify:all` mede isto hoje.**
+
+> ### ⛔ A HIPÓTESE "a extração é onde isso se resolve" FOI MEDIDA, E É FALSA
+>
+> `MEDIDO` — 2026-08-19, na promoção da `barba-cheia`
+> (`.scratch/lum-das-tres.ts` e `scripts/avatar/arte/barba-para-formas.ts`). A
+> pergunta era se o corte contorno × miolo, feito na extração, poderia devolver
+> massa recolorível à `cavanhaque`. **Não pode: não há massa para devolver.**
+>
+> O histograma de luminância da tinta de cada peça, sobre a arte versionada:
+>
+> | peça | moda | acima de lum 60 | forma do histograma |
+> |---|---|---|---|
+> | `barba-cheia` | **130–139** (80,9%) | **83,7%** | um pico só, alto e limpo |
+> | `barba-bigode` | **90–99** (26,4%) | **81,1%** | pico largo, com sombra e luz |
+> | `barba-cavanhaque` | **40–49** (35,9%) | **7,6%** | tudo abaixo de 60; nada acima |
+>
+> A `cavanhaque` não tem uma banda escura de contorno em volta de uma massa clara:
+> ela é **escura de ponta a ponta**, com a moda em 40–49 e uma cauda de 1,4% entre
+> 60 e 100. Nenhum limiar salva — mover o corte de 60 para 90 recupera **1,4%** da
+> peça, e mover para 140 recupera 3,6% pintando de cabelo o que é contorno.
+>
+> Ou seja: **as duas saídas continuam sendo (a) e (b) da lista acima**, e nenhuma
+> das duas é da esteira. A esteira de promoção reproduz o defeito com fidelidade,
+> que é o que se pede dela.
+>
+> A esteira medida, para quando a decisão vier: `rosto-barba-cavanhaque` sairia com
+> 92,4% em `var(--av-linha)` e 7,6% em `var(--av-cabelo, #262626)` — 4 988 + 462
+> bytes de `d`.
+
+---
+
 ### G29 — a régua da boca reprovou uma peça pelo parâmetro que EU escolhi, não pela peça
 
 **Prova:** `MEDIDO` — 2026-08-19, `.scratch/auditar-regua-boca.ts`. Achado pelo
@@ -594,6 +833,16 @@ pelo gerador, medido. Se a peça vier da arte com `semTraco`, os 6 u não existe
 **A decisão que falta, e é ela que fecha este achado:** peça de arte que recolore
 emite `kk-traco` ou não? Ela não foi tomada, e a régua a antecipou como se estivesse.
 Enquanto não for, esta sonda é **relatório, não gate**.
+
+> **Tomada em 2026-08-19:** ao aprovar a `barba-bigode` — que só vive sem o traço,
+> medido — o Doug decidiu pelo **contorno pintado** (`semTraco`). A sonda passa a
+> rodar com 0 u. Fecha quando a promoção das três barbas a `ROSTOS` for feita assim.
+>
+> **1 de 3 feita** — `rosto-barba-cheia` entrou em `ROSTOS` em 2026-08-19 com
+> `semTraco: true` nas duas formas, e `rostos-da-arte.test.ts` cobra isso do SVG
+> emitido: o boneco com a peça tem **exatamente o mesmo número de `kk-traco`** que o
+> boneco sem ela. Faltam a `cavanhaque` (presa ao **G31**) e o `bigode` (preso ao
+> **G32**).
 
 ---
 
@@ -1759,7 +2008,17 @@ do Doug, não régua de legibilidade.
 foi medida, por ser o composto mais pesado — mas a `assimetrico` tem massa que
 cobre 97,6% de uma sobrancelha, então a colisão dela tende a ser pior, não melhor.
 
-### D16 — ~~o bigode não pode existir sem virar nariz~~ ⛔ MORTO por medição
+### D16 — ~~o bigode não pode existir sem virar nariz~~ ♻️ REVOGADO pelo Doug em 2026-08-19, com medição
+> **REVOGADO em 2026-08-19.** O Doug pediu para testar uma arte com bigode **encostado
+> na barba** (ferradura) — o caso que este achado deixava escrito como não medido.
+> Medido com régua certa (colunas que passam pela boca, G27; com e sem traço, G29):
+> com o contorno pintado pelo gerador sobra **1 px de vão** a 56 e a 32 px, e o
+> Doug aprovou a olho — a peça é a `barba-bigode.png` (rare). Com o `kk-traco` de
+> 12 u ela funde, e por isso a aprovação **decide o contorno**: peça de arte usa o
+> contorno pintado. O que continua de pé aqui: o bigode **flutuante** vira nariz, e
+> o espaço olhos→boca é de 36 px = 2,7 px a 56. Registro em `ESTADO-DA-ROTA.md`,
+> entrada de 2026-08-19 (tarde).
+>
 > **MORTO pelo Doug em 2026-08-17**, na abertura do plano "até pronto para ir ao ar",
 > e **sem rodada de teste** — a decisão foi explícita nisso. O bigode sai do escopo
 > do slot de rosto, que fica em **barbas + óculos**.

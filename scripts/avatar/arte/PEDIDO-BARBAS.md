@@ -1,13 +1,15 @@
 # As 5 barbas — o elenco e os pedidos
 
-O slot `rosto` fica em **5 barbas**, decidido pelo Doug em 2026-08-18:
-**2 common · 1 rare · 1 epic · 1 legendary**. Todas de baú — no banco, raridade só
+O slot `rosto` fica em **6 barbas**: 5 decididas pelo Doug em 2026-08-18
+(**2 common · 1 rare · 1 epic · 1 legendary**) mais o `bigode` (rare), aprovado em
+2026-08-19 depois de a D16 cair por medição — ver o registro. Todas de baú — no banco, raridade só
 existe com `origem = 'bau'` (`CHECK avatar_catalogo_origem_coerente`).
 
 | raridade | slug | estado |
 |---|---|---|
-| legendary | `cheia` | ✅ **aprovada** — `.scratch/arte-aprovada/barba-6-limpa.png` |
-| common | `cavanhaque` | ✅ **aprovada** — `.scratch/arte-aprovada/cavanhaque-3-limpa.png` |
+| legendary | `cheia` | ✅ **aprovada** — `barba-cheia.png` |
+| common | `cavanhaque` | ✅ **aprovada** — `barba-cavanhaque.png` |
+| rare | `bigode` | ✅ **aprovada** — `barba-bigode.png` (bigode em ferradura + cavanhaque pontudo) |
 | common | `aparada` | a fazer |
 | rare | `quadrada` | a fazer |
 | epic | `bipartida` | a fazer |
@@ -73,7 +75,7 @@ Todas medidas na peça que passou. Valem para toda barba nova, sem exceção.
 |---|---|
 | cápsulas dos olhos | **0 px** de tinta |
 | linha da boca | **0 px** por cima |
-| miolo acima da boca | **vazio** — o bigode reprovou duas vezes, a segunda medida no tamanho real: funde com o sorriso a 56 **e** a 32 px |
+| miolo acima da boca | **vazio nas cinco; o `bigode` é a exceção medida** — com o contorno pintado pelo gerador sobra 1 px de vão a 56 e a 32 px, e o Doug aprovou a olho; com o `kk-traco` de 12 u ele funde. A segunda morte do bigode (2026-08-18) foi medida com colunas fora da boca (G27) e com o traço que não foi decidido (G29) |
 | pele nua abaixo da boca | **sem piso declarado** — o 30 u que estava aqui foi calibrado na `cheia` e reprovou três artes que o Doug aprovou (achado **G28**). Um piso com lastro sai de peça sintética, não do catálogo |
 | contorno | 12 u, igual ao do boneco |
 | menor detalhe | ≥ 11 u para existir · ≥ 33 u para ler |
@@ -89,6 +91,7 @@ Todas medidas na peça que passou. Valem para toda barba nova, sem exceção.
 | rare | `quadrada` | **borda de baixo reta**, cortada a régua | ~260 u | ~70 u | 24 × 6 px |
 | epic | `bipartida` | **duas pontas** com entalhe em V de ~40 u | ~310 u | ~100 u | 28 × 9 px |
 | legendary | `cheia` | cobre a cara de bochecha a bochecha, sobe à altura dos olhos, **ponta única** | 356 u (0,98) | 74,5 u | 32 × 7 px |
+| rare | `bigode` | **ferradura em volta da boca** + cavanhaque pontudo; a única acima da boca | 154 u (0,41) | 70 u | 14 × 6 px |
 
 **A lendária não é a mais longa, e é de propósito** — decisão do Doug em 2026-08-18.
 A `bipartida` desce mais; a `cheia` é a mais larga e a única que sobe até a altura
@@ -387,6 +390,16 @@ npx tsx .scratch/medir-modelo-barba.ts <png>      # largura, altura, componentes
 npx tsx .scratch/modelo-detalhe.ts <png>          # boca, olhos, caixa ROSTO
 npx tsx .scratch/bigode-no-tamanho.ts <png>       # a boca sobrevive a 56 e 32 px?
 ```
+
+**Mais um passo, aprendido na `cavanhaque` (achado G31):**
+
+```
+npx tsx .scratch/quanto-recolore.ts     # que fracao da peca REcolore?
+```
+
+A `cavanhaque` chegou do gerador quase toda **preta** em vez de ciano, e recolore só
+**8%** de si mesma — sai preta nas 8 cores de cabelo. O Gate −1 não pega isso, porque
+mede forma, não saturação. Piso de referência: `bigode` 80%, `cheia` 83%.
 
 **Reprovou por sombra ou por cor?** É caso da quarta saída — `restaurar-barba5.ts`
 troca matiz e restaura a base, sem tocar na silhueta.

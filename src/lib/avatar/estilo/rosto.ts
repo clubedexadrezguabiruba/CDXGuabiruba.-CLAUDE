@@ -102,7 +102,7 @@ import {
   bordasEm,
 } from "./geometria";
 import { ateAPoligonal, dentroDe, laco, ponto, type Ponto } from "./cabelo";
-import type { PecaSobreposta } from "./tipos";
+import type { PecaDeRosto } from "./tipos";
 
 // ---------------------------------------------------------------------------
 // Os tipos
@@ -341,7 +341,7 @@ function furo(hospedeiro: readonly Ponto[], pts: readonly Ponto[]): string {
  * COM traço, ou uma terceira forma, estouram. É o achado **G16** chegando na conta
  * de outro slot — medido aqui, não consertado aqui.
  */
-export function pecaDeRosto(b: Barba, comBigode = true): PecaSobreposta {
+export function pecaDeRosto(b: Barba, comBigode = true): PecaDeRosto {
   const massa = pontosDaMassa(b);
   const nucleo = pontosDoNucleo(b);
 
@@ -355,6 +355,13 @@ export function pecaDeRosto(b: Barba, comBigode = true): PecaSobreposta {
   return {
     id: comBigode ? b.id : `${b.id}-sem-bigode`,
     nome: comBigode ? b.nome : `${b.nome} (sem bigode)`,
+    // O CABELO VEM POR CIMA, e esta barba declara o mesmo que as de arte declaram.
+    //
+    // Ela nunca entrou em `ROSTOS` e talvez não entre — mas é barba, e duas barbas no
+    // mesmo repositório vestindo lados opostos do cabelo é o tipo de divergência que
+    // ninguém vê até alguém trocar uma pela outra numa folha. Pedido do Doug em
+    // 2026-08-19; o campo e o porquê moram em `PecaDeRosto` (`tipos.ts`).
+    cabeloPorCima: true,
     formas: [
       { d: dMassa.join(" "), cor: "var(--av-linha)" },
       // O NÚCLEO É `--av-cabelo` COM FALLBACK CASTANHO, E O TOM ESCURO ESTÁ VETADO

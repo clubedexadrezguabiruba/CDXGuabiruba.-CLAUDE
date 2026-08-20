@@ -1,0 +1,59 @@
+-- ============================================================================
+-- BLOCO 5 — o slot `rosto` deixa de ser vazio: a `Barba Cheia` entra no catálogo
+-- ============================================================================
+--
+-- É a **primeira peça de arte deste projeto a virar peça de catálogo**. Ela nasceu
+-- de um PNG que o Doug desenhou sobre a base oficial, passou pelo Gate −1, foi
+-- limpa pela quarta saída da rota (`restaurar-peca.ts` + `reparo-cheia-um-tom.ts`)
+-- e traçada em `formas[]` por `scripts/avatar/arte/barba-para-formas.ts`. O registro
+-- número a número está em `scripts/avatar/arte/ESTADO-DA-ROTA.md`.
+--
+-- SEM `BEGIN`/`COMMIT` — o postgres.js recusa transação explícita e um lote de
+-- comandos já roda em transação implícita (regra do CLAUDE.md).
+--
+-- ---------------------------------------------------------------------------
+-- POR QUE ESTA LINHA E NÃO OUTRA
+-- ---------------------------------------------------------------------------
+--
+-- `origem = 'bau'` e `raridade = 'legendary'`. As duas andam juntas por CHECK
+-- composto (`avatar_catalogo_origem_coerente`): quem sai de baú declara raridade e
+-- deixa `min_level` e `min_tier` nulos, porque cada origem tem a sua régua e ignora
+-- as outras duas.
+--
+-- **Baú, e não marco.** O elenco decidido em 2026-08-19 são 6 barbas — 2 common ·
+-- 2 rare · 1 epic · 1 legendary —, todas de baú. No banco a raridade só existe com
+-- `origem = 'bau'`, então "elenco por raridade" e "elenco de baú" são a mesma frase
+-- dita duas vezes. A `cheia` é a legendary: é a de maior massa (38 288 px contra
+-- 14 221 do cavanhaque) e a que mais muda o boneco.
+--
+-- **Uma linha só, e é de propósito.** As outras cinco entram cada uma no commit em
+-- que a sua arte for aprovada. Semear agora as seis daria de novo o retrato exato
+-- do que matou a v2 — 8 uniformes semeados, 0 renderáveis —, e `verify:catalogo-slots`
+-- reprovaria na mesma hora, porque ele compara os dois conjuntos NOS DOIS SENTIDOS.
+--
+-- ---------------------------------------------------------------------------
+-- O QUE ELA NÃO PRECISA MEXER
+-- ---------------------------------------------------------------------------
+--
+--  - **`claim_chest` já sorteia peça de qualquer slot.** A v3 (migration
+--    `20260813160000`) monta o pool com "peças de baú inéditas para aquele aluno,
+--    de qualquer slot, não só traje". A barba entra no pool `legendary` só de
+--    existir esta linha — sem uma palavra de SQL nova;
+--  - **`equipar_peca` já cobre `rosto`.** O slot está no CHECK de
+--    `avatar_catalogo.slot` desde a fundação (`20260811160000`), e é o mesmo
+--    caminho que o traje usa;
+--  - **nenhum `UPDATE` em `users`.** "Sem barba" continua sendo estado válido e é o
+--    padrão. Peça de baú se conquista; vesti-la em todo mundo apagaria a conquista.
+--
+-- ---------------------------------------------------------------------------
+-- O OUTRO LADO DESTA LINHA MORA NO CÓDIGO
+-- ---------------------------------------------------------------------------
+--
+-- `src/lib/avatar/estilo/rostos-da-arte.ts` (gerado por `npm run arte:rostos`) e
+-- `ROSTOS` em `src/lib/avatar/catalogo.ts`, que o espalha. `verify:catalogo-slots`
+-- exige que os dois conjuntos sejam iguais, slot a slot: aplicar esta migration sem
+-- o código reprova, e o código sem ela também. Elas viajam no mesmo commit.
+-- ============================================================================
+
+INSERT INTO public.avatar_catalogo (slug, slot, origem, raridade, min_level, min_tier) VALUES
+  ('rosto-barba-cheia', 'rosto', 'bau', 'legendary', NULL, NULL);

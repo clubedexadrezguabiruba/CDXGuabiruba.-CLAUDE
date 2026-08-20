@@ -50,19 +50,44 @@
  * compara conjuntos.
  */
 
+import { ROSTOS_DA_ARTE } from "./estilo/rostos-da-arte";
 import { TRAJES_DA_ARTE } from "./estilo/trajes-da-arte";
-import type { PecaSobreposta } from "./estilo/tipos";
+import type { PecaDeChapeu, PecaDeRosto, PecaSobreposta } from "./estilo/tipos";
 
 /** Os quatro slots do guarda-roupa. Iguais ao CHECK de `avatar_catalogo.slot`. */
 export const SLOTS = ["traje", "chapeu", "rosto", "pet"] as const;
 
 export type Slot = (typeof SLOTS)[number];
 
-/** Os chapéus desenhados. Vazio até o Bloco 7. */
-export const CHAPEUS: Record<string, PecaSobreposta> = {};
+/**
+ * Os chapéus desenhados. Vazio até o Bloco 7.
+ *
+ * `PecaDeChapeu` e não `PecaSobreposta`: o tipo carrega `cabeloPorCima?: never`, e é
+ * ele que faz um chapéu que tente escolher de que lado do cabelo veste **não
+ * compilar**. O chapéu é sempre o último. A trava vale com o catálogo vazio, que é
+ * exatamente quando um teste não valeria nada.
+ */
+export const CHAPEUS: Record<string, PecaDeChapeu> = {};
 
-/** As peças de rosto — óculos, bigode, barba. Vazio até o Bloco 5. */
-export const ROSTOS: Record<string, PecaSobreposta> = {};
+/**
+ * As peças de rosto — óculos, bigode, barba.
+ *
+ * DERIVADO desde 2026-08-19, e pelo mesmo motivo que o traje: `ROSTOS_DA_ARTE` é
+ * GERADO por `npm run arte:rostos` a partir dos PNGs que o Doug desenhou sobre a
+ * base oficial, então o slug é consequência de existir arte renderizável, nunca uma
+ * segunda declaração que pode discordar dela. É a trava nº 2 fechada na origem.
+ *
+ * A `barba-cheia` (legendary) é a **primeira peça de arte deste projeto a virar peça
+ * de catálogo**. O elenco decidido do slot são 6 barbas — 2 common · 2 rare · 1 epic
+ * · 1 legendary —, e as outras cinco entram uma a uma, cada uma pela mesma esteira.
+ * O registro número a número está em `scripts/avatar/arte/ESTADO-DA-ROTA.md`.
+ *
+ * ⚠️ **O slug `rosto-barba-cavanhaque` já está tomado** por uma barba PARAMÉTRICA
+ * antiga (`estilo/rosto.ts`, `BARBAS.vertical`), que nunca entrou aqui. Quando a
+ * arte do cavanhaque for promovida, uma das duas troca de slug — e é decisão, não
+ * conserto de esteira.
+ */
+export const ROSTOS: Record<string, PecaDeRosto> = { ...ROSTOS_DA_ARTE };
 
 /**
  * O que o código sabe desenhar, slot a slot.

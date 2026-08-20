@@ -169,6 +169,69 @@ export const ROSTO: Caixa = {
 };
 
 /**
+ * AS FEIÇÕES, UMA CAIXA CADA — e `ROSTO` acima é exatamente a caixa delas TODAS.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE UMA CAIXA SÓ NÃO SERVE PARA A PEÇA QUE VESTE A CARA
+ * ---------------------------------------------------------------------------
+ *
+ * O conjunto que precisa ser protegido — dois olhos e uma boca — **não é convexo**:
+ * a boca fica embaixo e no meio, os olhos em cima e nas pontas, e os quatro cantos
+ * da caixa que os envolve estão vazios. Para o CABELO isso nunca importou, porque
+ * cabelo não desce até ali. Para a BARBA importa, e custou um defeito:
+ *
+ * a `barba-cheia` entra no canto inferior direito de `ROSTO` (u x 378,3→393,3 ·
+ * y 300,8→308,3), que fica **84 px abaixo do olho direito** e **67 u à direita da
+ * boca** — não encosta em feição nenhuma. Recortada pela caixa, a peça perdeu
+ * 217 px e, pior, o corte passou pelo MIOLO dela: sobraram **27 px de aresta nua**,
+ * massa terminando sem o contorno preto que o gerador pintou. O Doug viu a olho
+ * ("falta um contorno no lado direito, abaixo do olho direito") antes de qualquer
+ * régua — de novo.
+ *
+ * ---------------------------------------------------------------------------
+ * ELAS SAEM DAS MESMAS CONSTANTES QUE `ROSTO`, E ISSO É A AMARRA
+ * ---------------------------------------------------------------------------
+ *
+ * Mesmos `OLHO`, `BOCA` e `FOLGA` de meio traço. Uma segunda descrição das feições
+ * concordaria com a INTENÇÃO em vez de concordar com o código — é a lição que
+ * `base-oficial.ts` já registra e o motivo de `base-barba.ts` ler estas constantes
+ * em vez de redesenhar as caixas.
+ *
+ * **`ROSTO` fica como está, e é de propósito.** Ele é o que o Gate −1 e a extração
+ * de cabelo medem desde sempre; trocá-lo moveria as peças já promovidas e o próprio
+ * gate. Quem precisa da régua fina é a peça de rosto, e é ela que pede por estas.
+ * O achado geral continua registrado como **G32**.
+ */
+export const FEICOES: readonly Caixa[] = [
+  {
+    x0: OLHO_CX_ESQ - OLHO.w / 2 - FOLGA,
+    y0: OLHO.cy - OLHO.h / 2 - FOLGA,
+    x1: OLHO_CX_ESQ + OLHO.w / 2 + FOLGA,
+    y1: OLHO.cy + OLHO.h / 2 + FOLGA,
+  },
+  {
+    x0: OLHO_CX_DIR - OLHO.w / 2 - FOLGA,
+    y0: OLHO.cy - OLHO.h / 2 - FOLGA,
+    x1: OLHO_CX_DIR + OLHO.w / 2 + FOLGA,
+    y1: OLHO.cy + OLHO.h / 2 + FOLGA,
+  },
+  // A BOCA. O `x` sai do meio dos dois olhos, que é onde `pathBoca()` a ancora
+  // (`geometria.ts`, `OLHO_MEIO = (esq + dir) / 2`), mais meio traço de cada ponta,
+  // que é o disco que o `stroke-linecap: round` põe ali. Confere com os 268,9→311,1
+  // que `rosto.ts` carregava escritos à mão.
+  //
+  // O `y` inclui a SAGITA, e `ROSTO` não a inclui: o sorriso desce 3,6 u no meio, e
+  // essa tinta existe. É a única fronteira em que esta régua protege MAIS que a
+  // caixa antiga — e é o lado certo de errar.
+  {
+    x0: (OLHO_CX_ESQ + OLHO_CX_DIR) / 2 - BOCA.larg / 2 - BOCA.espessura / 2 - FOLGA,
+    y0: OLHO.cy + BOCA.abaixoDoOlho - BOCA.espessura / 2 - FOLGA,
+    x1: (OLHO_CX_ESQ + OLHO_CX_DIR) / 2 + BOCA.larg / 2 + BOCA.espessura / 2 + FOLGA,
+    y1: OLHO.cy + BOCA.abaixoDoOlho + BOCA.sagita + BOCA.espessura / 2 + FOLGA,
+  },
+];
+
+/**
  * A FAIXA DA SOBRANCELHA — medida e RELATADA, nunca reprovando.
  *
  * As duas coisas que podem acontecer aqui são opostas e o Gate −1 não consegue
