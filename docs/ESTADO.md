@@ -258,9 +258,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 10 |
-| **Árvore** | **13 arquivos sujos** |
-| **Último commit** | e717f46 · 2026-08-20 · docs: `npm run estado` reconta — 9 commits, 33 scripts no verify:all, 22 arquivos de teste |
+| **Commits à frente de `origin/main`** | 12 |
+| **Árvore** | **3 arquivos sujos** |
+| **Último commit** | 88d09f3 · 2026-08-20 · feat(avatar): a partição do miolo ganha uma segunda saída — geometria em vez de histograma |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

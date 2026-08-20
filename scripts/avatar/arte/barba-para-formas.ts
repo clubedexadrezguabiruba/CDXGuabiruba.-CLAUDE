@@ -61,7 +61,17 @@
 import { Potrace } from "potrace";
 import sharp from "sharp";
 
-import { ESCALA, FEICOES, FUNDO, LADO, ORIGEM, PNG_BASE, paraPx } from "./base";
+import {
+  ESCALA,
+  FEICOES,
+  FUNDO,
+  LADO,
+  ORIGEM,
+  PNG_BASE,
+  naEspinhaDaBoca,
+  paraPx,
+  paraUnidade,
+} from "./base";
 
 // ---------------------------------------------------------------------------
 // As réguas, todas com o número que as funda
@@ -324,21 +334,35 @@ export async function construirRosto(
   // **27 px de aresta nua**: massa terminando sem o contorno preto que o gerador
   // pintou. A asserção logo abaixo é o que impede isso de voltar.
   //
-  // `FEICOES` são as mesmas constantes de `ROSTO`, partidas em três caixas. `ROSTO`
+  // `FEICOES` são as mesmas constantes de `ROSTO`, partidas em caixas — hoje duas,
+  // uma por olho. A boca saiu delas em 2026-08-20 e virou `naEspinhaDaBoca`. `ROSTO`
   // fica intacto: ele é o que o Gate −1 e a extração de cabelo medem. Ver **G32**.
   const peca = new Uint8Array(peca0.m);
   let pxNoRosto = 0;
+  const apagar = (i: number) => {
+    if (!peca[i]) return;
+    pxNoRosto++;
+    if (!opcoes.semLimite) peca[i] = 0;
+  };
+  // OS OLHOS, por caixa: eles são gordos e convexos, e caixa serve.
   for (const caixa of FEICOES) {
     const a = paraPx(caixa.x0, caixa.y0);
     const b = paraPx(caixa.x1, caixa.y1);
     for (let y = Math.floor(a.y); y <= Math.ceil(b.y); y++)
-      for (let x = Math.floor(a.x); x <= Math.ceil(b.x); x++) {
-        const i = y * W + x;
-        if (!peca[i]) continue;
-        pxNoRosto++;
-        if (!opcoes.semLimite) peca[i] = 0;
-      }
+      for (let x = Math.floor(a.x); x <= Math.ceil(b.x); x++) apagar(y * W + x);
   }
+  // A BOCA, pela ESPINHA — não por caixa. Um retângulo em volta de um arco de 5,3 u
+  // protege quase só ar, e era ele que recusava o `barba-bigode` com 27 px de aresta
+  // nua. Ver o docstring de `naEspinhaDaBoca` em `base.ts`: 0/400 amostras do arco
+  // são cobertas pelas três barbas aprovadas, e o traço da boca é sub-pixel em todo
+  // tamanho que o produto serve.
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (!peca[i]) continue;
+      const u = paraUnidade(x, y);
+      if (naEspinhaDaBoca(u.x, u.y)) apagar(i);
+    }
   const pecaLimpa = componentes(peca, W, H);
   const lum = (i: number) => 0.299 * A[i * 3] + 0.587 * A[i * 3 + 1] + 0.114 * A[i * 3 + 2];
 

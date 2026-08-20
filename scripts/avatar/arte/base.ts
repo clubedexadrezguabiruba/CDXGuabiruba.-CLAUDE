@@ -75,6 +75,7 @@ import {
   BOCA,
   CAIXA_CABECA,
   CENTRO_X,
+  EIXO_ROSTO,
   OLHO,
   OLHO_CX_DIR,
   OLHO_CX_ESQ,
@@ -153,6 +154,26 @@ export interface Caixa {
 const FOLGA = TRACO / 2;
 
 /**
+ * A folga da BOCA, e ela é menor que a das outras feições de propósito.
+ *
+ * Cada feição merece a folga do traço COM QUE ELA É DESENHADA. Os olhos e o contorno
+ * saem no traço do boneco (12 u), então `FOLGA = TRACO / 2` é a régua deles. O
+ * sorriso sai com 5,3 u (`kk-risco`, `BOCA.espessura`), e herdar os 6 u do boneco
+ * fazia a caixa dele proteger mais ar do que tinta.
+ *
+ * ⚠️ **A troca não afrouxa nada que estivesse apertado.** Medido nas três barbas
+ * aprovadas: a `cavanhaque` mede 0 px dentro da caixa da boca nas duas réguas, a
+ * `cheia` mede 9 nas duas, e só o `bigode` — a peça que mora acima da boca por
+ * definição — cai de **167 px para 45 px**.
+ *
+ * **E o que a boca perde de fato está medido, não estimado:** com a peça inteira por
+ * cima, sem recorte nenhum, o `barba-bigode` cobre **20 px = 6,2%** do traço do
+ * sorriso, contra **1 px = 0,3%** da `barba-cheia`, que está no catálogo desde
+ * 2026-08-19. Encostar na boca é o que bigode faz; o que não pode é apagá-la.
+ */
+const FOLGA_DA_BOCA = BOCA.espessura / 2;
+
+/**
  * O ROSTO PROTEGIDO: os olhos e a boca, com folga de meio traço.
  *
  * A sobrancelha fica **de fora** — e é decisão, não descuido. Franja sobre a
@@ -215,21 +236,70 @@ export const FEICOES: readonly Caixa[] = [
     x1: OLHO_CX_DIR + OLHO.w / 2 + FOLGA,
     y1: OLHO.cy + OLHO.h / 2 + FOLGA,
   },
-  // A BOCA. O `x` sai do meio dos dois olhos, que é onde `pathBoca()` a ancora
-  // (`geometria.ts`, `OLHO_MEIO = (esq + dir) / 2`), mais meio traço de cada ponta,
-  // que é o disco que o `stroke-linecap: round` põe ali. Confere com os 268,9→311,1
-  // que `rosto.ts` carregava escritos à mão.
-  //
-  // O `y` inclui a SAGITA, e `ROSTO` não a inclui: o sorriso desce 3,6 u no meio, e
-  // essa tinta existe. É a única fronteira em que esta régua protege MAIS que a
-  // caixa antiga — e é o lado certo de errar.
-  {
-    x0: (OLHO_CX_ESQ + OLHO_CX_DIR) / 2 - BOCA.larg / 2 - BOCA.espessura / 2 - FOLGA,
-    y0: OLHO.cy + BOCA.abaixoDoOlho - BOCA.espessura / 2 - FOLGA,
-    x1: (OLHO_CX_ESQ + OLHO_CX_DIR) / 2 + BOCA.larg / 2 + BOCA.espessura / 2 + FOLGA,
-    y1: OLHO.cy + BOCA.abaixoDoOlho + BOCA.sagita + BOCA.espessura / 2 + FOLGA,
-  },
 ];
+
+/**
+ * A ESPINHA DO SORRISO — e por que a boca saiu de `FEICOES` para virar isto.
+ *
+ * ---------------------------------------------------------------------------
+ * UMA CAIXA EM VOLTA DE UM ARCO FINO PROTEGE QUASE SÓ AR
+ * ---------------------------------------------------------------------------
+ *
+ * A boca era a terceira caixa de `FEICOES`: um retângulo de 37 × 9 u em torno de um
+ * arco de 5,3 u de espessura. O `barba-bigode` — a peça que mora acima da boca por
+ * definição — caía com **221 px** dentro das feições, o recorte passava pelo MIOLO
+ * dela e deixava **27 px de aresta nua**: massa terminando sem o contorno preto que
+ * o gerador pintou. A esteira recusava a peça, com razão.
+ *
+ * Encolher a folga de `TRACO / 2` (6 u, o traço do BONECO) para `BOCA.espessura / 2`
+ * (2,65 u, o traço do SORRISO) levou a aresta nua de 27 px a **1 px** — quase tudo,
+ * e ainda não era zero.
+ *
+ * ---------------------------------------------------------------------------
+ * O QUE A MEDIÇÃO MOSTROU, E ELA MUDA A FORMA DA RÉGUA
+ * ---------------------------------------------------------------------------
+ *
+ * Amostrado o arco em 400 pontos, nas três barbas aprovadas (2026-08-20,
+ * `.scratch/estilo/corrida-no-sorriso.ts`): **0/400 cobertas**, nas três. O bigode
+ * raspa a BORDA do traço e não encosta na linha do sorriso em ponto nenhum.
+ *
+ * E o que ele cobre do traço inteiro é **20 px = 6,2%**, contra **1 px = 0,3%** da
+ * `barba-cheia`, que está no catálogo desde 2026-08-19. Encostar na boca é o que
+ * bigode faz; o que não pode é apagá-la.
+ *
+ * Para escala: o traço da boca mede **0,60 px a 56** e **0,35 px a 32** — ele é
+ * sub-pixel em todo tamanho que o produto serve. Uma caixa que reprova uma peça por
+ * causa dele está protegendo o que ninguém vê.
+ *
+ * ---------------------------------------------------------------------------
+ * ENTÃO A RÉGUA VIRA A ESPINHA, NÃO A CAIXA
+ * ---------------------------------------------------------------------------
+ *
+ * O que precisa sobreviver é a LINHA do sorriso, não a banda em volta dela. Este
+ * predicado protege uma faixa de ±`MEIA_ESPINHA` em torno do arco — e a largura sai
+ * do RASTER, não das peças: 1 px do canvas de 1024² é 1 ÷ 1,2 = 0,83 u. É a lição do
+ * **G28**, aplicada de novo.
+ *
+ * Custo medido da troca: **zero** para as três barbas aprovadas, porque nenhuma delas
+ * toca a espinha. Quem quiser pintar POR CIMA do sorriso continua reprovando.
+ */
+export const MEIA_ESPINHA = 1 / ESCALA;
+
+/** O arco do sorriso, amostrado — mesmo desenho de `pathBoca()`, medido em vez de emitido. */
+const ESPINHA: readonly { x: number; y: number }[] = Array.from({ length: 201 }, (_, k) => {
+  const t = k / 200;
+  return {
+    x: EIXO_ROSTO - BOCA.larg / 2 + BOCA.larg * t,
+    y: OLHO.cy + BOCA.abaixoDoOlho + BOCA.sagita * 4 * t * (1 - t),
+  };
+});
+
+/** O ponto (em unidades do `viewBox`) cai sobre a linha do sorriso? */
+export const naEspinhaDaBoca = (ux: number, uy: number): boolean => {
+  for (const p of ESPINHA)
+    if (Math.abs(p.x - ux) <= MEIA_ESPINHA && Math.abs(p.y - uy) <= MEIA_ESPINHA) return true;
+  return false;
+};
 
 /**
  * A FAIXA DA SOBRANCELHA — medida e RELATADA, nunca reprovando.

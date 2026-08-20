@@ -677,7 +677,45 @@ mexer numa peça aprovada. **Nenhuma régua do `verify:all` mede isto hoje.**
 
 ---
 
-### G32 — `ROSTO` é uma caixa só ~~e come 23% da `barba-bigode`~~ ⚠️ 23,1% → **1,3%**
+### G32 — ~~`ROSTO` é uma caixa só, e ela come 23% da `barba-bigode`~~ ✅ FECHADO
+> ✅ **Fechado em 2026-08-20, em dois passos, e o segundo veio de o Doug perguntar
+> a coisa certa: *"o problema é a área protegida ser muito larga?"*.** Era.
+>
+> **Passo 1 — a caixa única virou três** (`FEICOES`, uma por feição). Levou o
+> descarte do bigode de **3 877 px (23,1%) a 221 px (1,3%)**, e trocou uma perda
+> silenciosa por uma recusa em voz alta: *"o recorte cortou o MIOLO da peça: 27 px
+> de aresta nua"*.
+>
+> **Passo 2 — a boca deixou de ser caixa e virou ESPINHA.** Um retângulo de 37 × 9 u
+> em volta de um arco de 5,3 u protege quase só ar. Duas medições decidiram a forma
+> da régua:
+>
+> | | |
+> |---|---|
+> | amostrado o arco em 400 pontos, nas 3 barbas aprovadas | **0/400 cobertas**, nas três |
+> | quanto do traço da boca o `bigode` cobre | **20 px · 6,2%** |
+> | quanto a `barba-cheia` cobre, e ela está no catálogo | **1 px · 0,3%** |
+> | o traço da boca renderizado | **0,60 px a 56** · **0,35 px a 32** |
+>
+> O bigode raspa a BORDA do traço e não encosta na linha do sorriso em ponto
+> nenhum. E o traço é **sub-pixel em todo tamanho que o produto serve** — uma caixa
+> que recusa uma peça por causa dele protege o que ninguém vê.
+>
+> Então `naEspinhaDaBoca` protege ±0,83 u em torno do arco, e a largura sai do
+> RASTER (1 px do canvas de 1024² ÷ 1,2 px/u), não das peças — a lição do **G28** de
+> novo. A folga da caixa dos olhos também deixou de ser `TRACO / 2`: cada feição
+> merece a folga do traço com que ELA é desenhada, e o sorriso sai com 5,3 u, não
+> com os 12 u do boneco.
+>
+> **Resultado, medido:** o `bigode` passa com **0 px recortados e 0 de aresta nua**,
+> e a `cheia` e a `cavanhaque` saem byte a byte iguais (38 505 e 14 221 px) —
+> `arte:rostos --check` confere caractere a caractere. **A caixa afrouxou só onde
+> estava larga demais.** Quem quiser pintar POR CIMA do sorriso continua reprovando.
+>
+> ⚠️ **Uma régua minha caiu junto, e fica registrado:** eu tinha proposto *"0 px
+> sobre o traço do sorriso, inegociável"*. A medição derrubou — a `barba-cheia`
+> aprovada já cobre 1 px, e encostar na boca é o que bigode faz. Ver
+> [[doug-julga-arte-a-olho]]: de novo, o olho antes da régua.
 > ⚠️ **Remedido em 2026-08-20: 94% dele já tinha sido consertado, e o que sobra é
 > outro problema com o mesmo endereço.**
 >
