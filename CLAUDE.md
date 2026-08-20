@@ -116,11 +116,24 @@ O que já foi delegado ao Codex e o que está na fila fica em
 [docs/codex-fila.md](docs/codex-fila.md) — com as regras de engajamento, os modos
 de trabalho e os briefings.
 
-**Achar não é consertar.** Problema descoberto vai para
-[docs/achados.md](docs/achados.md), ranqueado por gravidade, e **para ali** —
-nada vira trabalho sem o usuário mandar. Quem acha registra; quem decide a hora é
-ele; quem executa sou eu. Vale inclusive quando o conserto parece óbvio e o
-contexto está quente: conserto fora de hora atropela a frente em execução.
+**Problema que eu acho, eu conserto.** Se um defeito aparece no meio do trabalho e
+o conserto está ao meu alcance, o caminho é consertar — com a Regra de Evidência
+(reproduzir, uma causa com arquivo e linha, fix mínimo, gate que falha antes e passa
+depois), não registrar e seguir. Registrar em vez de consertar foi uma regra deste
+projeto até 2026-08-20 e o Doug a revogou: ela transformava achado em fila e fila em
+represa.
+
+Parar e perguntar continua certo em três casos, e só neles:
+
+- o conserto exige **arte do Doug** (desenhar, redesenhar, julgar a olho);
+- ele tem **mais de uma saída defensável** e escolher uma é decidir por ele — aí a
+  pergunta é curta e vem com as opções medidas, não com a minha preferida;
+- ele **atropela uma frente em execução** — outro agente, outro branch, migration
+  pendente.
+
+[docs/achados.md](docs/achados.md) **passa a ser do Codex.** É onde ele registra o
+que encontra, ranqueado por gravidade, para o Doug mandar consertar na hora certa.
+Eu leio de lá quando ele mandar; eu não escrevo lá o que eu mesmo posso resolver.
 
 ## Skills — invocar, não torcer para lembrar
 

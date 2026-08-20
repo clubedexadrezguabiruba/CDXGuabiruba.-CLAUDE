@@ -91,12 +91,17 @@ export interface Traje {
 /**
  * O que uma peça que fica POR CIMA do boneco declara — chapéu e rosto.
  *
- * Repare que é a mesma forma de `Traje.extensoes` menos o `atras`, e não é
- * economia de digitação: as duas são o mesmo conceito. A peça **excede** a
+ * Repare que é quase a mesma forma de `Traje.extensoes`, e não é economia de
+ * digitação: as duas são o mesmo conceito. A peça **excede** a
  * silhueta em vez de compartilhar fronteira com ela, então tem forma própria — o
  * que é lícito exatamente porque ela não precisa registrar com nada. Uma lente
  * pode ser maior que o rosto (decisão do Doug, doc 21 §2c) e um chapéu pode
  * passar da cabeça; nenhum dos dois é cortado por clip nenhum.
+ *
+ * **Ela continua sem `atras`, e ganhou outra coisa em 2026-08-19:** o slot `rosto`
+ * passou a escolher de que lado do cabelo veste, por `cabeloPorCima` — e esse campo
+ * NÃO mora aqui. Ver `PecaDeRosto` e `PecaDeChapeu`, logo abaixo: o par existe para
+ * que um chapéu que tente escolher lado **não compile**.
  *
  * ---------------------------------------------------------------------------
  * SÃO DOIS MODOS, E A PERGUNTA QUE ESCOLHE ENTRE ELES É UMA SÓ: A PEÇA RECOLORE?
@@ -182,6 +187,83 @@ export type PecaSobreposta = {
 );
 
 /**
+ * DE QUE LADO DO CABELO A PEÇA VESTE — e por que são DOIS tipos e não um campo.
+ *
+ * ---------------------------------------------------------------------------
+ * O SLOT `rosto` GUARDA DUAS FAMÍLIAS COM NECESSIDADES OPOSTAS
+ * ---------------------------------------------------------------------------
+ *
+ *  - **barba** — o cabelo cai POR CIMA dela, como na vida. Pedido do Doug em
+ *    2026-08-19, depois de a folha de contato da `rosto-barba-cheia` mostrar o
+ *    avesso: a serrilha da barba cortava a curva lisa do `chanel`;
+ *  - **óculos** — por cima do cabelo, e isso é decisão dele também (doc 21 §2c):
+ *    sem haste não há o que apoiar, a lente é livre para exceder o rosto, e a peça
+ *    que a criança desbloqueou não pode depender de qual franja está por baixo.
+ *
+ * **Isto não reabre a D17** (`docs/achados.md`). A fusão entre barba e cabelo
+ * continua aceita; o que `cabeloPorCima` escolhe é **quem vence a sobreposição**,
+ * não se ela existe.
+ *
+ * ---------------------------------------------------------------------------
+ * O `never` DO CHAPÉU É A TRAVA, E ELA É ESTRUTURAL COMO A UNIÃO ACIMA
+ * ---------------------------------------------------------------------------
+ *
+ * O chapéu é SEMPRE o último — ele disputa o crânio e vence, que é o que "esconde
+ * o cabelo" quer dizer. Ele não tem lado a escolher, e a regra fina dele é outra,
+ * com nome próprio (`escondeCabelo`, doc 15, ainda não implementada).
+ *
+ * Se o campo morasse em `PecaSobreposta`, um chapéu **poderia** declará-lo, e a
+ * única defesa seria um teste — sobre um catálogo (`CHAPEUS`) que hoje está vazio,
+ * ou seja, um teste vácuo. Com `cabeloPorCima?: never` o `typecheck` fecha os dois
+ * sentidos, e nenhum deles depende de haver peça:
+ *
+ *  - literal de chapéu com o campo → excesso de propriedade, **e** `boolean` não
+ *    atribuível a `never | undefined`;
+ *  - um valor já tipado `PecaDeRosto` entregue ao slot chapéu → também reprova,
+ *    porque `?: boolean` não é atribuível a `?: never`. É por isso que o `never`
+ *    vale mais que só separar os dois nomes.
+ *
+ * É a mesma trava da união `formas` | `arte` logo acima, e da `interface Traje` no
+ * topo deste arquivo, pelo mesmo motivo de sempre: **mecanismo em vez de
+ * disciplina.** `pecas-de-elenco.test.ts` mantém a trava viva pelo caminho
+ * contrário, com um `@ts-expect-error` que deixa de ter erro para consumir se
+ * alguém tirar o `never` daqui.
+ */
+export type PecaDeRosto = PecaSobreposta & {
+  /**
+   * DESENHA ANTES DO CABELO — o cabelo cobre a peça onde os dois se encontram.
+   *
+   * O nome descreve o MECANISMO, que é oclusão: o cabelo pinta depois e tapa. Não
+   * descreve a posição, e isso é deliberado — `sobOCabelo` foi considerado e
+   * recusado por estar a uma letra de `sobreOCabelo`, que significa o oposto exato
+   * do que este campo faz. Um par mínimo invertido bem no campo que existe para
+   * codificar essa distinção é a pior escolha possível de nome.
+   *
+   * `atras` também foi recusado: ele já quer dizer *sob o tronco* (`Traje.extensoes`)
+   * e *atrás da cabeça* (`Extensao` em `cabelo.ts`), e um terceiro sentido faz a
+   * palavra não significar nada.
+   *
+   * **QUEM DECLARA, E É DIRETRIZ, NÃO GOSTO.** A pergunta é *a peça nasce da cabeça,
+   * ou é posta nela?* — pelo (barba, bigode, costeleta) nasce e veste por baixo;
+   * acessório (óculos) é posto e vai por cima. A regra inteira, com o custo medido,
+   * está no docstring de `LadoDoRosto` em `camadas.ts`, que é a tabela autoritativa
+   * da pilha. Decidida pelo Doug em 2026-08-20, depois de a ordem ter virado quatro
+   * vezes em dois dias por ser julgada no zoom de uma junção.
+   *
+   * ⚠️ **Só alcança o cabelo TRAÇADO.** O paramétrico mora dentro do clip do crânio
+   * e é emitido muito antes das feições, então a peça de rosto continua por cima
+   * dele com bandeira ou sem. Não é defeito hoje — nenhum paramétrico desce ao
+   * queixo —, mas é limitação, não garantia. A causa está em `compor()`.
+   *
+   * Ausente e `false` são o mesmo, e o mesmo de sempre: a peça sai depois do cabelo.
+   */
+  cabeloPorCima?: boolean;
+};
+
+/** O chapéu é sempre o último, e o `never` é o que impede que ele escolha. */
+export type PecaDeChapeu = PecaSobreposta & { cabeloPorCima?: never };
+
+/**
  * O estado do boneco no momento de compor. Tudo que NÃO é forma.
  *
  * `pele` e `cabelo` são hex porque recolorem por `var()` — são os dois únicos
@@ -220,8 +302,8 @@ export interface EstadoAvatar {
    * traçado. Fundo e pet **não estão aqui de propósito**: eles não tocam a
    * geometria do boneco e são componentes irmãos, fora do SVG (doc 21 §3.4).
    */
-  rosto?: PecaSobreposta;
-  chapeu?: PecaSobreposta;
+  rosto?: PecaDeRosto;
+  chapeu?: PecaDeChapeu;
   /**
    * Liga o piscar e o respiro. Desligado no ranking, onde 30 bonecos numa lista
    * pagariam 30 animações por nada — a `flag` já existe no render por isso

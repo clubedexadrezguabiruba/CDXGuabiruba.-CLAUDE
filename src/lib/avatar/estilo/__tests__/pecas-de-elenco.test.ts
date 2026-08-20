@@ -19,7 +19,7 @@
 import { describe, expect, it } from "vitest";
 import { compor } from "../compositor";
 import { conferirSvg } from "../../svgContrato";
-import type { EstadoAvatar, PecaSobreposta } from "../tipos";
+import type { EstadoAvatar, PecaDeChapeu, PecaDeRosto, PecaSobreposta } from "../tipos";
 
 const BASE: EstadoAvatar = {
   pele: "#E9B183",
@@ -210,5 +210,176 @@ describe("semTraco — a forma que vive dentro de outra", () => {
     });
 
     expect(explicito).toBe(ausente);
+  });
+});
+
+/**
+ * `cabeloPorCima` — DE QUE LADO DO CABELO A PEÇA DE ROSTO VESTE.
+ *
+ * O pedido do Doug, 2026-08-19: *"a camada barba veste, depois a camada cabelo deve
+ * vir e cobrir a barba (se houver o que cobrir)"*. Antes disso o slot inteiro saía
+ * depois do cabelo, e a serrilha da barba cortava a curva lisa do `chanel`.
+ *
+ * **Por que ordem de string e não pixel** — a mesma razão que `linhas-cabelo.test.ts`
+ * escreve: medir o defeito de verdade pede render, e a relação entre as duas coisas é
+ * determinística, porque é oclusão de SVG e não heurística. Aqui mede-se o mecanismo.
+ *
+ * **A não-vacuidade é metade deste bloco**, e ela tem duas pernas: cada índice é
+ * exigido presente ANTES de ser comparado, e a mesma peça sem a bandeira é medida ao
+ * lado, com a desigualdade INVERTIDA. Sem a segunda perna, o bloco passaria no dia em
+ * que alguém pusesse tudo sob o cabelo e a bandeira virasse enfeite.
+ */
+describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
+  /** `chanel` é traçado, e traçado é o único que vira peça sobreposta. */
+  const COM_CHANEL = { ...BASE, modeloCabelo: "chanel" as const };
+  /**
+   * A peça traçada sai em DUAS partes, e a barba entra no meio das duas — então o
+   * marcador tem de saber qual das duas está medindo.
+   *
+   *   `iSilhueta` — a camada 1, a silhueta PRETA cheia. Vai ANTES da barba, para o
+   *                 anel dela não virar barra preta atravessando a massa unificada;
+   *   `iNucleo`   — a camada 2, o núcleo COLORIDO. Vai DEPOIS, e é ele que faz o
+   *                 cabelo cobrir a barba.
+   *
+   * A primeira versão deste bloco media `kk-(tinta|cabelo-m)`, o mesmo marcador de
+   * `linhas-cabelo.test.ts`. Ele casava com as DUAS camadas e pegava a primeira —
+   * uma régua grossa demais, que dizia "a barba saiu depois do cabelo" quando ela
+   * tinha saído no meio dele. O `search` de união é confortável e é onde o erro mora.
+   */
+  const iSilhueta = (svg: string) => svg.indexOf(`<path class="kk-tinta"`);
+  const iNucleo = (svg: string) => svg.indexOf(`<path class="kk-cabelo-m"`);
+  const iPeca = (svg: string) => svg.indexOf(`fill="#FF00FF"`);
+
+  it("com a bandeira, a peça entra ANTES do cabelo INTEIRO — silhueta preta inclusive", () => {
+    // O contrato inteiro numa linha: barba → silhueta preta → núcleo colorido.
+    //
+    // ⚠️ ESTA DESIGUALDADE JÁ ESTEVE INVERTIDA, e a inversão foi o defeito de
+    // 2026-08-20. Entre 2026-08-19 e 2026-08-20 a barba entrava ENTRE a silhueta
+    // preta do cabelo e o núcleo, para que o anel preto do cabelo não caísse sobre
+    // ela. A premissa era que esse anel media ~18 u e lia como uma barra.
+    //
+    // **Medido em 2026-08-20 (`.scratch/largura-do-anel.ts`): ele mede p50 11,7 u e
+    // p90 12,2 u — é o `TRACO` de 12 u do próprio desenho.** Só 205 px dos 12 733
+    // (1,6%) passam de 16 u, e ficam no queixo. Não era barra: era o contorno de
+    // oclusão do cabelo, na espessura de linha de todo o resto do boneco.
+    //
+    // Apagá-lo custou os dois defeitos que o Doug pegou a olho: o cabelo perdeu a
+    // aresta sobre a barba (*"saiu o contorno preto do cabelo"*), e o núcleo escuro
+    // do chanel (`--av-cabelo-s`) passou a encostar direto na massa clara da barba
+    // (`--av-cabelo`) por 489 px de costura, de u x 156 a 424 (*"ainda é possível ver
+    // o tom diferente que sobrou do chanel"*). A linha preta cobria a costura.
+    //
+    // A bandeira `cabeloPorCima` continua valendo e continua sendo o pedido dele de
+    // 2026-08-19: a barba veste, o cabelo cobre. O que voltou é o cabelo cobrir
+    // INTEIRO, com o contorno junto, em vez de só com as camadas coloridas.
+    const svg = compor({ ...COM_CHANEL, rosto: { ...FALSA, cabeloPorCima: true } });
+    const boca = svg.lastIndexOf("kk-risco");
+
+    expect(iPeca(svg), "a peça não foi emitida — o gate mediria o nada").toBeGreaterThan(-1);
+    expect(iSilhueta(svg), "não há silhueta preta — o gate mediria o nada").toBeGreaterThan(-1);
+    expect(iNucleo(svg), "não há núcleo colorido — o gate mediria o nada").toBeGreaterThan(-1);
+    expect(boca).toBeGreaterThan(-1);
+
+    expect(iPeca(svg)).toBeGreaterThan(boca);
+    expect(iPeca(svg), "a silhueta preta do cabelo saiu ANTES da barba").toBeLessThan(
+      iSilhueta(svg),
+    );
+    expect(iPeca(svg), "o núcleo do cabelo saiu ANTES da barba").toBeLessThan(iNucleo(svg));
+  });
+
+  it("SEM a bandeira, a MESMA peça sai depois das DUAS — as desigualdades invertem", () => {
+    // O controle negativo do bloco, e é ele que prova que a bandeira é a causa. Sem
+    // ele, o teste de cima passaria com um compositor que ignorasse o campo e pusesse
+    // todo rosto sob o cabelo.
+    const svg = compor({ ...COM_CHANEL, rosto: FALSA });
+
+    expect(iPeca(svg)).toBeGreaterThan(-1);
+    expect(iSilhueta(svg)).toBeGreaterThan(-1);
+    expect(iNucleo(svg)).toBeGreaterThan(-1);
+    expect(iPeca(svg)).toBeGreaterThan(iSilhueta(svg));
+    expect(iPeca(svg)).toBeGreaterThan(iNucleo(svg));
+  });
+
+  it("a silhueta preta e o núcleo do cabelo saem COLADOS — byte a byte", () => {
+    // A condição que mantém os 11 selos de `parametrico-congelado.ts` de pé: nada
+    // entra entre a silhueta preta do cabelo e o núcleo colorido, nem com peça de
+    // rosto nem sem. Foi escrita em 2026-08-19, quando a peça saía partida em
+    // `{ fundo, frente }` e a barba entrava no meio; a partição caiu em 2026-08-20
+    // (ver o teste da ordem, acima), e a linha fica porque é ela que reprova se
+    // alguém tentar de novo — um caractere a mais ali mata os 11 selos de uma vez,
+    // com a causa longe daqui.
+    const svg = compor(COM_CHANEL);
+    expect(svg.indexOf(`<path class="kk-cabelo-m"`)).toBe(
+      svg.indexOf(`<path class="kk-tinta"`) +
+        svg.slice(svg.indexOf(`<path class="kk-tinta"`)).indexOf("/>") +
+        2,
+    );
+  });
+
+  it("a peça é emitida UMA vez só, com bandeira ou sem", () => {
+    // A partição é sobre UMA peça, não sobre uma lista: escrever a emissão nas duas
+    // pontas sem o filtro desenharia a barba duas vezes, uma exatamente sobre a
+    // outra. A tela ficaria idêntica, e o custo — dois `<path>` a mais, × 30 bonecos
+    // no ranking — só apareceria no orçamento de formas.
+    const dosDoisJeitos: PecaDeRosto[] = [FALSA, { ...FALSA, cabeloPorCima: true }];
+    for (const rosto of dosDoisJeitos)
+      for (const modeloCabelo of ["chanel", "coque"] as const)
+        expect(
+          (compor({ ...BASE, modeloCabelo, rosto }).match(/fill="#FF00FF"/g) ?? []).length,
+          `${rosto.cabeloPorCima ? "com" : "sem"} bandeira × ${modeloCabelo}`,
+        ).toBe(1);
+  });
+
+  it("sem cabelo nenhum, a bandeira não muda um byte", () => {
+    // Careca: não há massa para cobrir, então as duas passadas dão a mesma string. É
+    // o que mantém a ausência de cabelo sendo o caso byte a byte de sempre.
+    expect(compor({ ...BASE, rosto: { ...FALSA, cabeloPorCima: true } })).toBe(
+      compor({ ...BASE, rosto: FALSA }),
+    );
+  });
+
+  it("com cabelo PARAMÉTRICO a bandeira é inerte, e isso é limitação declarada", () => {
+    // O paramétrico mora dentro do clip do crânio e sai muito antes das feições, então
+    // a peça de rosto continua por cima dele com bandeira ou sem. Não é defeito hoje —
+    // nenhum paramétrico desce ao queixo —, mas está escrito em `PecaDeRosto` como
+    // limitação, e este teste é o que impede que alguém "conserte" por engano.
+    const comFlag = compor({ ...BASE, modeloCabelo: "coque", rosto: { ...FALSA, cabeloPorCima: true } });
+    expect(iNucleo(comFlag), "o `coque` passou a emitir massa fora do clip").toBe(-1);
+    expect(comFlag).toBe(compor({ ...BASE, modeloCabelo: "coque", rosto: FALSA }));
+  });
+
+  it("o CHAPÉU não participa da partição — ele continua sendo o último", () => {
+    const svg = compor({
+      ...COM_CHANEL,
+      rosto: { ...FALSA, cabeloPorCima: true },
+      chapeu: { ...FALSA, id: "zz-chapeu", formas: [{ d: "M50 60 L70 60 L70 80 Z", cor: "#00FF00" }] },
+    });
+    const doChapeu = svg.indexOf(`fill="#00FF00"`);
+
+    expect(doChapeu).toBeGreaterThan(-1);
+    expect(iPeca(svg)).toBeLessThan(iNucleo(svg));
+    expect(doChapeu).toBeGreaterThan(iNucleo(svg));
+  });
+
+  it("o traço VIAJA junto com o preenchimento, e não fica para trás", () => {
+    // `sobrepor()` emite fill e traço na MESMA chamada, então partir por peça leva os
+    // dois juntos. Se alguém um dia juntar as passadas de traço das duas pontas "para
+    // economizar", o contorno da barba volta para cima do cabelo e só isto acusa.
+    const svg = compor({ ...COM_CHANEL, rosto: { ...FALSA, cabeloPorCima: true } });
+    const traco = svg.indexOf(`<path class="kk-traco" d="M10 20 L30 20 L30 40 Z"/>`);
+
+    expect(traco).toBeGreaterThan(-1);
+    expect(traco).toBeLessThan(iNucleo(svg));
+  });
+
+  it("um chapéu que tente escolher lado NÃO COMPILA — a trava é do tipo", () => {
+    // O par do `@ts-expect-error` da união `formas`/`arte`, e existe pelo mesmo motivo:
+    // `CHAPEUS` está vazio, então um teste que iterasse o catálogo não asseguraria
+    // nada. Aqui a trava vale sem haver peça — e se alguém tirar o `never` de
+    // `PecaDeChapeu`, este `@ts-expect-error` fica sem erro para consumir e o
+    // `npm run typecheck` quebra. Mecanismo em vez de disciplina.
+    // @ts-expect-error o chapéu é sempre o último; ele não escolhe lado do cabelo.
+    const comFlag: PecaDeChapeu = { ...FALSA, cabeloPorCima: true };
+    expect(comFlag.id).toBe(FALSA.id);
   });
 });

@@ -42,31 +42,15 @@
  * literalidade apareceu: o topo do tronco fica ATRÁS da cabeça, e um contorno
  * único desenhado por último traçaria aquela aresta escondida POR CIMA do rosto.
  *
- * A solução não precisa de máscara. A ordem abaixo resolve por oclusão, que é o
- * mesmo mecanismo que o estilo inteiro usa:
+ * A solução não precisa de máscara. **A ordem resolve por oclusão**, que é o mesmo
+ * mecanismo que o estilo inteiro usa.
  *
- *   1. sombra do chão            (fora do grupo que respira)
- *   2. extensões traseiras       (a parte de trás de uma capa)
- *   3. tronco: base opaca → tinta do traje (clipada) → decoração →
- *      **sombra projetada da cabeça** → planos laterais
- *   4. **contorno do tronco**
- *   5. cabeça: preenchimento OPACO — cobre o topo do tronco e o contorno dele
- *   6. facetas e especular, dentro do clip da cabeça
- *   7. **contorno da cabeça**
- *   8. olhos, sobrancelhas e boca
- *   9. **peça de cabelo sobreposta** — por cima do rosto, fora de todo clip
- *  10. extensões frontais        (fecho de capa, ombreira) + contorno
- *
- * **O passo 9 é depois do 8 desde 2026-08-08, e a ordem entre os dois é o conserto
- * de um defeito medido.** Cabelo que cai sobre a testa tem de tapar a sobrancelha,
- * como tapa na vida real. Ver o comentário no ponto de emissão.
- *
- * **A lista encurtou no Bloco 1d.** Saíram a orelha direita (que era um passo
- * próprio, com preenchimento e contorno) e a concha da orelha esquerda: a arte nova
- * não tem orelhas, e o motivo é de catálogo — orelha na base obriga cada um dos 92
- * itens de chapéu e cabelo a decidir se cobre ou não. Entraram as sobrancelhas e a
- * boca, no mesmo passo dos olhos, porque são a mesma natureza de peça: tinta da cor
- * do contorno, por cima do contorno da cabeça, fora de todo clip.
+ * **A ORDEM MORA EM `camadas.ts`, E NÃO AQUI.** A tabela `PILHA` é a única
+ * autoritativa; cada linha carrega o dono, o endereço de emissão e a razão
+ * *anatômica* da fronteira, e `__tests__/pilha-de-camadas.test.ts` prova que esta
+ * função obedece a ela. Esta lista já morou neste docstring em prosa, omitia três
+ * camadas emitidas e afirmava o contrário do código em vários pontos — que é
+ * exatamente como a ordem barba × cabelo virou três vezes em dois dias.
  *
  * ---------------------------------------------------------------------------
  * O QUE ESTE ARQUIVO NÃO FAZ
@@ -353,14 +337,19 @@ function sombraChao(ns: string): string {
  *  2. **Traje só com cor:** chapado. É o estado de toda peça antes de a imagem
  *     do Doug chegar, e é o que faz o sistema ficar utilizável entre um pedido
  *     de imagem e o seguinte.
- *  3. **Traje com PNG:** a imagem entra por `<image>`, escalada pela
- *     `escalaMedida` do auto-ajuste em torno do centro do tronco, POR CIMA da
- *     cor chapada. A cor continua embaixo: se a tinta tiver furo, aparece cor de
- *     traje, nunca transparência.
+ *  3. **Traje com arte:** o `.svg` da peça, que **não entra aqui**. Ele é colado por
+ *     `arteDoTraje()`, FORA deste clip e depois do contorno do tronco — a linha
+ *     `traje-arte` de `camadas.ts`. A cor chapada continua embaixo: se a tinta tiver
+ *     furo, aparece cor de traje, nunca transparência.
  *
- * A **sombra projetada da cabeça** entra por último, depois da arte do traje: ela é
- * sombra de contato e cai sobre o que estiver ali, seja o macacão bege ou o uniforme
- * de General. Pintá-la antes da arte a apagaria justamente nos trajes que têm PNG.
+ * A **sombra de contato do queixo** e o **plano lateral** entram por último, e só no
+ * caso 1 e 2: quem declara `tinta.arte` responde pelo próprio volume, e pintar o do
+ * compositor por cima dobraria o sombreado. É a `suprimidaPor` da linha
+ * `tronco-tinta` em `camadas.ts`, e o porquê está no comentário dentro da função.
+ *
+ * ⚠️ Este docstring já disse que a sombra entrava *"depois da arte do traje"*. Deixou
+ * de ser verdade em 2026-08-17, quando a arte saiu de dentro desta função para fora
+ * do clip — as duas coisas nem se encontram mais.
  *
  * Tudo isto vive dentro do `clipPath` do tronco, aplicado por quem chama. O que
  * excede o clip é cortado — e exceder é o comportamento EXIGIDO, não o defeito.
@@ -489,14 +478,13 @@ function extensoes(traje: Traje | undefined, atras: boolean): string {
  * As duas vivem dentro do `clipPath` da cabeça, que é quem resolve a lateral. O
  * cabelo não sabe onde o crânio termina, e é de propósito (ver `cabelo.ts`).
  *
- * ---------------------------------------------------------------------------
- * NA PEÇA TRAÇADA SÃO TRÊS PASSADAS, E O TRAÇO VEM POR ÚLTIMO
- * ---------------------------------------------------------------------------
- *
- * A massa pinta, a clara pinta por cima, e o traço vai por último — nesta ordem, e
- * não é gosto: a clara é desenhada DEPOIS da massa, então um traço emitido junto com
- * a massa seria coberto pela clara em todo trecho onde as duas se encostam. O traço
- * é a borda externa da peça; ele fica acima de tudo o que a peça pinta.
+ * **Ela só vê cabelo PARAMÉTRICO**, e isso é do chamador: `compor()` gateia por
+ * `massa` e manda a peça traçada para `pecaSobreposta()`. Esta função teve um
+ * segundo ramo, para a peça traçada dentro do clip, e ele ficou **inalcançável** no
+ * dia em que o gate do chamador passou a testar a mesma condição — o único caminho
+ * até aqui é `!massa`, que era exatamente a guarda do primeiro ramo. O ramo morto
+ * saiu em 2026-08-20, junto com a tabela da pilha; a ordem das três passadas da peça
+ * traçada é escrita onde ela de fato acontece, em `pecaSobreposta()`.
  */
 function cabeloNoCranio(modelo: CabeloOuModelo | undefined): string {
   if (!modelo) return "";
@@ -504,20 +492,12 @@ function cabeloNoCranio(modelo: CabeloOuModelo | undefined): string {
   // O moicano não tem touca — ele é só extensão. Emitir dois `<path d="">` vazios
   // custaria duas formas do orçamento para desenhar nada.
   if (!escuro) return "";
-  // Uma peça traçada pode ser CHAPADA: massa sem região clara. Ela não é o degrau
-  // paramétrico com a sombra zerada — é uma camada a menos, e cobrar dela uma forma
-  // vazia seria o mesmo desperdício que o moicano acabou de não pagar.
+  // Uma peça pode ser CHAPADA: massa sem região clara. Ela não é o degrau com a
+  // sombra zerada — é uma camada a menos, e cobrar dela uma forma vazia seria o
+  // mesmo desperdício que o moicano acabou de não pagar.
   const claro = pathCabeloClaro(modelo);
   const clara = claro ? `<path class="kk-cabelo" d="${claro}"/>` : "";
-  if (!resolverCabelo(modelo).massa) {
-    return `<path class="kk-cabelo-s" d="${escuro}"/>` + clara;
-  }
-  const linhas = pathCabeloLinhas(modelo);
-  return (
-    `<path class="kk-cabelo-m" d="${escuro}"/>` +
-    clara +
-    (linhas ? `<path class="kk-cabelo-l" d="${linhas}"/>` : "")
-  );
+  return `<path class="kk-cabelo-s" d="${escuro}"/>` + clara;
 }
 
 /**
@@ -549,11 +529,11 @@ function extensoesCabelo(modelo: CabeloOuModelo | undefined, atras: boolean): st
  * ESTE É O MODELO QUE OS CHAPÉUS VÃO USAR, e não "o jeito do cabelo"
  * ---------------------------------------------------------------------------
  *
- * Cabelo e chapéu são as únicas 11 das 33 peças do catálogo que batem no problema
- * da fronteira do crânio — traje, pet, fundo e moldura são imunes por construção,
- * porque não compartilham borda com a cabeça. Escrever isto como caminho do cabelo
- * obrigaria a inventar um segundo caminho para o chapéu; escrito como peça
- * sobreposta, é um só.
+ * Cabelo e chapéu são as únicas peças do catálogo que batem no problema da fronteira
+ * do crânio — traje, pet e moldura são imunes por construção, porque não compartilham
+ * borda com a cabeça (e as duas últimas nem estão no SVG: ver `FORA_DA_PILHA` em
+ * `camadas.ts`). Escrever isto como caminho do cabelo obrigaria a inventar um segundo
+ * caminho para o chapéu; escrito como peça sobreposta, é um só.
  *
  * ---------------------------------------------------------------------------
  * O ACHADO QUE O JUSTIFICA
@@ -563,24 +543,25 @@ function extensoesCabelo(modelo: CabeloOuModelo | undefined, atras: boolean): st
  * centradas na linha de centro do crânio (`geometria.ts:851`), a massa é clipada
  * nessa mesma linha, e SVG não tem `stroke-alignment` — zero ocorrências de
  * `stroke-alignment`, `paint-order` e `vector-effect` no repositório. Não existe
- * conserto por dentro do clip; foi por isso que `massaPorCima` só conseguiu levar
- * a barra de 12 u a 6 u, e nunca a zero.
+ * conserto por dentro do clip; foi por isso que a tentativa de pôr a massa por cima
+ * DENTRO do clip só conseguiu levar a barra de 12 u a 6 u, e nunca a zero. (O campo
+ * que ligava aquilo não existe mais — o achado é que fica, não o nome.)
  *
- * Conteúdo NÃO clipado desenhado depois cobre os 12 u inteiros. Este arquivo já
- * usa esse mecanismo em dois lugares — `:527`, onde o preenchimento opaco da
- * cabeça apaga o contorno do tronco, e `:280-287`, as extensões de traje — sob a
- * doutrina declarada em `:45-46`: *a ordem resolve por oclusão, que é o mesmo
- * mecanismo que o estilo inteiro usa*. Máscara e filtro continuam vetados por
- * escrito (doc 15 §7c item 17).
+ * Conteúdo NÃO clipado desenhado depois cobre os 12 u inteiros. Este arquivo já usa
+ * esse mecanismo em dois lugares — a linha `cabeca-pele`, onde o preenchimento opaco
+ * da cabeça apaga o contorno do tronco, e as extensões de traje — sob a doutrina
+ * declarada no topo: *a ordem resolve por oclusão, que é o mesmo mecanismo que o
+ * estilo inteiro usa*. Os dois estão na tabela `PILHA` de `camadas.ts`, que é onde a
+ * ordem mora. Máscara e filtro continuam vetados por escrito (doc 15 §7c item 17).
  *
  * ---------------------------------------------------------------------------
  * O QUE SAIU JUNTO
  * ---------------------------------------------------------------------------
  *
- * O ganho de simplificação só é real se o perdedor sair, e saíram quatro coisas:
- * `EstadoAvatar.massaPorCima`, o `atras` da peça traçada, a **sangria** da
- * conversão e a **partição massa/extensão**. Os três donos possíveis do contorno
- * do cabelo viraram um: a própria peça.
+ * O ganho de simplificação só é real se o perdedor sair, e saíram quatro coisas: a
+ * bandeira de massa por cima em `EstadoAvatar`, o `atras` da peça traçada, a
+ * **sangria** da conversão e a **partição massa/extensão**. Os três donos possíveis
+ * do contorno do cabelo viraram um: a própria peça.
  *
  * As formas saem num `<path>` só, com subpaths `M…Z M…Z` — o mesmo mecanismo de
  * `extensoesCabelo`. Multi-componente passa a ser representável sem custar uma
@@ -589,13 +570,14 @@ function extensoesCabelo(modelo: CabeloOuModelo | undefined, atras: boolean): st
  * 23 do arranjo anterior e 24 da alternativa que mantinha o clip.
  */
 function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
-  if (!modelo) return "";
+  const nada = "";
+  if (!modelo) return nada;
   const c = resolverCabelo(modelo);
-  if (!c.massa) return "";
+  if (!c.massa) return nada;
   const desenhadas = [pathCabelo(modelo), ...(c.formas ?? []).map(pathExtensao)]
     .filter(Boolean)
     .join(" ");
-  if (!desenhadas) return "";
+  if (!desenhadas) return nada;
   const claro = pathCabeloClaro(modelo);
 
   // ------------------------------------------------------- a peça TRANSCRITA
@@ -611,6 +593,36 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
   // `.kk-tinta` já é emitida em todo SVG, inclusive na careca — zero regra nova,
   // zero propriedade nova. E `.kk-cabelo-l` some sozinha, porque `temArco` já
   // gateia a regra por `linhas` existir e a peça transcrita não declara arcos.
+  //
+  // ---------------------------------------------------------------------------
+  // A CAMADA 1 NÃO SE PARTE, E ISSO É O CONSERTO DE 2026-08-20
+  // ---------------------------------------------------------------------------
+  //
+  // A camada 1 é uma silhueta PRETA CHEIA, e o que se vê dela é só o anel que o
+  // núcleo não cobre: **o contorno de oclusão do cabelo**. Contra a pele ele é a
+  // borda da peça; contra uma barba passando por baixo, ele é a aresta que diz onde
+  // o cabelo acaba — e é a mesma coisa que um desenhista traça quando uma mecha
+  // passa na frente de outra massa da mesma cor.
+  //
+  // Entre 2026-08-19 e 2026-08-20 esta função devolveu `{ fundo, frente }`, para que
+  // `compor()` intercalasse a barba entre a camada 1 e as outras três e o anel não
+  // caísse sobre ela. **A premissa era que esse anel media ~18 u e lia como barra.**
+  //
+  // `.scratch/largura-do-anel.ts` mediu, em 2026-08-20: **p50 11,7 u · p90 12,2 u**,
+  // contra o `TRACO` de 12 u do compositor. Não é barra — é a espessura de linha de
+  // todo o resto do boneco. Dos 12 733 px que a barba apagava, só 205 (1,6%) passam
+  // de 16 u, e ficam num trecho de queixo em u x 181→353.
+  //
+  // O preço de tê-lo apagado foram os dois defeitos que o Doug pegou a olho em
+  // 2026-08-20: o cabelo sem aresta sobre a barba, e — porque a linha preta era o
+  // que separava os dois tons — o núcleo escuro do chanel (`--av-cabelo-s`)
+  // encostando direto na massa clara da barba (`--av-cabelo`) por 489 px de costura,
+  // de u x 156 a 424. Um defeito só, com dois sintomas.
+  //
+  // **A D17 continua de pé, e `cabeloPorCima` também.** A barba veste e o cabelo
+  // cobre — o que voltou é o cabelo cobrir INTEIRO, contorno junto, em vez de só com
+  // as camadas coloridas. `pecas-de-elenco.test.ts` cobra a ordem barba → silhueta
+  // preta → núcleo colorido, e o comentário de lá guarda os números.
   const nucleo = pathCabeloNucleo(modelo);
   if (nucleo) {
     const pretas = pathCabeloPretas(modelo);
@@ -625,7 +637,13 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
   // O traço vai por ÚLTIMO, e não junto com a massa: a clara é desenhada depois da
   // massa, então um traço emitido antes dela seria coberto em todo trecho onde as
   // duas se encostam. Ele é a borda externa da peça e fica acima do que a peça
-  // pinta — a mesma ordem que `cabeloNoCranio` já usava.
+  // pinta. `cabeloNoCranio` já usou a mesma ordem, num ramo para peça traçada que
+  // ficou inalcançável e saiu em 2026-08-20 — hoje a razão vive só aqui.
+  //
+  // A família SINTETIZADA não tem camada preta cheia para separar: o preto dela é um
+  // `stroke` (`kk-cabelo-l`), não um laço. Então ela vai inteira na frente, como
+  // sempre foi. Medido, isso custa pouco: o `espetado` cobre **1,2%** da barba, e o
+  // risco dele sobre esses 1,2% é um traço fino, não um anel de 12 u.
   const risco = pathCabeloLinhas(modelo) + (c.formas ?? []).map(pathExtensaoLinhas).join("");
   return (
     `<path class="kk-cabelo-m" d="${desenhadas}"/>` +
@@ -921,12 +939,44 @@ export function compor(estado: EstadoAvatar): string {
   const traçada = modeloCabelo ? Boolean(resolverCabelo(modeloCabelo).massa) : false;
   const cabeloNoLugarDeSempre = traçada ? "" : cabeloNoCranio(modeloCabelo);
   const sobreposta = traçada ? pecaSobreposta(modeloCabelo) : "";
+
+  /**
+   * O SLOT `rosto`, PARTIDO EM DUAS PASSADAS pelo `cabeloPorCima` da própria peça.
+   *
+   * É o mesmo idioma de `extensoes(traje, atras)` e `extensoesCabelo(modelo, atras)`
+   * logo acima: uma função, chamada duas vezes, particionando por booleano. E existe
+   * pela mesma razão que aqueles — o slot guarda peças com necessidades opostas de
+   * camada, e a resposta é da PEÇA, nunca um `if` por item aqui dentro.
+   *
+   * `Boolean(...)` porque ausente e `false` têm de ser o mesmo, como em todo o resto
+   * deste arquivo. Uma peça sem a bandeira sai por cima do cabelo, que é a ordem de
+   * sempre — e é isso que mantém os selos byte a byte de pé.
+   */
+  const rosto = (sob: boolean) =>
+    sobrepor(
+      estado.rosto && Boolean(estado.rosto.cabeloPorCima) === sob ? estado.rosto : undefined,
+    );
   const semSobrancelha = sobrancelhaEscondida(modeloCabelo);
 
   // As duas do cabelo entram SÓ quando há cabelo. `escurecer` sem fator é o 0,82 do
   // item 2.4, e o docstring dele já nomeia "embaixo da franja" como um dos três
   // lugares para que existe — este é o terceiro a usar a mesma régua.
-  const varsCabelo = modeloCabelo
+  // AS DUAS DO CABELO SAEM QUANDO HÁ QUEM AS LEIA — e o cabelo não é o único leitor.
+  //
+  // A peça de rosto no modo `formas` **recolore com o cabelo** (D17: barba é cabelo),
+  // e ela existe sem `modeloCabelo`: um aluno CARECA de barba continua tendo escolhido
+  // a cor dela, porque `users.avatar_hair_color` é coluna própria e a careca é uma das
+  // seis opções do seletor, não um caso de canto.
+  //
+  // ⚠️ **Enquanto isto dependia só de `modeloCabelo`, a barba do careca saía PRETA** —
+  // `var(--av-cabelo, #262626)` caía na reserva —, e saía preta mesmo com loiro
+  // escolhido. Os dois SVGs eram byte a byte iguais: a escolha do aluno não chegava ao
+  // desenho, e nenhum gate media isso. `rosto-cor.test.ts` passa a medir.
+  //
+  // A peça de `arte` fica de fora de propósito: ela tem cor assada e não lê var
+  // nenhuma (Regra Inviolável nº 4), então emitir para ela seria byte por nada.
+  const recoloreComOCabelo = Boolean(modeloCabelo) || Boolean(estado.rosto?.formas?.length);
+  const varsCabelo = recoloreComOCabelo
     ? `;--av-cabelo:${estado.cabelo};--av-cabelo-s:${escurecer(estado.cabelo)}`
     : "";
   const vars =
@@ -1075,8 +1125,26 @@ export function compor(estado: EstadoAvatar): string {
     // A razão que a posição antiga alegava continua honrada: a peça precisa vir
     // depois do `<use ... class="kk-traco"/>` da cabeça para o traço do crânio sumir
     // por oclusão. Depois das feições é **ainda mais tarde** — a oclusão continua.
+    // A BARBA VESTE PRIMEIRO, E O CABELO VEM POR CIMA — pedido do Doug, 2026-08-19.
+    //
+    // *"A camada barba veste, depois a camada cabelo deve vir e cobrir a barba (se
+    // houver o que cobrir)"*. A folha de contato da `rosto-barba-cheia` mostrou o
+    // avesso disso: a serrilha da barba cortava a curva lisa do `chanel`.
+    //
+    // **Isto não reabre a D17.** A fusão entre barba e cabelo continua aceita — o
+    // que muda é quem vence a sobreposição, não se ela existe.
+    //
+    // ⚠️ **Só alcança o cabelo TRAÇADO.** O paramétrico (`coque`, `moicano`) mora
+    // dentro do clip do crânio, lá em cima, e a barba continua por cima dele com
+    // bandeira ou sem. Hoje não produz defeito porque nenhum dos dois desce ao
+    // queixo; no dia em que um descer, a causa está aqui e não na peça.
+    rosto(true) +
     sobreposta +
-    // ROSTO E CHAPÉU ENTRAM DEPOIS DO CABELO, e a ordem é decisão declarada.
+    // O RESTO DO ROSTO — o que NÃO declarou `cabeloPorCima`, e é o óculos.
+    //
+    // A linha `rosto-sobre-cabelo` de `camadas.ts`. Ela e a `rosto-sob-cabelo` acima
+    // são o MESMO slot em dois lugares da pilha, e é por isso que compartilham
+    // marcador no gate — ver `MESMO_MARCADOR` em `pilha-de-camadas.test.ts`.
     //
     // Óculos por cima do cabelo: sem haste (decisão do Doug, doc 21 §2c) não há o
     // que apoiar, e a lente é livre para exceder o rosto. Posta ANTES do cabelo,
@@ -1085,11 +1153,34 @@ export function compor(estado: EstadoAvatar): string {
     // sobrancelha), mas a peça que aparece é a que ela escolheu, e essa ordem não
     // depende de qual cabelo está por baixo.
     //
-    // Chapéu por último porque ele disputa o crânio e vence: é o que "esconde o
-    // cabelo" quer dizer. A regra fina — mostra tudo, esconde a franja, esconde
-    // tudo — mora no ITEM e não aqui (`escondeCabelo`), e é decisão obrigatória
-    // ANTES do primeiro chapéu, no Bloco 7. Este arquivo só garante o lugar.
-    sobrepor(estado.rosto) +
+    // ⚠️ Esta linha dizia "ROSTO E CHAPÉU ENTRAM DEPOIS DO CABELO" e valia para o
+    // slot inteiro. Deixou de valer em 2026-08-19: metade dele sobe, e a metade que
+    // sobe é a barba — ver o `rosto(true)` acima.
+    rosto(false) +
+    // O CHAPÉU, e ele NÃO participa da partição acima.
+    //
+    // ⚠️ **ELE NÃO É O ÚLTIMO, e este comentário já afirmou que era.** Logo abaixo
+    // vem `extensoes(traje, false)`: uma ombreira ou fecho de capa pinta POR CIMA da
+    // aba do chapéu. As duas afirmações não podiam ser verdadeiras ao mesmo tempo, e
+    // quem escrevia "CHAPÉU POR ÚLTIMO" aqui era a prosa, não o código.
+    //
+    // A contradição está **registrada, não consertada**: `emDisputa` na linha
+    // `traje-extensoes-frente` de `camadas.ts` guarda as duas leituras. Ela é INERTE
+    // até a primeira capa — nenhum traje do catálogo declara `extensoes`, e
+    // `extensoes(undefined, false)` devolve string vazia —, e não se decide sem peça
+    // na mão. O gate trava a posição de hoje.
+    //
+    // O que continua verdadeiro: ele disputa o crânio e vence, que é o que "esconde
+    // o cabelo" quer dizer. A regra fina — mostra tudo, esconde tudo — mora no ITEM e
+    // não aqui (`escondeCabelo`), e é decisão obrigatória ANTES do primeiro chapéu,
+    // no Bloco 7. Este arquivo só garante o lugar.
+    //
+    // **Por que ele não passa por `rosto()`, e não é descuido.** Se a partição fosse
+    // um parâmetro de `sobrepor()`, esta chamada viraria `sobrepor(estado.chapeu,
+    // false)` — e um chapéu que um dia declarasse `cabeloPorCima: true` **sumiria do
+    // boneco em silêncio**, porque nenhuma das duas passadas o emitiria. Filtrando
+    // só do lado do rosto, a bandeira num chapéu é inerte em vez de fatal.
+    // `pecas-de-elenco.test.ts` cobra exatamente isso.
     sobrepor(estado.chapeu) +
     extensoes(traje, false) +
     `</g>` +

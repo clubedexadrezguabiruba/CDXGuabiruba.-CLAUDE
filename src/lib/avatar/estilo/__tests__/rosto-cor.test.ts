@@ -27,6 +27,7 @@
 
 import { describe, expect, it } from "vitest";
 import { compor } from "../compositor";
+import { ROSTOS } from "../../catalogo";
 import { CABELO, PELE } from "../../palette";
 
 /** Um boneco qualquer: a cor do rosto não depende de qual pele ou cabelo. */
@@ -64,5 +65,40 @@ describe("o cabelo é o único leitor de --av-cabelo na base", () => {
     // Se alguma classe daqui lesse a cor, o escopo `avatar` da propriedade
     // voltaria a ter o leitor que o docstring antigo inventava.
     expect(svg).not.toContain("--av-cabelo");
+  });
+});
+
+/**
+ * A PEÇA DE ROSTO RECOLORE MESMO SEM MODELO DE CABELO — o boneco CARECA de barba.
+ *
+ * `--av-cabelo` era emitido só quando havia `modeloCabelo`. A barba lê essa
+ * propriedade (D17: barba é cabelo), então num boneco careca ela caía na reserva
+ * `#262626` e saía **PRETA — ignorando a cor que o aluno escolheu**. Ele podia ter
+ * escolhido loiro: a barba saía preta do mesmo jeito, e nada na tela explicava.
+ *
+ * A careca não é um caso de canto: é uma das seis opções do seletor, e
+ * `users.avatar_hair_color` existe independentemente de `users.avatar_hair`. O aluno
+ * escolhe a cor, some com o cabelo, e a barba tem de continuar sendo daquela cor.
+ *
+ * **A ausência continua valendo onde ela é o contrato**: sem cabelo E sem peça que
+ * leia a propriedade, nada é emitido — é o que o bloco acima cobra e o que mantém os
+ * onze selos de `parametrico-congelado.ts` e o teto da base careca de pé.
+ */
+describe("a barba do boneco CARECA usa a cor escolhida, não a reserva", () => {
+  const barba = ROSTOS["rosto-barba-cheia"];
+  const careca = (cabelo: string) =>
+    compor({ pele: PELE[2], cabelo, ns: "t2", rosto: barba });
+
+  it("`--av-cabelo` É emitido quando há peça de rosto que a lê", () => {
+    expect(careca(CABELO[3])).toContain(`--av-cabelo:${CABELO[3]}`);
+  });
+
+  it("trocar a cor do cabelo muda o SVG do careca de barba", () => {
+    // Sem isto, a asserção acima passaria com a propriedade emitida e ignorada.
+    expect(careca(CABELO[3])).not.toBe(careca(CABELO[0]));
+  });
+
+  it("SEM peça de rosto, a ausência continua — a base careca não muda um byte", () => {
+    expect(compor({ pele: PELE[2], cabelo: CABELO[3], ns: "t2" })).not.toContain("--av-cabelo");
   });
 });
