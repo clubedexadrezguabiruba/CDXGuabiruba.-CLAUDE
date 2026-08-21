@@ -62,12 +62,24 @@ import { gzipSync } from "zlib";
 /**
  * A prateleira do produto. É de lá que o navegador da criança pede a peça.
  *
- * ⚠️ **Ela contém dois arquivos que NÃO são peça de catálogo**, e eles entram no
- * ratchet de propósito: `items/base/avatar-base-neutro.svg` (174,0 KB no fio) e
- * `items/base/avatar-base-sem-traje.svg` (86,5 KB) são sobra da pilha v2/v3 que
- * nenhum componente do produto referencia — só `scripts/` e um spec de e2e. Estão
- * registrados como *"lastro que sobra"* dentro do **G24** em `docs/achados.md`, e
- * apagá-los é decisão do Doug, não deste gate.
+ * ⚠️ **Ela contém QUATRO arquivos que NÃO são peça de catálogo**, e eles entram no
+ * ratchet de propósito:
+ *
+ *   `items/base/avatar-base-neutro.svg`      174,0 KB   sobra da pilha v2/v3
+ *   `items/base/avatar-base-sem-traje.svg`    86,5 KB   idem
+ *   `items/base/avatar-base-female.png`       35,2 KB   sobra do avatar dual-gender
+ *   `items/base/avatar-base-male.png`         32,8 KB   idem
+ *
+ * Os dois `.svg` estão registrados como *"lastro que sobra"* dentro do **G24** em
+ * `docs/achados.md`. Os dois `.png` **apareceram em 2026-08-21**, quando este gate
+ * passou a medir `.png` — eles estavam em `public/items/` desde `715a44e`
+ * ("sistema de avatar com dual-gender"), somando **68 KB no deploy**, e um `grep`
+ * em `src/`, `scripts/` e `e2e/` não acha uma única referência a eles. Ficaram
+ * invisíveis por dois anos de esteira porque o gate filtrava por extensão — é
+ * exatamente o modo de falha que o parágrafo seguinte nomeia, acontecido dentro do
+ * próprio gate que existe para pegá-lo.
+ *
+ * Apagá-los é decisão do Doug, não deste gate.
  *
  * **Por que não excluí-los da conta:** eles estão em `public/`, portanto no deploy,
  * portanto pesam. Um gate que os filtrasse em silêncio diria "a prateleira está sob
@@ -94,7 +106,18 @@ interface Medida {
   gzip: number;
 }
 
-/** Todo `.svg` da prateleira, em ordem estável. */
+/**
+ * Toda peça da prateleira, em ordem estável — `.svg` **e `.png`**.
+ *
+ * O `.png` entrou em 2026-08-21, quando a máscara de tom da barba passou a ser
+ * arquivo servido à parte. Filtrar por extensão diria *"a prateleira está sob o
+ * teto"* enquanto 16 KB de máscara moram nela — e **descarte em silêncio é o modo de
+ * falha que esta rota inteira existe para fechar**, exatamente como o docstring de
+ * `PRATELEIRA` acima já argumenta para os dois `.svg` de lastro.
+ *
+ * Gzip sobre PNG quase não tira nada (ele já vem comprimido), e isso é o dado certo:
+ * o ratchet mede **o que vai no fio**, e no fio ele vai desse tamanho.
+ */
 function medir(dir: string, acc: Medida[] = []): Medida[] {
   let entradas: string[];
   try {
@@ -105,7 +128,7 @@ function medir(dir: string, acc: Medida[] = []): Medida[] {
   for (const nome of entradas) {
     const caminho = join(dir, nome).replace(/\\/g, "/");
     if (statSync(caminho).isDirectory()) medir(caminho, acc);
-    else if (nome.endsWith(".svg")) {
+    else if (nome.endsWith(".svg") || nome.endsWith(".png")) {
       acc.push({ caminho, gzip: gzipSync(readFileSync(caminho)).length });
     }
   }

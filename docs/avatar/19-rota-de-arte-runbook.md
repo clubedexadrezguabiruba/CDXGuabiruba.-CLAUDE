@@ -590,8 +590,9 @@ O que `construirRosto` emite hoje:
 ```
 
 As duas formas têm o **mesmo `d`**. O claro-escuro é um PNG **cinza** da luminância
-da arte, em base64, dentro de um `<mask maskUnits="userSpaceOnUse">` na caixa da
-peça. Onde a arte é clara a cor do cabelo aparece cheia; onde escurece ela cede e o
+da arte, dentro de um `<mask maskUnits="userSpaceOnUse">` na caixa da peça — e o
+PNG é **servido à parte**, como o `.svg` do traje: o SVG carrega o caminho
+(`/items/rosto/<slug>-tom.png`, 38 bytes), nunca os bytes. Onde a arte é clara a cor do cabelo aparece cheia; onde escurece ela cede e o
 preto de baixo aparece. **A máscara não tem cor** — é um canal de cinza —, então a
 peça recolore inteira e a Regra Inviolável nº 4 continua de pé.
 
@@ -651,10 +652,17 @@ peça sobrevive"). O defeito ficou latente até existir um bigode: num laço sem
    anel é simplesmente um cinza intermediário, que é o que ele sempre foi. O passo 3b
    e o gate `franja-da-borda.test.ts` foram apagados — um gate de um caminho que
    deixou de existir passa por vacuidade e mente sobre o que protege;
-6. **o `tom` guarda base64 PURO**, sem o prefixo `data:`. Quem monta a URL é o
-   compositor, uma vez. Gate: `scripts/avatar/arte/__tests__/tom-da-peca.test.ts`,
-   que também prende os dois `d` idênticos, a proporção do PNG contra a caixa e o
-   esticão tendo agido;
+6. **o `tom` guarda o CAMINHO do PNG, não os bytes** — e isto saiu de medição, não
+   de gosto. A primeira versão embutia base64, e 30 bonecos com a `trancada-v4`
+   fechavam em **753,0 KB** de gzip contra **17,6 KB** com o arquivo externo: o
+   boneco composto passava da janela de 32.768 B do DEFLATE e a dedução do blob
+   morria. Com o arquivo, o boneco caiu de 31.857 para **22.913 B** — a folga dentro
+   da janela foi de 911 para **9.855 bytes**, que é o que impede um chapéu somado à
+   barba de cruzá-la. O arquivo **precisa ser rastreado pelo git**
+   (`arteDaPecaNoDeploy.test.ts`), e `arte:rostos --check` compara o PNG do disco
+   byte a byte. Gate do conteúdo: `scripts/avatar/arte/__tests__/tom-da-peca.test.ts`,
+   que prende os dois `d` idênticos, a proporção do PNG contra a caixa e o esticão
+   tendo agido;
 7. **o id da máscara leva `ns` e slot** (`${ns}-tom-${slot}`). O ranking põe 30
    bonecos num `<svg>` só e um mesmo boneco pode ter tom no rosto E no chapéu — id
    repetido faz a segunda máscara vestir o desenho da primeira, em silêncio. Gates:

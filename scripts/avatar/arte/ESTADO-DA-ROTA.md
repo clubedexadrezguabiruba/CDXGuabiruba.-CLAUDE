@@ -4424,3 +4424,86 @@ máscara: 16.524 B de PNG · 22.032 B em base64
   nada para B adiar.
 
 **A escolha é do Doug.** Nada aqui foi implementado.
+
+### 2026-08-21 (4) · A DECISÃO — saída A, e o penhasco fechou
+
+O Doug aprovou a folha (*"ficou melhor"*) e delegou a escolha entre as saídas. **A
+escolhida foi a A: a máscara vira arquivo servido à parte**, `public/items/rosto/
+<slug>-tom.png`, com o catálogo guardando o caminho em vez dos bytes.
+
+#### O que desempatou não foi o peso
+
+Foi o **precedente**. A saída A não inventa mecanismo: é o que o TRAJE já faz desde
+2026-08-17. `Traje.tinta.arte` é um caminho (`/items/traje/traje-farda.svg`), colado
+pelo mesmo `<image>`, com o mesmo gate de deploy e a mesma renderização em dois
+tempos. A barba passou a usar o corredor que já existia.
+
+A saída C (içar o `<defs>` para a folha) exigiria **quebrar a unicidade de id** que
+`${ns}-tom-${slot}` acabara de estabelecer e que três arquivos de teste guardam — e
+compraria menos: 34,8 K contra 17,6 K, sem tocar no bundle, e sem valer para o aluno
+sozinho. A saída B não alcançava o problema medido.
+
+#### O resultado, no código de produção (não na bancada)
+
+|  | antes (base64 embutido) | **depois (saída A)** |
+|---|---|---|
+| boneco composto | 31.857 B | **22.913 B** |
+| folga dentro da janela de 32.768 B | **911 B** | **9.855 B** |
+| 30 bonecos, gzip | 24,9 KB | **15,4 KB** |
+| 30 bonecos, brotli | 13,7 KB | **7,1 KB** |
+| a máscara, no SVG | 8.960 B de base64 | **38 B de caminho** |
+| a máscara, no bundle | 8.960 B | **38 B** |
+| a máscara, no fio | por boneco | **6.718 B uma vez, cacheados** |
+
+O chão — os mesmos 30 bonecos SEM a peça — mede 9,9 KB de gzip. O tom inteiro custa
+hoje 5,5 KB no fio para uma lista de 30, mais um PNG cacheado.
+
+**A folga de 911 → 9.855 bytes é o número que mais importa.** Com 911 B, somar um
+chapéu à barba cruzaria a janela e o gzip explodiria sem aviso. Com 9.855, não.
+
+#### O que a troca arrastou junto
+
+- `TomDaPeca.png: string` (base64) → **`TomDaPeca.arte: string`** (caminho);
+- `construirRosto` devolve os **bytes** do PNG e **não grava nada** — quem grava é
+  `rostos.ts`. Ela é chamada pelas réguas de bancada sobre arte que nunca vai ao
+  catálogo; se gravasse, medir sujaria o deploy;
+- **`arte:rostos --check` deixou de escrever.** Ele compara o PNG do disco byte a
+  byte com o que a esteira produz e reprova se divergir. É conserto sobre
+  `arte:trajes --check`, que **reescreve** os `.svg` mesmo em `--check` — e foi por
+  causa daquilo que a trava das peças congeladas precisou ser mecânica;
+- `arteDaPecaNoDeploy.test.ts` passou a cobrir as **duas famílias** de endereço, com
+  contagem por extensão para nenhuma delas poder zerar em silêncio;
+- **`arte:peso` passou a medir `.png`**, não só `.svg`.
+
+#### O achado de graça: 68 KB de lastro invisível
+
+Estender o `arte:peso` para `.png` revelou **dois arquivos que ninguém media**:
+
+| arquivo | gzip | referências em `src/`, `scripts/`, `e2e/` |
+|---|---|---|
+| `public/items/base/avatar-base-female.png` | 35,2 KB | **zero** |
+| `public/items/base/avatar-base-male.png` | 32,8 KB | **zero** |
+
+Estão lá desde `715a44e` ("sistema de avatar com dual-gender"), somam **68 KB no
+deploy**, e ficaram invisíveis porque o gate filtrava por extensão — **o modo de
+falha que o docstring do próprio gate nomeia, acontecido dentro dele**. São a mesma
+família dos dois `.svg` órfãos já registrados no G24. Entraram no baseline (ficam
+visíveis a cada rodada) e **apagá-los é decisão do Doug**.
+
+#### Gates
+
+`verify:all` **exit 0** · `typecheck` 0 · **605 testes** (36 arquivos) · `lint` 0 ·
+`arte:rostos --check` 0 · `arte:peso` 0.
+
+#### E a peça ficou MAIS LEVE dentro do SVG do que antes de tudo isto
+
+O resultado que não estava previsto: o tom foi ganho **e** o SVG encolheu.
+
+| peça | antes do tom (`d` de 2 formas) | depois (saída A) | Δ |
+|---|---|---|---|
+| `barba-cheia` | 13.674 B | **10.662 B** (10.624 de `d` + 38 de caminho) | **−3.012 B** |
+| `trancada-v4` | 19.677 B | **14.838 B** (14.800 de `d` + 38 de caminho) | **−4.839 B** |
+
+A causa é o segundo traçado ter morrido: as duas formas passaram a ser a MESMA curva,
+e a máscara custa um caminho. O PNG saiu do SVG e do bundle, e entrou no orçamento de
+`arte:peso`, que passou a medir a prateleira inteira.

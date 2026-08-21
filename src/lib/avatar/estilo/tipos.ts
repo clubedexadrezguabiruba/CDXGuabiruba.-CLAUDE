@@ -188,16 +188,46 @@ export interface Traje {
  * unidades do `viewBox`, não frações de bounding box; `preserveAspectRatio="none"`
  * porque o PNG foi recortado exatamente nessa caixa e esticá-lo para ela é a conta
  * certa, não um ajuste.
+ *
+ * ---------------------------------------------------------------------------
+ * O PNG É ARQUIVO, NÃO `data:` — E ISSO SAIU DE UMA MEDIÇÃO, NÃO DE GOSTO
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira versão embutia o PNG em base64 dentro do próprio SVG. Funcionava, e
+ * quebrava o ranking. Medido em 2026-08-21:
+ *
+ *   30 bonecos com `trancada-v4`, base64 embutido → **753,0 KB** de gzip
+ *   30 bonecos com `trancada-v4`, arquivo externo →    17,6 KB
+ *
+ * **A causa é a janela do DEFLATE.** O gzip casa repetição dentro de 32.768 bytes;
+ * se o boneco composto cabe nela, a cópia seguinte referencia o blob anterior em
+ * poucos bytes. O boneco com a `trancada` mede 49.101 B — não cabe, e cada cópia
+ * paga o blob inteiro. (O boneco com a `barba-cheia` mede 31.857 B: passava do lado
+ * bom por **911 bytes**, o que é margem nenhuma.)
+ *
+ * E há o segundo custo, que compressão nenhuma alcança: `AvatarKokeshi.tsx` importa
+ * `catalogo`, então **todo blob embutido viaja no bundle do cliente**. Como arquivo,
+ * a peça leva 38 bytes de caminho em vez de 22.032 de base64.
+ *
+ * **Isto não é mecanismo novo — é o mecanismo do TRAJE.** `Traje.tinta.arte` já é um
+ * caminho servido à parte (`/items/traje/traje-farda.svg`), colado pelo mesmo
+ * `<image>`, com o mesmo gate de deploy. A barba passou a usar o corredor que já
+ * existia, e é por isso que a troca custou pouco.
+ *
+ * ⚠️ **O preço, declarado:** uma requisição a mais por peça (cacheada — os 30
+ * bonecos de uma lista apontam para a MESMA url) e o avatar aparecendo em dois
+ * tempos, silhueta primeiro e tom quando o PNG chega. É exatamente o que o traje já
+ * faz desde 2026-08-17.
  */
 export interface TomDaPeca {
   /**
-   * O PNG cinza, base64 **PURO** — sem o prefixo `data:image/png;base64,`.
+   * O `.png` cinza da máscara — o caminho que o BROWSER pede.
    *
-   * Quem monta a URL é o compositor, uma vez, em um lugar. Guardar o prefixo aqui
-   * seria a mesma string repetida em cada peça do catálogo e a porta aberta para
-   * duas grafias do mesmo `data:` — e o catálogo viaja para o bundle do cliente.
+   * Mesma forma e mesma exigência de `Traje.tinta.arte` e de `PecaSobreposta.arte`:
+   * começa em `/items/`, mora em `public/`, e **precisa ser rastreado pelo git** ou
+   * não chega ao ar. `arteDaPecaNoDeploy.test.ts` cobra as três coisas.
    */
-  png: string;
+  arte: string;
   /** Borda esquerda da caixa da tinta, em unidades do `viewBox`. */
   x: number;
   /** Borda superior da caixa da tinta, em unidades do `viewBox`. */

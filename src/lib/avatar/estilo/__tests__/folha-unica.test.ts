@@ -214,7 +214,7 @@ describe("o ns continua sendo o que separa os id", () => {
           nome: "Tom",
           formas: [{ d: "M10 20 L30 20 L30 40 Z", cor: "var(--av-cabelo, #262626)" }],
           tom: {
-            png: "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=",
+            arte: "/items/rosto/zz-tom-tom.png",
             x: 10,
             y: 20,
             w: 20,

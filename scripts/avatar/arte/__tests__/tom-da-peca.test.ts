@@ -46,19 +46,22 @@ describe("o tom contínuo que a esteira emite", () => {
     expect(peca.formas[1].cor).toContain("var(--av-cabelo");
   });
 
-  it("o base64 é PURO — sem `data:`, e é PNG de verdade", () => {
-    expect(peca.tom.png.startsWith("data:")).toBe(false);
-    expect(peca.tom.png).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
+  it("o campo guarda BYTES de PNG — não base64, não caminho", () => {
+    // A esteira devolve o buffer; quem grava o arquivo em `public/items/rosto/` e
+    // põe o CAMINHO no catálogo é `rostos.ts`. Uma função de medição que escrevesse
+    // no deploy sujaria a prateleira toda vez que alguém medisse alguma coisa.
+    expect(Buffer.isBuffer(peca.tom.png)).toBe(true);
+    expect(peca.tom.png).toHaveLength(peca.tomPx.bytes);
 
     // Assinatura PNG: os 8 bytes de cabeçalho. Um WEBP aqui passaria em tudo que é
-    // string e falharia no navegador.
-    const buf = Buffer.from(peca.tom.png, "base64");
-    expect([...buf.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    expect(buf).toHaveLength(peca.tomPx.bytes);
+    // tamanho e falharia só na tela.
+    expect([...peca.tom.png.subarray(0, 8)]).toEqual([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ]);
   });
 
   it("o PNG decodifica na metade da caixa — a resolução é 50% e é medida", async () => {
-    const meta = await sharp(Buffer.from(peca.tom.png, "base64")).metadata();
+    const meta = await sharp(peca.tom.png).metadata();
 
     // A bbox da máscara, recalculada aqui pelo caminho independente.
     let x0 = LADO;
@@ -120,7 +123,7 @@ describe("o tom contínuo que a esteira emite", () => {
     // esticar, e a asserção seguinte passaria por vacuidade.
     expect(peca.esticao.hi).toBeLessThan(255);
 
-    const { data, info } = await sharp(Buffer.from(peca.tom.png, "base64"))
+    const { data, info } = await sharp(peca.tom.png)
       .greyscale()
       .raw()
       .toBuffer({ resolveWithObject: true });

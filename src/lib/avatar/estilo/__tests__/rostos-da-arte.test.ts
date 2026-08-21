@@ -13,6 +13,8 @@
  * confere, é a família de defeito que este projeto mais pagou para aprender.
  */
 
+import { readFileSync } from "fs";
+
 import { describe, expect, it } from "vitest";
 
 import { CATALOGO, ROSTOS } from "../../catalogo";
@@ -140,9 +142,9 @@ describe("o SVG que o compositor emite com ela", () => {
   });
 
   it("não quebra o contrato do SVG", () => {
-    // Com o base64 dentro: o alfabeto dele (A–Z a–z 0–9 + / =) não colide com as
-    // regexes de `var(--…)` do contrato, e `conferirSvg` não tem allowlist de
-    // elemento — `<mask>` e `<image>` passam por serem estrutura, não propriedade.
+    // `conferirSvg` não tem allowlist de elemento: `<mask>` e `<image>` passam por
+    // serem estrutura, não propriedade. O que ele trava é custom property fora do
+    // contrato e comentário dentro do `<style>`, e o `href` não é nem um nem outro.
     expect(conferirSvg(comPeca)).toEqual([]);
   });
 
@@ -177,10 +179,10 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
     // apareça no `git diff` em vez de passar. Se ele mudar sem ninguém ter mexido na
     // arte, a mudança veio do traçador e vale para todas as peças — isso é achado.
     //
-    // **São dois porque a peça passou a ter duas naturezas.** O `d` é vetor e
-    // comprime como texto; o base64 é raster e não comprime (o PNG já está
-    // comprimido, e o base64 sobre ele é 4/3 de ruído para o gzip). Somá-los num
-    // número só esconderia exatamente a diferença que interessa.
+    // **São dois porque a peça passou a ter duas naturezas.** O `d` é vetor, vive
+    // dentro do SVG e comprime como texto; a máscara é raster, é ARQUIVO servido à
+    // parte, e não comprime (o PNG já vem comprimido). Somá-los num número só
+    // esconderia exatamente a diferença que interessa — e eles nem viajam juntos.
     //
     // A HISTÓRIA DO PRIMEIRO NÚMERO, porque ela mostra o selo funcionando duas vezes:
     //
@@ -190,12 +192,19 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
     //   10 624 B  2026-08-20, o TOM CONTÍNUO: o miolo deixou de ser traçado e a
     //             forma 2 virou a mesma curva da 1. Duas cópias de um `d` de 5 312 B.
     //
-    // O `d` caiu 6,6% e a peça ganhou **8 960 B de base64** — que é o preço do tom, e
-    // está pago com os olhos abertos: a arte tinha 917 tons e chegava ao boneco com
-    // dois. Peso maior foi consequência aceita, não descuido.
+    // O `d` caiu 6,6% e a peça ganhou **6 718 B de PNG**, que é o preço do tom e está
+    // pago com os olhos abertos: a arte tinha 917 tons e chegava ao boneco com dois.
+    //
+    // ⚠️ Este segundo número **não vai no SVG nem no bundle**. Ele foi base64 embutido
+    // por um dia, e a medição do ranking mostrou o que isso custava: 30 bonecos com a
+    // `trancada-v4` fechavam em 753,0 KB de gzip contra 17,6 KB com o arquivo
+    // externo, porque o boneco composto passa da janela de 32.768 B do DEFLATE. Ver
+    // `TomDaPeca` (`tipos.ts`). No SVG, a máscara custa hoje 38 bytes de caminho.
     const bytes = ROSTOS_DA_ARTE[SLUG].formas!.reduce((a, f) => a + f.d.length, 0);
     expect(bytes, "os `d` das duas formas").toBe(10624);
-    expect(ROSTOS_DA_ARTE[SLUG].tom!.png.length, "o base64 da máscara").toBe(8960);
+    expect(readFileSync(`public${ROSTOS_DA_ARTE[SLUG].tom!.arte}`), "o PNG da máscara").toHaveLength(
+      6718,
+    );
   });
 });
 
@@ -211,13 +220,14 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
 describe("o tom, e o que ele não pode ter de errado", () => {
   const tom = ROSTOS_DA_ARTE[SLUG].tom!;
 
-  it("o base64 é PURO e é PNG — sem `data:`, com a assinatura certa", () => {
-    // O prefixo `data:` é montado pelo COMPOSITOR, uma vez. Um que vazasse para cá
-    // sairia duplicado no `href` e o navegador descartaria a imagem em silêncio.
-    expect(tom.png.startsWith("data:")).toBe(false);
-    expect(tom.png).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
+  it("o campo é um CAMINHO da prateleira, e o arquivo lá é PNG de verdade", () => {
+    // Mesma forma e mesma exigência de `Traje.tinta.arte`: começa em `/items/`, e o
+    // `arteDaPecaNoDeploy.test.ts` cobra que ele exista no disco E seja rastreado
+    // pelo git. Aqui a pergunta é a de conteúdo — o arquivo é mesmo um PNG?
+    expect(tom.arte).toMatch(/^\/items\/rosto\/.+\.png$/);
+    expect(tom.arte).not.toContain("data:");
 
-    const buf = Buffer.from(tom.png, "base64");
+    const buf = readFileSync(`public${tom.arte}`);
     expect([...buf.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   });
 
@@ -229,7 +239,7 @@ describe("o tom, e o que ele não pode ter de errado", () => {
     // O IHDR são os 8 bytes logo depois do nome do chunk, em big-endian: largura,
     // depois altura. Lê-los aqui em vez de usar o `sharp` é de propósito — este teste
     // mora em `src/`, e `sharp` é ferramenta de esteira.
-    const buf = Buffer.from(tom.png, "base64");
+    const buf = readFileSync(`public${tom.arte}`);
     const w = buf.readUInt32BE(16);
     const h = buf.readUInt32BE(20);
     expect(w).toBeGreaterThan(0);

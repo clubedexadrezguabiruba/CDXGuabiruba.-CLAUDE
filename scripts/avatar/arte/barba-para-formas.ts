@@ -30,7 +30,10 @@
  *
  *   forma 1 — a silhueta INTEIRA da peça, em `var(--av-linha)`. O preto de baixo.
  *   forma 2 — **o MESMO `d`**, em `var(--av-cabelo, …)`, vestido pela máscara.
- *   tom     — um PNG **cinza** da luminância da arte, base64, na caixa da peça.
+ *   tom     — um PNG **cinza** da luminância da arte, na caixa da peça. Ele é
+ *             **servido à parte**, como o `.svg` do traje: o SVG do boneco carrega o
+ *             caminho, não os bytes. Quem grava o arquivo é `rostos.ts` — ver o
+ *             campo `tom` de `RostoDeArte` e `TomDaPeca` em `tipos.ts`.
  *
  * Onde a arte é clara a cor do cabelo aparece cheia; onde escurece ela cede e o
  * preto de baixo aparece. **A máscara não tem cor** — é um canal de cinza —, então
@@ -308,8 +311,15 @@ export interface RostoDeArte {
    * mesma receita do cabelo sobre o crânio (`compositor.ts`, `cabeloNoCranio`).
    */
   formas: { d: string; cor: string; semTraco: true }[];
-  /** O tom contínuo: PNG cinza base64 **PURO** e a caixa dele, em unidades. */
-  tom: { png: string; x: number; y: number; w: number; h: number };
+  /**
+   * O tom contínuo: os BYTES do PNG cinza e a caixa dele, em unidades.
+   *
+   * ⚠️ **Quem grava o arquivo é `rostos.ts`, não esta função.** Ela é chamada também
+   * pelas réguas de bancada, com `--sem-limite` e sobre arte que nunca vai ao
+   * catálogo — uma função de MEDIÇÃO que escreve em `public/` como efeito colateral
+   * sujaria o deploy toda vez que alguém medisse alguma coisa.
+   */
+  tom: { png: Buffer; x: number; y: number; w: number; h: number };
   /** As âncoras do esticão que ESTA arte produziu — p2 e p98 da luminância. */
   esticao: { lo: number; hi: number };
   /** O PNG de tom em pixels, depois do `RESOLUCAO_DO_TOM`. */
@@ -544,12 +554,12 @@ export async function construirRosto(
   // --- 4. traçado. UM, e é a silhueta. ---
   const dPeca = paraUnidades(await tracar(pecaLimpa.m, W, H));
 
-  const png64 = pngTom.toString("base64");
-  // O CAMPO GUARDA O BASE64 PURO, e isto é asserção, não zelo: quem monta o
-  // `data:image/png;base64,` é o compositor, uma vez. Um prefixo que vazasse para cá
-  // sairia duplicado no `href` e o navegador descartaria a imagem em silêncio.
-  if (png64.startsWith("data:"))
-    throw new Error("o PNG de tom veio com prefixo `data:` — o campo guarda base64 PURO");
+  // O CAMPO GUARDA OS BYTES DO PNG, e a assinatura é conferida aqui em vez de
+  // presumida: um buffer que não fosse PNG só apareceria como imagem quebrada na
+  // tela, e a esteira inteira passaria verde até alguém abrir a folha.
+  const ASSINATURA = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (!ASSINATURA.every((b, i) => pngTom[i] === b))
+    throw new Error("o buffer de tom não começa com a assinatura PNG");
 
   return {
     slug: slugDoRosto(caminhoArte),
@@ -558,7 +568,7 @@ export async function construirRosto(
       { d: dPeca, cor: COR_CONTORNO, semTraco: true },
       { d: dPeca, cor: COR_MIOLO, semTraco: true },
     ],
-    tom: { png: png64, x: emU(a0.x), y: emU(a0.y), w: emU(b0.x - a0.x), h: emU(b0.y - a0.y) },
+    tom: { png: pngTom, x: emU(a0.x), y: emU(a0.y), w: emU(b0.x - a0.x), h: emU(b0.y - a0.y) },
     esticao: { lo, hi },
     tomPx: { w: tomW, h: tomH, bytes: pngTom.length },
     pxPeca: pecaLimpa.mantidos,
@@ -605,7 +615,7 @@ BARBA -> silhueta + tom — ${arte}
   console.log(
     `  tom (${(RESOLUCAO_DO_TOM * 100).toFixed(0)}% da caixa)            ` +
       `${p.tomPx.w}x${p.tomPx.h} px · ${p.tomPx.bytes} B de PNG · ` +
-      `${(p.tom.png.length / 1024).toFixed(1)} KB em base64`,
+      `${(p.tom.png.length / 1024).toFixed(1)} KB de arquivo`,
   );
   console.log(
     `  caixa da máscara               ` +
@@ -619,8 +629,11 @@ BARBA -> silhueta + tom — ${arte}
     `  forma 2  ${f2.cor.padEnd(24)} ${f2.d.length} bytes · o MESMO \`d\`` +
       `${f1.d === f2.d ? "" : "  <- DIVERGIU, e não deveria"}`,
   );
-  console.log(`  soma     ${f1.d.length + f2.d.length} bytes de \`d\` + ${p.tom.png.length} de base64
-`);
+  console.log(
+    `  soma     ${f1.d.length + f2.d.length} bytes de \`d\` no SVG` +
+      `  ·  ${p.tom.png.length} B de PNG servido à parte (quem grava é \`arte:rostos\`)
+`,
+  );
 }
 
 if (process.argv[1]?.endsWith("barba-para-formas.ts")) {

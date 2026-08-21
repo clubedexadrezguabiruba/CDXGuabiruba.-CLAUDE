@@ -718,6 +718,10 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
  * um mesmo boneco pode ter tom no rosto E no chapéu. `${ns}-tom-${slot}` é único nos
  * dois eixos, pelo mesmo motivo que `${ns}-fe` e `${ns}-fd` já são.
  *
+ * **O `href` é um CAMINHO, e o `<mask>` custa 38 bytes por boneco.** O PNG é servido
+ * à parte, como o `.svg` do traje — ver `TomDaPeca` (`tipos.ts`) para os 753 KB de
+ * gzip que o base64 embutido custava numa lista de 30.
+ *
  * **Sem `tom`, byte a byte o de sempre**: `defs` é string vazia e o atributo `mask`
  * não é escrito. É o que mantém os selos parados.
  */
@@ -755,7 +759,7 @@ function sobrepor(peca: PecaSobreposta | undefined, ns: string, slot: string): s
     : "";
   const defs = tom
     ? `<defs><mask id="${idTom}" maskUnits="userSpaceOnUse"${caixa}>` +
-      `<image href="data:image/png;base64,${attr(tom.png)}"${caixa} ` +
+      `<image href="${attr(tom.arte)}"${caixa} ` +
       `preserveAspectRatio="none"/></mask></defs>`
     : "";
   // A ÚLTIMA forma é a de cima — a da tinta. O tom veste ela e só ela.

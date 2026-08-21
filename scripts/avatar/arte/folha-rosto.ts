@@ -23,7 +23,7 @@
  *
  * Uso: npm run arte:folha-rosto [slug]
  */
-import { writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 import { chromium } from "@playwright/test";
 import sharp from "sharp";
@@ -87,7 +87,10 @@ async function principal(): Promise<void> {
     (tom
       ? `<defs><mask id="fr-tom" maskUnits="userSpaceOnUse" ` +
         `x="${tom.x}" y="${tom.y}" width="${tom.w}" height="${tom.h}">` +
-        `<image href="data:image/png;base64,${tom.png}" ` +
+        // O PNG entra aqui EMBUTIDO, e é a única coisa nesta folha que difere do
+        // produto: a folha é um HTML montado por `setContent`, sem servidor, e um
+        // `href="/items/…"` não resolveria. O produto serve o mesmo arquivo por url.
+        `<image href="data:image/png;base64,${readFileSync(`public${tom.arte}`).toString("base64")}" ` +
         `x="${tom.x}" y="${tom.y}" width="${tom.w}" height="${tom.h}" ` +
         `preserveAspectRatio="none"/></mask></defs>`
       : "") +
@@ -199,8 +202,8 @@ async function principal(): Promise<void> {
       `(p2/p98 desta arte; fora disso, grampeado)`,
   );
   console.log(
-    `  máscara              ${p.tomPx.w}×${p.tomPx.h} px · ${p.tomPx.bytes} B de PNG · ` +
-      `${(p.tom.png.length / 1024).toFixed(1)} KB em base64`,
+    `  máscara              ${p.tomPx.w}×${p.tomPx.h} px · ${p.tomPx.bytes} B de PNG` +
+      `${peca.tom ? `  ·  servida em ${peca.tom.arte}` : ""}`,
   );
   console.log(`  descartado em ROSTO  ${p.pxNoRosto} px  (${((100 * p.pxNoRosto) / (total + p.pxNoRosto)).toFixed(2)}% da peça)`);
   console.log(

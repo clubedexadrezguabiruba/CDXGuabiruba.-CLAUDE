@@ -159,8 +159,8 @@ const ROSTO = (sob: boolean): PecaDeRosto => ({
   nome: "Rosto da pilha",
   formas: [{ d: "M 101 101 L 141 101 L 141 141 Z", cor: "#FE0001" }],
   tom: {
-    // PNG cinza 2×2 — o menor que decodifica. O que importa aqui é a MOLDURA.
-    png: "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=",
+    // O caminho da máscara — o que importa aqui é a MOLDURA, não os bytes.
+    arte: "/items/rosto/zz-rosto-da-pilha-tom.png",
     x: 101,
     y: 101,
     w: 40,

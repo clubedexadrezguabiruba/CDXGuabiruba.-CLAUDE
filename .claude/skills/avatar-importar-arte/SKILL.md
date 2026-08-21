@@ -76,6 +76,10 @@ ser a rota. O que passou a valer:
 aluno escolhe; nunca proibiu **tom**. A máscara da barba é um PNG **cinza** — não
 tem cor para assar —, e a cor continua vindo inteira de `var(--av-cabelo)`.
 
+**A máscara é ARQUIVO, não `data:`** (`public/items/rosto/<slug>-tom.png`, e o
+catálogo guarda o caminho). Embutir o base64 foi a primeira versão e custava
+**753,0 KB de gzip** num ranking de 30 — ver §13 do runbook.
+
 Duas travas que você vai encontrar e que são de propósito:
 
 - `traje-farda` e `traje-gambesao` estão **congeladas no vetor** (`CONGELADAS_NO_VETOR`

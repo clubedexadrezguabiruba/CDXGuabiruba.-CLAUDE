@@ -443,36 +443,47 @@ export const ORCAMENTO_COMPOSTO = { formas: 26, bytes: 10240 } as const;
  * `folha-base.ts`.
  *
  * ---------------------------------------------------------------------------
- * OS BYTES SUBIRAM 6,5×, E O NÚMERO NOVO É O DA PEÇA DE ARTE COM TOM
+ * OS BYTES — E A HISTÓRIA DELES É A LIÇÃO, NÃO O NÚMERO
  * ---------------------------------------------------------------------------
  *
- *   barba PARAMÉTRICA                                          3 010 B
- *   barba DE ARTE, antes do tom          `d` de 2 formas      11 372 B
- *   barba DE ARTE, com tom               `d` × 2   10 624 B
- *                                        + base64   8 960 B →  19 584 B
+ *   barba PARAMÉTRICA                                            3 010 B
+ *   barba DE ARTE, antes do tom            `d` de 2 formas      11 372 B
+ *   barba DE ARTE, tom EMBUTIDO em base64  10 624 + 8 960 B  →  19 584 B
+ *   barba DE ARTE, tom em ARQUIVO          10 624 +    38 B  →  10 662 B
  *
- * Os 30 000 declarados dão a mesma ordem de folga que os 4 500 davam sobre 3 010.
+ * Os 15 000 declarados dão a mesma ordem de folga que os 4 500 davam sobre 3 010.
  * Vale a regra de sempre (doc 15:463): **byte não veta arte aprovada** — ele
  * registra. Quem veta é forma.
  *
- * ⚠️ **RESSALVA, e ela é o que este número tem de mais importante: BASE64 NÃO
- * COMPRIME.** Toda a conta de peso deste projeto se apoiava em "SVG é texto, e texto
- * comprime" — os 482 KB crus do ranking virando 56 KB no fio, com a razão MELHORANDO
- * a cada camada (6,6× → 8,6×), porque cada peça nova repete estrutura que o
- * dicionário do gzip já tem.
+ * ⚠️ **A LIÇÃO, e ela vale para toda peça futura: BASE64 NÃO COMPRIME.** Toda a
+ * conta de peso deste projeto se apoiava em "SVG é texto, e texto comprime" — os
+ * 482 KB crus do ranking virando 56 KB no fio, com a razão MELHORANDO a cada camada
+ * (6,6× → 8,6×), porque cada peça nova repete estrutura que o dicionário do gzip já
+ * tem. **A máscara embutida quebrava essa premissa em dois lugares ao mesmo tempo:**
+ * o PNG já vem comprimido (o gzip não tem o que tirar) e o base64 ainda o infla em
+ * 4/3.
  *
- * A máscara quebra essa premissa em dois lugares ao mesmo tempo: o PNG já está
- * comprimido (o gzip não tem o que tirar dele) e o base64 ainda o infla em 4/3.
- * Trinta bonecos no ranking com a mesma barba repetem o mesmo blob, e aí o
- * dicionário salva — mas trinta barbas DIFERENTES não. **É custo no fio, e é custo
- * no bundle do cliente**, porque `AvatarKokeshi.tsx` importa `catalogo` e o catálogo
- * viaja inteiro: cada barba com tom são ~+9 a ~+21 KB que nenhuma compressão devolve.
+ * E o sintoma não foi gradual, foi um PENHASCO. Medido em 2026-08-21 sobre a lista
+ * do ranking (30 bonecos):
  *
- * A mitigação (catálogo preguiçoso, ou máscara em arquivo externo em vez de inline)
- * está **fora do escopo por decisão** — ela só entra se o número da folha do Bloco G
- * pedir, e a decisão é do Doug.
+ *   peça             boneco composto    gzip dos 30
+ *   `barba-cheia`         31 857 B          24,9 KB     cabe na janela por 911 B
+ *   `trancada-v4`         49 101 B         753,0 KB     não cabe — 30× pior
+ *
+ * O DEFLATE casa repetição dentro de **32.768 bytes**. Cabendo o boneco na janela, a
+ * cópia seguinte referencia o blob anterior; não cabendo, cada cópia paga o blob
+ * inteiro.
+ *
+ * **A saída foi tirar o PNG de dentro do SVG** (`TomDaPeca.arte`, `tipos.ts`): ele é
+ * servido de `public/items/rosto/`, como o `.svg` do traje, e no SVG a máscara custa
+ * 38 bytes de caminho. O boneco caiu para **22 913 B** — a folga dentro da janela foi
+ * de 911 para **9 855 bytes**, que é o que impede um chapéu somado à barba de
+ * cruzá-la. Os 30 do ranking fecham em **15,4 KB**.
+ *
+ * O peso do PNG não sumiu: ele saiu deste orçamento e entrou no de `arte:peso`, que
+ * mede a prateleira de `public/items/` — e passou a medir `.png` por causa disto.
  */
-export const CUSTO_DE_SOBREPOSTA = { formas: 5, bytes: 30000 } as const;
+export const CUSTO_DE_SOBREPOSTA = { formas: 5, bytes: 15000 } as const;
 
 /**
  * BASE + CABELO + ROSTO — três camadas, e é o que o produto renderiza hoje.

@@ -1,6 +1,9 @@
 {
+  "public/items/base/avatar-base-female.png": 36029,
+  "public/items/base/avatar-base-male.png": 33557,
   "public/items/base/avatar-base-neutro.svg": 178166,
   "public/items/base/avatar-base-sem-traje.svg": 88607,
+  "public/items/rosto/rosto-barba-cheia-tom.png": 6741,
   "public/items/traje/traje-farda.svg": 8119,
   "public/items/traje/traje-gambesao.svg": 62060
 }

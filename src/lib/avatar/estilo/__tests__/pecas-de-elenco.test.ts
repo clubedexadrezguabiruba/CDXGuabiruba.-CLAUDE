@@ -449,9 +449,8 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
  *     confissão de que alguém entendeu a máscara como "camada de sombra genérica".
  */
 describe("tom — o claro-escuro por máscara de luminosidade", () => {
-  /** PNG cinza 2×2, o menor que decodifica. O conteúdo não importa aqui; o id sim. */
-  const PNG =
-    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=";
+  /** O caminho da máscara. Ela é servida à parte, como o `.svg` do traje. */
+  const PNG = "/items/rosto/zz-com-tom-tom.png";
 
   /** Duas formas — a de baixo é o traço, a de cima é a tinta que a máscara veste. */
   const COM_TOM: PecaSobreposta = {
@@ -461,7 +460,7 @@ describe("tom — o claro-escuro por máscara de luminosidade", () => {
       { d: "M10 20 L30 20 L30 40 Z", cor: "var(--av-linha)" },
       { d: "M10 20 L30 20 L30 40 Z", cor: "var(--av-cabelo, #262626)", semTraco: true },
     ],
-    tom: { png: PNG, x: 10, y: 20, w: 20, h: 20 },
+    tom: { arte: PNG, x: 10, y: 20, w: 20, h: 20 },
   };
 
   it("emite UMA máscara e UM `mask=url(#…)`, e os dois fecham no mesmo id", () => {
@@ -480,7 +479,10 @@ describe("tom — o claro-escuro por máscara de luminosidade", () => {
     expect(svg).toContain('maskUnits="userSpaceOnUse"');
     expect(svg.match(/x="10" y="20" width="20" height="20"/g) ?? []).toHaveLength(2);
     expect(svg).toContain('preserveAspectRatio="none"');
-    expect(svg).toContain(`href="data:image/png;base64,${PNG}"`);
+    // O `href` é um CAMINHO, não `data:`. Ver `TomDaPeca` (`tipos.ts`): base64
+    // embutido custava 753 KB de gzip numa lista de 30 bonecos.
+    expect(svg).toContain(`href="${PNG}"`);
+    expect(svg).not.toContain("data:image/png;base64,");
   });
 
   it("a máscara veste a ÚLTIMA forma, e nunca o traço", () => {
@@ -533,7 +535,7 @@ describe("tom — o claro-escuro por máscara de luminosidade", () => {
       id: "zz-assada-com-tom",
       nome: "Assada com tom",
       arte: "/items/chapeu/zz.svg",
-      tom: { png: PNG, x: 0, y: 0, w: 1, h: 1 },
+      tom: { arte: PNG, x: 0, y: 0, w: 1, h: 1 },
     };
     expect(assadaComTom.id).toBe("zz-assada-com-tom");
   });

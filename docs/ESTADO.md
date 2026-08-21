@@ -258,9 +258,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 0 |
-| **Árvore** | **27 arquivos sujos** |
-| **Último commit** | 6e10909 · 2026-08-20 · fix(avatar): a barba com bigode APAGAVA A BOCA — o potrace declara a regra e a esteira jogava fora |
+| **Commits à frente de `origin/main`** | 1 |
+| **Árvore** | **21 arquivos sujos** |
+| **Último commit** | 7649eed · 2026-08-21 · feat(avatar): a barba de 917 tons deixa de chegar com DOIS — o vetor carrega a forma, o raster carrega o tom |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -319,7 +319,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-20 |
+| `CLAUDE.md` | 2026-08-21 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-11 |

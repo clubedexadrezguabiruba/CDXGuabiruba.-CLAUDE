@@ -64,7 +64,8 @@ escolhe; ela nunca proibiu **tom**. Quem produzia peça de duas cores era o
   WEBP dentro do `.svg` — arte NOVA só; `traje-farda` e `traje-gambesao` estão
   congeladas no vetor por decisão do Doug, com trava mecânica em `traje.ts`;
 - **quem recolore** (barba) sai como silhueta em `formas` com token de cor **mais
-  uma máscara de luminosidade**: um PNG **cinza** em base64. A máscara não tem
+  uma máscara de luminosidade**: um PNG **cinza** servido à parte, em
+  `public/items/rosto/`, com o catálogo guardando só o caminho. A máscara não tem
   cor — é um canal de cinza —, então a cor continua vindo inteira de
   `var(--av-cabelo)`, que é a escolha do aluno. O `typecheck` cobra isso: o braço
   `arte` da união declara `tom?: never`.

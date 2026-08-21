@@ -24,11 +24,29 @@ import { execFileSync } from "child_process";
 import { existsSync } from "fs";
 import { describe, expect, it } from "vitest";
 
+import { ROSTOS_DA_ARTE } from "../estilo/rostos-da-arte";
 import { TRAJES_DA_ARTE } from "../estilo/trajes-da-arte";
 
-/** As `tinta.arte` do catálogo, como caminho de disco a partir da raiz. */
-const ARTES = Object.values(TRAJES_DA_ARTE)
-  .map((t) => t.tinta.arte)
+/**
+ * Todo endereço que o catálogo declara, como caminho de disco a partir da raiz.
+ *
+ * São DUAS famílias hoje, e a segunda entrou em 2026-08-21:
+ *
+ *  - `tinta.arte` do TRAJE — o `.svg` da peça;
+ *  - `tom.arte` do ROSTO — o `.png` da máscara de luminosidade, que deixou de ser
+ *    base64 embutido quando o gzip do ranking mostrou o penhasco da janela do
+ *    DEFLATE (ver `TomDaPeca` em `tipos.ts`).
+ *
+ * O modo de falha é IDÊNTICO nas duas, e é por isso que elas dividem este gate: o
+ * compositor decide pelo campo declarado, nunca pelo arquivo existindo. Um `.png` de
+ * tom que não viajasse levaria 404, o `<mask>` ficaria vazio — e máscara vazia não
+ * mostra o desenho pela metade, ela **apaga a forma que veste**. A barba sairia só
+ * com o preto de baixo, em produção, com todos os gates verdes.
+ */
+const ARTES = [
+  ...Object.values(TRAJES_DA_ARTE).map((t) => t.tinta.arte),
+  ...Object.values(ROSTOS_DA_ARTE).map((r) => r.tom?.arte),
+]
   .filter((p): p is string => !!p)
   .map((url) => `public${url}`);
 
@@ -43,9 +61,13 @@ function rastreado(caminho: string): boolean {
 }
 
 describe("a arte de cada peça chega ao deploy", () => {
-  it("o catálogo declara pelo menos uma peça com arte", () => {
-    // Sem esta linha o teste passaria vazio no dia em que o literal regredisse.
+  it("o catálogo declara pelo menos uma peça com arte — nas DUAS famílias", () => {
+    // Sem esta linha o teste passaria vazio no dia em que o literal regredisse. E
+    // são duas contagens porque um `.filter` que zerasse UMA das famílias deixaria a
+    // outra segurando o total — o gate ficaria verde cobrindo metade do catálogo.
     expect(ARTES.length).toBeGreaterThan(0);
+    expect(ARTES.filter((p) => p.endsWith(".svg")).length).toBeGreaterThan(0);
+    expect(ARTES.filter((p) => p.endsWith(".png")).length).toBeGreaterThan(0);
   });
 
   it.each(ARTES)("%s existe no disco", (caminho) => {

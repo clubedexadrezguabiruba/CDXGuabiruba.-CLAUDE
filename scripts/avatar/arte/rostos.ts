@@ -39,6 +39,22 @@ import { primeiraDivergencia, semCR } from "./gerado";
 const SAIDA = "src/lib/avatar/estilo/rostos-da-arte.ts";
 
 /**
+ * ONDE O PNG DE TOM MORA — e ele é peça de deploy, não intermediário.
+ *
+ * `public/items/` é a prateleira do produto: é de lá que o navegador da criança pede
+ * a peça, e é a única pasta de `public/` que viaja como catálogo (`public/dev/` é
+ * oficina, e `arteDaPecaNoDeploy.test.ts` reprova quem nasce lá).
+ *
+ * O arquivo **precisa ser rastreado pelo git** — a Vercel builda a árvore do git, e
+ * arquivo ignorado não chega ao ar por mais que exista nesta máquina. É o mesmo gate
+ * do `.svg` do traje, pelo mesmo motivo, e o modo de falha é o mesmo: o compositor
+ * decide pelo campo declarado, nunca pelo arquivo existindo, então a máscara sumiria
+ * em silêncio e a barba sairia chapada em produção com todos os gates verdes.
+ */
+const PRATELEIRA_TOM = "public/items/rosto";
+const urlDoTom = (slug: string) => `/items/rosto/${slug}-tom.png`;
+
+/**
  * O nome que a criança lê, por arte promovida. Uma linha por peça, sem default.
  *
  * Ele não se deriva do slug pelo motivo que `trajes.ts` já escreve: `barba-cheia`
@@ -82,10 +98,18 @@ const CABECALHO = `/**
  *     ela o \`fill\` cai em preto e a barba vira mancha sólida. \`#262626\` é a que o
  *     Doug julgou na folha recolorida de 2026-08-19.
  *
- * E o campo \`tom\`: um PNG **cinza** da luminância da arte, em base64, esticado
- * entre os percentis p2 e p98 DESTA peça e servido a 50% da caixa. O compositor o
- * monta como \`<mask>\` e veste a forma 2. Onde a arte é clara a cor do cabelo
- * aparece cheia; onde escurece ela cede e o preto de baixo aparece.
+ * E o campo \`tom\`: um PNG **cinza** da luminância da arte, esticado entre os
+ * percentis p2 e p98 DESTA peça e servido a 50% da caixa. O compositor o monta como
+ * \`<mask>\` e veste a forma 2. Onde a arte é clara a cor do cabelo aparece cheia;
+ * onde escurece ela cede e o preto de baixo aparece.
+ *
+ * **O que entra aqui é o CAMINHO do PNG, não os bytes.** O arquivo mora em
+ * \`public/items/rosto/\` e é servido à parte, como o \`.svg\` do traje. Embutir os
+ * bytes em base64 foi a primeira versão, e ela quebrava o ranking: 30 bonecos com a
+ * \`trancada-v4\` fechavam em **753,0 KB** de gzip contra **17,6 KB** com o arquivo
+ * externo, porque o boneco composto passa da janela de 32.768 B do DEFLATE e a
+ * dedução do blob morre. E o base64 viajava no bundle do cliente, onde compressão
+ * nenhuma o alcança. Ver \`TomDaPeca\` em \`tipos.ts\`.
  *
  * **A máscara não tem cor** — é um canal de cinza —, então a peça continua
  * recolorindo INTEIRA e a Regra Inviolável nº 4 continua de pé. O argumento
@@ -145,7 +169,7 @@ function corpoDaPeca(
   slug: string,
   nome: string,
   formas: { d: string; cor: string; semTraco: true }[],
-  tom: { png: string; x: number; y: number; w: number; h: number },
+  tom: { arte: string; x: number; y: number; w: number; h: number },
 ): string {
   return (
     `  ${JSON.stringify(slug)}: {\n` +
@@ -176,12 +200,12 @@ function corpoDaPeca(
       )
       .join("\n") +
     `\n    ],\n` +
-    // O TOM, e o `png` vai numa linha só POR NECESSIDADE: é base64, e base64 não tem
-    // ponto de quebra. Partir a string em pedaços concatenados custaria bytes de
-    // fonte e criaria um jeito de o `--check` divergir por formatação em vez de por
-    // conteúdo. O Prettier não toca em literal de string.
+    // O TOM. O que entra no literal é o CAMINHO do PNG, não os bytes dele — os bytes
+    // moram em `public/items/rosto/` e são servidos à parte, como o `.svg` do traje.
+    // Ver `TomDaPeca` (`tipos.ts`) para os 753 KB de gzip que o base64 embutido
+    // custava numa lista de 30 bonecos, e para o que ele pesava no bundle.
     `    tom: {\n` +
-    `      png: ${JSON.stringify(tom.png)},\n` +
+    `      arte: ${JSON.stringify(tom.arte)},\n` +
     `      x: ${tom.x},\n` +
     `      y: ${tom.y},\n` +
     `      w: ${tom.w},\n` +
@@ -191,9 +215,19 @@ function corpoDaPeca(
   );
 }
 
-async function gerar(): Promise<string> {
+/**
+ * `escrever: false` é o modo `--check`: nada é gravado, e o PNG no disco é COMPARADO
+ * byte a byte com o que a esteira produziu agora.
+ *
+ * A assimetria com `arte:trajes` é de propósito e é conserto: aquele **reescreve** os
+ * `.svg` mesmo em `--check`, e foi por causa disso que a trava das peças congeladas
+ * precisou ser mecânica (`CONGELADAS_NO_VETOR`, `traje.ts`). Um `--check` que escreve
+ * não é conferência, é regeração com relatório.
+ */
+async function gerar(escrever: boolean): Promise<string> {
   const blocos: string[] = [];
   let faltou = false;
+  if (escrever) mkdirSync(PRATELEIRA_TOM, { recursive: true });
 
   for (const [arquivo, nome] of Object.entries(NOMES)) {
     const caminho = `${PASTA}/${arquivo}.png`;
@@ -207,15 +241,39 @@ async function gerar(): Promise<string> {
     }
     const p = await construirRosto(caminho);
     const bytes = p.formas.reduce((a, f) => a + f.d.length, 0);
+
+    // O PNG DA MÁSCARA — gravado aqui, e só aqui. `construirRosto` é chamada também
+    // pelas réguas de bancada, sobre arte que nunca vai ao catálogo; se ela gravasse,
+    // medir alguma coisa sujaria o deploy.
+    const arquivoTom = `${PRATELEIRA_TOM}/${p.slug}-tom.png`;
+    if (escrever) writeFileSync(arquivoTom, p.tom.png);
+    else if (!existsSync(arquivoTom)) {
+      console.error(
+        `  ✗ ${arquivoTom} NÃO EXISTE, e o catálogo o declara.
+` +
+          `    O boneco pediria a máscara ao servidor, levaria 404, e a barba sairia
+` +
+          `    chapada em produção com todos os gates verdes. Rode \`npm run arte:rostos\`.`,
+      );
+      faltou = true;
+    } else if (!readFileSync(arquivoTom).equals(p.tom.png)) {
+      console.error(
+        `  ✗ ${arquivoTom} DEFASOU da esteira (disco ${readFileSync(arquivoTom).length} B ` +
+          `× gerado ${p.tom.png.length} B).
+` +
+          `    A máscara no ar não é a que esta arte produz. Rode \`npm run arte:rostos\`.`,
+      );
+      faltou = true;
+    }
     console.log(
       `  ${p.slug.padEnd(22)} ${nome.padEnd(16)} ` +
         `${p.pxPeca.toLocaleString("pt-BR")} px · ` +
         `esticão lum ${p.esticao.lo}→${p.esticao.hi} · ` +
-        `tom ${p.tomPx.w}×${p.tomPx.h} (${(p.tom.png.length / 1024).toFixed(1)} KB b64) · ` +
+        `tom ${p.tomPx.w}×${p.tomPx.h} (${(p.tom.png.length / 1024).toFixed(1)} KB de PNG) · ` +
         `${p.formas.length} formas · ${bytes.toLocaleString("pt-BR")} bytes de \`d\` · ` +
         `${p.pxNoRosto} px descartados em ROSTO`,
     );
-    blocos.push(corpoDaPeca(p.slug, nome, p.formas, p.tom));
+    blocos.push(corpoDaPeca(p.slug, nome, p.formas, { ...p.tom, arte: urlDoTom(p.slug) }));
   }
   if (faltou) process.exit(1);
 
@@ -233,7 +291,7 @@ async function principal(): Promise<void> {
 
   if (check) {
     console.log(`CONFERINDO ${SAIDA} (--check: gera em memória, não escreve)\n`);
-    const esperado = await gerar();
+    const esperado = await gerar(false);
     let emDisco: string;
     try {
       emDisco = readFileSync(SAIDA, "utf-8");
@@ -258,7 +316,7 @@ async function principal(): Promise<void> {
   }
 
   console.log(`GERANDO ${SAIDA}\n`);
-  const texto = await gerar();
+  const texto = await gerar(true);
   mkdirSync("src/lib/avatar/estilo", { recursive: true });
   writeFileSync(SAIDA, texto, "utf-8");
   console.log(
