@@ -1,5 +1,20 @@
 # Recruta 64 — Diretriz Geral dos Bots v1
 
+> ## ⛔ SUPERADA — não vale como instrução (2026-08-20)
+>
+> Este documento descreve os 20 Mestres do **Reino das 64 Casas**, e o reino
+> morreu. A lei do elenco é agora a **Bíblia Tonal v2**
+> ([`../Academia64_Biblia_Tonal_v2.md`](Academia64_Biblia_Tonal_v2.md) §11): o
+> bot não precisa ser humano nem de época — precisa **pertencer à Academia**, e o
+> elenco tem de variar em natureza, função e personalidade ao mesmo tempo.
+>
+> A **Diretriz dos Bots v2**, com o elenco novo de 10 personagens e as 5 alas
+> (Pátio → Salas de Treino → Biblioteca → Observatório → Arena), é escrita no
+> **Bloco 3** da virada. Enquanto ela não existe, use a §11 da Bíblia.
+>
+> O que sobrevive daqui: nada de conteúdo. Fica como registro de qual era o
+> elenco antes.
+
 ## Status do documento
 Documento diretriz final de **visão geral dos bots** do Recruta 64.
 

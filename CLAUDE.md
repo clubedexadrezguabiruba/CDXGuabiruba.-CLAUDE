@@ -1,8 +1,13 @@
-# Recruta 64 — Plataforma Educacional de Xadrez
+# Academia 64 — Plataforma Educacional de Xadrez
 
 ## Sobre o Projeto
-Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba (Recruta 64).
+Plataforma web educacional de xadrez do Clube de Xadrez Guabiruba (Academia 64).
 Mobile-first, com gamificação e progressão verificável pelo servidor.
+
+**O produto se chama Academia 64 desde 2026-08-20.** *Recruta 64* é nome
+histórico: sobrevive no nome deste diretório, em nome de arquivo de doc e em
+migration já aplicada — e em lugar nenhum que o aluno leia. A lei tonal é
+[docs/Academia64_Biblia_Tonal_v2.md](docs/Academia64_Biblia_Tonal_v2.md).
 
 ## Stack
 - Next.js 16 (App Router) + TypeScript strict + Tailwind CSS
@@ -37,7 +42,7 @@ O client envia tentativas. O servidor valida e decide.
 **Nada mais no avatar recolore. Nunca.** Traje, chapéu, rosto, óculos, pet,
 fundo, moldura, item de baú — todos têm **cor final, assada no desenho**.
 É a *emenda à D27*, decidida e permanente; ela já revogou a cor de fundo
-(`avatar_bg_color` não existe) e a recolorização do traje por patente.
+(`avatar_bg_color` não existe) e a recolorização do traje por título.
 
 Na prática, isto proíbe quatro coisas que já foram tentadas:
 - **coluna nova de cor** no banco (`avatar_*_color` além de `avatar_hair_color`);
@@ -192,6 +197,19 @@ quando não há `.env.local` — é assim que funcionam em CI.
   discordavam — a contagem de gates do `verify:all` aparecia à mão em seis lugares,
   com quatro valores diferentes. **Não escreva número de progresso em doc nenhum:
   ou o painel já mede, ou é caso de ensinar `scripts/estado.ts` a medir**
+- **A lei tonal: `docs/Academia64_Biblia_Tonal_v2.md`.** Um doc, uma era —
+  identidade, mapa da Academia, escada de títulos, vocabulário oficial, tom de
+  voz, direção visual, lei da arte de traje e lei do elenco de bots. Onde
+  divergir de outro doc de produto ou design, **ela vence** (só este arquivo está
+  acima dela). A v1, escrita para o reino medieval, está em `docs/_superado/`.
+  **A escada mudou de nome e não de número** — quem ler doc antigo traduz assim:
+  Soldado→**Aprendiz**, Aspirante→**Estudante**, Capitão→**Analista**,
+  Comandante→**Estrategista**, General→**Mestre**, Mestre→**Grão-Mestre**; o
+  tier 0 é **Calouro**. Os slugs do banco não mudam
+- Design System: [DESIGN.md](DESIGN.md) — tokens, escada de cor, tipografia,
+  componentes e os Do's/Don'ts. Deriva da Bíblia; a skill `design-recruta64` é só
+  o gatilho dele
+- Produto: [PRODUCT.md](PRODUCT.md) — superfícies, restrições e brand commitments
 - Visão do Produto: docs/Recruta64_Visao_do_Produto_v1.md — **a §5 (aulas) está
   superada** pelo currículo abaixo
 - Currículo das aulas: `docs/curriculo/01-curriculo-definitivo-v1.md` — **aprovado em
@@ -232,11 +250,21 @@ quando não há `.env.local` — é assim que funcionam em CI.
     leia este.** O processo de ponta a ponta: o que pedir ao gerador, a tabela de
     matiz, as três camadas do asset, as variantes por DPR, os oito gates e o que
     cada reprovação significa
-  - `docs/avatar/17-patentes-uniformes-design.md` — o design das 6 patentes: a lei
-    das cores do pipeline, a paleta medida e o racional pela Bíblia Tonal. A régua
-    de verdade é `scripts/avatar/patentes.ts`, medida por `verify:paleta-patentes`
+  - `docs/avatar/17-patentes-uniformes-design.md` — o design dos 6 títulos com
+    cor: a lei das cores do pipeline, a paleta medida e o racional pela Bíblia
+    Tonal. A régua de verdade é `scripts/avatar/patentes.ts`, medida por
+    `verify:paleta-patentes`. **A §4 (uniforme por patente) e a §6 (as 5 regiões)
+    são histórico** — a cor migrou para a moldura e as regiões viraram o mapa da
+    Academia (Bíblia v2 §5)
   - `docs/avatar/18-uniformes-blocos.md` — **para abrir, copiar e fechar.** Os 4
     pedidos prontos (Capitão, Comandante, General, Mestre) e a esteira até o gate
+  - `docs/avatar/22-catalogo-de-trajes.md` — **o menu de onde a próxima arte de
+    traje é escolhida**: 40 peças com raridade, organizadas por corredor da
+    Academia. Não é fila de produção
+  - `docs/avatar/21-slots-do-avatar-plano.md` — o plano vigente do guarda-roupa
+    (traje, chapéu, rosto, pet), e onde o título deixou a roupa e virou moldura
+  - `docs/avatar/20-troca-de-pilha-plano.md` — a troca de pilha: apagar o avatar
+    v2 e pôr o kokeshi em produção
   - `docs/avatar/12-avatar-v4-plano-completo.md` — as 30 decisões e o porquê,
     mais a **emenda à D27**: só pele e cabelo recolorem
   - `docs/avatar/13-checklist-de-verificacao.md` — os ~90 itens de auditoria

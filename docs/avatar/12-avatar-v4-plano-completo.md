@@ -1,5 +1,27 @@
 # Avatar v4 — Plano Completo (decisões tomadas + execução)
 
+> ## ⚠️ Emenda de 2026-08-20 — a virada para a Academia 64
+>
+> Este doc foi escrito na era do **reino medieval**, e três coisas dele já não
+> valem. A lei vigente é
+> [`../Academia64_Biblia_Tonal_v2.md`](../Academia64_Biblia_Tonal_v2.md).
+>
+> - **D27 — a justificativa mudou, a regra não.** "Só pele e cabelo recolorem"
+>   continua sendo lei dura (`CLAUDE.md`, regra 4). O que caiu foi o *porquê*
+>   escrito aqui, que apelava ao **uniforme por patente**: a cor deixou de vestir
+>   o boneco em 2026-08-13 e virou moldura. A razão da regra hoje é outra e é mais
+>   simples — **cor assada é cor que o artista controla**, e recolorir peça de
+>   catálogo com 40 formas diferentes não tem como dar certo.
+> - **D10 — o elenco de chapéu não tem elmo nem coroa.** São peças de época e de
+>   reino; a Academia não as pede.
+> - **"Patente" virou "título"**, e os degraus foram renomeados (Bíblia v2 §6).
+>   Onde este doc disser Soldado/Aspirante/Capitão/Comandante/General/Mestre, leia
+>   Aprendiz/Estudante/Analista/Estrategista/Mestre/Grão-Mestre. Os slugs do banco
+>   não mudaram.
+>
+> **D9, D16 e D25 já estavam revogadas antes desta emenda** — o que as substituiu
+> está no doc 15 e no doc 21, e não se reabre aqui.
+
 > **Para o usuário verificar e aprovar.** Todas as decisões do
 > `_superado/11-checklist-de-decisoes.md` estão respondidas aqui, cada uma com o motivo em
 > uma linha. Discordou de alguma? Diga qual — várias se encadeiam, e eu recalculo

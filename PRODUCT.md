@@ -51,12 +51,11 @@ relatório da turma no dia seguinte.
 ## Capabilities and Constraints
 
 **Superfícies existentes** (~24 telas de produto, App Router do Next.js 16):
-landing pública · login/registro · Quartel-General (dashboard) · Trilhas de
-Formação (lista, aula, revisão) · Desafios Táticos (rating, rush, revanche,
-categorias) · Bots (lista, partida com análise) · Quadro de Honra · Perfil
-(próprio e de terceiros) · Turmas (mural, ranking, tarefas, relatório) ·
-configurações · criação de personagem. O mapa planejado está em
-`docs/Recruta64_Visao_do_Produto_v1.md` §15.
+landing pública · login/registro · Saguão (dashboard) · Trilhas (lista, aula,
+revisão) · Desafios (rating, rush, revanche, categorias) · Sala de Duelos (lista
+de bots, partida com análise) · Quadro de Honra · Perfil (próprio e de terceiros)
+· Turmas (mural, ranking, tarefas, relatório) · configurações · Matrícula. O mapa
+planejado está em `docs/Recruta64_Visao_do_Produto_v1.md` §15.
 
 **Regra inviolável — server-authority.** Toda recompensa (XP, rating, missão,
 baú, conquista, streak) é concedida **exclusivamente no servidor**, via RPC ou
@@ -94,46 +93,52 @@ menores de idade — decisão registrada para revisitar antes do lançamento.
 ## Brand Commitments
 
 O produto tem uma **bíblia tonal escrita e vinculante**:
-`docs/Recruta64_Biblia_Tonal_v1.md` (1054 linhas). É brand commitment, não
-sugestão. Os pontos que constrangem qualquer trabalho visual futuro:
+`docs/Academia64_Biblia_Tonal_v2.md`. É brand commitment, não sugestão. Os pontos
+que constrangem qualquer trabalho visual futuro:
 
-- **O universo é "A Academia 64"** — uma academia extraordinária de estratégia:
-  fantasia leve e mistério, **sem época**. **Não é militarismo realista.** Aluno
-  pode ser moderno ou excêntrico; bot pode ser coruja, autômato ou criatura — o que
-  amarra o elenco é o lugar compartilhado. (Substituiu *"O Reino das 64 Casas"* em
-  2026-08-13; o porquê medido está na Bíblia Tonal §3b.)
-- **A patente aparece na moldura em volta do avatar, não na roupa.** Duas
-  linguagens de cor que nunca ocupam o mesmo elemento: patente na moldura, raridade
+- **O produto e o universo se chamam "Academia 64"** — uma academia
+  extraordinária de estratégia: fantasia leve, descoberta e mistério, **sem
+  época**. **Não é militarismo.** Aluno pode ser moderno ou excêntrico; bot pode
+  ser coruja, autômato ou criatura — o que amarra o elenco é o lugar
+  compartilhado. (*Recruta 64* / *O Reino das 64 Casas* são nomes históricos; o
+  porquê medido está no Apêndice A da Bíblia v2.) Slogan: *"Uma academia inteira,
+  e 64 casas para explorar."*
+- **Fórmula tonal** (§3): 50% academia e aprendizado · 25% descoberta e mistério ·
+  15% competição e domínio · 10% humor e calor humano.
+- **O título aparece na moldura em volta do avatar, não na roupa.** Duas
+  linguagens de cor que nunca ocupam o mesmo elemento: título na moldura, raridade
   na vitrine do editor. O traje é peça de catálogo com **cor final livre**.
-- **Vocabulário de navegação obrigatório** (§8). A navegação principal usa
-  palavras claras — Início, Trilhas, Desafios, Bots, Quadro de Honra, Perfil,
-  Turmas — e a camada temática aparece em títulos e blocos internos:
-  Dashboard → **Quartel-General** · Aulas → **Trilhas de Formação** · Puzzles →
-  **Desafios Táticos** · Missões diárias → **Ordens do Dia** · Análise pós-jogo →
-  **Revisão de Batalha** · Ranking → **Quadro de Honra** · Streak → **Sequência de
-  Campanha** · Badges → **Insígnias** · Itens → **Equipamentos** · Turmas →
-  **Companhias**. ⚠️ Este vocabulário é o **do reino** e ainda não foi revisto para
-  a Academia — ele continua sendo o que está em tela, e a revisão é bloco próprio
-  (Bíblia Tonal §5b). Não troque palavra de interface de carona em outra tarefa.
-- **Escada de patentes de 6 degraus**, que é o eixo de progressão do produto:
-  Soldado → Aspirante → Capitão → Comandante → General → Mestre. (O tier de
-  entrada chama-se **Aprendiz**; "Recruta" é o nome da *trilha* de aulas, não de
-  uma patente.)
-- **Curva tonal obrigatória** (§14): início acolhedor e humano → meio firme e
-  técnico → fim nobre, silencioso e memorável. Vale para texto, ilustração,
-  ambientação, animação e recompensa.
-- **Tom no ranking: prestígio, nunca humilhação** (§16.5). O Quadro de Honra é
+- **Vocabulário obrigatório** (§7). A navegação principal usa palavras claras —
+  Início, Trilhas, Desafios, Bots, Quadro de Honra, Perfil, Turmas — e a camada
+  temática aparece em títulos e blocos internos:
+  Dashboard → **Saguão** · Aulas → **Trilhas** · Puzzles → **Desafios** · Missões
+  diárias → **Missões do Dia** · Análise pós-jogo → **Revisão da Partida** ·
+  Ranking → **Quadro de Honra** · Streak → **Sequência de Presença** · Badges →
+  **Insígnias** · Itens → **Guarda-roupa** · Turmas → **Turmas** · Bots → **Sala
+  de Duelos** · Criar personagem → **Matrícula**.
+  **Palavras banidas de texto de aluno:** campanha, patente, recruta, companhia,
+  quartel, batalha, tropa, reino, "falha tática".
+- **Escada de títulos de 8 degraus**, que é o eixo de progressão do produto:
+  Calouro (tier 0) → Aprendiz → Estudante → Analista → Estrategista → Mestre →
+  Grão-Mestre → Lenda. Os 6 degraus do meio têm cor medida; os slugs de trilha no
+  banco (`recruta`…`mestre`) **não mudam** — são chave, não texto.
+- **Curva tonal obrigatória** (§8): início acolhedor e humano → meio curioso e
+  preciso → fim econômico e marcante. Vale para texto, ilustração, ambientação,
+  animação e recompensa.
+- **Tom no ranking: prestígio, nunca humilhação** (§12.5). O Quadro de Honra é
   visto por crianças de uma turma que se conhecem pessoalmente.
 
 ## Evidence on Hand
 
 Real, no repositório:
 
-- `docs/Recruta64_Biblia_Tonal_v1.md` — identidade verbal e tonal completa.
+- `docs/Academia64_Biblia_Tonal_v2.md` — identidade verbal e tonal completa.
+  (A v1, escrita para o reino, está em `docs/_superado/`.)
 - `docs/curriculo/01-curriculo-definitivo-v1.md` — as 126 aulas, aprovado.
 - `scripts/avatar/patentes.ts` — a **única paleta medida e travada por gate** do
-  projeto (as 6 patentes), com lei de distância mínima de matiz entre patentes
-  vizinhas, medida por `npm run verify:paleta-patentes`.
+  projeto (os 6 títulos com cor), com lei de distância mínima de matiz entre
+  títulos vizinhos, medida por `npm run verify:paleta-patentes`. O arquivo e o
+  script npm mantêm o nome antigo de propósito: são chave interna, não texto.
 - `docs/avatar/15-plano-ate-pronto.md` — o avatar em estilo **kokeshi/chibi**, com
   base visual já aprovada: contorno `#000000`, cor chapada, sem orelhas.
 - `src/app/page.tsx` — a landing, hoje a **única** superfície que usa os tokens de

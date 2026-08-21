@@ -1,5 +1,25 @@
 # Os uniformes das patentes — o design
 
+> ## ⚠️ Emenda de 2026-08-20 — leia antes do resto
+>
+> **A palavra "patente" virou "título"** e os seis degraus foram renomeados
+> (Bíblia v2 §6): Soldado→**Aprendiz**, Aspirante→**Estudante**,
+> Capitão→**Analista**, Comandante→**Estrategista**, General→**Mestre**,
+> Mestre→**Grão-Mestre**. Os slugs e os nomes de arquivo **não** mudaram.
+>
+> **A §4 (uniforme por patente) é histórico.** A cor deixou de vestir o boneco em
+> 2026-08-13 e virou **moldura** em volta do avatar; o traje é peça de catálogo
+> com cor final livre (doc 21 §0, doc 22).
+>
+> **A §6 (as 5 regiões: Acampamento dos Recrutas, Vila dos Soldados, Fortaleza
+> dos Estrategistas, Cidade dos Generais, Cidadela dos Mestres) morreu.** No lugar
+> dela está o **mapa da Academia** (Bíblia v2 §5), e lugar não ordena progresso.
+> O campo `regiao` de `patentes.ts`, que espelhava essas regiões, **foi removido**.
+>
+> **O que continua valendo:** a paleta medida, os dois pisos de distância
+> (≥40 / ≥60) e a faixa proibida de matiz 0°–44° **para o pipeline de SVG** — ela
+> nunca valeu para a moldura em CSS.
+
 > **Para gerar a arte, vá direto ao [doc 18](18-uniformes-blocos.md).** Este aqui
 > é o documento de leitura: de onde cada cor veio, e por que ela não pode ser
 > trocada por gosto.

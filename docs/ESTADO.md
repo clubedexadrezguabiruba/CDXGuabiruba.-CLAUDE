@@ -10,6 +10,41 @@
 ## Agora
 
 <!-- AGORA:inicio -->
+🏛️ **A VIRADA PARA A ACADEMIA 64 — em execução desde 2026-08-20, branch
+`tema/academia-64`** (a partir de `avatar/bloco5-rosto`, não de `main`: `main`
+estava 15 commits atrás e não tinha nem a regra 4 do `CLAUDE.md`).
+
+O produto deixa de se chamar **Recruta 64** e passa a se chamar **Academia 64**; a
+espinha militar sai da lei. A virada de 2026-08-13 tinha feito metade — trocou o
+universo e a direção de arte, mas manteve a fórmula 70/20/10, a palavra "patente",
+as 5 regiões e o vocabulário de interface. Esta fecha a outra metade.
+
+- **Bloco 0 — a lei. FECHADO.** `docs/Academia64_Biblia_Tonal_v2.md`: um doc, uma
+  era. A v1 foi para `docs/_superado/`. Fórmula nova **50/25/15/10**, mapa da
+  Academia (10 lugares + 5 alas de bot), escada de **títulos**, vocabulário
+  oficial, palavras banidas de tela. Slogan escolhido pelo Doug: *"Uma academia
+  inteira, e 64 casas para explorar."*
+- **Bloco 1 — lei derivada e código de referência. FECHADO.** `DESIGN.md`,
+  `PRODUCT.md`, `CLAUDE.md`, a skill `design-recruta64`, `scripts/avatar/
+  patentes.ts` (nomes novos; o campo `regiao` **morreu** — era o espelho das 5
+  regiões e ninguém o lia), `TRAILS.name`, os mocks do design-lab, e emendas
+  datadas nos docs 12 e 17, no currículo (revisão 5), na Visão do Produto e na
+  Diretriz dos Bots v1 (marcada como **superada**).
+- **Bloco 2 — banco + interface.** Não iniciado. É onde `title_tiers.title` e
+  `user_titles.current_title` são renomeados por migration, e onde as ~24
+  ocorrências de "Reino das 64 Casas" e as ~20 de "campanha" saem da tela.
+- **Bloco 3 — os bots.** Não iniciado. Elenco novo de 10 personagens da Academia,
+  **10 retratos de arte do Doug**, e `UPDATE` no lugar (nunca DELETE+INSERT, senão
+  some o histórico dos alunos).
+
+⚠️ **Pendência declarada do Bloco 1:** `Badge` casa o título por **string**
+(`Badge.tsx:45`), e o banco ainda diz "Soldado". Até a migration do Bloco 2 descer,
+a pílula do dashboard sai **sem o ponto de cor**. Os dois lados sobem juntos.
+
+⚠️ **A suíte e2e assere strings temáticas** e vai quebrar no Bloco 2:
+`helpers/auth-helpers.ts:76` e `avatar-identidade.spec.ts:317,455` procuram o `h1`
+"Quartel-General"; `bots-ui-audit.spec.ts:233` procura "Vila dos Soldados".
+
 ✅ **PASSE DE ACHADOS DO AVATAR — 2026-08-20.** Nove entradas fechadas com número
 medido: **D2 · D8 · D12 · D14 · G5 · G16 · G27 · G28 · G30**, mais o **G32**
 remedido (23,1% → **1,3%**). Um gate novo (`arte:traco`, 20º do `verify:arte`), uma
@@ -257,10 +292,10 @@ de alunos menores de idade.
 <!-- VOLATIL:inicio -->
 | | |
 |---|---|
-| **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 14 |
-| **Árvore** | **2 arquivos sujos** |
-| **Último commit** | 52ed209 · 2026-08-20 · feat(avatar): os olhos também deixam de ser caixa — a região passa a ser a forma da feição |
+| **Branch** | `tema/academia-64` |
+| **Commits à frente de `origin/main`** | 15 |
+| **Árvore** | **19 arquivos sujos** |
+| **Último commit** | 6e10909 · 2026-08-20 · fix(avatar): a barba com bigode APAGAVA A BOCA — o potrace declara a regra e a esteira jogava fora |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
