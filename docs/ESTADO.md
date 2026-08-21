@@ -40,9 +40,48 @@ as 5 regiões e o vocabulário de interface. Esta fecha a outra metade.
   `Sequência de Campanha` e `Companhia` em `src/` e `e2e/`. A migration
   `20260821120000_academia_titulos.sql` **está aplicada**, e `verify:all=0`
   medido depois dela.
-- **Bloco 3 — os bots.** Não iniciado. Elenco novo de 10 personagens da Academia,
-  **10 retratos de arte do Doug**, e `UPDATE` no lugar (nunca DELETE+INSERT, senão
-  some o histórico dos alunos).
+- **Bloco 3 — os bots. EM EXECUÇÃO desde 2026-08-21, parado no Ponto 5 (a arte).**
+  A lei do elenco existe: `docs/Academia64_Diretriz_dos_Bots_v2.md` substitui a
+  Diretriz v1. **Elenco aprovado pelo Doug** — 10 personagens, **2 por ala nas 5
+  alas** (Pátio · Salas de Treino · Biblioteca · Observatório · Arena), variedade
+  medida em natureza (6 humanos · 1 autômato · 1 criatura · 1 animal · 1 não
+  declarada) e função. `elo`, `skill_level`, `depth` e `unlock_order` **não mudam**:
+  o elenco novo entra por cima da calibração que já existe. Falta: os 10 retratos
+  (arte do Doug, **sem prazo**) e as **110 falas — as duas ficam com o Doug, por
+  decisão dele em 2026-08-21**; depois delas, a migration de `UPDATE`, e
+  `BotGrid.tsx:8-22` + as 4 asserções de `e2e/bots-ui-audit.spec.ts` que ainda
+  procuram as regiões do Reino. Os **10 pedidos de arte estão escritos**:
+  `docs/Academia64_Pedidos_de_Retrato_dos_Bots.md`.
+
+⚠️ **O retrato de bot é um CÍRCULO de no máximo 96 px, e a arte atual foi feita para
+outro frame.** `BotAvatar.tsx` recorta o PNG no círculo inscrito (`rounded-full` +
+`object-cover`) e o produto só o usa em 32 · 48 · 64 · 80 · 96 px — `md` (64) na grade
+da Sala de Duelos. Medido nos dois extremos do elenco velho: o rosto da `helena.png`
+tem **13% da largura do quadro**, ou **8 pixels na tela**; o cenário inteiro dela
+(castelo, mapas, globos, astrolábio) cai fora do círculo ou some. A progressão que a
+arte velha tinha — fundo do bot fraco borrado (lapVar 16) contra fundo do forte nítido
+(lapVar 1346–2819), **~100× mais detalhe** — nunca chegou ao aluno. Os pedidos novos
+pedem **close**, fundo simples, e a progressão por **valor, temperatura e silhueta**,
+que é o que sobrevive a 64 px. **A saída oposta — dar ao produto uma superfície que
+mostre o retrato grande — foi posta ao Doug e descartada por ele:** o frame fica como
+está, e é ele que manda no enquadramento.
+
+✅ **Um defeito de produção achado ao escrever a Diretriz v2, consertado e medido no
+mesmo dia.** `on_win` e `on_loss` estão **invertidos entre banco e código**: o
+código lê as duas chaves na perspectiva do bot ([`GameOverModal.tsx:94`](../src/components/bots/GameOverModal.tsx#L94)
+sobre `result`, que é o resultado *do aluno*), e os 10 bots semeados em
+`20260307120000` foram escritos na perspectiva do aluno. Efeito: o aluno dava
+xeque-mate no Sargento Pardo e ouvia *"Revise os fundamentos, recruta."* Medido nos 10
+com `.scratch/medir-perspectiva-falas.ts` — **os 10 estavam trocados, e consistentes
+entre si**. A migration `20260821170000_bots_perspectiva_das_falas.sql` **foi aplicada
+pelo Doug em 2026-08-21**, e a medição depois mostra os 10 trocados de volta: o
+`on_win` do `sargento-pardo` agora é *"Revise os fundamentos, recruta."* e o `on_loss`
+é *"Aprovado, soldado. Pode seguir."* `verify:phase6` 18/0 e `verify:seeds` OK depois.
+Não há gate permanente possível ("esta frase
+foi dita por quem venceu?" não é decidível por máquina); a evidência é a medição
+antes/depois. O que **é** verificável, e entra junto com a migration do elenco, é a
+contagem por chave da lei das falas (3 · 4 · 2 · 2) — hoje 9 dos 10 já batem, só o
+`leo` tem `during` 5.
 
 ✅ **A janela do `Badge` durou uma sessão e fechou.** `Badge` casa o título por
 **string** (`Badge.tsx:45`), e entre o Bloco 1 (que renomeou `patentes.ts`) e esta
@@ -334,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `tema/academia-64` |
-| **Commits à frente de `origin/main`** | 16 |
-| **Árvore** | **56 arquivos sujos** |
-| **Último commit** | 40d57b6 · 2026-08-20 · feat(tema): a Academia 64 deixa de ser meia virada — a lei vira um doc só, e a patente vira título |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **6 arquivos sujos** |
+| **Último commit** | 40f1558 · 2026-08-21 · feat(tema): a Academia 64 chega na tela e no banco — a patente vira título, e o Reino sai de 53 arquivos |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -385,7 +424,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 90 |
+| **Migrations** | 91 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 22 |
 | **Primitivos de UI** | 4 |

@@ -89,7 +89,13 @@ export default function GameOverModal({
 
   const canReview = !analyzing && analysis !== null;
 
-  // Bot reacts to game outcome
+  // Bot reacts to game outcome.
+  //
+  // `result` e o resultado DO ALUNO (botGameLogic.ts:15). As chaves on_win e
+  // on_loss estao na perspectiva DO BOT: aluno venceu => o bot perdeu => on_loss.
+  // Foi essa inversao que a migration 20260821170000 consertou nos dados — os 10
+  // bots semeados tinham sido escritos na perspectiva do aluno. A lei das falas
+  // esta em docs/Academia64_Diretriz_dos_Bots_v2.md §5.
   const botPhrase = useMemo(() => {
     const phraseKey = result === "win" ? "on_loss" : result === "loss" ? "on_win" : "on_win";
     return getRandomPhrase(bot, phraseKey);
