@@ -4507,3 +4507,93 @@ O resultado que não estava previsto: o tom foi ganho **e** o SVG encolheu.
 A causa é o segundo traçado ter morrido: as duas formas passaram a ser a MESMA curva,
 e a máscara custa um caminho. O PNG saiu do SVG e do bundle, e entrou no orçamento de
 `arte:peso`, que passou a medir a prateleira inteira.
+
+---
+
+## 2026-08-21 — a barba fica sendo UMA: a trancaça promovida, e as outras apagadas
+
+Decisão do Doug: **só a trancaça sobrevive.** Ela vira a **peça-padrão da linha de
+arte** — a peça de que o `docs/avatar/23-linha-de-arte.md` cita toda régua — e o
+elenco de 6 barbas decidido em 2026-08-19 é cortado para 1. A decisão em aberto da
+seção anterior (*"decide também se a `trancada-v4` deve ser promovida como está"*)
+fecha aqui, e fecha promovendo.
+
+### A ordem, e ela não é a das outras rotas
+
+Runbook 19 §13: `reparo-trancada` → `restaurar-peca` → **Gate −1** → esteira. Rodar
+o Gate −1 na arte crua reprova todas as artes, inclusive as boas, porque o passo 2
+do gate reconhece a peça pelo ciano e quem cria o ciano é o `restaurar-peca`.
+
+| passo | comando | número |
+|---|---|---|
+| versionar | `.scratch/arte/lote/trancada-v4.png` → `barba-trancada-crua.png` | 210.191 B |
+| reparo | `reparo-trancada.ts` | 63 manchas · **209 px de 54.264** · 11 alongadas mantidas |
+| procedência | o reparo sobre a própria saída | **0 px trocados** |
+| restaurar | `restaurar-peca.ts` | 54.264 px em **1 componente** · **0 px restaurados** |
+| Gate −1 | `arte:gate` | **APROVADA** — 0/125 ladrilhos em `rosto`, 1/1104 em `corpo` |
+| traço | `arte:traco` | coberto 8.032 px · **apagado 0 px** |
+| esteira | `arte:rostos` | esticão **lum 0 → 140** · máscara **213×184** · 16.516 B · **14.800 B de `d`** |
+
+**`restaurado: 0 px` é a descoberta do dia:** o `trancada-v4.png` do lote **já vinha
+restaurado** — o miolo dele sai em `rgb(50, 116, 116)`, que é ciano. E o
+`trancada-v5.png` que estava na cópia principal sem registro é, medido, **a saída do
+reparo sobre o v4: 0 canais diferentes em 3.145.728**. Não era arte nova; era o passo
+2 já rodado. O script reproduz byte a byte.
+
+### Os números da peça-padrão
+
+| | |
+|---|---|
+| peça | **54.264 px**, 1 componente, 91 px de ruído descartado |
+| cortado nas feições | **0 px** |
+| esticão p2/p98 | lum **0 → 140** |
+| máscara (50% da caixa) | **213 × 184** px · **16.516 B** de PNG · **256 tons distintos** |
+| caixa da máscara | u x 84,2 y 250,0 w 354,2 h 306,7 |
+| `d` das 2 formas | **14.800 B** (7.400 cada, o MESMO `d`) |
+| no fio | 16,2 KB de gzip |
+
+Contra a `barba-cheia`, que ela substitui: **38.505 → 54.264 px** e **10.624 →
+14.800 B de `d`**. A peça é maior porque cobre mais rosto, e é isso que faz dela a
+legendary do slot.
+
+### O que foi apagado, e é irreversível
+
+7 PNGs de arte (`barba-{bigode,cavanhaque,cheia}` + os três `-crua` +
+`barba-cheia-dois-tons`), a folha `folha-rosto-barba-cheia.png`, a máscara no ar
+`public/items/rosto/rosto-barba-cheia-tom.png`, e o `reparo-cheia-um-tom.ts`.
+
+⚠️ **A `barba-cheia` do repositório não é reproduzível pelo `restaurar-peca` de
+hoje** — ela saiu de uma variante anterior que reconhecia a peça pela COR e por isso
+descartava a sombra contígua (está escrito no docstring dele, e continua escrito).
+Apagada, ela não volta rodando comando nenhum. Foi o que o Doug pediu, sabendo.
+
+**O que NÃO foi apagado, e é decisão consciente:** os docstrings que citam a
+`barba-cheia` como **medida** — `tipos.ts`, `compositor.ts`, `camadas.ts`,
+`catalogo.ts`, `cabelo.ts`, `base.ts`, `traco-intacto.ts`, `restaurar-peca.ts`,
+`barba-para-formas.ts` — e os registros (este arquivo, o runbook §13, `achados.md`,
+`PEDIDO-BARBAS.md`). É a `cheia` que mede *"31 857 B — passava do lado bom da janela
+do DEFLATE por 911 bytes"*, e sem esse número o porquê de a máscara ser arquivo e
+não base64 desaparece. Apagar a medida deixa a decisão sem razão, que é como este
+repositório perdeu contexto antes.
+
+O **selo** de `rostos-da-arte.test.ts` ganhou a quarta linha em vez de perder as
+três primeiras: 13.674 → 11.372 → 10.624 (`cheia`) → **14.800** (`trancada`).
+
+### Os 68 KB de lastro: apagados
+
+`avatar-base-female.png` e `avatar-base-male.png` saíram. Zero referência em
+`src/`, `scripts/` e `e2e/`; o que os cita são docs em `_superado/`, este registro e
+o do achado. `peso-baseline.json` regravado com **5 peças** (eram 7).
+
+### Gates
+
+`typecheck` 0 · `lint` 0 (1 warning herdado da main) · **605 testes** (36 arquivos)
+· `verify:arte` **exit 0** · `arte:rostos --check` confere caractere a caractere.
+
+`verify:catalogo-slots` reprova com **2 FAILs**, e eles são o "falha antes" da
+migration `20260821190000_a_barba_fica_sendo_uma_a_trancada.sql`:
+
+```
+[FAIL] slot rosto: 1 slug(s) no banco que o código não desenha — rosto-barba-cheia
+[FAIL] slot rosto: 1 peça(s) do código sem linha no banco — rosto-barba-trancada
+```

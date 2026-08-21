@@ -54,7 +54,7 @@ const COR_DA_ARTE = "#2AA8A9";
 const uri = (b: Buffer) => `data:image/png;base64,${b.toString("base64")}`;
 
 async function principal(): Promise<void> {
-  const slug = process.argv[2] ?? "rosto-barba-cheia";
+  const slug = process.argv[2] ?? "rosto-barba-trancada";
   const peca = ROSTOS[slug];
   if (!peca?.formas) {
     console.error(`  ✗ ${slug} não está em ROSTOS, ou não é peça de \`formas\`.`);

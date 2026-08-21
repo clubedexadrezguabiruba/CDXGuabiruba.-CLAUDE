@@ -62,7 +62,7 @@ const urlDoTom = (slug: string) => `/items/rosto/${slug}-tom.png`;
  * ela é do servidor, e vive em `avatar_catalogo` (Regra Inviolável nº 1).
  */
 const NOMES: Record<string, string> = {
-  "barba-cheia": "Barba Cheia",
+  "barba-trancada": "Barba Trancada",
 };
 
 const CABECALHO = `/**

@@ -85,7 +85,7 @@ describe("o cabelo é o único leitor de --av-cabelo na base", () => {
  * onze selos de `parametrico-congelado.ts` e o teto da base careca de pé.
  */
 describe("a barba do boneco CARECA usa a cor escolhida, não a reserva", () => {
-  const barba = ROSTOS["rosto-barba-cheia"];
+  const barba = ROSTOS["rosto-barba-trancada"];
   const careca = (cabelo: string) =>
     compor({ pele: PELE[2], cabelo, ns: "t2", rosto: barba });
 

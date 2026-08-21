@@ -23,7 +23,7 @@ import { compor } from "../compositor";
 import { ROSTOS_DA_ARTE, TOTAL_ROSTOS_DA_ARTE } from "../rostos-da-arte";
 import { PELE } from "../../palette";
 
-const SLUG = "rosto-barba-cheia";
+const SLUG = "rosto-barba-trancada";
 
 describe("o slot `rosto` deixou de ser vazio", () => {
   it("a peça está no registro, e `ROSTOS` a espalha", () => {
@@ -184,15 +184,24 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
     // parte, e não comprime (o PNG já vem comprimido). Somá-los num número só
     // esconderia exatamente a diferença que interessa — e eles nem viajam juntos.
     //
-    // A HISTÓRIA DO PRIMEIRO NÚMERO, porque ela mostra o selo funcionando duas vezes:
+    // A HISTÓRIA DOS NÚMEROS, porque ela mostra o selo funcionando três vezes. As
+    // três primeiras linhas são da `barba-cheia`, que ocupou este selo até 2026-08-21
+    // e foi apagada com a peça — o número fica, porque é o lastro que explica por que
+    // a esteira é como é:
     //
     //   13 674 B  a esteira original, silhueta + miolo traçados
     //   11 372 B  2026-08-20, o passo 3b tirou a franja de antialias do miolo (o
     //             defeito *"a cor está fugindo do traço"*, que o Doug pegou a olho)
     //   10 624 B  2026-08-20, o TOM CONTÍNUO: o miolo deixou de ser traçado e a
     //             forma 2 virou a mesma curva da 1. Duas cópias de um `d` de 5 312 B.
+    //             Mais 6 718 B de PNG de máscara.
+    //   14 800 B  2026-08-21, a TROCA DE PEÇA: a `barba-trancada` promovida, e o
+    //             elenco do slot cortado de 6 barbas para 1 (a peça-padrão da linha
+    //             de arte, doc 23). Duas cópias de um `d` de 7 400 B, mais 16 516 B
+    //             de máscara. A peça é maior — 54 264 px contra 38 505 —, e é dela
+    //             que o doc 23 cita toda régua.
     //
-    // O `d` caiu 6,6% e a peça ganhou **6 718 B de PNG**, que é o preço do tom e está
+    // O `d` caiu 6,6% na `cheia` e a peça ganhou o PNG, que é o preço do tom e está
     // pago com os olhos abertos: a arte tinha 917 tons e chegava ao boneco com dois.
     //
     // ⚠️ Este segundo número **não vai no SVG nem no bundle**. Ele foi base64 embutido
@@ -201,9 +210,9 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
     // externo, porque o boneco composto passa da janela de 32.768 B do DEFLATE. Ver
     // `TomDaPeca` (`tipos.ts`). No SVG, a máscara custa hoje 38 bytes de caminho.
     const bytes = ROSTOS_DA_ARTE[SLUG].formas!.reduce((a, f) => a + f.d.length, 0);
-    expect(bytes, "os `d` das duas formas").toBe(10624);
+    expect(bytes, "os `d` das duas formas").toBe(14800);
     expect(readFileSync(`public${ROSTOS_DA_ARTE[SLUG].tom!.arte}`), "o PNG da máscara").toHaveLength(
-      6718,
+      16516,
     );
   });
 });

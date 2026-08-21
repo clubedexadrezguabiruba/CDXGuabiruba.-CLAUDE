@@ -20,7 +20,7 @@
  *  5. **a caixa não ser a da peça.** Ela sai de `paraUnidade` sobre a bbox da
  *     máscara — recalculada aqui pelo caminho independente, contra a que o campo diz.
  *
- * A cobaia é `barba-cheia.png`, que é **versionada** (ver `.gitignore` da pasta): um
+ * A cobaia é `barba-trancada.png`, que é **versionada** (ver `.gitignore` da pasta): um
  * gate que dependesse de arte de `.scratch/` passaria na máquina de quem o escreveu e
  * nunca rodaria no CI.
  */
@@ -30,7 +30,7 @@ import sharp from "sharp";
 import { construirRosto } from "../barba-para-formas";
 import { LADO, paraUnidade } from "../base";
 
-const ARTE = "scripts/avatar/arte/barba-cheia.png";
+const ARTE = "scripts/avatar/arte/barba-trancada.png";
 
 /** Uma travessia só da esteira serve as cinco asserções — ela custa segundos. */
 const peca = await construirRosto(ARTE);

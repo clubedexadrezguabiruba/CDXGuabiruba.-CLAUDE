@@ -62,22 +62,24 @@ import { gzipSync } from "zlib";
 /**
  * A prateleira do produto. É de lá que o navegador da criança pede a peça.
  *
- * ⚠️ **Ela contém QUATRO arquivos que NÃO são peça de catálogo**, e eles entram no
+ * ⚠️ **Ela contém DOIS arquivos que NÃO são peça de catálogo**, e eles entram no
  * ratchet de propósito:
  *
  *   `items/base/avatar-base-neutro.svg`      174,0 KB   sobra da pilha v2/v3
  *   `items/base/avatar-base-sem-traje.svg`    86,5 KB   idem
- *   `items/base/avatar-base-female.png`       35,2 KB   sobra do avatar dual-gender
- *   `items/base/avatar-base-male.png`         32,8 KB   idem
  *
- * Os dois `.svg` estão registrados como *"lastro que sobra"* dentro do **G24** em
- * `docs/achados.md`. Os dois `.png` **apareceram em 2026-08-21**, quando este gate
- * passou a medir `.png` — eles estavam em `public/items/` desde `715a44e`
- * ("sistema de avatar com dual-gender"), somando **68 KB no deploy**, e um `grep`
- * em `src/`, `scripts/` e `e2e/` não acha uma única referência a eles. Ficaram
- * invisíveis por dois anos de esteira porque o gate filtrava por extensão — é
- * exatamente o modo de falha que o parágrafo seguinte nomeia, acontecido dentro do
- * próprio gate que existe para pegá-lo.
+ * Os dois estão registrados como *"lastro que sobra"* dentro do **G24** em
+ * `docs/achados.md`.
+ *
+ * **Eram QUATRO até 2026-08-21.** `avatar-base-female.png` (35,2 KB) e
+ * `avatar-base-male.png` (32,8 KB) **apareceram** quando este gate passou a medir
+ * `.png` — estavam em `public/items/` desde `715a44e` ("sistema de avatar com
+ * dual-gender"), somando **68 KB no deploy**, e um `grep` em `src/`, `scripts/` e
+ * `e2e/` não achava uma única referência a eles. Ficaram invisíveis por dois anos de
+ * esteira porque o gate filtrava por extensão — é exatamente o modo de falha que o
+ * parágrafo seguinte nomeia, acontecido dentro do próprio gate que existe para
+ * pegá-lo. Foram **apagados** no mesmo dia; o número fica porque ele é a medida de
+ * quanto custa um gate que filtra por extensão.
  *
  * Apagá-los é decisão do Doug, não deste gate.
  *

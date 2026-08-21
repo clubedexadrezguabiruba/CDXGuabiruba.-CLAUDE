@@ -296,9 +296,7 @@ export async function comQueixoApagado(arteBase: string, alturaU = 2): Promise<B
  * lá — o que muda é a base de comparação, e ela não é esta.
  */
 const APROVADAS = [
-  "scripts/avatar/arte/barba-cheia.png",
-  "scripts/avatar/arte/barba-cavanhaque.png",
-  "scripts/avatar/arte/barba-bigode.png",
+  "scripts/avatar/arte/barba-trancada.png",
   "scripts/avatar/arte/chanel.png",
   "scripts/avatar/arte/entrada.png",
   "scripts/avatar/arte/entrada-2.png",
@@ -340,7 +338,7 @@ async function principal(): Promise<void> {
   }
   // O ponto cego, medido na mesma rodada e ANUNCIADO — para ninguém o descobrir
   // como surpresa no dia em que uma barba esconder um defeito.
-  const cego = await tracoIntacto(await comQueixoApagado("scripts/avatar/arte/barba-cheia.png", 2));
+  const cego = await tracoIntacto(await comQueixoApagado("scripts/avatar/arte/barba-trancada.png", 2));
   console.log(
     linha("ponto cego: barba + queixo 2u", cego) +
       "   ← esperado passar: a barba cobre o queixo",
