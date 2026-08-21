@@ -147,6 +147,67 @@ export interface Traje {
  * que mora DENTRO de outra não tem borda externa para desenhar, e traçá-la põe
  * uma linha preta no meio da peça que ninguém desenhou.
  */
+
+/**
+ * O TOM CONTÍNUO DE UMA PEÇA QUE RECOLORE — o raster carrega o que o vetor não sabe.
+ *
+ * ---------------------------------------------------------------------------
+ * O PROBLEMA: O POTRACE É BINÁRIO, E A BARBA SAÍA COM DUAS CORES
+ * ---------------------------------------------------------------------------
+ *
+ * A esteira de arte converte raster em vetor pelo potrace, e o potrace decide por
+ * limiar: todo tom intermediário arredonda para dentro ou para fora do laço. Uma
+ * barba desenhada com 917 tons chegava ao boneco com **dois** — e a leitura de que
+ * isso era exigência da D17 era falsa. A investigação de 2026-08-20 provou o
+ * contrário: a **D17 proíbe cor ASSADA, não tom**. Quem escolhia duas cores era o
+ * potrace, não a lei.
+ *
+ * A decisão: **o vetor carrega só o que precisa ser vetor, e o raster carrega o
+ * tom.** A silhueta continua em `formas` — é ela que recolore, que ganha o traço do
+ * compositor e que responde a `var(--av-cabelo)`. O claro-escuro vem por cima, como
+ * uma máscara de LUMINOSIDADE: um PNG cinza em base64 dentro de um `<mask>`, que
+ * modula a opacidade da tinta sem nunca dizer que cor ela é.
+ *
+ * **Por isso isto não fura a Regra Inviolável nº 4.** A máscara não tem cor: ela é
+ * um canal de cinza. A cor continua vindo inteira de `var(--av-cabelo)`, que é a
+ * escolha do aluno — o que a máscara faz é deixar parte dessa cor mais fraca onde a
+ * arte era mais clara. Uma peça de cor ASSADA nunca usa este campo: ela é raster
+ * inteiro, e o braço `arte` da união abaixo declara `tom?: never` justamente para
+ * que o `typecheck` cobre isso.
+ *
+ * ---------------------------------------------------------------------------
+ * O QUE O COMPOSITOR FAZ COM ISTO
+ * ---------------------------------------------------------------------------
+ *
+ * `sobrepor()` emite um `<defs><mask id="{ns}-tom-{slot}" maskUnits="userSpaceOnUse"
+ * x y width height><image href="data:image/png;base64,…" preserveAspectRatio="none"
+ * /></mask></defs>` e veste com ele a **última** forma da peça — a de cima, a que
+ * leva a tinta. Nunca o `kk-traco`: mascarar o contorno o comeria pelas beiradas.
+ *
+ * `maskUnits="userSpaceOnUse"` porque `x/y/w/h` são a caixa da tinta MEDIDA em
+ * unidades do `viewBox`, não frações de bounding box; `preserveAspectRatio="none"`
+ * porque o PNG foi recortado exatamente nessa caixa e esticá-lo para ela é a conta
+ * certa, não um ajuste.
+ */
+export interface TomDaPeca {
+  /**
+   * O PNG cinza, base64 **PURO** — sem o prefixo `data:image/png;base64,`.
+   *
+   * Quem monta a URL é o compositor, uma vez, em um lugar. Guardar o prefixo aqui
+   * seria a mesma string repetida em cada peça do catálogo e a porta aberta para
+   * duas grafias do mesmo `data:` — e o catálogo viaja para o bundle do cliente.
+   */
+  png: string;
+  /** Borda esquerda da caixa da tinta, em unidades do `viewBox`. */
+  x: number;
+  /** Borda superior da caixa da tinta, em unidades do `viewBox`. */
+  y: number;
+  /** Largura da caixa da tinta, em unidades do `viewBox`. */
+  w: number;
+  /** Altura da caixa da tinta, em unidades do `viewBox`. */
+  h: number;
+}
+
 export type PecaSobreposta = {
   /** Slug do catálogo — a mesma chave que o banco guarda em `avatar_catalogo`. */
   id: string;
@@ -163,6 +224,13 @@ export type PecaSobreposta = {
        * externa. Ausente e `false` são o mesmo, e o mesmo de sempre.
        */
       formas: { d: string; cor: string; semTraco?: boolean }[];
+      /**
+       * O claro-escuro da peça, por máscara de luminosidade. Ver `TomDaPeca`.
+       *
+       * Ele veste a **ÚLTIMA** forma — a de cima, a da tinta. Ausente é o modo de
+       * sempre, e o SVG sai byte a byte igual ao de antes deste campo existir.
+       */
+      tom?: TomDaPeca;
       arte?: never;
     }
   | {
@@ -183,6 +251,13 @@ export type PecaSobreposta = {
        */
       arte: string;
       formas?: never;
+      /**
+       * ⚠️ Peça de cor ASSADA não tem tom a declarar — ela É o raster inteiro.
+       *
+       * O `never` é a trava estrutural de sempre: `arte` + `tom` **não compila**, e
+       * o `typecheck` cobra isso sem depender de teste nenhum.
+       */
+      tom?: never;
     }
 );
 

@@ -3,6 +3,23 @@
 *Escrita em 2026-08-12, quando a primeira peça de traje passou pela rota
 (`traje-soldado-farda`). A rota nasceu para cabelo; esta é a metade dela que muda.*
 
+> ### ⚠️ EMENDA DE 2026-08-20 — arte NOVA sai em RASTER
+>
+> **O invólucro continua `.svg` e a colagem não mudou.** O que muda é o conteúdo:
+> em vez de centenas de paths chapados, **um `<image>` WEBP q82** com o recorte
+> inteiro. Medido: gambesão **228,2 KB → 20,0 KB**; farda **152,0 → 21,9 KB**.
+>
+> **Por quê:** peça de cor assada não é pintada pelo compositor — ele só a cola.
+> Traçá-la é converter raster em polígonos para imitar de volta o tom que o raster
+> já tinha: custa peso e perde desenho.
+>
+> **⚠️ `traje-farda` e `traje-gambesao` NÃO se regeneram.** Estão congeladas no
+> vetor (`CONGELADAS_NO_VETOR`, `traje.ts`) — já aprovadas pelo Doug, e o ganho
+> seria de custo, não de qualidade. A trava é mecânica porque `arte:trajes --check`
+> reescreve os `.svg` mesmo em `--check`. Quem decide o braço é `formatoDoTraje(slug)`.
+>
+> Detalhe na §12 do runbook.
+
 > ### ⚠️ EMENDA DE 2026-08-13 — leia antes de qualquer passo daqui
 >
 > A esteira mudou em quatro pontos, e o texto abaixo ainda descreve os antigos.
@@ -50,6 +67,7 @@ esta.
 | 5 | o literal | `arte:pecas` | **`arte:trajes`** |
 | 6 | o `--check` no CI | `arte:pecas --check` | **`arte:trajes --check`** |
 | 7 | a folha | `arte:folha` | **`arte:folha-traje`** |
+| 7b | **a conferência** | **eu, antes do Doug** — teto de 2 min | **igual** |
 | 8 | o parecer | o Doug | o Doug |
 | 9 | promoção | `CABELOS` | `TRAJES` + seed do banco |
 
@@ -61,6 +79,7 @@ npm run arte:extrair    -- scripts/avatar/arte/<SLUG>.png
 npm run arte:traje      -- scripts/avatar/arte/<SLUG>.png   # recolore + recorta
 npm run arte:trajes                                         # gera o literal
 npm run arte:folha-traje                                    # a folha, N peças
+# a CONFERÊNCIA: eu olho a folha contra o PNG antes do Doug — SKILL.md, teto 2 min
 ```
 
 **Os passos 2 e 3 não precisaram de nenhuma mudança**, e isso foi surpresa. Eu

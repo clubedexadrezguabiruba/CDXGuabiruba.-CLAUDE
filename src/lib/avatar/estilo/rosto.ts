@@ -337,9 +337,16 @@ function furo(hospedeiro: readonly Ponto[], pts: readonly Ponto[]): string {
  * A BARBA COMO `PecaSobreposta` — duas formas, três `<path>`.
  *
  * Medido em `.scratch/estilo/sondas-rosto.ts` (P3): base + `chanel` = 23 formas, e
- * esta receita leva o composto a **26 exatos**, que é o teto. Zero folga: o núcleo
- * COM traço, ou uma terceira forma, estouram. É o achado **G16** chegando na conta
- * de outro slot — medido aqui, não consertado aqui.
+ * esta receita leva o composto a **26**. O 26 já foi teto e não é mais: o orçamento
+ * hoje é `ORCAMENTO_COM_ROSTO` (`cabelo.ts`), que soma as 5 formas declaradas de
+ * `CUSTO_DE_SOBREPOSTA` — contra ele, **sobram 5**. A folga existe porque a peça de
+ * três formas com núcleo sem traço (3 + 2 = 5) é o próximo degrau real, não porque
+ * esta receita precise dela.
+ *
+ * ⚠️ **Esta é a barba PARAMÉTRICA, e ela não recebeu o tom contínuo do Bloco 5.**
+ * O tom (`TomDaPeca`, `tipos.ts`) vem da esteira de arte, que mede o claro-escuro
+ * de um raster desenhado — não há raster aqui, e forma calculada não tem tom para
+ * medir. Ela continua sendo massa + núcleo, que é o desenho que ela sempre foi.
  */
 export function pecaDeRosto(b: Barba, comBigode = true): PecaDeRosto {
   const massa = pontosDaMassa(b);
@@ -375,12 +382,17 @@ export function pecaDeRosto(b: Barba, comBigode = true): PecaDeRosto {
       //    e de 134,3 para 109,9 no castanho, 18 a 24% justamente nas duas cores
       //    mais escolhidas. A banda preta É a peça (é o IoU 80,1% × 34,4%): apagar o
       //    contraste apaga o desenho;
-      //  - **o careca sai PRETO CHAPADO, sem gate nenhum acusar.** `compositor.ts:876-878`
-      //    só emite `--av-cabelo` e `--av-cabelo-s` quando há `modeloCabelo`, e
-      //    `--av-cabelo-s` **não tem fallback declarado em lugar nenhum** — um
-      //    `fill:var(--av-cabelo-s)` sem valor cai em preto, que é a cor da massa.
-      //    Núcleo preto sobre massa preta é uma mancha sólida, e ela passa em todas
+      //  - **`--av-cabelo-s` não tem fallback declarado em lugar nenhum.** Um
+      //    `fill:var(--av-cabelo-s)` sem valor cai em preto, que é a cor da massa —
+      //    núcleo preto sobre massa preta é uma mancha sólida, e ela passa em todas
       //    as réguas desta etapa: elas medem pontos, não cor.
+      //
+      //    O caminho pelo qual isso acontecia no CARECA está consertado desde
+      //    2026-08-20: `compositor.ts:1039` emite as duas variáveis quando há
+      //    `modeloCabelo` **ou** quando a peça de rosto declara `formas`, e
+      //    `rosto-cor.test.ts` mede. O que continua de pé é o motivo do veto — a
+      //    variável sem fallback é frágil por natureza, e o `--av-cabelo` daqui tem
+      //    o castanho escrito ao lado justamente por isso.
       //
       // O fallback castanho é a COR MODAL de propósito, e emitir a variável sempre
       // quebraria a regressão de 19 formas / 7 468 bytes da base. O salto de cor

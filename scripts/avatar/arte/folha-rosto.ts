@@ -68,12 +68,33 @@ async function principal(): Promise<void> {
   const arteUri = uri(await recorteDe(arte));
   const baseUri = uri(await recorteDe(PNG_BASE));
 
-  /** As duas formas, nas cores da própria arte — a coluna da fidelidade. */
+  /**
+   * As duas formas, nas cores da própria arte — a coluna da fidelidade.
+   *
+   * **Ela aplica a MÁSCARA DE TOM**, e sem isso a coluna mentiria: desde o tom
+   * contínuo as duas formas têm o mesmo `d`, então desenhá-las cruas pinta uma
+   * mancha chapada da cor de cima e some com o claro-escuro inteiro. O painel
+   * existe para o Doug comparar traçado com arte — comparar contra uma mancha não
+   * responde nada.
+   *
+   * Sem `tom` (peça antiga, ou paramétrica) o `<mask>` não sai e a coluna volta a
+   * ser o que era: duas formas cruas, uma sobre a outra.
+   */
+  const tom = peca.tom;
   const tracadoNaCorDaArte =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700" ` +
     `style="position:absolute;inset:0;width:100%;height:100%">` +
+    (tom
+      ? `<defs><mask id="fr-tom" maskUnits="userSpaceOnUse" ` +
+        `x="${tom.x}" y="${tom.y}" width="${tom.w}" height="${tom.h}">` +
+        `<image href="data:image/png;base64,${tom.png}" ` +
+        `x="${tom.x}" y="${tom.y}" width="${tom.w}" height="${tom.h}" ` +
+        `preserveAspectRatio="none"/></mask></defs>`
+      : "") +
     `<path d="${peca.formas[0].d}" fill="#000"/>` +
-    `<path d="${peca.formas[1].d}" fill="${COR_DA_ARTE}"/></svg>`;
+    `<path d="${peca.formas[1].d}" fill="${COR_DA_ARTE}"` +
+    (tom ? ` mask="url(#fr-tom)"` : "") +
+    `/></svg>`;
 
   const sobreABase = (largura: number) =>
     `<div style="position:relative;width:${largura}px;height:${(largura * 7) / 5}px">` +
@@ -167,24 +188,25 @@ async function principal(): Promise<void> {
 
   // ------------------------------------------------------------------- os números
   const p = await construirRosto(arte);
-  const total = p.pxContorno + p.pxNucleo;
+  const total = p.pxPeca;
   const bytes = peca.formas.reduce((a, f) => a + f.d.length, 0);
 
   console.log(`\nFOLHA DO ROSTO — ${slug}\n`);
   console.log(`  arte de origem       ${arte}`);
   console.log(`  peça                 ${total} px  ·  ${p.componentes} componente(s)`);
   console.log(
-    `    contorno pintado   ${p.pxContorno} px  ${((100 * p.pxContorno) / total).toFixed(1)}%  ` +
-      `(var(--av-linha), NÃO recolore)`,
+    `  esticão do tom       lum ${p.esticao.lo} → ${p.esticao.hi}  ` +
+      `(p2/p98 desta arte; fora disso, grampeado)`,
   );
   console.log(
-    `    miolo              ${p.pxNucleo} px  ${((100 * p.pxNucleo) / total).toFixed(1)}%  ` +
-      `(var(--av-cabelo, #262626), recolore)`,
+    `  máscara              ${p.tomPx.w}×${p.tomPx.h} px · ${p.tomPx.bytes} B de PNG · ` +
+      `${(p.tom.png.length / 1024).toFixed(1)} KB em base64`,
   );
   console.log(`  descartado em ROSTO  ${p.pxNoRosto} px  (${((100 * p.pxNoRosto) / (total + p.pxNoRosto)).toFixed(2)}% da peça)`);
   console.log(
     `  \`d\` das 2 formas     ${bytes.toLocaleString("pt-BR")} bytes  ·  ` +
-      `${peca.formas.map((f) => (f.d.match(/M/g) ?? []).length).join(" + ")} subcaminhos`,
+      `${peca.formas.map((f) => (f.d.match(/M/g) ?? []).length).join(" + ")} subcaminhos` +
+      `${peca.formas[0].d === peca.formas[1].d ? "  (o mesmo `d` nas duas)" : "  <- os `d` DIVERGIRAM"}`,
   );
   console.log(`\n  escrito              ${saida}`);
   console.log(

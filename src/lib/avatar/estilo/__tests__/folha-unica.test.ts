@@ -29,6 +29,7 @@ import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { compor, folhaAvatar } from "@/lib/avatar/estilo/compositor";
 import { MODELOS_CABELO } from "@/lib/avatar/estilo/cabelo";
 import { IDS_DA_ARTE, PECAS_DA_ARTE } from "@/lib/avatar/estilo/pecas-da-arte";
+import { ROSTOS } from "@/lib/avatar/catalogo";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { conferirSvg } from "@/lib/avatar/svgContrato";
 
@@ -37,7 +38,17 @@ const N = 30;
 
 const blocosDeEstilo = (html: string) => (html.match(/<style/g) ?? []).length;
 
-/** A lista do ranking, variando pele, cor e modelo — 30 iguais mediriam o cache. */
+/**
+ * A lista do ranking, variando pele, cor e modelo — 30 iguais mediriam o cache.
+ *
+ * **Com peça de rosto**, e isso não é enfeite: desde o tom contínuo (Bloco 5) a peça
+ * pode trazer um `<mask id="{ns}-tom-{slot}">`, e o `<mask>` é a coisa mais fatal de
+ * colidir que existe nesta lista — id repetido faz a segunda máscara vestir o
+ * desenho da primeira, sem erro nenhum, em nenhum lugar. Um ranking sem rosto
+ * deixaria a asserção dos 30 conjuntos distintos passando por cima do caso.
+ */
+const ROSTO_DO_RANKING = Object.keys(ROSTOS)[0];
+
 const ranking = () =>
   createElement(
     "div",
@@ -48,6 +59,7 @@ const ranking = () =>
         skin: i % PELE.length,
         hair: MODELOS_CABELO[i % MODELOS_CABELO.length],
         hairColor: i % CABELO.length,
+        rosto: ROSTO_DO_RANKING,
         altura: 78,
         ns: `r${i}`,
       }),
@@ -181,5 +193,44 @@ describe("o ns continua sendo o que separa os id", () => {
     const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
 
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it(`os ${N} do ranking com TOM emitem ${N} máscaras de id distinto`, () => {
+    // O caso mais fatal da lista, e ele não pode esperar o catálogo declarar `tom`
+    // para ser medido: `${ns}-tom-${slot}` colidido faz a máscara do segundo boneco
+    // vestir o desenho do primeiro — o tom sai no lugar errado e nada acusa.
+    //
+    // Por isso a peça é sintética aqui em vez de vir de `ROSTOS`: um teste que
+    // dependesse de o catálogo já ter tom estaria verde e vazio até o Bloco D.
+    const comTom = (ns: string) =>
+      compor({
+        pele: PELE[0],
+        cabelo: CABELO[0],
+        modeloCabelo: "coque",
+        ns,
+        folhaExterna: true,
+        rosto: {
+          id: "zz-tom",
+          nome: "Tom",
+          formas: [{ d: "M10 20 L30 20 L30 40 Z", cor: "var(--av-cabelo, #262626)" }],
+          tom: {
+            png: "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=",
+            x: 10,
+            y: 20,
+            w: 20,
+            h: 20,
+          },
+        },
+      });
+
+    const svgs = Array.from({ length: N }, (_, i) => comTom(`r${i}`));
+    const idsDeTom = svgs.flatMap((s) => [...s.matchAll(/<mask id="([^"]+)"/g)].map((m) => m[1]));
+
+    expect(idsDeTom).toHaveLength(N);
+    expect(new Set(idsDeTom).size).toBe(N);
+
+    // E cada um fecha com o próprio `mask="url(#…)"` — id único que não fecha é o
+    // mesmo defeito com outra cara.
+    for (const [i, svg] of svgs.entries()) expect(svg).toContain(`mask="url(#r${i}-tom-rosto)"`);
   });
 });

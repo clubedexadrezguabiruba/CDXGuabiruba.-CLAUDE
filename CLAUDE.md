@@ -55,6 +55,23 @@ tem cor assada vira `.svg` avulso pela rota do traje; quem recolore (cabelo e
 barba) fica na geometria declarada com token de cor. É a única pergunta que
 bifurca a esteira de arte — ver doc 19 §12.
 
+**Desde 2026-08-20, o RASTER carrega o tom nos dois lados dessa bifurcação — e
+isso não abre exceção nenhuma aqui.** A regra proíbe **cor assada** onde o aluno
+escolhe; ela nunca proibiu **tom**. Quem produzia peça de duas cores era o
+`potrace`, que traça contorno, e contorno é binário. Então:
+
+- **quem tem cor assada** (traje, chapéu, óculos, pet, fundo) sai como `<image>`
+  WEBP dentro do `.svg` — arte NOVA só; `traje-farda` e `traje-gambesao` estão
+  congeladas no vetor por decisão do Doug, com trava mecânica em `traje.ts`;
+- **quem recolore** (barba) sai como silhueta em `formas` com token de cor **mais
+  uma máscara de luminosidade**: um PNG **cinza** em base64. A máscara não tem
+  cor — é um canal de cinza —, então a cor continua vindo inteira de
+  `var(--av-cabelo)`, que é a escolha do aluno. O `typecheck` cobra isso: o braço
+  `arte` da união declara `tom?: never`.
+
+Doc 19 §12 (traje) e §13 (rosto); o argumento longo está em `TomDaPeca`
+(`src/lib/avatar/estilo/tipos.ts`).
+
 #### 5. Regra de Evidência (anti-hallucination)
 Antes de alterar qualquer bug/fluxo:
 1) Reproduzir (passos).

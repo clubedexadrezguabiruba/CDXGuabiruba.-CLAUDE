@@ -44,9 +44,16 @@ describe("o slot `rosto` deixou de ser vazio", () => {
 describe("as duas formas, e as decisões que cada uma carrega", () => {
   const peca = ROSTOS_DA_ARTE[SLUG];
 
-  it("são duas: a silhueta preta e o miolo que recolore", () => {
+  it("são duas, e têm o MESMO `d` — a de baixo é o preto da de cima", () => {
     expect(peca.formas).toHaveLength(2);
     expect(peca.arte).toBeUndefined(); // o outro braço da união
+
+    // ISTO É A ESPINHA DO TOM CONTÍNUO, e não redundância. Até 2026-08-20 a forma 2
+    // era o MIOLO — uma silhueta encolhida, traçada por um segundo `potrace`, que
+    // deixava a arte de 917 tons chegando ao boneco com dois. Hoje a forma 2 é a
+    // mesma curva, e quem faz o claro-escuro é a máscara. Um `d` diferente aqui
+    // significa que alguém devolveu a partição, e a peça volta a ter duas cores.
+    expect(peca.formas![0].d).toBe(peca.formas![1].d);
   });
 
   it("a silhueta pinta em `var(--av-linha)`", () => {
@@ -113,15 +120,29 @@ describe("o SVG que o compositor emite com ela", () => {
     expect(conta(comPeca)).toBe(conta(semPeca));
   });
 
-  it("os dois `d` aparecem, e depois das feições", () => {
-    for (const f of ROSTOS[SLUG].formas!) expect(comPeca).toContain(`d="${f.d}"`);
+  it("o `d` sai DUAS vezes, e depois das feições", () => {
+    // Duas, porque as duas formas têm a mesma curva. Contar em vez de só procurar é
+    // o que separa "as duas saíram" de "uma saiu e a outra sumiu" — com `d` idêntico,
+    // um `toContain` passaria nos dois casos.
+    const d = ROSTOS[SLUG].formas![0].d;
+    expect(comPeca.split(`d="${d}"`).length - 1).toBe(2);
     // A boca é a última feição emitida; a peça de rosto vem depois dela.
-    expect(comPeca.lastIndexOf("kk-risco")).toBeLessThan(
-      comPeca.indexOf(`d="${ROSTOS[SLUG].formas![0].d}"`),
-    );
+    expect(comPeca.lastIndexOf("kk-risco")).toBeLessThan(comPeca.indexOf(`d="${d}"`));
+  });
+
+  it("a máscara de tom sai UMA vez, e veste só a forma de cima", () => {
+    expect(comPeca.match(/<mask /g) ?? []).toHaveLength(1);
+    expect(comPeca).toContain('<mask id="t-tom-rosto"');
+    expect(comPeca.match(/mask="url\(#t-tom-rosto\)"/g) ?? []).toHaveLength(1);
+    // A de cima é a que leva `--av-cabelo`; a de baixo, o preto, sai limpa.
+    expect(comPeca).toContain(`fill="var(--av-cabelo, #262626)" mask="url(#t-tom-rosto)"`);
+    expect(comPeca).not.toMatch(/fill="var\(--av-linha\)" mask=/);
   });
 
   it("não quebra o contrato do SVG", () => {
+    // Com o base64 dentro: o alfabeto dele (A–Z a–z 0–9 + / =) não colide com as
+    // regexes de `var(--…)` do contrato, e `conferirSvg` não tem allowlist de
+    // elemento — `<mask>` e `<image>` passam por serem estrutura, não propriedade.
     expect(conferirSvg(comPeca)).toEqual([]);
   });
 
@@ -150,12 +171,155 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
       }
   });
 
-  it("o selo de bytes — registro, não teto que veta", () => {
+  it("o selo de bytes — DOIS números agora, e os dois são registro", () => {
     // O doc 19 §6 é explícito: `ORCAMENTO_COMPOSTO` é autoimposto e **não veta arte
     // aprovada**. O número existe para que uma mudança de esteira que dobre o peso
     // apareça no `git diff` em vez de passar. Se ele mudar sem ninguém ter mexido na
     // arte, a mudança veio do traçador e vale para todas as peças — isso é achado.
+    //
+    // **São dois porque a peça passou a ter duas naturezas.** O `d` é vetor e
+    // comprime como texto; o base64 é raster e não comprime (o PNG já está
+    // comprimido, e o base64 sobre ele é 4/3 de ruído para o gzip). Somá-los num
+    // número só esconderia exatamente a diferença que interessa.
+    //
+    // A HISTÓRIA DO PRIMEIRO NÚMERO, porque ela mostra o selo funcionando duas vezes:
+    //
+    //   13 674 B  a esteira original, silhueta + miolo traçados
+    //   11 372 B  2026-08-20, o passo 3b tirou a franja de antialias do miolo (o
+    //             defeito *"a cor está fugindo do traço"*, que o Doug pegou a olho)
+    //   10 624 B  2026-08-20, o TOM CONTÍNUO: o miolo deixou de ser traçado e a
+    //             forma 2 virou a mesma curva da 1. Duas cópias de um `d` de 5 312 B.
+    //
+    // O `d` caiu 6,6% e a peça ganhou **8 960 B de base64** — que é o preço do tom, e
+    // está pago com os olhos abertos: a arte tinha 917 tons e chegava ao boneco com
+    // dois. Peso maior foi consequência aceita, não descuido.
     const bytes = ROSTOS_DA_ARTE[SLUG].formas!.reduce((a, f) => a + f.d.length, 0);
-    expect(bytes).toBe(13674);
+    expect(bytes, "os `d` das duas formas").toBe(10624);
+    expect(ROSTOS_DA_ARTE[SLUG].tom!.png.length, "o base64 da máscara").toBe(8960);
+  });
+});
+
+/**
+ * O TOM — o campo novo, e as quatro coisas que ele pode ter de errado em silêncio.
+ *
+ * Ele é o único campo do catálogo que carrega **bytes de codificador**: tudo o mais
+ * aqui é número ou string que alguém consegue ler. Um base64 corrompido, uma caixa
+ * fora do `viewBox` ou um PNG na proporção errada não quebram o `typecheck`, não
+ * quebram `conferirSvg` e não quebram o censo de camadas — eles só aparecem na tela,
+ * e aparecem como "a barba ficou estranha".
+ */
+describe("o tom, e o que ele não pode ter de errado", () => {
+  const tom = ROSTOS_DA_ARTE[SLUG].tom!;
+
+  it("o base64 é PURO e é PNG — sem `data:`, com a assinatura certa", () => {
+    // O prefixo `data:` é montado pelo COMPOSITOR, uma vez. Um que vazasse para cá
+    // sairia duplicado no `href` e o navegador descartaria a imagem em silêncio.
+    expect(tom.png.startsWith("data:")).toBe(false);
+    expect(tom.png).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
+
+    const buf = Buffer.from(tom.png, "base64");
+    expect([...buf.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  });
+
+  it("o IHDR do PNG bate com a proporção da caixa, dentro de 1%", () => {
+    // O `<image>` entra com `preserveAspectRatio="none"`: ele é ESTICADO para a
+    // caixa. Se a proporção do PNG divergir da da caixa, o tom entra deformado — a
+    // luz da barba desliza para o lado e nada acusa.
+    //
+    // O IHDR são os 8 bytes logo depois do nome do chunk, em big-endian: largura,
+    // depois altura. Lê-los aqui em vez de usar o `sharp` é de propósito — este teste
+    // mora em `src/`, e `sharp` é ferramenta de esteira.
+    const buf = Buffer.from(tom.png, "base64");
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    expect(w).toBeGreaterThan(0);
+    expect(h).toBeGreaterThan(0);
+    expect(Math.abs(w / h - tom.w / tom.h) / (tom.w / tom.h)).toBeLessThan(0.01);
+  });
+
+  it("a caixa cabe no `viewBox`, e é uma caixa de verdade", () => {
+    // 500 × 700 é o `viewBox` do compositor. Uma caixa fora dele põe metade da
+    // máscara em lugar nenhum, e a barba sai com o tom cortado.
+    expect(tom.x).toBeGreaterThanOrEqual(0);
+    expect(tom.y).toBeGreaterThanOrEqual(0);
+    expect(tom.w).toBeGreaterThan(0);
+    expect(tom.h).toBeGreaterThan(0);
+    expect(tom.x + tom.w).toBeLessThanOrEqual(500);
+    expect(tom.y + tom.h).toBeLessThanOrEqual(700);
+  });
+
+  it("a caixa cobre a CURVA, com a folga de um pixel do canvas de edição", () => {
+    // A régua independente: a caixa da máscara tem de conter o desenho. Menor que
+    // ele, a máscara devolve 0 na sobra — e ali a forma de cima some, deixando à
+    // vista só o preto de baixo. Uma faixa escura na ponta do queixo que ninguém
+    // consegue explicar, e nenhuma outra régua acusa.
+    //
+    // ⚠️ **Mede a CURVA, não os pontos de controle**, e a diferença não é detalhe:
+    // medido em 2026-08-20, o controle mais alto desta peça está em y 241,1 e a
+    // curva não passa de 243,8 — 2,7 u de diferença, e ponto de controle não
+    // desenha. Uma asserção sobre os números crus do `d` reprovaria um desenho
+    // correto.
+    //
+    // A FOLGA sai da grade, não de tentativa: a caixa é a bbox dos PIXELS da máscara,
+    // e o `potrace` suaviza a escada de pixels em Bézier — a curva pode abaular até
+    // cerca de um pixel do canvas para fora da caixa. Um pixel são `1 / ESCALA` =
+    // 1/1,2 ≈ 0,83 u. Medido aqui: 0,40 u no topo, e negativo nos outros três lados.
+    const FOLGA = 1 / 1.2;
+    const d = ROSTOS_DA_ARTE[SLUG].formas![0].d;
+
+    // Achatamento das Béziers: 16 amostras por segmento. O `d` só tem M, L, C e Z
+    // (o teste acima cobra isso), então o laço não precisa de mais casos.
+    const partes = d.match(/[A-Za-z]|-?\d*\.?\d+/g) ?? [];
+    let i = 0;
+    let cx = 0;
+    let cy = 0;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    const ponto = (x: number, y: number) => {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    };
+    while (i < partes.length) {
+      const c = partes[i++];
+      if (c === "Z" || c === "z") continue;
+      const pares = c === "C" ? 3 : 1;
+      do {
+        const n: number[] = [];
+        for (let k = 0; k < pares * 2; k++) n.push(Number(partes[i++]));
+        if (pares === 1) {
+          [cx, cy] = n;
+          ponto(cx, cy);
+        } else {
+          const [x1, y1, x2, y2, x3, y3] = n;
+          for (let s = 0; s <= 16; s++) {
+            const t = s / 16;
+            const u = 1 - t;
+            ponto(
+              u ** 3 * cx + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t ** 3 * x3,
+              u ** 3 * cy + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t ** 3 * y3,
+            );
+          }
+          cx = x3;
+          cy = y3;
+        }
+      } while (i < partes.length && /^[-\d.]/.test(partes[i]));
+    }
+
+    expect(minX, "a curva sai pela esquerda da caixa").toBeGreaterThanOrEqual(tom.x - FOLGA);
+    expect(maxX, "a curva sai pela direita da caixa").toBeLessThanOrEqual(tom.x + tom.w + FOLGA);
+    expect(minY, "a curva sai por cima da caixa").toBeGreaterThanOrEqual(tom.y - FOLGA);
+    expect(maxY, "a curva sai por baixo da caixa").toBeLessThanOrEqual(tom.y + tom.h + FOLGA);
+
+    // E a caixa não é folgada: ela encosta no desenho nos quatro lados. Uma caixa
+    // muito maior que a peça passaria na asserção acima e desperdiçaria bytes de PNG
+    // em fundo preto — e desperdiçaria RESOLUÇÃO, que é o que custa tom.
+    expect(minX - tom.x).toBeLessThan(2);
+    expect(tom.x + tom.w - maxX).toBeLessThan(2);
+    expect(minY - tom.y).toBeLessThan(2);
+    expect(tom.y + tom.h - maxY).toBeLessThan(2);
   });
 });

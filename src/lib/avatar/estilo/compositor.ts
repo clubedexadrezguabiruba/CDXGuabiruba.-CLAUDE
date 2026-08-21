@@ -703,8 +703,25 @@ function pecaSobreposta(modelo: CabeloOuModelo | undefined): string {
  * SVG de hoje continuar saindo byte a byte, e o teste `pecas-de-elenco.test.ts`
  * cobra as TRÊS pontas: ausente não muda um byte, `formas` sai como sempre saiu, e
  * `arte` emite `<image>` sem um único `kk-traco`.
+ *
+ * ---------------------------------------------------------------------------
+ * O TERCEIRO MODO: `formas` + `tom` — A SILHUETA VETOR, O CLARO-ESCURO RASTER
+ * ---------------------------------------------------------------------------
+ *
+ * Quando a peça declara `tom` (ver `TomDaPeca` em `tipos.ts`), sai um `<defs>` com
+ * um `<mask>` de luminosidade e ele veste a **ÚLTIMA** forma de preenchimento — a
+ * de cima, a que carrega `var(--av-cabelo)`. Nunca o `kk-traco`: mascarar o
+ * contorno o comeria pelas beiradas justamente onde ele existe para ler.
+ *
+ * **`ns` e `slot` são o que impede a colisão de id**, e por isso entraram na
+ * assinatura em vez de virar constante: o `ranking` põe 30 bonecos num `<svg>` só, e
+ * um mesmo boneco pode ter tom no rosto E no chapéu. `${ns}-tom-${slot}` é único nos
+ * dois eixos, pelo mesmo motivo que `${ns}-fe` e `${ns}-fd` já são.
+ *
+ * **Sem `tom`, byte a byte o de sempre**: `defs` é string vazia e o atributo `mask`
+ * não é escrito. É o que mantém os selos parados.
  */
-function sobrepor(peca: PecaSobreposta | undefined): string {
+function sobrepor(peca: PecaSobreposta | undefined, ns: string, slot: string): string {
   if (!peca) return "";
   // `k = 1` explícito: a peça de cabeça não tem `escalaMedida` e não vai ter — ela
   // ocupa o `viewBox` inteiro, que é o retângulo em que a esteira a recortou.
@@ -726,8 +743,34 @@ function sobrepor(peca: PecaSobreposta | undefined): string {
   // cercam nada, e num laço sem buraco `evenodd` e `nonzero` desenham igual — por
   // isso as duas saem byte a byte iguais com esta linha e sem ela.
   const REGRA = ` fill-rule="evenodd"`;
+
+  // A caixa da máscara é a MESMA no `<mask>` e no `<image>`: o `<mask>` a usa para
+  // recortar a região de efeito, o `<image>` para se esticar dentro dela. Duas
+  // grafias da mesma caixa é a divergência silenciosa que este arquivo evita em
+  // todo lugar — daí a string sair de uma variável só.
+  const tom = peca.tom;
+  const idTom = `${ns}-tom-${slot}`;
+  const caixa = tom
+    ? ` x="${n(tom.x)}" y="${n(tom.y)}" width="${n(tom.w)}" height="${n(tom.h)}"`
+    : "";
+  const defs = tom
+    ? `<defs><mask id="${idTom}" maskUnits="userSpaceOnUse"${caixa}>` +
+      `<image href="data:image/png;base64,${attr(tom.png)}"${caixa} ` +
+      `preserveAspectRatio="none"/></mask></defs>`
+    : "";
+  // A ÚLTIMA forma é a de cima — a da tinta. O tom veste ela e só ela.
+  const ultima = peca.formas.length - 1;
+
   return (
-    peca.formas.map((f) => `<path d="${attr(f.d)}"${REGRA} fill="${f.cor}"/>`).join("") +
+    defs +
+    peca.formas
+      .map(
+        (f, i) =>
+          `<path d="${attr(f.d)}"${REGRA} fill="${f.cor}"` +
+          (tom && i === ultima ? ` mask="url(#${idTom})"` : "") +
+          `/>`,
+      )
+      .join("") +
     peca.formas
       .filter((f) => !f.semTraco)
       .map((f) => `<path class="kk-traco"${REGRA} d="${attr(f.d)}"/>`)
@@ -971,6 +1014,8 @@ export function compor(estado: EstadoAvatar): string {
   const rosto = (sob: boolean) =>
     sobrepor(
       estado.rosto && Boolean(estado.rosto.cabeloPorCima) === sob ? estado.rosto : undefined,
+      ns,
+      "rosto",
     );
   const semSobrancelha = sobrancelhaEscondida(modeloCabelo);
 
@@ -1197,7 +1242,7 @@ export function compor(estado: EstadoAvatar): string {
     // boneco em silêncio**, porque nenhuma das duas passadas o emitiria. Filtrando
     // só do lado do rosto, a bandeira num chapéu é inerte em vez de fatal.
     // `pecas-de-elenco.test.ts` cobra exatamente isso.
-    sobrepor(estado.chapeu) +
+    sobrepor(estado.chapeu, ns, "chapeu") +
     extensoes(traje, false) +
     `</g>` +
     fecha +

@@ -17,6 +17,17 @@
  *  - `minifyStyles` mexeria nos nomes de classe, que são o contrato com a
  *    folha de estilo global.
  *
+ * MEDIDO no Bloco 5, quando o raster entrou na arte: as duas formas novas
+ * atravessam esta configuração intactas. A peça que recolore sai como
+ * `<mask>` + `<image href="data:image/png;base64,…">` sobre dois paths do
+ * mesmo `d`; a peça de cor assada sai como um `<image>` WEBP direto. Passam
+ * `<mask>`, o id, o `mask="url(#…)"`, o `href`, o base64 byte a byte,
+ * `maskUnits` e `preserveAspectRatio` — 517→517 B e 244→244 B. Quem segura o
+ * id é `cleanupIds: false` (o preset cru o reescreve para `a`, e ids de
+ * camadas concatenadas colidiriam); quem segura `maskUnits` e
+ * `preserveAspectRatio` é `defaultAttrs: false`. Guardado por
+ * `__tests__/otimizar-svg.test.ts`.
+ *
  * Uso: `otimizar(svg)` antes de gravar qualquer asset.
  */
 

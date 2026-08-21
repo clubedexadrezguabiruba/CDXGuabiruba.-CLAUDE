@@ -16,25 +16,33 @@
  * reusá-lo: não é outra configuração de traçador, é outro **destino de tipo**.
  *
  * ---------------------------------------------------------------------------
- * SÃO DUAS FORMAS, E A SEGUNDA É A PRIMEIRA MENOS O QUE O GERADOR PINTOU DE PRETO
+ * O VETOR CARREGA A SILHUETA; O RASTER CARREGA O TOM
  * ---------------------------------------------------------------------------
  *
- *   forma 1 — a silhueta INTEIRA da peça, preta. O que sobra dela à vista, depois
- *             da forma 2 por cima, é exatamente a banda de contorno pintada.
- *   forma 2 — o miolo: os pixels da peça que NÃO são contorno, em
- *             `var(--av-cabelo, …)`.
+ * **Isto mudou em 2026-08-20, e a mudança é de espinha.** Até então a esteira
+ * partia a peça em duas formas — silhueta preta embaixo, miolo colorido por cima —
+ * e traçava as duas. O Doug perguntou por que uma arte de 917 tons chegava ao
+ * boneco com **dois**, e a resposta não era a D17: era o `potrace`. Ele traça
+ * CONTORNO, e contorno é binário — todo tom intermediário arredonda para uma das
+ * cores disponíveis. **A borda dura era escolha da esteira, não regra.**
  *
- * É a mesma receita da barba paramétrica (`rosto.ts`, `pecaDeRosto`) — massa preta
- * embaixo, núcleo colorido por cima —, e a mesma da família **transcrita** do
- * cabelo (doc 19 §4), que mede IoU 80,1% contra 34,4% da sintetizada. A diferença
- * é de onde vem a fronteira entre as duas: lá de um `recuo` escrito à mão, aqui do
- * pixel que o gerador pintou.
+ * O que sai daqui agora:
  *
- * O corte entre contorno e miolo é **luminância < 60**, e não é escolha nova: é
- * exatamente a regra da folha que o Doug aprovou em 2026-08-19
- * (`.scratch/folha-recolorida.ts`), onde `lum < 60` vira preto e o resto recebe a
- * cor do cabelo. Reproduzir no SVG a mesma partição que ele julgou no raster é o
- * ponto inteiro desta esteira.
+ *   forma 1 — a silhueta INTEIRA da peça, em `var(--av-linha)`. O preto de baixo.
+ *   forma 2 — **o MESMO `d`**, em `var(--av-cabelo, …)`, vestido pela máscara.
+ *   tom     — um PNG **cinza** da luminância da arte, base64, na caixa da peça.
+ *
+ * Onde a arte é clara a cor do cabelo aparece cheia; onde escurece ela cede e o
+ * preto de baixo aparece. **A máscara não tem cor** — é um canal de cinza —, então
+ * a peça continua recolorindo inteira e a Regra Inviolável nº 4 continua de pé. Ver
+ * `TomDaPeca` em `tipos.ts` para o argumento completo.
+ *
+ * **A silhueta continua VETOR de propósito.** É ela que o compositor pinta, é ela
+ * que a borda da peça segue, e uma borda raster a 50% de resolução serrilharia a
+ * 425 px. O raster entra só onde o olho pede tom e não pede aresta.
+ *
+ * **Um traçado, não dois.** Era o `potrace` rodando duas vezes — a peça e o núcleo.
+ * O núcleo deixou de existir; o segundo traçado foi junto.
  *
  * ---------------------------------------------------------------------------
  * `semTraco` NAS DUAS, E ISSO FECHA O G29
@@ -81,17 +89,60 @@ import {
 const NIVEL = 24;
 /** Componente solta menor que isto, em fração da maior, é ruído. O mesmo de `extrair.ts`. */
 const PISO_SOLTA = 0.05;
-/** Luminância abaixo da qual o pixel é CONTORNO. A régua da folha aprovada. */
+/**
+ * Luminância abaixo da qual o pixel é CONTORNO — e hoje ela mede UMA coisa só.
+ *
+ * Era a régua que partia a peça em duas formas. Desde o tom contínuo não é mais:
+ * a partição morreu com o traçado do núcleo, e a luminância virou dado do RASTER.
+ * O que sobrou dela aqui é o gate da **aresta nua** (passo 2b), onde a pergunta
+ * continua sendo binária e continua sendo esta — *este pixel é contorno pintado?*
+ */
 const LUM_CONTORNO = 60;
 
 /**
- * Quantos passos de erosão a partição `erosao` aplica, em pixels.
+ * O ESTICÃO DO TOM — as âncoras saem de PERCENTIL DESTA ARTE, não de constante.
  *
- * O contorno que o gerador pinta mede **5,2 u** (medido), e metade dele fica de
- * cada lado da fronteira: 5,2 ÷ 2 × 1,2 px/u = 3,1 → **3 px**. Sai do desenho, não
- * de nenhuma das peças — é a lição do G28.
+ * A máscara mapeia luminância em opacidade, e mapear 0–255 direto sai lavado: na
+ * `trancada-v4` a peça inteira mora entre lum 0 e 140, então o miolo (lum ≈ 93)
+ * pousaria em **55% de opacidade** e a barba apareceria desbotada em cima da pele.
+ * Os percentis medidos naquela arte: p10 13 · p25 72 · p50 93 · p75 102 · p90 111
+ * · p98 140.
+ *
+ * **Por que percentil e não os números medidos:** 0 e 140 são desta arte. Assar os
+ * dois seria calibrar a esteira pelo primeiro desenho que passou por ela — o erro
+ * que `PISO_DISTINCAO` nomeia em `folha-base.ts`. p2/p98 recalcula por peça e
+ * ignora o antialias das duas pontas, que é ruído de borda e não tom.
+ *
+ * ⚠️ **É consequência declarada, não efeito colateral:** o percentil NORMALIZA o
+ * contraste. Uma arte desenhada escura passa a recolorir tanto quanto uma clara,
+ * porque as âncoras acompanham a peça. Isso conserta a `cavanhaque` (que saía preta
+ * chapada) e é exatamente o que precisa ir para o olho do Doug na folha — medir
+ * quanto contraste a peça tem é fácil; decidir se ela ficou boa não é.
  */
-const RAIO_DA_EROSAO = 3;
+const PERCENTIS: readonly [number, number] = [0.02, 0.98];
+
+/**
+ * A resolução do PNG de tom, em fração da caixa da peça. **50%, e o custo é medido.**
+ *
+ * A escada, contando tons distintos no render da `trancada-v4`
+ * (`.scratch/estilo/bancada-tom-continuo.ts`):
+ *
+ *   resolução   tons no render   base64
+ *   100%             1.038        —
+ *    50%               917        21,5 KB
+ *    35%               916        11,8 KB
+ *
+ * Cair pela metade custa **12% dos tons** e devolve metade dos bytes; cair a 35%
+ * não custa mais tom nenhum e devolve mais bytes ainda. Os 50% foram o que o Doug
+ * aprovou a olho na folha de 2026-08-20, e a régua aqui é o olho: 917 contra os
+ * **2 tons** que a esteira de paths entregava é a mudança inteira, e a diferença
+ * entre 917 e 916 não é vista por ninguém.
+ *
+ * **Vale para a BARBA.** Cada slot tem direito ao próprio número — o traje já fala
+ * em supersample 2× (`traje.ts:99`) e `uniforme.ts` tem variantes até DPR 3. Isto
+ * é pendência escrita, não omissão.
+ */
+const RESOLUCAO_DO_TOM = 0.5;
 
 /**
  * A ILHA MÍNIMA — 50 px² no canvas de edição, e o número sai da SOBRANCELHA.
@@ -193,7 +244,7 @@ function componentes(m: Uint8Array, W: number, H: number, piso = PISO_SOLTA) {
 }
 
 /** Máscara binária -> `d` do `potrace`, em pixels do canvas. */
-async function tracar(m: Uint8Array, W: number, H: number): Promise<string> {
+export async function tracar(m: Uint8Array, W: number, H: number): Promise<string> {
   const buf = Buffer.alloc(W * H);
   for (let i = 0; i < W * H; i++) buf[i] = m[i] ? 0 : 255; // preto = tinta
   const png = await sharp(buf, { raw: { width: W, height: H, channels: 1 } }).png().toBuffer();
@@ -249,20 +300,26 @@ export interface RostoDeArte {
   slug: string;
   /** O caminho do PNG de origem. */
   arte: string;
-  /** As duas formas, na ordem de desenho. */
+  /**
+   * As duas formas, na ordem de desenho — e elas têm o **MESMO `d`**.
+   *
+   * Não é redundância: a de baixo é o preto que aparece onde a máscara cede, a de
+   * cima é a cor do cabelo vestida por ela. Duas passadas da mesma curva, que é a
+   * mesma receita do cabelo sobre o crânio (`compositor.ts`, `cabeloNoCranio`).
+   */
   formas: { d: string; cor: string; semTraco: true }[];
+  /** O tom contínuo: PNG cinza base64 **PURO** e a caixa dele, em unidades. */
+  tom: { png: string; x: number; y: number; w: number; h: number };
+  /** As âncoras do esticão que ESTA arte produziu — p2 e p98 da luminância. */
+  esticao: { lo: number; hi: number };
+  /** O PNG de tom em pixels, depois do `RESOLUCAO_DO_TOM`. */
+  tomPx: { w: number; h: number; bytes: number };
   pxPeca: number;
-  pxContorno: number;
-  pxNucleo: number;
   pxNoRosto: number;
   ruidoDaPeca: number;
-  /** As ilhas de miolo, e quantas delas o `turdSize` guarda. */
-  ilhasDoNucleo: number;
-  ilhasGuardadas: number;
   componentes: number;
   /** A máscara final da peça, para quem quiser medir fidelidade contra o render. */
   mascara: Uint8Array;
-  mascaraDoNucleo: Uint8Array;
 }
 
 /**
@@ -278,11 +335,13 @@ export const slugDoRosto = (caminhoArte: string): string =>
 /**
  * A COR DE CADA FORMA, e as duas reservas estão escritas aqui de propósito.
  *
- * `--av-cabelo` só é emitido quando há `modeloCabelo` (`compositor.ts:876-878`).
- * Num boneco CARECA a variável não existe, e sem reserva declarada o `fill` cai no
- * valor inicial do SVG — **preto**. A barba inteira viraria uma mancha sólida da
- * cor do próprio contorno, e nenhuma régua desta etapa acusaria: elas medem forma,
- * não cor.
+ * Num boneco CARECA `--av-cabelo` poderia não existir, e sem reserva declarada o
+ * `fill` cairia no valor inicial do SVG — **preto**. A barba inteira viraria uma
+ * mancha sólida da cor do próprio contorno, e nenhuma régua desta etapa acusaria:
+ * elas medem forma, não cor. (O caminho está fechado desde 2026-08-20 —
+ * `compositor.ts:1039` emite as variáveis também quando a peça de rosto declara
+ * `formas`, e `rosto-cor.test.ts` mede —, mas a reserva fica: ela custa zero e é o
+ * que impede a próxima variante deste caminho de sair preta em silêncio.)
  *
  * A reserva é `#262626` porque foi a que o Doug julgou. A folha recolorida de
  * 2026-08-19 (`.scratch/folha-recolorida.ts`) desenhou as três barbas na coluna
@@ -297,7 +356,7 @@ export const COR_MIOLO = "var(--av-cabelo, #262626)";
 /** Traça uma arte de barba já aprovada. Não repara nada — ver o topo. */
 export async function construirRosto(
   caminhoArte: string,
-  opcoes: { semLimite?: boolean; divisao?: "luminancia" | "erosao" } = {},
+  opcoes: { semLimite?: boolean } = {},
 ): Promise<RostoDeArte> {
   const { data: A, info } = await cru(caminhoArte);
   const { data: B } = await cru(PNG_BASE);
@@ -394,90 +453,119 @@ export async function construirRosto(
     );
   }
 
-  // --- 3. contorno x miolo ---
+  // --- 3. O TOM — a caixa da peça, o esticão por percentil, e o PNG cinza ---
   //
-  // ⚠️ **DUAS PARTIÇÕES, e a segunda é bancada aberta pelo achado G31.**
+  // A partição contorno × miolo MORREU AQUI. Ela existia para dar duas cores a uma
+  // arte de muitas, e a máscara dá todas. Com ela foram junto o `divisao: "erosao"`
+  // aberto pelo G31 (a `cavanhaque` saía preta chapada — o esticão por percentil
+  // resolve isso pela raiz), a franja da borda do passo 3b (o antialias que virava
+  // miolo agora é só um cinza intermediário, que é o que ele sempre foi) e o
+  // segundo traçado.
   //
-  //  - `luminancia` (padrão) — contorno é o que é escuro (`lum < 60`). Funciona
-  //    quando o gerador entrega a peça com miolo mais claro que a borda, que é o
-  //    caso da `cheia` (83,4% de miolo) e do `bigode` (79,5%);
-  //  - `erosao` — contorno é a FAIXA EXTERNA da silhueta, da espessura que o
-  //    gerador pinta (5,2 u → 3 px de erosão), e miolo é o resto. É geometria, não
-  //    histograma.
-  //
-  // **Por que a segunda existe:** a `cavanhaque` chegou quase toda preta (moda em
-  // 40–49, 92,4% abaixo de lum 60) e a partição por luminância declara **7,6%** dela
-  // como recolorível — ela sai PRETA nas 8 cores de cabelo, e o aluno loiro recebe
-  // barba preta. É o achado **G31**, e mover o limiar não resolve: de 60 para 90
-  // recupera 1,4%.
-  //
-  // Medido em 2026-08-20 (`.scratch/estilo/g31-miolo-por-erosao.ts`), e o que a
-  // torna candidata a REGRA e não a caso especial é a coluna da direita:
-  //
-  //   peça                por luminância    por erosão
-  //   barba-cheia            83,4% miolo    88,0%
-  //   barba-bigode           79,5%          79,8%
-  //   barba-cavanhaque        7,6%          75,8%   ← a peça volta a recolorir
-  //
-  // Ela quase não move as duas que já funcionavam. **A troca do padrão espera o
-  // olho do Doug a 56 px**: engordar o miolo à custa do contorno pode apagar a
-  // separação entre a barba e o queixo, e isso é julgamento, não medição.
-  const nucleo = new Uint8Array(n);
-  if (opcoes.divisao === "erosao") {
-    // Erosão por 4-vizinhança, `RAIO_DA_EROSAO` passos: sobra tudo que está a mais
-    // de meia espessura de contorno da borda.
-    let cur = pecaLimpa.m;
-    for (let passo = 0; passo < RAIO_DA_EROSAO; passo++) {
-      const nx = new Uint8Array(n);
-      for (let y = 1; y < H - 1; y++)
-        for (let x = 1; x < W - 1; x++) {
-          const i = y * W + x;
-          if (cur[i] && cur[i - 1] && cur[i + 1] && cur[i - W] && cur[i + W]) nx[i] = 1;
-        }
-      cur = nx;
+  // A caixa é a da MÁSCARA DA PEÇA, não a do canvas: um PNG de 1024² para uma barba
+  // de 425 × 368 seria 6,6× de área paga em pixel de fundo.
+  let x0 = W;
+  let x1 = -1;
+  let y0 = H;
+  let y1 = -1;
+  for (let i = 0; i < n; i++)
+    if (pecaLimpa.m[i]) {
+      const x = i % W;
+      const y = (i / W) | 0;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
     }
-    for (let i = 0; i < n; i++) if (cur[i]) nucleo[i] = 1;
-  } else {
-    for (let i = 0; i < n; i++) {
-      if (!pecaLimpa.m[i]) continue;
-      if (lum(i) >= LUM_CONTORNO) nucleo[i] = 1;
-    }
-  }
-  let pxContorno = 0;
-  for (let i = 0; i < n; i++) if (pecaLimpa.m[i] && !nucleo[i]) pxContorno++;
-  // O MIOLO NÃO PASSA PELO FILTRO DE COMPONENTE, e a assimetria com a peça é
-  // deliberada. Lá o filtro separa a barba do ruído de reencode do gerador; aqui
-  // cada ilha de miolo é TEXTURA — o tufo de pelo claro entre duas mechas escuras.
-  // Medido na `cheia`: com o piso de 5% da maior componente, 1 628 px de miolo
-  // viravam preto, e o que se perde é justamente o que o Doug mandou preservar
-  // quando reprovou a regra uniforme de contorno em 2026-08-19 ("piorou, afetou as
-  // outras barbas que estavam perfeitas"). Speck de 1 px quem descarta é o
-  // `turdSize` do potrace, e ele está em 0 pelo mesmo motivo de `rotas/potrace.ts`.
-  const ilhas = componentes(nucleo, W, H, 0);
-  let pxNucleo = 0;
-  for (let i = 0; i < n; i++) if (nucleo[i]) pxNucleo++;
+  if (x1 < 0) throw new Error(`${caminhoArte}: a peça ficou vazia — não há o que traçar`);
+  const MW = x1 - x0 + 1;
+  const MH = y1 - y0 + 1;
 
-  // --- 4. traçado ---
+  // AS ÂNCORAS DO ESTICÃO — p2 e p98 da luminância DENTRO da peça.
+  //
+  // Histograma de 256 baldes em vez de ordenar 150 mil floats: a luminância já cai
+  // num inteiro de 0 a 255, e o percentil de um histograma é exato para essa grade.
+  const hist = new Int32Array(256);
+  let pxDaPeca = 0;
+  for (let i = 0; i < n; i++)
+    if (pecaLimpa.m[i]) {
+      hist[Math.max(0, Math.min(255, Math.round(lum(i))))]++;
+      pxDaPeca++;
+    }
+  const percentil = (p: number) => {
+    const alvo = p * pxDaPeca;
+    let acc = 0;
+    for (let v = 0; v < 256; v++) {
+      acc += hist[v];
+      if (acc >= alvo) return v;
+    }
+    return 255;
+  };
+  const lo = percentil(PERCENTIS[0]);
+  const hi = percentil(PERCENTIS[1]);
+  // PEÇA CHAPADA NÃO TEM TOM PARA MEDIR, e isso reprova em vez de dividir por zero.
+  // Uma arte de um tom só é arte que o gerador entregou errada, ou peça que não
+  // devia estar nesta esteira. Dividir por (hi − lo) = 0 daria NaN, o PNG sairia
+  // preto inteiro e a peça sumiria do boneco sem erro nenhum.
+  if (hi <= lo)
+    throw new Error(
+      `${caminhoArte}: a peça é CHAPADA — p${PERCENTIS[0] * 100} e p${PERCENTIS[1] * 100} ` +
+        `da luminância caem os dois em ${lo}.
+` +
+        `  Não há tom para esticar, e o esticão dividiria por zero. Ou a arte veio de
+` +
+        `  um tom só (é defeito do desenho), ou esta peça não pertence a esta esteira.`,
+    );
+
+  // O CINZA: (lum − lo) / (hi − lo), grampeado. Fora da peça é 0 — a máscara não
+  // deixa nada passar ali, e o `d` da silhueta já recorta a mesma região.
+  const cinza = Buffer.alloc(MW * MH);
+  for (let y = 0; y < MH; y++)
+    for (let x = 0; x < MW; x++) {
+      const i = (y + y0) * W + (x + x0);
+      cinza[y * MW + x] = pecaLimpa.m[i]
+        ? Math.max(0, Math.min(255, Math.round(((lum(i) - lo) / (hi - lo)) * 255)))
+        : 0;
+    }
+  const pngTom = await sharp(cinza, { raw: { width: MW, height: MH, channels: 1 } })
+    .resize(Math.round(MW * RESOLUCAO_DO_TOM))
+    .png({ compressionLevel: 9, palette: true })
+    .toBuffer();
+  const tomW = Math.round(MW * RESOLUCAO_DO_TOM);
+  const tomH = Math.round((MH * tomW) / MW);
+
+  // A CAIXA EM UNIDADES — `x1 + 1` e `y1 + 1` porque a caixa vai até a borda EXTERNA
+  // do último pixel, não até o começo dele. Um pixel a menos de cada lado desloca a
+  // máscara meio pixel e a peça sai com o tom fora de registro.
+  const a0 = paraUnidade(x0, y0);
+  const b0 = paraUnidade(x1 + 1, y1 + 1);
+  const emU = (v: number) => Number(v.toFixed(CASAS));
+
+  // --- 4. traçado. UM, e é a silhueta. ---
   const dPeca = paraUnidades(await tracar(pecaLimpa.m, W, H));
-  const dNucleo = paraUnidades(await tracar(nucleo, W, H));
+
+  const png64 = pngTom.toString("base64");
+  // O CAMPO GUARDA O BASE64 PURO, e isto é asserção, não zelo: quem monta o
+  // `data:image/png;base64,` é o compositor, uma vez. Um prefixo que vazasse para cá
+  // sairia duplicado no `href` e o navegador descartaria a imagem em silêncio.
+  if (png64.startsWith("data:"))
+    throw new Error("o PNG de tom veio com prefixo `data:` — o campo guarda base64 PURO");
 
   return {
     slug: slugDoRosto(caminhoArte),
     arte: caminhoArte,
     formas: [
       { d: dPeca, cor: COR_CONTORNO, semTraco: true },
-      { d: dNucleo, cor: COR_MIOLO, semTraco: true },
+      { d: dPeca, cor: COR_MIOLO, semTraco: true },
     ],
+    tom: { png: png64, x: emU(a0.x), y: emU(a0.y), w: emU(b0.x - a0.x), h: emU(b0.y - a0.y) },
+    esticao: { lo, hi },
+    tomPx: { w: tomW, h: tomH, bytes: pngTom.length },
     pxPeca: pecaLimpa.mantidos,
-    pxContorno,
-    pxNucleo,
     pxNoRosto,
     ruidoDaPeca: peca0.descartados,
-    ilhasDoNucleo: ilhas.tamanhos.length,
-    ilhasGuardadas: ilhas.tamanhos.filter((t) => t >= TURD).length,
     componentes: pecaLimpa.quantas,
     mascara: pecaLimpa.m,
-    mascaraDoNucleo: nucleo,
   };
 }
 
@@ -495,9 +583,10 @@ async function principal(): Promise<void> {
 
   const p = await construirRosto(arte, { semLimite });
   const [f1, f2] = p.formas;
-  const total = p.pxContorno + p.pxNucleo;
 
-  console.log(`\nBARBA -> formas[] — ${arte}\n`);
+  console.log(`
+BARBA -> silhueta + tom — ${arte}
+`);
   console.log(`  slug                           ${p.slug}`);
   console.log(
     `  peça (difere da base > ${NIVEL})     ${p.pxPeca + p.pxNoRosto * (semLimite ? 0 : 1)} px ` +
@@ -507,22 +596,31 @@ async function principal(): Promise<void> {
     `  dentro das FEIÇÕES             ${p.pxNoRosto} px  ` +
       `${semLimite ? "MANTIDOS (--sem-limite)" : "recortados, como na extração"}`,
   );
-  console.log(`  a peça, afinal                 ${total} px`);
+  console.log(`  a peça, afinal                 ${p.pxPeca} px`);
   console.log(
-    `    contorno (lum < ${LUM_CONTORNO})           ${p.pxContorno} px  ` +
-      `${((100 * p.pxContorno) / total).toFixed(1)}%   <- NAO recolore`,
+    `
+  esticão (p${PERCENTIS[0] * 100}/p${PERCENTIS[1] * 100})            ` +
+      `lum ${p.esticao.lo} -> ${p.esticao.hi}   (fora disso, grampeado)`,
   );
   console.log(
-    `    miolo                        ${p.pxNucleo} px  ` +
-      `${((100 * p.pxNucleo) / total).toFixed(1)}%   <- recolore`,
+    `  tom (${(RESOLUCAO_DO_TOM * 100).toFixed(0)}% da caixa)            ` +
+      `${p.tomPx.w}x${p.tomPx.h} px · ${p.tomPx.bytes} B de PNG · ` +
+      `${(p.tom.png.length / 1024).toFixed(1)} KB em base64`,
   );
   console.log(
-    `    o miolo são ${p.ilhasDoNucleo} ilhas; o traçado guarda as ${p.ilhasGuardadas} ` +
-      `com ${TURD} px² ou mais (turdSize) — o resto é antialias, ver o topo`,
+    `  caixa da máscara               ` +
+      `x ${p.tom.x} y ${p.tom.y} w ${p.tom.w} h ${p.tom.h} (unidades do viewBox)`,
   );
-  console.log(`\n  forma 1  ${f1.cor.padEnd(24)} ${f1.d.length} bytes · ${(f1.d.match(/M/g) ?? []).length} subcaminhos`);
-  console.log(`  forma 2  ${f2.cor.padEnd(24)} ${f2.d.length} bytes · ${(f2.d.match(/M/g) ?? []).length} subcaminhos`);
-  console.log(`  soma     ${f1.d.length + f2.d.length} bytes de \`d\`\n`);
+  console.log(
+    `
+  forma 1  ${f1.cor.padEnd(24)} ${f1.d.length} bytes · ${(f1.d.match(/M/g) ?? []).length} subcaminhos`,
+  );
+  console.log(
+    `  forma 2  ${f2.cor.padEnd(24)} ${f2.d.length} bytes · o MESMO \`d\`` +
+      `${f1.d === f2.d ? "" : "  <- DIVERGIU, e não deveria"}`,
+  );
+  console.log(`  soma     ${f1.d.length + f2.d.length} bytes de \`d\` + ${p.tom.png.length} de base64
+`);
 }
 
 if (process.argv[1]?.endsWith("barba-para-formas.ts")) {

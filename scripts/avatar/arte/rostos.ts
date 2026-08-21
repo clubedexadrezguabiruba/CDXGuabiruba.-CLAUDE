@@ -66,14 +66,30 @@ const CABECALHO = `/**
  * que é o que traje e chapéu usam, seria preto fixo. Ver o docstring de
  * \`PecaSobreposta\` em \`tipos.ts\`, a tabela "a peça recolore?".
  *
- * AS DUAS FORMAS DE CADA PEÇA, e a ordem é a de desenho:
+ * ---------------------------------------------------------------------------
+ * AS DUAS FORMAS TÊM O MESMO \`d\`, E O CLARO-ESCURO VEM DO \`tom\`
+ * ---------------------------------------------------------------------------
  *
- *  1. a silhueta INTEIRA, em \`var(--av-linha)\`. O que sobra dela à vista, com a
- *     forma 2 por cima, é a banda de contorno que o gerador pintou;
- *  2. o miolo, em \`var(--av-cabelo, #262626)\`. A reserva é a rede de segurança para
- *     quando a propriedade não existir — sem ela o \`fill\` cai em preto e a barba
- *     vira mancha sólida. \`#262626\` é a que o Doug julgou na folha recolorida de
- *     2026-08-19.
+ * Isto mudou em 2026-08-20 e a mudança é de espinha. Até ali a esteira partia a
+ * peça em silhueta preta e miolo colorido, e traçava as duas — o que fazia uma arte
+ * de **917 tons** chegar ao boneco com **dois**. A causa não era a D17: era o
+ * \`potrace\`, que traça CONTORNO, e contorno é binário. Hoje:
+ *
+ *  1. a silhueta INTEIRA, em \`var(--av-linha)\`. O preto de baixo;
+ *  2. **o MESMO \`d\`**, em \`var(--av-cabelo, #262626)\`, vestido pela máscara.
+ *
+ *     A reserva é a rede de segurança para quando a propriedade não existir — sem
+ *     ela o \`fill\` cai em preto e a barba vira mancha sólida. \`#262626\` é a que o
+ *     Doug julgou na folha recolorida de 2026-08-19.
+ *
+ * E o campo \`tom\`: um PNG **cinza** da luminância da arte, em base64, esticado
+ * entre os percentis p2 e p98 DESTA peça e servido a 50% da caixa. O compositor o
+ * monta como \`<mask>\` e veste a forma 2. Onde a arte é clara a cor do cabelo
+ * aparece cheia; onde escurece ela cede e o preto de baixo aparece.
+ *
+ * **A máscara não tem cor** — é um canal de cinza —, então a peça continua
+ * recolorindo INTEIRA e a Regra Inviolável nº 4 continua de pé. O argumento
+ * completo está no docstring de \`TomDaPeca\` em \`tipos.ts\`.
  *
  *     ⚠️ **Ela deixou de ser o caminho do boneco CARECA em 2026-08-20.** Até ali,
  *     \`--av-cabelo\` só era emitido quando havia \`modeloCabelo\`, e a barba do careca
@@ -129,6 +145,7 @@ function corpoDaPeca(
   slug: string,
   nome: string,
   formas: { d: string; cor: string; semTraco: true }[],
+  tom: { png: string; x: number; y: number; w: number; h: number },
 ): string {
   return (
     `  ${JSON.stringify(slug)}: {\n` +
@@ -159,6 +176,17 @@ function corpoDaPeca(
       )
       .join("\n") +
     `\n    ],\n` +
+    // O TOM, e o `png` vai numa linha só POR NECESSIDADE: é base64, e base64 não tem
+    // ponto de quebra. Partir a string em pedaços concatenados custaria bytes de
+    // fonte e criaria um jeito de o `--check` divergir por formatação em vez de por
+    // conteúdo. O Prettier não toca em literal de string.
+    `    tom: {\n` +
+    `      png: ${JSON.stringify(tom.png)},\n` +
+    `      x: ${tom.x},\n` +
+    `      y: ${tom.y},\n` +
+    `      w: ${tom.w},\n` +
+    `      h: ${tom.h},\n` +
+    `    },\n` +
     `  },`
   );
 }
@@ -182,11 +210,12 @@ async function gerar(): Promise<string> {
     console.log(
       `  ${p.slug.padEnd(22)} ${nome.padEnd(16)} ` +
         `${p.pxPeca.toLocaleString("pt-BR")} px · ` +
-        `contorno ${((100 * p.pxContorno) / (p.pxContorno + p.pxNucleo)).toFixed(1)}% · ` +
+        `esticão lum ${p.esticao.lo}→${p.esticao.hi} · ` +
+        `tom ${p.tomPx.w}×${p.tomPx.h} (${(p.tom.png.length / 1024).toFixed(1)} KB b64) · ` +
         `${p.formas.length} formas · ${bytes.toLocaleString("pt-BR")} bytes de \`d\` · ` +
         `${p.pxNoRosto} px descartados em ROSTO`,
     );
-    blocos.push(corpoDaPeca(p.slug, nome, p.formas));
+    blocos.push(corpoDaPeca(p.slug, nome, p.formas, p.tom));
   }
   if (faltou) process.exit(1);
 

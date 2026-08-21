@@ -11,6 +11,11 @@
 # Uma pasta por arte (`saidaDaArte` em base.ts), mais fixtures e réguas.
 */
 
+# ...MENOS os testes. `*/` engolia `__tests__/`, e um gate que não entra no
+# repositório não é gate: ele passa na máquina de quem o escreveu e nunca roda no CI.
+# Pego em 2026-08-20, quando `franja-da-borda.test.ts` nasceu invisível.
+!__tests__/
+
 # Os artefatos soltos.
 folha.html
 folha.png

@@ -258,9 +258,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 14 |
-| **Árvore** | **2 arquivos sujos** |
-| **Último commit** | 52ed209 · 2026-08-20 · feat(avatar): os olhos também deixam de ser caixa — a região passa a ser a forma da feição |
+| **Commits à frente de `origin/main`** | 0 |
+| **Árvore** | **27 arquivos sujos** |
+| **Último commit** | 6e10909 · 2026-08-20 · fix(avatar): a barba com bigode APAGAVA A BOCA — o potrace declara a regra e a esteira jogava fora |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

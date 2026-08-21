@@ -206,6 +206,69 @@ export async function vetorizarRecorte(
 }
 
 /**
+ * O RECORTE RGBA VIRANDO `.svg` COM UM `<image>` DENTRO — o braço RASTER.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE UMA PEÇA DE COR ASSADA NÃO PRECISA SER VETOR
+ * ---------------------------------------------------------------------------
+ *
+ * O traçado existia para uma coisa: dar ao compositor um `d` que ele pudesse pintar
+ * com token de cor. Peça de cor ASSADA não é pintada por ninguém — ela chega pronta
+ * do desenho, e o compositor só a cola. Vetorizá-la é converter um raster em milhares
+ * de polígonos chapados **para imitar de volta o degradê que o raster já tinha**.
+ *
+ * Medido em 2026-08-20 (`.scratch/estilo/_preco-do-traje.ts`):
+ *
+ *   peça             vetor (paths)      raster WEBP q82
+ *   traje-gambesao   228,2 KB / 530     **15,1 KB**   (15× menor)
+ *   traje-farda       28,7 KB           **16,9 KB**
+ *
+ * E o ganho não é só peso: o vetor perde tom pelo mesmo motivo que a barba perdia —
+ * quantização em cores chapadas. O raster carrega o desenho inteiro.
+ *
+ * **O invólucro continua sendo `.svg`, e isso não é cerimônia.** É o que mantém uma
+ * colagem só: `colarArte()` no compositor serve traje, chapéu, óculos e pet pelo
+ * mesmo `<image>` com o mesmo `viewBox` de 600 × 840, e trocar a extensão por peça
+ * abriria um segundo caminho de colagem para a primeira divergência acontecer.
+ *
+ * ⚠️ **Só para arte NOVA.** `traje-farda` e `traje-gambesao` estão congeladas no
+ * vetor — já foram aprovadas pelo Doug, e o ganho delas seria de custo e não de
+ * qualidade visível. A trava mecânica disso é `CONGELADAS_NO_VETOR` em `traje.ts`,
+ * e ela precisa ser mecânica porque `arte:trajes --check` reescreve os `.svg`.
+ */
+export async function embrulharRaster(
+  rgba: Buffer,
+  w: number,
+  h: number,
+): Promise<{ svg: string; bytes: number }> {
+  // Alfa preservado — é ele que recorta a peça, e o WEBP carrega alfa nativo. (O
+  // braço vetor precisa da sentinela magenta porque o VTracer é cego a alfa; aqui
+  // não há traçador, então não há o que enganar.)
+  const webp = await sharp(rgba, { raw: { width: w, height: h, channels: 4 } })
+    .webp({ quality: QUALIDADE_WEBP })
+    .toBuffer();
+
+  return {
+    svg:
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" ` +
+      `width="${w}" height="${h}">` +
+      `<image href="data:image/webp;base64,${webp.toString("base64")}" ` +
+      `x="0" y="0" width="${w}" height="${h}"/></svg>`,
+    bytes: webp.length,
+  };
+}
+
+/**
+ * A qualidade do WEBP da peça de cor assada. **82, e é o número da medição.**
+ *
+ * Foi a que produziu os 15,1 KB do gambesão contra 228,2 KB de paths — a comparação
+ * que decidiu o braço. Subir para 90 devolve bytes sem devolver desenho que o olho
+ * distinga a 425 px; descer para 70 começa a sujar a borda da peça, que é onde o
+ * traço preto do gerador mora e onde o olho do Doug vai primeiro.
+ */
+const QUALIDADE_WEBP = 82;
+
+/**
  * O QUE UM SLOT PRECISA DECLARAR PARA PASSAR POR AQUI — e são quatro linhas.
  *
  * Repare no que NÃO está aqui: recorte, escala, âncora, configuração de traçador.
@@ -252,6 +315,8 @@ export interface Peca {
   slug: string;
   /** O `.svg` que vai ao ar — o caminho de disco, a partir da raiz. */
   arte: string;
+  /** Por qual braço ela saiu. No `raster`, `formas` é 0 e não é falta de dado. */
+  formato: FormatoDaPeca;
   /**
    * O recorte RGBA como PNG, **em memória e de propósito**.
    *
@@ -306,10 +371,24 @@ export interface Peca {
 export const slugDaArte = (caminhoArte: string): string =>
   basename(caminhoArte).replace(/\.png$/i, "");
 
+/**
+ * COMO A PEÇA CHEGA AO AR — e a bifurcação é do SLUG, nunca desta função.
+ *
+ * `vetor` traça o recorte em paths; `raster` embrulha o recorte num `<image>` WEBP.
+ * Os dois escrevem o MESMO `.svg` no MESMO lugar, com o mesmo `viewBox` — é o que
+ * mantém `colarArte()` sendo uma conta só.
+ *
+ * Quem escolhe é quem sabe da peça: `formatoDoTraje()` em `traje.ts`, porque a
+ * escolha é "esta arte é nova, ou já foi aprovada no vetor?" — e isso é história do
+ * catálogo, não propriedade da esteira.
+ */
+export type FormatoDaPeca = "vetor" | "raster";
+
 export async function construirPeca(
   caminhoArte: string,
   slot: SlotDeArte,
   fabricaDeTinta?: FabricaDeTinta,
+  formato: FormatoDaPeca = "vetor",
 ): Promise<Peca> {
   const slug = slugDaArte(caminhoArte);
   if (!slot.slug.test(slug)) {
@@ -360,9 +439,14 @@ export async function construirPeca(
     .png({ compressionLevel: 9 })
     .toBuffer();
 
-  const vetor = await vetorizarRecorte(saida, W, H);
+  // A BIFURCAÇÃO. No raster não há traçador, então não há forma: `formas` sai 0, e
+  // isso é o dado certo — `<image>` não é forma, e os contadores de orçamento do
+  // projeto já o excluem (`/(path|ellipse|rect|circle|use)/`, `cabelo.ts`).
+  const embrulhado = formato === "raster" ? await embrulharRaster(saida, W, H) : null;
+  const vetor = embrulhado ? null : await vetorizarRecorte(saida, W, H);
+  const svg = embrulhado ? embrulhado.svg : vetor!.svg;
   const arte = `${slot.pasta}/${slug}.svg`;
-  writeFileSync(arte, vetor.svg, "utf-8");
+  writeFileSync(arte, svg, "utf-8");
 
   // ------------------------------- o controle negativo: a base contra si mesma
   //
@@ -414,8 +498,9 @@ export async function construirPeca(
   return {
     slug,
     arte,
+    formato,
     raster,
-    formas: vetor.formas,
+    formas: vetor?.formas ?? 0,
     cor: hex(dominante),
     recolorida: tinta.declarada,
     pixels,
@@ -425,8 +510,8 @@ export async function construirPeca(
     foraDoRecorte,
     caixaUnidades: e.caixaUnidades,
     controleNaBase,
-    bytes: Buffer.byteLength(vetor.svg),
-    bytesGzip: gzipSync(Buffer.from(vetor.svg)).length,
+    bytes: Buffer.byteLength(svg),
+    bytesGzip: gzipSync(Buffer.from(svg)).length,
     bytesRaster: raster.length,
   };
 }

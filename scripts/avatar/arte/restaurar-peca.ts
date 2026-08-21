@@ -35,6 +35,16 @@
  * Gate −1 mas apaga parte da peça (a `cheia` cai de 38 505 px para 16 022).
  * Fica como achado, não como conserto.
  *
+ * ⚠️ ELE RODA **ANTES** DO GATE −1, e é o contrário das rotas de cabelo e de traje.
+ *
+ * O Gate −1 reconhece a peça pelo **ciano** (passo 2 da ordem em três tempos,
+ * `gate-menos-um.ts`), e quem cria o ciano é este programa. Na arte crua a máscara
+ * sai parcial e o que sobra é contado como boneco redesenhado: medido na `rala` em
+ * 2026-08-20, 84,3% da peça reconhecida, 660 px não explicados e 27 ladrilhos de
+ * forma em "rosto" — **REPROVADA**. A mesma arte depois daqui: 100,0% da peça,
+ * 0 px não explicados, APROVADA. A reprovação engana porque sai com a mensagem de
+ * gerador que redesenhou o boneco. Ver doc 19 §13.
+ *
  * Uso: npx tsx scripts/avatar/arte/restaurar-peca.ts <entrada.png> <saida.png> [franja_u]
  */
 import sharp from "sharp";

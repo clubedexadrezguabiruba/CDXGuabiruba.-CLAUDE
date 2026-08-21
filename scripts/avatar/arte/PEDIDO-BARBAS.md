@@ -114,6 +114,48 @@ o que o tamanho não dá.
 continuam medindo e imprimindo o vão; nenhuma reprova por ele. Quem reprova é o olho
 do Doug, e nas três vezes em que ele e um piso discordaram, o piso é que estava errado.
 
+## ⚠️ O CONTORNO FECHA EM VOLTA — e a borda de baixo é a que o gerador larga
+
+**Achado de 2026-08-20, medido, e vale para todo pedido de barba daqui em diante.**
+
+O Doug olhou a folha da `cheia` e disse: *"o contorno da barba, que deveria ser um
+traço preto, tem a cor fugindo, excedendo o traço"*, e depois *"ainda tem cor vazando
+embaixo"*. Estava certo nas duas vezes. A causa é a arte, e é **local**: o gerador
+pinta o contorno nas laterais e no topo e deixa a barba morrer sem preto **na borda
+de baixo**, onde ela encosta no pescoço e na túnica.
+
+A banda preta abaixo do último pixel de cor, por coluna, na máscara da própria peça:
+
+| peça | banda embaixo (p50) | colunas SEM preto no render |
+|---|---|---|
+| `cheia` | **1 px** do canvas | 24,7% |
+| `cheia-com-bigode` | **1 px** | 43,1% |
+| `bigode-ferradura` | 6 px | 25,8% |
+| **`rala`** | **12 px** | **0%** |
+
+Referência: o contorno do boneco é **12 u = 14,4 px** do canvas. A `rala` é a única
+que o gerador fechou por baixo — e é a única que não vaza no render. A correlação é a
+prova.
+
+**Por que a cláusula que já existe não bastou:** ela está na lista de cores
+(*"contorno da barba: preto, da mesma espessura das outras linhas do boneco"*), e o
+gerador a lê como instrução de COR. Ela tem de ser instrução de **forma**, com a borda
+de baixo nomeada — é o que o parágrafo abaixo faz. **Cole-o em todo pedido**, junto
+com o bloco de cores:
+
+> **O CONTORNO DA BARBA DÁ A VOLTA COMPLETA NELA.** A linha preta que envolve a barba
+> tem a **mesma espessura da linha preta que contorna o corpo do boneco** e não
+> afina em lugar nenhum. Ela existe nos quatro lados, e a **borda de baixo é a mais
+> importante**: onde a barba termina e começa a roupa ou o pescoço, tem de haver a
+> mesma linha preta grossa que existe nas laterais. A barba **nunca** termina com a
+> cor dela encostando direto na roupa, na pele ou no fundo. Se em algum ponto a linha
+> preta ficar mais fina que a do corpo do boneco, engrosse-a até ficar igual.
+
+**Como conferir sem abrir a imagem:** `npx tsx .scratch/estilo/de-quem-e-a-borda.ts`
+imprime a banda de baixo por peça. Abaixo de ~8 px do canvas, a peça vaza no render.
+
+---
+
 ## O elenco, em número
 
 | raridade | slug | assinatura | largura | desce do queixo | a 56 px |
@@ -455,3 +497,57 @@ A rota compara a arte com a base pixel a pixel, e qualquer reamostragem estraga 
 comparação. O PNG cru do Gemini é a entrada certa. **Formato nunca é a causa de
 reprovação — redesenho é:** a base oficial passada por JPEG q95, q85, q75 e q60
 aprova no Gate −1 nas quatro qualidades, com 0,0 px de deslocamento.
+
+---
+
+# Retoque cirúrgico — fechar o contorno de baixo
+
+**Para quem:** `cheia`, `cheia-com-bigode` e `bigode-ferradura`, medidas em 2026-08-20.
+A `rala` **não** precisa: ela já tem 12 px de banda embaixo.
+
+**Não é um pedido de barba nova.** A forma das três está aprovada; o que falta é a
+linha preta na borda de baixo. Pedir uma barba nova troca um defeito conhecido por uma
+rodada inteira de incerteza — e a `cheia` é a única peça que já está no banco.
+
+**Anexe UMA imagem:** a própria arte da peça (`scripts/avatar/arte/barba-cheia.png`,
+ou a do lote em `.scratch/arte/lote/<peça>.png`). **Salve o retorno em**
+`.scratch/arte/<peça>-contorno-1.png` e passe pela rota: `restaurar-peca.ts` →
+`arte:gate` → `de-quem-e-a-borda.ts`.
+
+> Edite esta imagem. Não crie um personagem novo, não redesenhe nada, não reenquadre.
+>
+> Esta imagem está quase certa. **O único problema é a linha preta de contorno da
+> barba: ela some na borda de baixo.** Nas laterais e em cima a barba tem uma linha
+> preta em volta; embaixo, onde a barba termina e começa a roupa, a cor da barba
+> encosta direto na roupa, sem linha nenhuma.
+>
+> **A sua tarefa, e é a única: desenhar a linha preta que falta na borda de baixo da
+> barba.**
+>
+> A linha nova tem exatamente **a mesma espessura da linha preta que contorna o corpo
+> do boneco** — compare com ela na própria imagem e iguale. Ela acompanha a borda de
+> baixo da barba de ponta a ponta, sem interrupção, e se encontra com as linhas que já
+> existem nas laterais, formando um contorno fechado em volta da barba inteira.
+>
+> **A BARBA NÃO MUDA DE TAMANHO NEM DE FORMATO.** A linha nova ocupa a beirada da
+> barba que já existe — ela come um pouco da cor da barba, e **não** avança sobre a
+> roupa, sobre o pescoço nem sobre o fundo. A silhueta da barba na imagem que você
+> devolver é a mesma da imagem que eu mandei.
+>
+> **NADA MAIS NA IMAGEM MUDA.** A imagem que você devolver será comparada com esta
+> pixel a pixel. Ficam idênticos: o tamanho do arquivo (1024 × 1024), o enquadramento,
+> o tamanho e a posição do boneco, o formato da cabeça e do corpo, os olhos, as
+> sobrancelhas, a boca, a cor da pele, a cor da roupa, o fundo, a cor da barba, e todas
+> as linhas pretas que já existem. Não "melhore" nada. Não acrescente sombra, textura,
+> fios, brilho nem gradiente. Não escureça a roupa em volta da barba.
+>
+> Devolva um único PNG de 1024 × 1024.
+
+**O que reprova o retorno, em ordem de gravidade:**
+
+| sintoma | o que aconteceu | régua |
+|---|---|---|
+| Gate −1 reprova em "rosto/corpo" com causa *repintura* | o gerador redesenhou o boneco | `arte:gate` |
+| a banda de baixo continua < 8 px | ele ignorou o pedido | `de-quem-e-a-borda.ts` |
+| a peça cresceu para baixo | a linha foi desenhada POR FORA | comparar `pxPeca` antes/depois |
+| o recolorimento despencou | a linha comeu a barba inteira | `barba-para-formas.ts`, laudo |

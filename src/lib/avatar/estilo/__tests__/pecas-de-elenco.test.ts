@@ -427,3 +427,114 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
     expect(comFlag.id).toBe(FALSA.id);
   });
 });
+
+/**
+ * `tom` — O CLARO-ESCURO POR MÁSCARA, E O QUE ELE NÃO PODE QUEBRAR.
+ *
+ * O terceiro modo de peça do Bloco 5: a silhueta continua vetor e recolorindo, e o
+ * claro-escuro vem por cima como máscara de LUMINOSIDADE — um PNG cinza em base64.
+ * Ver `TomDaPeca` (`tipos.ts`) para o porquê disso não furar a Regra Inviolável nº 4.
+ *
+ * As quatro asserções cobrem os quatro jeitos de isto quebrar em silêncio:
+ *
+ *  1. **o id não fechar** — `<mask id>` e `mask="url(#…)"` divergirem é a peça
+ *     perder o tom sem erro nenhum, em nenhum lugar;
+ *  2. **`tom: undefined` não ser ausência** — o campo opcional cujo valor explícito
+ *     muda um byte é o mesmo defeito que o `describe` do topo deste arquivo existe
+ *     para pegar, um andar abaixo;
+ *  3. **os ids colidirem entre slots** — o boneco pode ter tom no rosto E no chapéu,
+ *     e no `ranking` são 30 bonecos num `<svg>` só. Id repetido faz a segunda
+ *     máscara vestir o desenho da primeira, e a folha sai errada sem reprovar;
+ *  4. **a peça de cor assada declarar tom** — ela É o raster; um tom ali é a
+ *     confissão de que alguém entendeu a máscara como "camada de sombra genérica".
+ */
+describe("tom — o claro-escuro por máscara de luminosidade", () => {
+  /** PNG cinza 2×2, o menor que decodifica. O conteúdo não importa aqui; o id sim. */
+  const PNG =
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=";
+
+  /** Duas formas — a de baixo é o traço, a de cima é a tinta que a máscara veste. */
+  const COM_TOM: PecaSobreposta = {
+    id: "zz-com-tom",
+    nome: "Com tom",
+    formas: [
+      { d: "M10 20 L30 20 L30 40 Z", cor: "var(--av-linha)" },
+      { d: "M10 20 L30 20 L30 40 Z", cor: "var(--av-cabelo, #262626)", semTraco: true },
+    ],
+    tom: { png: PNG, x: 10, y: 20, w: 20, h: 20 },
+  };
+
+  it("emite UMA máscara e UM `mask=url(#…)`, e os dois fecham no mesmo id", () => {
+    const svg = compor({ ...BASE, rosto: COM_TOM });
+
+    expect(svg.match(/<mask /g) ?? []).toHaveLength(1);
+    const usos = svg.match(/mask="url\(#([^)]+)\)"/g) ?? [];
+    expect(usos).toHaveLength(1);
+
+    // O id fecha, e leva `ns` e slot — é isso que o mantém único no `ranking`.
+    const id = /<mask id="([^"]+)"/.exec(svg)?.[1];
+    expect(id).toBe("t-tom-rosto");
+    expect(svg).toContain(`mask="url(#${id})"`);
+
+    // A caixa é a mesma no `<mask>` e no `<image>`, e em unidades do viewBox.
+    expect(svg).toContain('maskUnits="userSpaceOnUse"');
+    expect(svg.match(/x="10" y="20" width="20" height="20"/g) ?? []).toHaveLength(2);
+    expect(svg).toContain('preserveAspectRatio="none"');
+    expect(svg).toContain(`href="data:image/png;base64,${PNG}"`);
+  });
+
+  it("a máscara veste a ÚLTIMA forma, e nunca o traço", () => {
+    const svg = compor({ ...BASE, rosto: COM_TOM });
+
+    // A de baixo — `--av-linha` — sai limpa; a de cima leva a máscara.
+    expect(svg).toContain(`d="M10 20 L30 20 L30 40 Z" fill-rule="evenodd" fill="var(--av-linha)"/>`);
+    expect(svg).toContain(
+      `fill="var(--av-cabelo, #262626)" mask="url(#t-tom-rosto)"/>`,
+    );
+    // Mascarar o contorno o comeria pelas beiradas — justamente onde ele existe.
+    expect(svg).not.toMatch(/class="kk-traco"[^>]*mask=/);
+  });
+
+  it("`tom: undefined` é byte a byte igual ao campo ausente", () => {
+    const sem: PecaSobreposta = { ...COM_TOM, tom: undefined };
+    const svg = compor({ ...BASE, rosto: sem });
+
+    expect(svg).toBe(compor({ ...BASE, rosto: { id: COM_TOM.id, nome: COM_TOM.nome, formas: COM_TOM.formas } }));
+    expect(svg).not.toContain("<mask");
+    expect(svg).not.toContain("mask=");
+  });
+
+  it("rosto e chapéu com tom saem com ids DISTINTOS — a colisão é fatal e muda", () => {
+    const svg = compor({
+      ...BASE,
+      rosto: COM_TOM,
+      chapeu: { id: "zz-chapeu-tom", nome: "Chapéu", formas: COM_TOM.formas, tom: COM_TOM.tom },
+    });
+
+    expect(svg).toContain('<mask id="t-tom-rosto"');
+    expect(svg).toContain('<mask id="t-tom-chapeu"');
+    expect(svg.match(/<mask /g) ?? []).toHaveLength(2);
+    expect(svg.match(/mask="url\(/g) ?? []).toHaveLength(2);
+  });
+
+  it("não quebra o contrato do SVG", () => {
+    // O `conferirSvg` não tem allowlist de elemento; o que ele trava é custom
+    // property fora do contrato e comentário dentro do `<style>`. O alfabeto do
+    // base64 não colide com as regexes de `var(--…)`.
+    expect(conferirSvg(compor({ ...BASE, rosto: COM_TOM }))).toEqual([]);
+  });
+
+  it("uma peça de cor ASSADA não pode declarar tom — o `never` é a trava", () => {
+    // O par do `@ts-expect-error` da união `formas`/`arte`, e existe pelo mesmo
+    // motivo: se o `tom?: never` sair do braço `arte`, este erro deixa de existir
+    // para consumir e o `npm run typecheck` quebra aqui.
+    // @ts-expect-error peça de cor assada É o raster; ela não tem tom a declarar.
+    const assadaComTom: PecaSobreposta = {
+      id: "zz-assada-com-tom",
+      nome: "Assada com tom",
+      arte: "/items/chapeu/zz.svg",
+      tom: { png: PNG, x: 0, y: 0, w: 1, h: 1 },
+    };
+    expect(assadaComTom.id).toBe("zz-assada-com-tom");
+  });
+});

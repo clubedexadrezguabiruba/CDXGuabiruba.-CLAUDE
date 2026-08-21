@@ -4090,3 +4090,337 @@ Este arquivo é registro de execução: **entrada que descreve mudança tem de s
 DEPOIS de o gate passar sobre ela**, nunca junto com a intenção. A entrada de ontem
 citava até a contagem de testes ("555") de um estado que nunca compilou.
 
+
+### 2026-08-20 · "a cor está fugindo do traço" — a franja da borda virava miolo
+
+O Doug abriu a folha individual da `cheia` e disse: *"o contorno da barba, que deveria
+ser um traço preto, tem a cor fugindo, excedendo o traço"*. Defeito de **esteira**, e
+os dois números que separam a culpa:
+
+| peça | a ARTE deixa a borda sem preto | o RENDER punha cor na borda |
+|---|---|---|
+| **cheia** | 28 px (**1,7%**) | 342 px (**24,4%**) |
+| cheia-com-bigode | 29 px (1,5%) | 391 px (22,5%) |
+| rala | 265 px (17,0%) | 689 px (52,7%) |
+| bigode-ferradura | 118 px (9,7%) | 199 px (18,8%) |
+| bigode-puro | 0 | 0 |
+| cavanhaque-nova | 11 px (1,4%) | 22 px (3,3%) |
+| cavanhaque-antiga | 2 px (0,2%) | 24 px (2,2%) |
+
+**A CAUSA, com arquivo e linha.** `barba-para-formas.ts`, passo 3: a peça é *o que
+difere da base*, então o anel mais externo dela é **antialias** entre o preto do
+contorno (lum 18) e a pele (lum 183). A mistura lê lum ≈ 100, acima de
+`LUM_CONTORNO = 60`, e a franja entrava no MIOLO. O miolo é a segunda forma e vai por
+cima do contorno — a cor terminava pintada exatamente onde o traço deveria estar.
+
+**A BANCADA** (`.scratch/estilo/franja-da-borda.ts`), k passos de erosão da peça:
+
+| peça | k=0 | k=1 | k=2 | recolore k=0 → k=1 |
+|---|---|---|---|---|
+| cheia | 24,4% | **1,7%** | 0,0% | 83,6% → 80,7% |
+| cheia-com-bigode | 22,5% | **0,4%** | 0,0% | 61,6% → 58,7% |
+| rala | 52,7% | **2,8%** | 0,0% | 62,7% → 59,0% |
+| bigode-ferradura | 18,8% | **0,8%** | 0,0% | 79,5% → 73,8% |
+| cavanhaque-nova | 3,3% | 1,0% | 0,0% | 44,6% → 40,5% |
+| cavanhaque-antiga | 2,2% | 0,0% | 0,0% | 7,6% → 3,1% |
+
+**k = 1, e o motivo de não ser 2:** com 1 px o que sobra **é o defeito da arte**, e os
+números batem — 24 px de resíduo na `cheia` contra 28 px que o gerador deixou sem
+preto. k = 2 zera a coluna e, ao zerá-la, apaga também o erro do gerador, que é
+justamente o que a folha existe para mostrar ao Doug. É a lição do *"não desenhar para
+a régua"*.
+
+**O GATE:** `scripts/avatar/arte/__tests__/franja-da-borda.test.ts` — *"nenhum pixel de
+miolo encosta em não-peça"*. Antes: **1 094 px**. Depois: **0**.
+
+**Efeito colateral medido, e o selo o pegou sozinho:** o `d` da `barba-cheia` caiu de
+**13 674 para 11 372 bytes** (−16,8%) — o miolo deixou de perseguir a beirada
+serrilhada. O selo de `rostos-da-arte.test.ts` reprovou pedindo explicação, que é o
+que ele existe para fazer.
+
+**⚠️ Consequência para a `cavanhaque-antiga`:** ela cai de 7,6% para **3,1%** de
+recolorimento. Não é regressão nova — é o achado **G31** ficando mais caro, e reforça
+a bancada da divisão por `erosao` (75,8% na mesma peça), que segue esperando o olho do
+Doug.
+
+577 testes · verify:arte=0 · typecheck=0
+
+### 2026-08-20 (2) · "ainda tem cor vazando embaixo" — e desta vez é a ARTE
+
+O passo 3b consertou um defeito real (o miolo encostando na borda, 1 094 px → 0), mas
+o Doug olhou de novo e o defeito continuava, **embaixo**. Ele apontou "embaixo" duas
+vezes; quatro réguas minhas responderam com estatística da peça inteira e disseram que
+embaixo era igual ao resto. **Quem estava medindo o alvo errado era eu, e são quatro
+erros no mesmo dia, todos da mesma família.** Ficam registrados porque o padrão importa
+mais que cada um:
+
+| régua | o que ela dizia | por que estava errada |
+|---|---|---|
+| miolo fora da silhueta | 0 px | as duas curvas nunca se cruzam; o defeito não é esse |
+| banda por lado (cima/baixo/esq/dir) | embaixo 66% fino, cima 76% | p50 da peça inteira **esconde** trecho contínuo ruim |
+| perfil da borda de baixo, 1ª versão | 59,9% das colunas com ZERO preto | contava a MOLDURA do recorte como borda |
+| perfil da borda de baixo, 2ª versão | idem | parava no pixel de **antialias** da ponta e devolvia zero sobre colunas com 11 px de `#000000` |
+
+O que destravou foi **imprimir os pixels crus** de quatro colunas
+(`.scratch/estilo/dump-colunas.ts`) em vez de escrever uma quinta estatística.
+
+**O ACHADO, medido nas duas pontas.** A banda preta abaixo do último pixel de cor:
+
+| peça | na máscara da ARTE (p50) | colunas SEM preto no RENDER |
+|---|---|---|
+| `cheia` | **1 px** | 24,7% |
+| `cheia-com-bigode` | **1 px** | 43,1% |
+| `bigode-ferradura` | 6 px | 25,8% |
+| **`rala`** | **12 px** | **0%** |
+
+Referência: o contorno do boneco mede 12 u = **14,4 px** do canvas, e no render de
+800 px ele mede 23,2 px contra os 0–4 px da barba. **A `rala` é a única que o gerador
+fechou por baixo, e é a única que não vaza.** A correlação é a prova de que o defeito é
+de arte, não de esteira.
+
+**Não tem conserto de programa, e isso é decisão de rota, não preguiça:** transcrever
+preto que não existe é desenhar, e o G20 separa restaurar de desenhar. Engrossar por
+dentro foi medido e o Doug reprovou a olho — a bancada
+(`.scratch/estilo/banda-do-contorno.ts`, K = 1/3/5/8) mostra que K ≥ 3 colapsa a
+textura da `cheia` de 6 ilhas de miolo para 1, que é a mesma perda que ele reprovou em
+2026-08-19. Parecer dele: *"nenhuma ficou bom. K1 quase boa"*.
+
+**A SAÍDA:** retoque cirúrgico no gerador, com a peça pronta como única imagem de
+entrada — o texto está no `PEDIDO-BARBAS.md`, seção "Retoque cirúrgico". Mais uma
+cláusula nova de FORMA no pedido geral: a que existia (*"contorno da mesma espessura
+das outras linhas"*) mora na lista de CORES, e o gerador a lê como instrução de cor.
+
+**Fica de pé o passo 3b**, que é defeito independente e já gateado.
+
+### 2026-08-21 · O TOM CONTÍNUO POR MÁSCARA — a esteira do rosto troca de espinha
+
+Registro de execução do **Bloco 5** do plano homônimo, escrito **depois** dos gates:
+`typecheck` 0 · `npm test` 602 · `verify:all` **exit 0** · `avatar:pose` 0 ·
+`npm run build` 0.
+
+#### O que mudou, e por quê
+
+O Doug perguntou por que a esteira só entregava duas cores. A investigação de
+2026-08-20 mostrou que a leitura corrente estava errada: **a D17 proíbe cor assada,
+não tom.** Quem produzia duas cores era o `potrace` — ele traça CONTORNO, e contorno
+é binário. Toda a partição contorno × miolo existia para dar duas cores a uma arte
+de muitas.
+
+O padrão novo, aprovado a olho em `.scratch/estilo/bancada-tom-continuo.png`:
+**o vetor carrega só o que precisa ser vetor, e o raster carrega o tom.**
+
+```
+<path d=silhueta fill="var(--av-linha)"/>            ← o preto, por baixo
+<path d=silhueta fill="var(--av-cabelo)" mask=…/>    ← a cor, com a luz da arte
+```
+
+#### Os números, medidos pela esteira de produção
+
+| | `barba-cheia` | `trancada-v4` |
+|---|---|---|
+| peça | 38.505 px, 1 componente | 54.264 px, 1 componente |
+| formas | **2, com o mesmo `d`** | **2, mesmo `d`** |
+| esticão p2/p98 | lum 1 → 159 | lum **0 → 140** |
+| máscara (50%) | 218×113 · 8,8 KB b64 | 213×184 · **21,5 KB b64** |
+| cortado nas feições | 0 px | 0 px |
+
+A `trancada-v4` reproduz número a número a bancada que o Doug aprovou (0/140 ·
+21,5 KB) — o porte da régua para a produção é fiel.
+
+**O selo da `rosto-barba-cheia` virou dois:** `d` **11.372 → 10.624 B** (o `d` caiu
+6,6% porque o miolo deixou de ser traçado) e **8.960 B de base64**, que é o preço do
+tom e está pago com os olhos abertos.
+
+#### O G31 se dissolve por construção
+
+O achado era a `cavanhaque` saindo **preta chapada** — 7,6% de miolo pela partição
+por luminância. A saída aberta na época (`divisao: "erosao"`) foi apagada junto com a
+partição, e não fez falta: o esticão por **percentil da própria arte** normaliza o
+contraste peça a peça. Medido com a esteira nova:
+
+| peça | esticão | tons distintos na máscara |
+|---|---|---|
+| `barba-cheia` | 1 → 159 | 254 |
+| `trancada-v4` | 0 → 140 | 256 |
+| `barba-bigode` | 4 → 155 | 228 |
+| **`barba-cavanhaque`** | **0 → 146** | **180** |
+
+Contra os **2** da esteira anterior.
+
+#### O braço do TRAJE — arte nova em raster
+
+Mesma descoberta, outro corredor: peça de cor assada não é pintada pelo compositor,
+então não há o que ser vetor. `construirPeca(…, "raster")` embrulha o recorte num
+`<image>` WEBP q82 dentro do mesmo `.svg`, com o mesmo `viewBox`.
+
+| peça | vetor (cru / gzip / formas) | raster (cru / gzip / formas) |
+|---|---|---|
+| `traje-farda` | 152,0 KB / 42,8 KB / 473 | 21,9 KB / 16,0 KB / 0 |
+| `traje-gambesao` | 228,2 KB / 60,6 KB / 530 | 20,0 KB / 14,6 KB / 0 |
+
+**As duas continuam CONGELADAS no vetor** (`CONGELADAS_NO_VETOR`, `traje.ts`) — foi a
+opção 3, escolhida pelo Doug. A tabela é o que elas custariam, medido em pasta
+temporária. A trava é mecânica porque `arte:trajes --check` reescreve os `.svg` mesmo
+em `--check`; conferido: `git status` de `public/items/traje/` **limpo** depois do
+gate, e `arte:peso` nos mesmos 8.119 / 62.060 B.
+
+#### O que morreu, e por que apagar em vez de guardar
+
+- o passo 3 (partição contorno × miolo) e o `divisao: "erosao"`;
+- o passo 3b (a franja da borda) — com tom contínuo não há corte, e aquele anel é só
+  um cinza intermediário, que é o que sempre foi;
+- o segundo `tracar` do núcleo;
+- `franja-da-borda.test.ts`. **Um gate de um caminho que deixou de existir passa por
+  vacuidade e mente sobre o que protege** — por isso foi apagado, não desativado.
+
+#### Uma régua minha que reprovou desenho correto
+
+A asserção "a caixa da máscara cobre a peça" reprovou medindo os números crus do `d`:
+o ponto mais alto era **y 241,1** contra uma caixa começando em 244,2. Era **ponto de
+controle de Bézier**, que não desenha — a curva achatada para em **243,8**, 0,40 u
+fora da caixa (0,48 px do canvas; 0,04 px no boneco de 56). A régua foi refeita
+achatando a curva, com folga de 1 px do canvas (`1 / ESCALA` ≈ 0,83 u). É a mesma
+família dos quatro erros de 2026-08-20 registrados acima: **medir o alvo errado.**
+
+#### As pendências, escritas em vez de esquecidas
+
+1. **Safari/iOS não foi medido.** `<mask>` + `<image href="data:…">` é suportado
+   desde Safari 12 pela documentação, mas este projeto mediu **só no Chromium**. Não
+   é bloqueio conhecido; é ignorância declarada.
+2. **A resolução é por SLOT, e só a barba tem número.** Os 50% saem da escada
+   1.038 → 917 → 916 tons medida na `trancada-v4`. O traje já fala em supersample 2×
+   (`traje.ts:99`) e `uniforme.ts` tem variantes até DPR 3 — cada slot precisa do seu.
+3. **O percentil por arte NORMALIZA contraste, e isso é decisão de produto.** Uma
+   arte desenhada escura passa a ler como uma clara. Conserta a `cavanhaque` e é o
+   que o olho do Doug precisa julgar na folha — medir quanto tom a peça tem é fácil;
+   decidir se ficou boa não é.
+4. **Base64 não comprime, e o catálogo vai para o bundle do cliente.**
+   `AvatarKokeshi.tsx` importa `catalogo`, e cada barba com tom são ~9 a ~21 KB que
+   nenhuma compressão devolve. A mitigação (catálogo preguiçoso, ou máscara em
+   arquivo externo) está **fora do escopo por decisão** — só entra se o número da
+   folha pedir, e a decisão é do Doug. O registro está em `CUSTO_DE_SOBREPOSTA`
+   (`cabelo.ts`), que subiu de 4.500 para 30.000 B com a ressalva escrita ao lado.
+
+### 2026-08-21 (2) · O ACHADO DO BLOCO G — o gzip do ranking cai de um penhasco
+
+**Medido na folha do Bloco G, e é achado estrutural, não afinação.** Ele não estava
+previsto no plano e contradiz a premissa de peso que este projeto usa desde o Bloco 4
+(*"SVG é texto, e a razão de compressão MELHORA com as camadas: 6,6× → 8,6×"*).
+
+#### O número
+
+Trinta bonecos com a mesma barba — a lista do ranking, `escala: 0,92`, cabelo `chanel`:
+
+| peça | boneco composto | cru | **gzip** | brotli |
+|---|---|---|---|---|
+| `barba-cheia` · novo | 31.857 B | 933,9 KB | **24,9 KB** | 13,7 KB |
+| `trancada-v4` · novo | 49.101 B | 1.439,1 KB | **753,0 KB** | 24,1 KB |
+
+**30× de diferença no gzip entre duas peças da mesma família.** O brotli não sente.
+
+#### A causa, provada por controle
+
+O DEFLATE casa repetição dentro de uma **janela deslizante de 32.768 bytes**. Se o
+boneco inteiro cabe nela, a cópia seguinte encontra o blob base64 anterior e ele vira
+uma referência de poucos bytes. Se não cabe, **cada cópia paga o blob inteiro**.
+
+A curva por N mostra o penhasco sem ambiguidade (`.scratch/estilo/janela-do-gzip.ts`):
+
+| peça | N=1 | N=2 | N=5 | N=30 | gzip **por cópia** |
+|---|---|---|---|---|---|
+| `barba-cheia` (31.857 B) | 14,6 K | 15,1 K | 16,4 K | 24,9 K | 14,6 → **0,8 K** |
+| `trancada-v4` (49.101 B) | 25,4 K | 50,0 K | 125,3 K | 753,0 K | 25,4 → **25,1 K** |
+
+E o controle direto — o mesmo blob 30×, variando só o espaço entre as cópias:
+
+| espaço entre cópias | gzip |
+|---|---|
+| 0 B | 21,4 KB |
+| 10.000 B | 22,0 KB |
+| **20.000 B** | **489,1 KB** |
+| 32.000 B | 490,5 KB |
+| 60.000 B | 493,9 KB |
+
+O blob da `trancada` mede 22.032 B; com 20.000 B de espaço, blob + espaço passa de
+32.768 e a dedução morre. **É a janela, e nada mais.**
+
+#### O que isto significa na prática
+
+- **A `barba-cheia` está do lado bom por 911 bytes.** 31.857 contra 32.768. Não há
+  margem nenhuma: qualquer peça um pouco maior, ou um chapéu somado à barba, cruza.
+- **O brotli salva** (24,1 KB nos dois casos), e a Vercel serve brotli para navegador
+  moderno. O gzip é o caminho de fallback — não é hipótese remota, é o que roda em
+  cliente velho e em alguns proxies.
+- **É custo de bundle também**, e ali não há compressão que resolva:
+  `AvatarKokeshi.tsx` importa `catalogo`, e o catálogo viaja inteiro.
+  `barba-cheia` **13.674 → 19.584 B** (Δ +5.910); `trancada-v4` **19.677 → 36.832 B**
+  (Δ +17.155).
+
+#### O que NÃO foi feito, e por quê
+
+A mitigação — catálogo preguiçoso, ou máscara em arquivo externo em vez de inline —
+está **fora do escopo por decisão do plano**, que a reservou para "só se o número do
+Bloco G pedir, e é decisão sua". **O número pede.** A decisão é do Doug, e é ela que
+decide também se a `trancada-v4` (blob de 22 KB) deve ser promovida como está.
+
+#### O ganho, do outro lado da balança — tons medidos NO RENDER
+
+| peça | hoje | novo |
+|---|---|---|
+| `barba-cheia` | 971 | **1.405** |
+| `trancada-v4` | 1.084 | **1.842** |
+
+(recorte da cabeça a 420 px, cabelo castanho, `chanel` por cima)
+
+### 2026-08-21 (3) · A BANCADA DO PENHASCO — as saídas medidas, nenhuma escolhida
+
+Pedido do Doug: *"medir as duas saídas primeiro; você decide com número na mão"*.
+Régua: `.scratch/estilo/bancada-do-penhasco.ts`. Nada foi implementado — cada saída é
+simulada sobre o SVG que o compositor já emite, para os números ficarem comparáveis
+contra a mesma linha de base.
+
+**Uma terceira entrou na medição** (`C`), porque é nativa deste código: `folhaExterna`
+já iça o `<style>` único para N avatares, e a máscara subiria pelo mesmo caminho.
+
+#### `barba-cheia` — boneco 31.857 B, **cabe na janela com 911 B de folga**
+
+máscara: 6.718 B de PNG · 8.960 B em base64
+
+| cenário (30 bonecos) | cru | gzip | brotli | bundle |
+|---|---|---|---|---|
+| linha de base — SEM tom | 663,8 K | 14,9 K | 6,8 K | 0 B |
+| novo, inline (o do branch) | 933,9 K | 24,9 K | 13,7 K | 8.960 B |
+| **A** · máscara em arquivo externo | 671,9 K | **15,4 K** | 7,1 K | **38 B** |
+| **B** · catálogo preguiçoso | 933,9 K | 24,9 K | 13,7 K | 0 B |
+| **C** · máscara içada para a folha | 673,9 K | 22,7 K | 13,5 K | 8.960 B |
+
+#### `trancada-v4` — boneco 49.101 B, **16.333 B ALÉM da janela**
+
+máscara: 16.524 B de PNG · 22.032 B em base64
+
+| cenário (30 bonecos) | cru | gzip | brotli | bundle |
+|---|---|---|---|---|
+| linha de base — SEM tom | 786,1 K | 17,2 K | 7,5 K | 0 B |
+| novo, inline (o do branch) | 1.439,1 K | **753,0 K** | 24,1 K | 22.032 B |
+| **A** · máscara em arquivo externo | 794,1 K | **17,6 K** | 7,8 K | **38 B** |
+| **B** · catálogo preguiçoso | 1.439,1 K | 753,0 K | 24,1 K | 0 B |
+| **C** · máscara içada para a folha | 809,0 K | 34,8 K | 24,0 K | 22.032 B |
+
+#### A leitura
+
+- **A apaga o penhasco**, não o suaviza: 17,6 K contra 17,2 K da linha de base sem
+  tom nenhum. O tom passa a custar **0,4 KB no fio** em vez de 736 KB. E tira 21.994 B
+  do bundle. Preço: **+1 requisição por peça** (cacheada; os 30 bonecos da lista
+  apontam para a MESMA url) e o avatar renderizando em dois tempos — silhueta
+  primeiro, tom quando o PNG chega. O arquivo passa a valer para
+  `arteDaPecaNoDeploy`: em `public/`, commitado, ou a peça some em produção.
+- **C tira 95,4% do gzip sem requisição nova e sem mexer no catálogo**, mas para em
+  34,8 K — o dobro de A —, porque o blob continua aparecendo uma vez e base64 não
+  comprime. E **só vale onde há LISTA**: num avatar sozinho o blob sai igual.
+- **B não toca no penhasco.** 753,0 K com ou sem ela. Ela adia bytes de bundle, e
+  isso é real — mas o problema medido no Bloco G é de fio, e ela não o alcança.
+  Registrar isso é metade do motivo de tê-la medido.
+- **A e B não se somam:** A tira o blob do catálogo de vez (38 B), então não sobra
+  nada para B adiar.
+
+**A escolha é do Doug.** Nada aqui foi implementado.

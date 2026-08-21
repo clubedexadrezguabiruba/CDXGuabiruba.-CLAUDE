@@ -425,9 +425,16 @@ export const ORCAMENTO_COMPOSTO = { formas: 26, bytes: 10240 } as const;
 /**
  * O que UMA peça sobreposta pode custar ao composto.
  *
- * **Medido: 3 formas.** `sobrepor()` emite um `<path>` de preenchimento por forma
- * mais um de traço por forma que não declare `semTraco` — a receita de duas formas
- * cheias (massa + núcleo) dá 2 + 1 = 3, e as duas barbas custam exatamente isso.
+ * **Medido em formas: 3, e agora 2.** `sobrepor()` emite um `<path>` de
+ * preenchimento por forma mais um de traço por forma que não declare `semTraco`:
+ *
+ *   barba PARAMÉTRICA (`rosto.ts`)     massa + núcleo, o núcleo sem traço → 2 + 1 = 3
+ *   barba DE ARTE com tom              2 formas, as duas `semTraco`       → 2 + 0 = 2
+ *
+ * A de arte ficou mais barata em forma porque o tom contínuo matou o traçado do
+ * miolo: as duas formas dela são a MESMA curva, e o claro-escuro veio para o raster.
+ * O `<mask>` e o `<image>` que ele traz **não contam** — `contarFormas` procura
+ * `/(path|ellipse|rect|circle|use)/`, e máscara não é forma pintada, é modulação.
  *
  * **Declarado: 5.** A folga não é arredondamento: é a peça de três formas com um
  * núcleo sem traço (3 + 2 = 5), que é o próximo degrau de complexidade real — um
@@ -435,11 +442,37 @@ export const ORCAMENTO_COMPOSTO = { formas: 26, bytes: 10240 } as const;
  * que ele deveria julgar, que é o erro que `PISO_DISTINCAO` nomeia em
  * `folha-base.ts`.
  *
- * Em bytes, a barba mais cara custou 3 010 B; os 4 500 declarados dão a mesma
- * ordem de folga. Vale a regra de sempre (doc 15:463): **byte não veta arte
- * aprovada** — ele registra.
+ * ---------------------------------------------------------------------------
+ * OS BYTES SUBIRAM 6,5×, E O NÚMERO NOVO É O DA PEÇA DE ARTE COM TOM
+ * ---------------------------------------------------------------------------
+ *
+ *   barba PARAMÉTRICA                                          3 010 B
+ *   barba DE ARTE, antes do tom          `d` de 2 formas      11 372 B
+ *   barba DE ARTE, com tom               `d` × 2   10 624 B
+ *                                        + base64   8 960 B →  19 584 B
+ *
+ * Os 30 000 declarados dão a mesma ordem de folga que os 4 500 davam sobre 3 010.
+ * Vale a regra de sempre (doc 15:463): **byte não veta arte aprovada** — ele
+ * registra. Quem veta é forma.
+ *
+ * ⚠️ **RESSALVA, e ela é o que este número tem de mais importante: BASE64 NÃO
+ * COMPRIME.** Toda a conta de peso deste projeto se apoiava em "SVG é texto, e texto
+ * comprime" — os 482 KB crus do ranking virando 56 KB no fio, com a razão MELHORANDO
+ * a cada camada (6,6× → 8,6×), porque cada peça nova repete estrutura que o
+ * dicionário do gzip já tem.
+ *
+ * A máscara quebra essa premissa em dois lugares ao mesmo tempo: o PNG já está
+ * comprimido (o gzip não tem o que tirar dele) e o base64 ainda o infla em 4/3.
+ * Trinta bonecos no ranking com a mesma barba repetem o mesmo blob, e aí o
+ * dicionário salva — mas trinta barbas DIFERENTES não. **É custo no fio, e é custo
+ * no bundle do cliente**, porque `AvatarKokeshi.tsx` importa `catalogo` e o catálogo
+ * viaja inteiro: cada barba com tom são ~+9 a ~+21 KB que nenhuma compressão devolve.
+ *
+ * A mitigação (catálogo preguiçoso, ou máscara em arquivo externo em vez de inline)
+ * está **fora do escopo por decisão** — ela só entra se o número da folha do Bloco G
+ * pedir, e a decisão é do Doug.
  */
-export const CUSTO_DE_SOBREPOSTA = { formas: 5, bytes: 4500 } as const;
+export const CUSTO_DE_SOBREPOSTA = { formas: 5, bytes: 30000 } as const;
 
 /**
  * BASE + CABELO + ROSTO — três camadas, e é o que o produto renderiza hoje.

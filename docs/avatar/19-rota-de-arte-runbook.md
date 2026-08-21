@@ -13,6 +13,11 @@
 **Duas peças saíram por aqui e foram aprovadas pelo Doug:** o espetado
 (`entrada`, 2026-08-06, Bloco 9) e o chanel (`chanel`, 2026-08-07, Bloco 14).
 
+> **São TRÊS esteiras, e a §2 é só a primeira.** Antes de mexer, veja em qual você
+> está: **cabelo → §2** · **traje → §12** · **rosto/barba → §13**. A do rosto
+> **inverte a ordem dos dois primeiros passos** (a limpeza vem antes do Gate −1), e
+> rodar a ordem das outras duas ali reprova artes boas em lote.
+
 ---
 
 ## 1. A ideia, em uma frase
@@ -45,6 +50,7 @@ sem extensão (`entrada`, `chanel`, …); o PNG mora em `scripts/avatar/arte/`.
 | 9 | **gerar o literal** | `npm run arte:pecas` | reescreve `src/lib/avatar/estilo/pecas-da-arte.ts` |
 | 10 | **a folha de revisão** | `npm run arte:revisao -- <ARTE>` | 6 controles + a arte contra o render, sobrepostos |
 | 11 | **a folha de escolha** | `npm run arte:folha` | as artes **entre si** a 56 px, nos 4 fundos |
+| 11b | **a conferência do Claude** | ver **§14** | a folha bate com o PNG que foi ao gerador? **Teto de 2 min.** Não se pula para o 12 sem isto |
 | 12 | **parecer do Doug** | `/dev/avatar-kokeshi` no navegador | aprovado ou não. **É a única aprovação que existe** |
 | 13 | **promoção** | ver §7 | a peça entra em `CABELOS` |
 
@@ -331,6 +337,38 @@ conversor** cai no `--check`. Nenhum dos dois exige render.
 
 ## 12. A rota do TRAJE — o que muda, e o que não muda
 
+> ### ⚠️ EMENDA DE 2026-08-20 — arte NOVA sai em raster; as duas antigas ficam
+>
+> **O invólucro continua `.svg` e a colagem continua a mesma.** O que muda é o que
+> vai dentro dele: em vez de milhares de paths chapados imitando o degradê que a
+> arte já tinha, **um `<image>` WEBP** com o recorte inteiro.
+>
+> | peça | vetor (cru / gzip / formas) | raster (cru / gzip / formas) |
+> |---|---|---|
+> | `traje-farda` | 152,0 KB / 42,8 KB / 473 | **21,9 KB / 16,0 KB / 0** |
+> | `traje-gambesao` | 228,2 KB / 60,6 KB / 530 | **20,0 KB / 14,6 KB / 0** |
+>
+> **Por que:** é a mesma descoberta que mudou a rota do rosto (§13). Traçar arte de
+> cor assada é converter raster em polígonos **para imitar de volta o tom que o
+> raster já carregava** — custa peso e perde desenho. Peça de cor assada não é
+> pintada pelo compositor; ele só a cola. Não há nada ali que precise ser vetor.
+>
+> **⚠️ `traje-farda` e `traje-gambesao` estão CONGELADAS no vetor.** Foram
+> desenhadas, medidas e aprovadas pelo Doug no traçado, e regerá-las gastaria o olho
+> dele para devolver a mesma peça mais leve — ganho de custo, não de qualidade. Foi
+> a **opção 3**, escolhida por ele. A tabela acima é o que elas *custariam*, medido
+> em pasta temporária; no disco elas continuam vetor.
+>
+> A trava é **mecânica**, `CONGELADAS_NO_VETOR` em `traje.ts`, e precisa ser: o
+> `arte:trajes --check` **reescreve** os `.svg` mesmo no modo `--check`, então uma
+> decisão escrita só aqui seria desfeita pelo primeiro `verify:arte` de quem não a
+> leu. Quem escolhe o braço é `formatoDoTraje(slug)` — função pura, prendida por
+> `scripts/avatar/arte/__tests__/peca-raster.test.ts`.
+>
+> **Qualidade do WEBP: 82.** Subir para 90 devolve bytes sem devolver desenho que o
+> olho distinga a 425 px; descer para 70 suja a borda, que é onde o traço preto do
+> gerador mora e onde o olho vai primeiro.
+
 > ### ⚠️ EMENDA DE 2026-08-17 — o passo 4 deixou de terminar em raster
 >
 > **A peça que vai ao ar é um `.svg`.** Onde o resto desta seção disser PNG,
@@ -414,6 +452,7 @@ números e as três ressalvas, está em
 | 5 | o literal | `arte:pecas` | **`arte:trajes`** |
 | 6 | o `--check` no CI | `arte:pecas --check` | **`arte:trajes --check`** |
 | 7 | a folha | `arte:folha` | **`arte:folha-traje`** |
+| 8 | **a conferência do Claude** | §14 | **igual** |
 
 **Os passos 2 e 3 não precisaram de uma linha de mudança**, e isso contraria o que
 esta rota previa. `base-tronco.ts` foi escrito dizendo que a inversão de
@@ -462,6 +501,237 @@ ombreira), não para o transbordo do pano.
    da base curva para dentro e o pano pendurado legitimamente não acompanha.
    Enquanto essa linha não for medida em `base-tronco.ts`, aplicar o teto da
    cintura ali é inventar régua — foi o erro do Claude na 2ª rodada do gambesão.
+
+## 13. A rota do ROSTO (barba) — e a ordem que ela inverte
+
+*Escrita em 2026-08-20, com nove artes de barba já passadas pela esteira. Vale para
+todo o slot `rosto`: barba, bigode, e o que mais for desenhado ali.*
+
+### ⚠️ A LIMPEZA VEM ANTES DO GATE −1 — e é o contrário das outras duas rotas
+
+| rota | ordem |
+|---|---|
+| cabelo (§2) | edição → **Gate −1** → extração |
+| traje (§12) | edição → **Gate −1** → extração |
+| **rosto** | edição → **`restaurar-peca.ts`** → **Gate −1** → esteira |
+
+**Rodar o Gate −1 na arte crua reprova TODAS as artes, inclusive as boas.** Não é
+tolerância mal calibrada; é a ordem em três tempos do próprio gate
+(`gate-menos-um.ts`, a inversão do Bloco 2b):
+
+1. hash + dimensão;
+2. **ciano → máscara preliminar da peça**;
+3. registro + NCC sobre `região ∧ ¬peça`.
+
+O passo 2 reconhece a peça **pelo ciano instrumental** (matiz 180°). A barba que
+volta do gerador vem no matiz que ele quis — castanho, verde, preto —, então a
+máscara preliminar sai **parcial**, e o pedaço de barba que ela não reconhece é
+contado como *o gerador redesenhou o boneco*. A arte reprova por estar certa, que é
+o mesmo modo de falha da `entrada-2` (§5, "a própria peça").
+
+**Medido na `rala`, em 2026-08-20** — a mesma arte, com e sem a limpeza antes:
+
+| | peça reconhecida | não explicado | forma em "rosto" | veredito |
+|---|---|---|---|---|
+| arte crua | 84,3% (3 799 px) | **14,7% (660 px)** | **27 ladrilhos** (teto 1) | **REPROVADA** |
+| depois de `restaurar-peca` | **100,0%** (4 120 px) | 0 px | 0 | APROVADA |
+
+Repare que a máscara **não** vai a zero — o ciano acerta a maior parte da mancha por
+acaso de matiz. É o resto que reprova, e é por isso que a reprovação engana: ela sai
+com a mensagem *"a FORMA mudou — 27 ladrilhos"*, que é a mensagem de gerador que
+redesenhou o boneco, sobre uma arte em que o boneco está intacto.
+
+Quem cria o ciano é `restaurar-peca.ts`: ele leva o matiz da mancha grande e conexa
+para 180° preservando saturação e luminância — **nenhum pixel muda de lugar** — e
+restaura o resto contra a base. Só depois disso o passo 2 tem o que reconhecer.
+
+**No cabelo e no traje a inversão não aparece** porque lá o ciano já vem do pedido
+(cabelo) ou o campo do traje substitui a cor como critério (§12, emenda de
+2026-08-13). No rosto não há nem um nem outro: o pedido pede a barba **em cor
+final**, e o campo do rosto é pequeno demais para carregar o reconhecimento sozinho.
+
+**Esta ordem já foi errada uma vez**, e o sintoma é o da tabela acima: o lote
+inteiro reprovando com "a FORMA mudou" sobre artes boas. Se um lote reprovar em
+peso, a primeira pergunta é a ordem, não o gerador.
+
+### A esteira, comando a comando
+
+| # | passo | comando | o que ele decide |
+|---|---|---|---|
+| 0 | a base de edição | `npm run arte:base-barba` | o render careca e sem barba que vai ao gerador |
+| 1 | a edição | — (ChatGPT desenha a barba, Gemini transplanta; `PEDIDO-BARBAS.md`) | a arte volta em `scripts/avatar/arte/<PEÇA>.png` |
+| 2 | **a limpeza** | `npx tsx scripts/avatar/arte/restaurar-peca.ts <bruta> <limpa> [franja_u]` | matiz → ciano, resto → base. **Sem ele o passo 3 reprova tudo** |
+| 3 | Gate −1 | `npm run arte:gate -- <limpa>` | o boneco se mexeu? Reprovou aqui, **não siga** |
+| 4 | o traço | `npm run arte:traco -- <limpa>` | o contorno do boneco sobreviveu à limpeza |
+| 5 | a peça | `construirRosto()` (`barba-para-formas.ts`) | potrace → **uma** silhueta, servida a duas formas do mesmo `d`, mais o PNG de tom |
+| 6 | o literal | `npm run arte:rostos` | reescreve `src/lib/avatar/estilo/rostos-da-arte.ts` |
+| 7 | o `--check` no CI | `npm run arte:rostos-check` | entra em `verify:arte` |
+| 8 | a folha do elenco | `npx tsx .scratch/estilo/folha-elenco.ts` | as peças entre si, um cartão por barba |
+| 8b | **a conferência do Claude** | ver **§14** | a folha bate com o PNG? **Teto de 2 min.** Não se pula para o 9 sem isto |
+| 9 | parecer do Doug | a folha | aprovado ou não. **É a única aprovação que existe** |
+
+Para passar a pasta inteira de uma vez, `.scratch/estilo/lote-barbas.ts` roda os
+passos 2 a 5 em cada arte e imprime onde cada uma parou.
+
+### O tom vem por MÁSCARA, e a partição contorno/miolo morreu
+
+**Isto mudou em 2026-08-20 e revoga o que esta seção dizia antes.** Até ali a
+esteira partia a peça em duas — contorno preto fixo (lum < 60) e miolo recolorível —
+e traçava as duas. O Doug perguntou por que uma arte de **917 tons** chegava ao
+boneco com **dois**, e a causa não era a D17: era o `potrace`. Ele traça CONTORNO, e
+contorno é binário — todo tom intermediário arredonda para uma das cores. A borda
+dura era escolha da esteira, não regra. **A D17 proíbe cor assada, não tom.**
+
+O que `construirRosto` emite hoje:
+
+```
+<path d=silhueta fill="var(--av-linha)"/>            ← o preto, por baixo
+<path d=silhueta fill="var(--av-cabelo)" mask=…/>    ← a cor, com a luz da arte
+```
+
+As duas formas têm o **mesmo `d`**. O claro-escuro é um PNG **cinza** da luminância
+da arte, em base64, dentro de um `<mask maskUnits="userSpaceOnUse">` na caixa da
+peça. Onde a arte é clara a cor do cabelo aparece cheia; onde escurece ela cede e o
+preto de baixo aparece. **A máscara não tem cor** — é um canal de cinza —, então a
+peça recolore inteira e a Regra Inviolável nº 4 continua de pé.
+
+Dois números que decidem o resto:
+
+- **o esticão sai de PERCENTIL desta arte** (p2 / p98), não de constante. Mapear
+  0–255 direto sai lavado: na `trancada-v4` a peça mora entre lum 0 e 140, e o miolo
+  pousaria em 55% de opacidade. `hi <= lo` **reprova** — peça chapada não tem tom;
+- **a resolução é 50% da caixa**. Medido: 100% → 1.038 tons, 50% → 917, 35% → 916.
+  Metade custa 12% dos tons e devolve metade dos bytes. Vale para a BARBA; cada slot
+  tem direito ao próprio número.
+
+**Consequência para o pedido ao gerador, e ela INVERTEU.** Antes: *"peça escura de
+qualquer matiz recolore pouco"* — a `cavanhaque-antiga` recolorindo 7,6% era o
+achado **G31**. Agora o percentil normaliza o contraste peça a peça, e a
+`cavanhaque` volta a ter tom: **180 tons distintos, esticão lum 0 → 146**. O G31 se
+dissolve por construção, sem caso especial e sem a saída `divisao: "erosao"`, que
+foi apagada junto com a partição.
+
+⚠️ **Isso é consequência declarada, não efeito colateral livre:** normalizar
+contraste significa que uma arte desenhada escura passa a ler como uma clara. Medir
+quanto tom a peça tem é fácil; decidir se ela ficou boa é o olho do Doug, na folha.
+
+O pedido ao gerador continua falando de **valor**, nunca de cor — mas o alvo deixou
+de ser uma faixa (`lum 100–130`) e passou a ser **amplitude**: peça com variação de
+luz lê melhor que peça chapada, porque é a variação que a máscara carrega.
+
+### O que o compositor exige da peça, e já custou um defeito
+
+Toda forma vinda do potrace precisa sair com `fill-rule="evenodd"`. O potrace
+declara a regra na tag que a esteira descarta, e sem ela o SVG cai em `nonzero`, que
+**preenche os buracos** — numa barba que cerca a boca (bigode em ferradura mais
+queixo) o sorriso é um buraco no laço, e some inteiro. Medido em 2026-08-20:
+`bigode-ferradura`, `rala` e `cheia-com-bigode` apagavam **100%** do traço da boca.
+Consertado em `compositor.ts`, gateado por `pecas-de-elenco.test.ts` ("o buraco da
+peça sobrevive"). O defeito ficou latente até existir um bigode: num laço sem buraco
+`evenodd` e `nonzero` desenham igual.
+
+### As amarras que só existem aqui
+
+1. **a barba recolore com o CABELO** (D17), então cor não diferencia nada: num mesmo
+   aluno todas as barbas saem do mesmo tom, e **só a silhueta separa uma da outra**;
+2. **a peça vive na geometria declarada, não em `.svg` avulso.** É a bifurcação da
+   Regra Inviolável nº 4: quem tem cor assada vira arquivo pela rota do traje; quem
+   recolore fica em formas com token de cor;
+3. **`cabeloPorCima: true`** — a barba nasce da cabeça e veste **sob** o cabelo. Custo
+   declarado e medido (G33): o `chanel` come 22,4% da silhueta da barba. Já foi
+   reaberto duas vezes e as quatro saídas estão medidas no ESTADO-DA-ROTA;
+4. **as cápsulas dos olhos e a linha da boca levam 0 px de tinta** — e desde
+   2026-08-20 as duas regiões são a **forma da feição**, não uma caixa em volta
+   (a caixa da boca protegia 80% de ar; a dos olhos, 41%);
+5. ~~**a franja da borda nunca é miolo**~~ — **revogada em 2026-08-20, junto com a
+   partição.** Ela existia porque o anel externo da peça é antialias entre o preto do
+   contorno (lum 18) e a pele (lum 183), a mistura lê lum ≈ 100, e o corte binário a
+   declarava MIOLO — a cor terminava pintada em cima do traço (*"a cor está fugindo
+   do traço"*, o Doug, olhando a `cheia`). Com o tom contínuo não há corte: aquele
+   anel é simplesmente um cinza intermediário, que é o que ele sempre foi. O passo 3b
+   e o gate `franja-da-borda.test.ts` foram apagados — um gate de um caminho que
+   deixou de existir passa por vacuidade e mente sobre o que protege;
+6. **o `tom` guarda base64 PURO**, sem o prefixo `data:`. Quem monta a URL é o
+   compositor, uma vez. Gate: `scripts/avatar/arte/__tests__/tom-da-peca.test.ts`,
+   que também prende os dois `d` idênticos, a proporção do PNG contra a caixa e o
+   esticão tendo agido;
+7. **o id da máscara leva `ns` e slot** (`${ns}-tom-${slot}`). O ranking põe 30
+   bonecos num `<svg>` só e um mesmo boneco pode ter tom no rosto E no chapéu — id
+   repetido faz a segunda máscara vestir o desenho da primeira, em silêncio. Gates:
+   `pecas-de-elenco.test.ts` e `folha-unica.test.ts`.
+
+## 14. A conferência antes do parecer — o Claude olha primeiro
+
+*Decidida pelo Doug em 2026-08-20. Vale para as **três** esteiras: passo 11b do
+cabelo (§2), passo 8 do traje (§12), passo 8b do rosto (§13).*
+
+**A folha não vai ao Doug sem passar pelo olho do Claude.** Até aqui ela ia: a
+esteira terminava na folha e o parecer humano era o primeiro filtro visual que
+existia. Isso fazia o Doug gastar rodada de gerador com peça que tinha defeito
+**objetivo** — descritível, mensurável, consertável sem redesenhar nada.
+
+### O teto: 2 minutos, e ele é vinculante
+
+O Doug fixou **2 minutos** para esta conferência. Não é meta, é teto: se estourar,
+**a parte de imagem cai fora** e o passo fica só com as réguas de script. Uma
+conferência que custa 10 minutos por peça é mais cara que o defeito que ela pega.
+
+⚠️ **O teto ainda não foi medido.** O número que existe é de outra coisa: leitura
+por subagente de PNG grande com tarefa aberta custou **8 a 12 minutos**. Esta
+conferência é o oposto — imagem pequena, pergunta fechada, sem exploração —, mas
+isso é hipótese até a primeira peça cronometrar. **Quem rodar primeiro anota o
+tempo no ESTADO-DA-ROTA.** Estourou 2 min duas vezes seguidas: corta a leitura,
+mantém as réguas, e registra aqui.
+
+### A ordem: barato antes de caro
+
+| # | o quê | custo | quando para |
+|---|---|---|---|
+| 1 | **as réguas que já existem** — `arte:revisao` (6 controles), `arte:reguas` (21 asserções), `arte:espessura` | segundos | reprovou → conserta **sem abrir imagem nenhuma** |
+| 2 | **uma leitura, por subagente** — a folha a 56 px contra o PNG que foi ao gerador | o teto de 2 min | achou defeito → §14.3 |
+
+O passo 1 sozinho já pega boa parte, e é grátis. **Só se manda ler imagem depois
+que ele passa** — o que sobrou aí é genuinamente visual.
+
+### As cinco perguntas — fechadas, e são só estas
+
+O subagente recebe a folha **no tamanho do jogo** (56 px por peça, poucos KB, os 4
+fundos) e o PNG que foi ao gerador, e responde sim/não:
+
+1. A peça tem as **mesmas partes** que o PNG? Sumiu alguma?
+2. A **cor** bate?
+3. O **contorno** é contínuo — sem buraco, sem fio solto?
+4. Alguma parte do boneco **que não devia mudar** mudou?
+5. A peça **cobre** algo que devia aparecer? (boca, olho — o defeito de 2026-08-20)
+
+**Pergunta aberta é proibida aqui.** "O que você acha da peça" custa o mesmo e
+devolve opinião que não é do subagente para dar — e nem minha. A régua *lê bem a
+56 px, é bonita, serve ao elenco* é do Doug, e continua sendo.
+
+### O que eu conserto, e o que sobe com o defeito nomeado
+
+| o achado | o que fazer |
+|---|---|
+| tem régua por trás — tira de pele, dois tons onde devia haver um, buraco preenchido | **conserto pela quarta saída** (§8: restaurar o que a base tem, ou trocar cor que um número separa), refaço a folha, e **só então** chamo o Doug |
+| é forma nova, ou é "está feio" | **não tento consertar.** Sobe ao Doug com o problema apontado — redesenhar é dele |
+
+A fronteira é a mesma da §8 e não se move: **desenhar por programa é o que a rota
+inteira existe para evitar.**
+
+### A amarra que faz o custo cair: reprovação do Doug vira régua
+
+**Toda vez que o Doug reprovar uma peça, o defeito vira asserção em `arte:reguas`
+antes de a próxima arte entrar na esteira.** É esta linha que paga a seção: um
+defeito que hoje custa 2 minutos de leitura passa a custar segundos de script, e
+para sempre.
+
+O caso que a fundou: a barba com bigode **apagava 100% do traço da boca** e nenhum
+gate reprovou (§13). Se aquilo tivesse virado régua na hora, as duas artes
+seguintes teriam pego de graça. Régua nova entra com **controle negativo** ao
+lado, como todas — §5.
+
+**Esta amarra vale mesmo se a leitura cair fora por custo.** Ela é a parte que não
+depende de imagem.
 
 ## 11. As imagens vão por subagente
 

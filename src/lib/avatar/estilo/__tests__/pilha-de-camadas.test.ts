@@ -147,10 +147,25 @@ const TRAJE: Traje = {
   ],
 };
 
+/**
+ * A peça de rosto do elenco — e ela declara `tom` DE PROPÓSITO.
+ *
+ * O tom contínuo põe um `<mask>` com um `<image>` no meio do corpo, e é justamente o
+ * tipo de emissão nova que o censo (asserção 4) existe para pegar. Declarar aqui é o
+ * que mantém `corpoDe` honesto: sem o strip dos `<defs>` inline, este elenco reprova.
+ */
 const ROSTO = (sob: boolean): PecaDeRosto => ({
   id: "zz-rosto-da-pilha",
   nome: "Rosto da pilha",
   formas: [{ d: "M 101 101 L 141 101 L 141 141 Z", cor: "#FE0001" }],
+  tom: {
+    // PNG cinza 2×2 — o menor que decodifica. O que importa aqui é a MOLDURA.
+    png: "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=",
+    x: 101,
+    y: 101,
+    w: 40,
+    h: 40,
+  },
   cabeloPorCima: sob,
 });
 
@@ -171,9 +186,23 @@ interface Elenco {
   readonly corpo: string;
 }
 
+/**
+ * O corpo: tudo depois do `</defs>` do cabeçalho, **e sem nenhum `<defs>` de dentro**.
+ *
+ * O `slice` sozinho bastou enquanto todo `<defs>` morava no topo. Desde o tom
+ * contínuo (Bloco 5) não mora: `sobrepor()` emite o `<mask>` da peça INLINE, ao lado
+ * dos paths dela, porque o id precisa levar o `ns` e o slot e nenhum dos dois é
+ * conhecido lá em cima.
+ *
+ * **Sem o strip o censo lê 3 onde a tabela declara 2 e reprova** — o `<image>` do
+ * PNG cinza casa o `DESENHAVEL` e entra na conta como se fosse camada. E ele não é:
+ * a máscara não desenha, ela modula quem desenha. É a mesma regra que o campo já
+ * dizia em prosa desde o começo — *o que está em `<defs>` não é camada* —, agora
+ * valendo para os `<defs>` que não estão no topo.
+ */
 const corpoDe = (estado: EstadoAvatar) => {
   const svg = compor(estado);
-  return svg.slice(svg.indexOf("</defs>"));
+  return svg.slice(svg.indexOf("</defs>")).replace(/<defs>.*?<\/defs>/g, "");
 };
 
 const ELENCOS: readonly Elenco[] = (["parametrico", "tracado"] as const).flatMap((familia) =>

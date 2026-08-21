@@ -106,6 +106,7 @@ import { noCampoDoTraje } from "./base";
 import type { ExtracaoPorCampo } from "./extrair";
 import {
   type FabricaDeTinta,
+  type FormatoDaPeca,
   type Peca,
   RECORTE,
   type Rgb,
@@ -308,8 +309,36 @@ const tintaDoTraje =
     };
   };
 
+/**
+ * AS DUAS PEÇAS QUE FICAM NO VETOR — e esta constante é uma TRAVA, não um registro.
+ *
+ * O braço raster (`peca-de-arte.ts`, `embrulharRaster`) vale **só para arte nova**.
+ * Estas duas foram desenhadas, medidas e aprovadas pelo Doug no traçado, e regerá-las
+ * gastaria o olho dele para devolver a mesma peça mais leve — ganho de custo, não de
+ * qualidade. Foi a **opção 3**, escolhida por ele em 2026-08-20.
+ *
+ * ⚠️ **Precisa ser trava mecânica, e não instrução em prosa, por um motivo concreto:**
+ * `arte:trajes --check` **reescreve** os `.svg` de `public/items/traje/` mesmo no modo
+ * `--check` — ele regera para comparar o literal. Uma decisão escrita só no runbook
+ * seria desfeita pelo primeiro `npm run verify:arte` de quem não a leu, e o `git
+ * status` acusaria dois arquivos sujos que ninguém pediu.
+ *
+ * O dia em que uma delas for redesenhada, ela sai daqui junto com a arte nova.
+ */
+export const CONGELADAS_NO_VETOR = new Set(["traje-farda", "traje-gambesao"]);
+
+/**
+ * O formato de saída de um traje, pelo slug. Arte nova → raster; as duas → vetor.
+ *
+ * Função pura de propósito: ela é a decisão inteira, ela é testável sem tocar em
+ * PNG nenhum, e é ela que `peca-raster.test.ts` prende.
+ */
+export const formatoDoTraje = (slug: string): FormatoDaPeca =>
+  CONGELADAS_NO_VETOR.has(slug) ? "vetor" : "raster";
+
 export async function construir(caminhoArte: string): Promise<Peca> {
-  return construirPeca(caminhoArte, TRAJE, tintaDoTraje(slugDaArte(caminhoArte)));
+  const slug = slugDaArte(caminhoArte);
+  return construirPeca(caminhoArte, TRAJE, tintaDoTraje(slug), formatoDoTraje(slug));
 }
 
 async function principal() {
