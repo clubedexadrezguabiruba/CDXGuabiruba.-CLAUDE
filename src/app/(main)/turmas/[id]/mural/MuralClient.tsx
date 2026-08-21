@@ -82,7 +82,7 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
         <Link href={`/turmas/${classId}`} className="text-xs text-zinc-400 hover:text-zinc-600">
           &larr; {className}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-zinc-900">Mural da Companhia</h1>
+        <h1 className="mt-1 text-2xl font-bold text-zinc-900">Mural da Turma</h1>
         <p className="mt-0.5 text-xs text-zinc-500">Conquistas recentes dos membros.</p>
       </div>
 

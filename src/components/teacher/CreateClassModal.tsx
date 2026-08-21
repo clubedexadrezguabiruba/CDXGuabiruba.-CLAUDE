@@ -48,7 +48,7 @@ export default function CreateClassModal({ onClose, onCreated }: CreateClassModa
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
         {result ? (
           <>
-            <h2 className="text-lg font-bold text-zinc-900">Companhia Criada!</h2>
+            <h2 className="text-lg font-bold text-zinc-900">Turma Criada!</h2>
             <p className="mt-2 text-sm text-zinc-600">
               <strong>{result.name}</strong> foi criada com sucesso.
             </p>
@@ -70,16 +70,16 @@ export default function CreateClassModal({ onClose, onCreated }: CreateClassModa
           </>
         ) : (
           <>
-            <h2 className="text-lg font-bold text-zinc-900">Criar Companhia</h2>
+            <h2 className="text-lg font-bold text-zinc-900">Criar Turma</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Escolha um nome para sua nova companhia.
+              Escolha um nome para sua nova turma.
             </p>
             <form onSubmit={handleSubmit} className="mt-4">
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Nome da companhia"
+                placeholder="Nome da turma"
                 maxLength={100}
                 autoFocus
                 className="w-full rounded-lg border border-zinc-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"

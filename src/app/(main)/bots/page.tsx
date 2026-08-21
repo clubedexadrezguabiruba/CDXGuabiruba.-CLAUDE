@@ -60,9 +60,9 @@ export default async function BotsPage() {
     <div className="mx-auto max-w-5xl px-4 py-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-zinc-900">Duelos da Campanha</h1>
+        <h1 className="text-3xl font-bold text-zinc-900">Sala de Duelos</h1>
         <p className="mt-1 text-zinc-500">
-          Escolha seu rival. Cada vitória abre o próximo desafio.
+          Escolha seu adversário. Cada vitória abre o próximo desafio.
         </p>
       </div>
 

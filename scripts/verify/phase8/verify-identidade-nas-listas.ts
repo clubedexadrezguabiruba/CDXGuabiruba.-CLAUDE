@@ -178,7 +178,7 @@ const CONSUMIDORES: { arquivo: string; rotulo: string; tipo?: string }[] = [
  * telas de lista desenham as duas coisas no mesmo elemento — o recorte de cabeça
  * dentro do anel de patente.
  *
- * **Por que o NÚMERO e não o nome.** A view já manda `title` ("Soldado"). Derivar a
+ * **Por que o NÚMERO e não o nome.** A view já manda `title` ("Aprendiz"). Derivar a
  * cor do nome no cliente seria uma segunda tabela de patentes escrita em
  * TypeScript, discordando de `scripts/avatar/patentes.ts` no dia em que alguém
  * renomear um degrau — e o banco tem **8 tiers** contra as 6 cores da paleta
@@ -343,7 +343,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
 
     // A moldura, e a falha dela é silenciosa de um jeito próprio: sem a chave o
     // componente não quebra, ele desenha o anel do tier 0 em todo mundo — e o
-    // ranking passa a dizer que a turma inteira é Aprendiz.
+    // ranking passa a dizer que a turma inteira é Calouro.
     const tier = entrada[COLUNA_MOLDURA];
     if (!(COLUNA_MOLDURA in entrada)) {
       nok(
@@ -360,7 +360,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     } else if (!Number.isInteger(tier) || tier < 0) {
       nok(
         `${rotulo}: '${COLUNA_MOLDURA}' fora da escada (${tier})`,
-        "tier é índice inteiro da escada de patentes, a partir de 0 (Aprendiz)",
+        "tier é índice inteiro da escada de títulos, a partir de 0 (Calouro)",
       );
     } else {
       ok(`${rotulo} devolve '${COLUNA_MOLDURA}' como número (${tier})`);

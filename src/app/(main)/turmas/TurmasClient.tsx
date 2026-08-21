@@ -46,9 +46,9 @@ export default function TurmasClient({ role }: TurmasClientProps) {
 
     const result = data as { class_name: string; already_member?: boolean } | null;
     if (result?.already_member) {
-      setJoinError("Voce ja faz parte desta companhia.");
+      setJoinError("Voce ja faz parte desta turma.");
     } else {
-      setJoinSuccess(result?.class_name ?? "Companhia");
+      setJoinSuccess(result?.class_name ?? "Turma");
     }
     setInviteCode("");
     setJoining(false);
@@ -58,7 +58,7 @@ export default function TurmasClient({ role }: TurmasClientProps) {
   if (loading) {
     return (
       <div className="rounded-xl border bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
-        Carregando companhias...
+        Carregando turmas...
       </div>
     );
   }
@@ -79,14 +79,14 @@ export default function TurmasClient({ role }: TurmasClientProps) {
           onClick={() => setShowCreate(true)}
           className="mb-4 w-full rounded-xl border-2 border-dashed border-zinc-300 bg-white py-4 text-sm font-medium text-zinc-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
         >
-          + Criar Companhia
+          + Criar Turma
         </button>
       )}
 
       {/* Aluno: entrar com código */}
       {role !== "professor" && (
         <div className="mb-4 rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-zinc-700">Entrar em uma companhia</h3>
+          <h3 className="text-sm font-semibold text-zinc-700">Entrar em uma turma</h3>
           <form onSubmit={handleJoin} className="mt-2 flex gap-2">
             <input
               type="text"
@@ -109,7 +109,7 @@ export default function TurmasClient({ role }: TurmasClientProps) {
           )}
           {joinSuccess && (
             <p className="mt-2 text-sm text-green-600">
-              Voce entrou na companhia <strong>{joinSuccess}</strong>!
+              Voce entrou na turma <strong>{joinSuccess}</strong>!
             </p>
           )}
         </div>
@@ -120,8 +120,8 @@ export default function TurmasClient({ role }: TurmasClientProps) {
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-zinc-500">
             {role === "professor"
-              ? "Nenhuma companhia criada ainda. Crie sua primeira companhia acima."
-              : "Voce ainda nao faz parte de nenhuma companhia."}
+              ? "Nenhuma turma criada ainda. Crie sua primeira turma acima."
+              : "Voce ainda nao faz parte de nenhuma turma."}
           </p>
         </div>
       ) : (

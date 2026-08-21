@@ -30,20 +30,61 @@ as 5 regiões e o vocabulário de interface. Esta fecha a outra metade.
   regiões e ninguém o lia), `TRAILS.name`, os mocks do design-lab, e emendas
   datadas nos docs 12 e 17, no currículo (revisão 5), na Visão do Produto e na
   Diretriz dos Bots v1 (marcada como **superada**).
-- **Bloco 2 — banco + interface.** Não iniciado. É onde `title_tiers.title` e
-  `user_titles.current_title` são renomeados por migration, e onde as ~24
-  ocorrências de "Reino das 64 Casas" e as ~20 de "campanha" saem da tela.
+- **Bloco 2 — banco + interface. FECHADO em 2026-08-21.** A ordem foi invertida
+  de propósito em relação ao plano — interface primeiro, banco por último —,
+  porque não há banco separado (D3) e toda migration bate em produção na hora:
+  descer o banco antes da tela deixaria a produção dizendo "Analista" dentro de
+  um "Quartel-General". **53 arquivos, 264 linhas trocadas**, e o grep de
+  fechamento dá **zero** para `Reino das 64 Casas`, `Quartel-General`, `Duelos da
+  Campanha`, `Revisão de Batalha`, `Criação do Recruta`, `Ordens do Dia`,
+  `Sequência de Campanha` e `Companhia` em `src/` e `e2e/`. A migration
+  `20260821120000_academia_titulos.sql` **está aplicada**, e `verify:all=0`
+  medido depois dela.
 - **Bloco 3 — os bots.** Não iniciado. Elenco novo de 10 personagens da Academia,
   **10 retratos de arte do Doug**, e `UPDATE` no lugar (nunca DELETE+INSERT, senão
   some o histórico dos alunos).
 
-⚠️ **Pendência declarada do Bloco 1:** `Badge` casa o título por **string**
-(`Badge.tsx:45`), e o banco ainda diz "Soldado". Até a migration do Bloco 2 descer,
-a pílula do dashboard sai **sem o ponto de cor**. Os dois lados sobem juntos.
+✅ **A janela do `Badge` durou uma sessão e fechou.** `Badge` casa o título por
+**string** (`Badge.tsx:45`), e entre o Bloco 1 (que renomeou `patentes.ts`) e esta
+migration a pílula saiu **sem o ponto de cor, em silêncio**. Medido depois de aplicar:
+**os 8 degraus batem** — tiers 1 a 6 com nome idêntico dos dois lados, tiers 0 e 7 sem
+cor dos dois lados.
 
-⚠️ **A suíte e2e assere strings temáticas** e vai quebrar no Bloco 2:
-`helpers/auth-helpers.ts:76` e `avatar-identidade.spec.ts:317,455` procuram o `h1`
-"Quartel-General"; `bots-ui-audit.spec.ts:233` procura "Vila dos Soldados".
+⚠️ **E esse casamento continua sem régua.** Nenhum gate compara `title_tiers.title` com
+`PATENTES[].patente`: `verify:paleta-patentes` mede **cor**, não nome. Foi conferido à
+mão nesta sessão, com script descartável. Quem renomear um degrau de novo não será
+avisado — é o candidato natural a uma conferência nova dentro do `verify:paleta-patentes`.
+
+✅ **A suíte e2e foi atualizada junto.** `Quartel-General`→`Saguão`,
+`Criação do Recruta`→`Matrícula`, `Duelos da Campanha`→`Sala de Duelos`,
+`Revisão de Batalha`→`Revisão da Partida`, `Companhia`→`Turma`, e a trilha exibida
+`Recruta`→`Calouro` (que o Bloco 1 já tinha quebrado sem ninguém acusar).
+**`Acampamento dos Recrutas` e `Vila dos Soldados` FICARAM de propósito** em
+`bots-ui-audit.spec.ts:170,232-237`: são valores de `bots.stage` no banco, que só
+mudam no Bloco 3 junto com `BotGrid.tsx`. Trocá-los agora quebraria a suíte.
+O e2e **não foi rodado** — bate no Supabase de produção.
+
+⚠️ **A migration achou uma coisa que o plano não previa, e ela é a razão de a
+migration ser maior que três UPDATEs.** Havia **três** lugares gravando `'Aprendiz'`
+como título inicial — o `DEFAULT` da coluna `user_titles.current_title`, a
+`ensure_user_profile` e a `handle_new_user`. Como o nome "Aprendiz" **desce um
+degrau** (era tier 0, vira tier 1), todo aluno novo nasceria com nome de tier 1 sobre
+o degrau 0, e a conferência (d) do `verify:avatar-db` reprovaria na primeira matrícula
+seguinte. As duas funções passam a **ler o primeiro degrau de `title_tiers`**, como a
+`recompute_user_title` já fazia. Isso custou **+2 no `rpc-baseline.json`**
+(`handle_new_user` 2→3, `ensure_user_profile` 1→2): é o escape sancionado pelo próprio
+ratchet, e está justificado aqui e no commit.
+
+✅ **As duas confirmações que o plano exigia antes da migration foram medidas no banco,
+não presumidas.** `recompute_user_title` **lê** o nome de `title_tiers` — renomear a
+régua propaga sozinho, e a função não precisou ser recriada. E **nenhuma** função viva
+cita `v_title_map` (zero linhas em `pg_get_functiondef` sobre todo o `public`).
+
+✅ **Ensaio a seco da migration, em transação com `ROLLBACK`:** escada nova com `trail`
+e `lessons_required` intactos; os 19 alunos reconciliados (17 Calouro, 2 Aprendiz);
+`DEFAULT` em `'Calouro'`; as duas funções lendo a régua; e a **conferência (d) do
+`verify:avatar-db` com 0 atrasados dentro da transação** — que é a prova de que o gate
+passa depois de aplicar.
 
 ✅ **PASSE DE ACHADOS DO AVATAR — 2026-08-20.** Nove entradas fechadas com número
 medido: **D2 · D8 · D12 · D14 · G5 · G16 · G27 · G28 · G30**, mais o **G32**
@@ -293,9 +334,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `tema/academia-64` |
-| **Commits à frente de `origin/main`** | 15 |
-| **Árvore** | **19 arquivos sujos** |
-| **Último commit** | 6e10909 · 2026-08-20 · fix(avatar): a barba com bigode APAGAVA A BOCA — o potrace declara a regra e a esteira jogava fora |
+| **Commits à frente de `origin/main`** | 16 |
+| **Árvore** | **56 arquivos sujos** |
+| **Último commit** | 40d57b6 · 2026-08-20 · feat(tema): a Academia 64 deixa de ser meia virada — a lei vira um doc só, e a patente vira título |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -344,7 +385,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 89 |
+| **Migrations** | 90 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 22 |
 | **Primitivos de UI** | 4 |
@@ -360,7 +401,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-11 |
 | `docs/avatar/15-plano-ate-pronto.md` | 2026-08-11 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
-| `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-11 |
+| `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-20 |
 | `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-11 |
 
 _Doc parado há semanas e ainda citado como fonte é candidato a `_superado/`._

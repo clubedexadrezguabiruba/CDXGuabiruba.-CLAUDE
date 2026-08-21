@@ -91,12 +91,12 @@ export default function MissionPanel({
   chestAvailable,
   loading,
   error,
-  title = "Recruta",
+  title = "Calouro",
 }: MissionPanelProps) {
   if (loading) {
     return (
       <Card>
-        <CardTitle>Ordens do Dia</CardTitle>
+        <CardTitle>Missões do Dia</CardTitle>
         <div className="flex items-center justify-center py-6 text-sm text-ink/45">
           Carregando missões...
         </div>
@@ -107,7 +107,7 @@ export default function MissionPanel({
   if (error) {
     return (
       <Card>
-        <CardTitle>Ordens do Dia</CardTitle>
+        <CardTitle>Missões do Dia</CardTitle>
         <p className="text-sm text-erro">Erro: {error}</p>
       </Card>
     );
@@ -118,7 +118,7 @@ export default function MissionPanel({
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between">
-        <CardTitle className="mb-0">Ordens do Dia</CardTitle>
+        <CardTitle className="mb-0">Missões do Dia</CardTitle>
         <span className="text-sm font-medium text-ink/55">
           {completedCount}/{missions.length}
         </span>
@@ -129,7 +129,7 @@ export default function MissionPanel({
           <span className="text-4xl">&#127942;</span>
           <p className="text-sm font-medium text-ink/80">
             Parabéns, <span className="font-bold text-ink/80">{title}</span>!
-            Você concluiu todas as ordens do dia!
+            Você concluiu todas as missões do dia!
           </p>
           <p className="text-xs text-ink/55">
             Volte amanhã para novas missões.

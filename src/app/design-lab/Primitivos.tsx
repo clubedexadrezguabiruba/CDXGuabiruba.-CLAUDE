@@ -42,7 +42,7 @@ export default function Primitivos() {
         <CardTitle>Badge</CardTitle>
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            <Badge>Aprendiz</Badge>
+            <Badge>Calouro</Badge>
             <Badge tone="ouro">Novo</Badge>
           </div>
           <div>
@@ -69,11 +69,11 @@ export default function Primitivos() {
           {/*
             A tira existe para o Doug julgar o anel a olho, nos tamanhos em que ele
             de fato aparece. É a parada do bloco B3, e ela pede as duas coisas que
-            número nenhum responde: o Aprendiz lê como "sem patente" em vez de "erro"?
+            número nenhum responde: o Calouro lê como "sem título" em vez de "erro"?
             E o anel do Mestre, que é prata clara, sobrevive ao marfim do card?
 
             O boneco é o mesmo em todos — o assunto aqui é a moldura, e trocar o
-            cabelo de degrau para degrau daria a impressão de que a patente veste.
+            cabelo de degrau para degrau daria a impressão de que o título veste.
           */}
           {([32, 40] as const).map((lado) => (
             <div key={lado} className="space-y-1.5">
@@ -85,7 +85,7 @@ export default function Primitivos() {
                       <AvatarCabeca skin={2} hair="chanel" hairColor={0} lado={lado} ns={`ml-${lado}-${tier}`} />
                     </MolduraPatente>
                     <p className="text-[10px] text-ink/45">
-                      {PATENTES.find((p) => p.tier === tier)?.patente ?? "Aprendiz"}
+                      {PATENTES.find((p) => p.tier === tier)?.patente ?? "Calouro"}
                     </p>
                   </div>
                 ))}

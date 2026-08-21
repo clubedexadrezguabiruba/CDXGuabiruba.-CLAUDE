@@ -44,7 +44,7 @@ function ChocadeiraVazia() {
         </svg>
         <p className="text-sm text-ink/70">
           Nenhum ovo por aqui. Os baús estão pagando XP na hora — os ovos voltam
-          quando os companheiros do Reino chegarem.
+          quando os bichos da Academia chegarem.
         </p>
       </div>
     </Card>

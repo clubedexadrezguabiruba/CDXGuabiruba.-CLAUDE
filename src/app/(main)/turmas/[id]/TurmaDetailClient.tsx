@@ -34,7 +34,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
   if (loading) {
     return (
       <div className="rounded-xl border bg-white p-8 text-center text-sm text-zinc-500 shadow-sm">
-        Carregando companhia...
+        Carregando turma...
       </div>
     );
   }
@@ -42,7 +42,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
   if (error || !classData) {
     return (
       <div className="rounded-xl border bg-red-50 p-4 text-sm text-red-600 shadow-sm">
-        Erro: {error ?? "Companhia nao encontrada."}
+        Erro: {error ?? "Turma nao encontrada."}
       </div>
     );
   }
@@ -79,7 +79,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
         <div className="flex items-start justify-between">
           <div>
             <Link href="/turmas" className="text-xs text-zinc-400 hover:text-zinc-600">
-              &larr; Companhias
+              &larr; Turmas
             </Link>
             <h1 className="mt-1 text-2xl font-bold text-zinc-900">{classData.name}</h1>
             {!classData.active && (
@@ -115,7 +115,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
         const students = members.filter((m) => !m.is_teacher);
         return (
           <div className="mb-4 rounded-xl border bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-zinc-900">Companhia</h2>
+            <h2 className="text-lg font-bold text-zinc-900">Turma</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
               1 professor, {students.length} aluno(s)
             </p>
@@ -249,7 +249,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-zinc-700">Tarefas</h3>
-                  <p className="mt-0.5 text-xs text-zinc-400">Criar e gerenciar tarefas da companhia</p>
+                  <p className="mt-0.5 text-xs text-zinc-400">Criar e gerenciar tarefas da turma</p>
                 </div>
                 <span className="text-zinc-400">&rarr;</span>
               </div>
@@ -261,7 +261,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-zinc-700">Relatorios</h3>
-                  <p className="mt-0.5 text-xs text-zinc-400">Progresso dos membros da companhia</p>
+                  <p className="mt-0.5 text-xs text-zinc-400">Progresso dos membros da turma</p>
                 </div>
                 <span className="text-zinc-400">&rarr;</span>
               </div>
@@ -274,7 +274,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-zinc-700">Ranking da Companhia</h3>
+              <h3 className="text-sm font-semibold text-zinc-700">Ranking da Turma</h3>
               <p className="mt-0.5 text-xs text-zinc-400">Classificação dos membros por rating, rush e nível</p>
             </div>
             <span className="text-zinc-400">&rarr;</span>
@@ -287,7 +287,7 @@ export default function TurmaDetailClient({ classId, isTeacher }: TurmaDetailCli
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-zinc-700">Mural</h3>
-              <p className="mt-0.5 text-xs text-zinc-400">Conquistas recentes da companhia</p>
+              <p className="mt-0.5 text-xs text-zinc-400">Conquistas recentes da turma</p>
             </div>
             <span className="text-zinc-400">&rarr;</span>
           </div>

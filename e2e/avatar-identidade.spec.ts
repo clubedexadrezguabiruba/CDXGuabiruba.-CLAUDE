@@ -252,7 +252,7 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
     await page.fill('input[type="password"]', SENHA);
     await page.click('button[type="submit"]');
 
-    await expect(page.locator("h1", { hasText: "Criação do Recruta" })).toBeVisible({
+    await expect(page.locator("h1", { hasText: "Matrícula" })).toBeVisible({
       timeout: 20_000,
     });
 
@@ -314,7 +314,7 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
 
     // ------------------------------------------------------------- e ao servidor
     await page.getByRole("button", { name: "Confirmar", exact: true }).click();
-    await expect(page.locator("h1", { hasText: "Quartel-General" })).toBeVisible({
+    await expect(page.locator("h1", { hasText: "Saguão" })).toBeVisible({
       timeout: 20_000,
     });
 
@@ -452,7 +452,7 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
   test("a navbar e o Quadro de Honra mostram o boneco do aluno", async ({ page }) => {
     await loginAndSettle(page, EMAIL_ALUNO, SENHA);
     await page.goto("/dashboard");
-    await expect(page.locator("h1", { hasText: "Quartel-General" })).toBeVisible({
+    await expect(page.locator("h1", { hasText: "Saguão" })).toBeVisible({
       timeout: 20_000,
     });
 

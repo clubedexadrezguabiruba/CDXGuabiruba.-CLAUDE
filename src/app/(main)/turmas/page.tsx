@@ -19,11 +19,11 @@ export default async function TurmasPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Companhias</h1>
+        <h1 className="text-2xl font-bold">Turmas</h1>
         <p className="mt-1 text-sm text-zinc-500">
           {role === "professor"
-            ? "Gerencie suas companhias e acompanhe seus alunos."
-            : "Suas companhias de treinamento."}
+            ? "Gerencie suas turmas e acompanhe seus alunos."
+            : "Suas turmas."}
         </p>
       </div>
 

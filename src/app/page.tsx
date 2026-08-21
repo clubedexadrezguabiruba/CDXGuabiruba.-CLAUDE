@@ -50,56 +50,63 @@ function IconArrowRight({ className }: { className?: string }) {
 const methodFeatures = [
   {
     icon: IconTarget,
-    title: "Missões Diárias",
-    description: "Ordens do dia que mantêm seu progresso constante. Pequenas conquistas que se acumulam em grandes vitórias.",
+    title: "Missões do Dia",
+    description: "Tarefas curtas que mantêm seu progresso constante. Pequenas conquistas que se acumulam em avanço real.",
   },
   {
     icon: IconSwords,
-    title: "Duelos com Bots",
-    description: "Enfrente adversários calibrados ao seu nível. Cada bot é um novo desafio, do Peão Preguiçoso ao Rei Implacável.",
+    title: "Sala de Duelos",
+    description: "Enfrente adversários calibrados ao seu nível. Cada personagem da Academia joga de um jeito, e ensina algo diferente.",
   },
   {
     icon: IconBook,
-    title: "Trilhas de Formação",
-    description: "Conteúdo organizado em treinamentos progressivos. Aprenda tática, estratégia e finais de forma estruturada.",
+    title: "Trilhas",
+    description: "Conteúdo organizado em aulas progressivas. Aprenda tática, estratégia e finais de forma estruturada.",
   },
   {
     icon: IconCrown,
-    title: "Sistema de Patentes",
-    description: "Evolua de Recruta a Mestre. Cada patente desbloqueia novos desafios, bots e reconhecimento.",
+    title: "Escada de títulos",
+    description: "De Calouro a Grão-Mestre. Cada título é reconhecimento público de estudo feito — e abre desafios novos.",
   },
 ];
 
-const journeyStages = [
+/**
+ * Os lugares da Academia (Bíblia v2 §5). **Não são etapas de marcha**: o aluno
+ * frequenta a Academia inteira desde o primeiro dia, e o que avança é o título
+ * que ele carrega. O número é índice de visita guiada, e a copy da seção diz
+ * isso com todas as letras — as 5 regiões que ordenavam progresso morreram com
+ * o reino.
+ */
+const lugares = [
   {
     num: "01",
-    badge: "Fase Inicial",
-    name: "Acampamento dos Recrutas",
-    description: "Seu ponto de partida. Aprenda os fundamentos, conheça as peças e dê seus primeiros passos no tabuleiro.",
+    badge: "Chegada",
+    name: "o Pátio",
+    description: "Onde todo mundo entra. Primeiros movimentos, primeiros colegas, primeira partida — sem ninguém cobrando nada.",
   },
   {
     num: "02",
-    badge: "Tática Básica",
-    name: "Vila dos Soldados",
-    description: "Domine táticas básicas, enfrente os primeiros bots e conquiste suas primeiras vitórias.",
+    badge: "Estudo",
+    name: "a Biblioteca",
+    description: "O conhecimento guardado em silêncio e altura. Aberturas, teoria e as ideias que outros levaram séculos para achar.",
   },
   {
     num: "03",
-    badge: "Estratégia",
-    name: "Fortaleza dos Estrategistas",
-    description: "Aprenda aberturas, meio-jogo e estratégias mais elaboradas. Os desafios se intensificam.",
+    badge: "Cálculo",
+    name: "o Observatório",
+    description: "Onde se olha longe. Finais, cálculo profundo e a paciência de enxergar o lance que ainda não está no tabuleiro.",
   },
   {
     num: "04",
-    badge: "Comando",
-    name: "Cidade dos Generais",
-    description: "Domine finais, cálculos avançados e preparação para competição. Lidere o campo de batalha.",
+    badge: "Disputa",
+    name: "a Arena",
+    description: "Onde se prova o que se aprendeu. Duelos, quadro de honra e o prestígio de quem chegou lá por mérito.",
   },
   {
     num: "05",
-    badge: "Maestria",
-    name: "Cidadela dos Mestres",
-    description: "O topo da campanha. Refinamento máximo, desafios de elite e o prestígio de quem domina o tabuleiro.",
+    badge: "Descoberta",
+    name: "o Arquivo",
+    description: "O que ainda não foi mostrado. Nem todo corredor da Academia aparece no primeiro dia — e essa é a graça.",
   },
 ];
 
@@ -127,15 +134,15 @@ export default function LandingPage() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Link href="/" className="font-heading text-xl font-bold tracking-wide text-brand-cyan">
-            Recruta 64
+            Academia 64
           </Link>
 
           <div className="hidden items-center gap-8 sm:flex">
             <a href="#metodo" className="font-sans text-sm font-medium text-white/70 transition-colors hover:text-white">
               O Método
             </a>
-            <a href="#jornada" className="font-sans text-sm font-medium text-white/70 transition-colors hover:text-white">
-              A Jornada
+            <a href="#academia" className="font-sans text-sm font-medium text-white/70 transition-colors hover:text-white">
+              A Academia
             </a>
             <Link
               href="/login"
@@ -189,27 +196,26 @@ export default function LandingPage() {
 
         <div className="relative z-10 mx-auto max-w-3xl px-5 text-center">
           <p className="mb-6 font-sans text-xs font-semibold uppercase tracking-[0.25em] text-gold">
-            Bem-vindo ao Reino das 64 Casas
+            Bem-vindo à Academia 64
           </p>
 
           <h1
             className="font-heading text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl xl:text-6xl"
             style={{ textShadow: "0 2px 24px rgba(0,0,0,0.6)" }}
           >
-            <span className="text-white">Entre como recruta.</span>
+            <span className="text-white">Uma academia inteira,</span>
             <br />
-            <span className="text-white">Evolua como estrategista.</span>
-            <br />
-            <span className="text-gold">Torne-se mestre.</span>
+            <span className="text-white">e 64 casas</span>{" "}
+            <span className="text-gold">para explorar.</span>
           </h1>
 
           <p
             className="mx-auto mt-6 max-w-xl font-sans text-base leading-relaxed text-white/70 sm:text-lg"
             style={{ textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}
           >
-            Uma jornada imersiva pelo xadrez. Do primeiro movimento ao
-            xeque-mate vitorioso, guiado por uma campanha que transforma
-            iniciantes em jogadores completos.
+            Você não precisa nascer sabendo. Aqui se entra curioso, estuda com
+            método e aprende a pensar com clareza, paciência e imaginação — do
+            primeiro movimento ao xeque-mate.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -217,7 +223,7 @@ export default function LandingPage() {
               href="/registro"
               className="group flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-8 py-3.5 font-sans font-semibold text-deep-navy shadow-sm transition-all hover:bg-gold-light hover:shadow-glow-gold sm:w-auto"
             >
-              Começar minha campanha
+              Fazer minha matrícula
               <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <a
@@ -250,15 +256,15 @@ export default function LandingPage() {
             </div>
 
             <h2 className="font-heading text-2xl font-bold text-slate-800 sm:text-3xl">
-              Uma campanha de verdade.
+              Uma escola de verdade.
             </h2>
             <p className="mt-2 font-heading text-xl text-gold/80 sm:text-2xl">
-              Do treino à maestria.
+              Do estudo à maestria.
             </p>
 
             <p className="mx-auto mt-6 max-w-2xl font-sans text-base leading-relaxed text-slate-500">
-              Não é só um curso. É uma jornada completa com missões, recompensas
-              e evolução real.
+              Não é só um curso. É um lugar, com aulas, colegas, desafios e
+              títulos que se conquistam estudando.
             </p>
           </div>
 
@@ -286,20 +292,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════ A JORNADA — Timeline ═══════════ */}
-      <section id="jornada" className="bg-deep-navy py-20 sm:py-28">
+      {/* ═══════════ A ACADEMIA — os lugares ═══════════ */}
+      <section id="academia" className="bg-deep-navy py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-5">
           {/* Header */}
           <div className="mb-16 text-center">
             <span className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              A Jornada
+              A Academia
             </span>
             <h2 className="mt-4 font-heading text-2xl font-bold text-white sm:text-3xl">
-              A Campanha do Jovem Recruta
+              Antiga por fora, imprevisível por dentro
             </h2>
             <p className="mx-auto mt-4 max-w-lg font-sans text-base text-slate-400">
-              Cinco regiões, dezenas de missões, uma evolução real. Cada fase
-              prepara você para a próxima.
+              Estes cinco corredores são só o começo da visita. Você não avança
+              de um para o outro: frequenta a Academia inteira desde o primeiro
+              dia — o que avança é o título que você carrega.
             </p>
           </div>
 
@@ -309,7 +316,7 @@ export default function LandingPage() {
             <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gold/20 lg:block" />
 
             <div className="space-y-10 lg:space-y-16">
-              {journeyStages.map((stage, i) => {
+              {lugares.map((stage, i) => {
                 const isLeft = i % 2 === 0;
                 return (
                   <div key={stage.num} className="relative flex flex-col items-start gap-5 lg:flex-row lg:items-center lg:gap-0">
@@ -384,20 +391,20 @@ export default function LandingPage() {
             className="font-heading text-2xl font-bold text-white sm:text-3xl lg:text-4xl"
             style={{ textShadow: "0 2px 16px rgba(0,0,0,0.4)" }}
           >
-            Todo mestre já foi{" "}
-            <span className="text-gold">recruta</span> um dia.
+            Todo grão-mestre já foi{" "}
+            <span className="text-gold">calouro</span> um dia.
           </h2>
 
           <p className="mx-auto mt-5 max-w-lg font-sans text-base leading-relaxed text-slate-400">
-            O tabuleiro está pronto. As peças esperam seu comando. Sua campanha
-            no Reino das 64 Casas começa agora.
+            O tabuleiro está pronto e a porta está aberta. Sua matrícula na
+            Academia 64 começa agora.
           </p>
 
           <Link
             href="/registro"
             className="group mt-8 inline-flex items-center gap-2 rounded-lg bg-gold px-8 py-3.5 font-sans font-semibold text-deep-navy shadow-sm transition-all hover:bg-gold-light hover:shadow-glow-gold"
           >
-            Começar minha campanha
+            Fazer minha matrícula
             <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
 
@@ -413,7 +420,7 @@ export default function LandingPage() {
           {/* Logo */}
           <div>
             <p className="font-heading text-sm font-semibold tracking-wide text-brand-cyan/80">
-              Recruta 64
+              Academia 64
             </p>
           </div>
 
@@ -422,8 +429,8 @@ export default function LandingPage() {
             <a href="#metodo" className="font-sans text-sm text-slate-500 transition-colors hover:text-slate-300">
               O Método
             </a>
-            <a href="#jornada" className="font-sans text-sm text-slate-500 transition-colors hover:text-slate-300">
-              A Jornada
+            <a href="#academia" className="font-sans text-sm text-slate-500 transition-colors hover:text-slate-300">
+              A Academia
             </a>
             <Link href="/login" className="font-sans text-sm text-slate-500 transition-colors hover:text-slate-300">
               Entrar
@@ -434,8 +441,8 @@ export default function LandingPage() {
         {/* Copyright */}
         <div className="mx-auto mt-8 max-w-6xl border-t border-slate-800/40 px-5 pt-6 text-center">
           <p className="font-sans text-xs text-slate-600">
-            2026 Recruta 64 &middot; Clube de Xadrez Guabiruba &middot; O
-            Reino das 64 Casas
+            2026 Academia 64 &middot; Clube de Xadrez Guabiruba &middot; Uma
+            academia inteira, e 64 casas para explorar
           </p>
         </div>
       </footer>

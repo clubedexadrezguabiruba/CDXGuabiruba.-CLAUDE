@@ -20,7 +20,7 @@ export default function FaixaDeComando({
   xpTotal,
   className,
 }: {
-  /** Versalete pequeno em ouro. Ex.: "Reino das 64 Casas", "Patente Capitão". */
+  /** Versalete pequeno em ouro. Ex.: "Academia 64", "Título Analista". */
   supertitulo?: string;
   titulo: string;
   saudacao?: string;

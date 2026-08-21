@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import Card, { CardTitle } from "@/components/ui/Card";
 import AchievementPanel from "@/components/gamification/AchievementPanel";
 import { xpForLevel } from "@/lib/gamification/xp";
+import { emojiDaInsignia } from "@/lib/gamification/achievementIcons";
 
 /* ================================================================
    Types
@@ -47,7 +48,7 @@ interface ProfileData {
   puzzleBestStreak: number;
   title: string;
   /**
-   * O NÚMERO da patente, para a moldura do palco. 0 é Aprendiz, e é degrau real —
+   * O NÚMERO do título, para a moldura do palco. 0 é Calouro, e é degrau real —
    * não ausência de dado. Sai da mesma consulta a `user_titles` que já buscava o
    * nome, então não custa ida a mais ao banco.
    */
@@ -269,21 +270,11 @@ function QuickStat({ icon, value, label }: { icon: React.ReactNode; value: strin
 }
 
 /* ================================================================
-   Achievement Icon Mapping
-   ================================================================ */
-
-const ACHIEVEMENT_ICON_MAP: Record<string, string> = {
-  sword: "⚔️", target: "🎯", crown: "👑", puzzle: "🧩", brain: "🧠",
-  "trending-up": "📈", zap: "⚡", flame: "🔥", "book-open": "📖",
-  "graduation-cap": "🎓", star: "⭐", award: "🏆",
-};
-
-/* ================================================================
    Achievement Preview Card
    ================================================================ */
 
 function AchievementPreviewCard({ title, description, icon }: { title: string; description: string; icon: string }) {
-  const emoji = ACHIEVEMENT_ICON_MAP[icon] || "⭐";
+  const emoji = emojiDaInsignia(icon);
   return (
     <div className="flex items-center gap-3 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 to-white px-3 py-2.5">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-200/80 text-sm">
@@ -415,7 +406,7 @@ export default function PerfilClient({
         <div className="mb-5 flex items-center gap-4">
           <div className="h-[2px] flex-1 bg-gradient-to-r from-amber-400/70 via-amber-300/40 to-transparent" />
           <h1 className="shrink-0 text-center text-base font-black uppercase tracking-[0.25em] text-stone-600 sm:text-lg">
-            Registro da Campanha
+            Registro de Formação
           </h1>
           <div className="h-[2px] flex-1 bg-gradient-to-l from-amber-400/70 via-amber-300/40 to-transparent" />
         </div>
@@ -529,7 +520,7 @@ export default function PerfilClient({
           {/* --- Left Column: Stats + Insígnias --- */}
           <div className="flex flex-col gap-5">
             {/* STATS */}
-            <CollapsibleSection title="Desempenho do Recruta">
+            <CollapsibleSection title="Desempenho do aluno">
               <div className="space-y-4">
                 {statGroups.map((group) => (
                   <div key={group.label}>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { PublicProfileData } from "@/types/ranking";
 import { xpForLevel } from "@/lib/gamification/xp";
+import { emojiDaInsignia } from "@/lib/gamification/achievementIcons";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import MolduraPatente from "@/components/avatar/MolduraPatente";
 
@@ -163,7 +164,7 @@ export default function PublicProfileClient({ profile }: Props) {
                 key={ach.key}
                 className="flex items-center gap-3 rounded-lg border border-zinc-100 px-3 py-2"
               >
-                <span className="text-xl">{ach.icon || "🏅"}</span>
+                <span className="text-xl">{emojiDaInsignia(ach.icon)}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-zinc-800">
                     {ach.title}

@@ -88,7 +88,7 @@ export default function ClassRankingClient({
         &larr; {className}
       </Link>
       <h1 className="mb-4 text-xl font-bold text-zinc-900">
-        Ranking da Companhia
+        Ranking da Turma
       </h1>
 
       {/* Tabs */}

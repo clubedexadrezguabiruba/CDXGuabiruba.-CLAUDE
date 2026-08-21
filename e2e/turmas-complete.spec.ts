@@ -23,7 +23,7 @@ const TEACHER_EMAIL = `e2e-prof-${TS}@cdxguabiruba.test`;
 const STUDENT1_EMAIL = `e2e-aluno1-${TS}@cdxguabiruba.test`;
 const STUDENT2_EMAIL = `e2e-aluno2-${TS}@cdxguabiruba.test`;
 const PASSWORD = `Test@${TS}`;
-const CLASS_NAME = `Companhia E2E Full ${TS}`;
+const CLASS_NAME = `Turma E2E Full ${TS}`;
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -142,14 +142,14 @@ test.describe.serial("Suite A — Fluxo do Aluno", () => {
     await expect(page.locator(`text=${CLASS_NAME}`)).toBeVisible({ timeout: 10000 });
   });
 
-  test("A2. aluno acessa detalhe da turma e ve a Companhia", async ({ page }) => {
+  test("A2. aluno acessa detalhe da turma e ve a Turma", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
-    // "Colegas" não existe mais: a seção de membros é "Companhia" para os dois
+    // "Colegas" não existe mais: a seção de membros é "Turma" para os dois
     // papéis (TurmaDetailClient.tsx:118). exact evita casar com o h1
-    // "Companhia <nome>".
+    // "Turma <nome>".
     await expect(
-      page.getByRole("heading", { name: "Companhia", exact: true })
+      page.getByRole("heading", { name: "Turma", exact: true })
     ).toBeVisible({ timeout: 15_000 });
   });
 
@@ -163,9 +163,9 @@ test.describe.serial("Suite A — Fluxo do Aluno", () => {
   test("A4. aluno NAO ve cards de Tarefas nem Relatorios", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
-    // Esperar conteudo carregar (a seção de membros é "Companhia" — ver A2)
+    // Esperar conteudo carregar (a seção de membros é "Turma" — ver A2)
     await expect(
-      page.getByRole("heading", { name: "Companhia", exact: true })
+      page.getByRole("heading", { name: "Turma", exact: true })
     ).toBeVisible({ timeout: 15_000 });
     // Verificar ausencia
     const tarefasCard = page.locator('a[href*="/tarefas"]');
@@ -195,7 +195,7 @@ test.describe.serial("Suite B — Ranking", () => {
   test("B1. ranking carrega com tab Rating", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/ranking`);
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible({ timeout: 10000 });
     // Tab Rating deve estar ativo
     const ratingTab = page.locator('button:has-text("Rating")');
     await expect(ratingTab).toBeVisible();
@@ -204,7 +204,7 @@ test.describe.serial("Suite B — Ranking", () => {
   test("B2. ranking mostra conteudo (tabela ou mensagem vazia)", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/ranking`);
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible({ timeout: 10000 });
     // Pode ter membros ou msg "Nenhum membro" (materialized view pode nao ter refresh)
     const hasContent = page.locator("text=Nenhum membro").or(page.locator("table tbody tr").first());
     await expect(hasContent).toBeVisible({ timeout: 5000 });
@@ -213,33 +213,33 @@ test.describe.serial("Suite B — Ranking", () => {
   test("B3. switch para tab Rush 3min funciona sem erro", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/ranking`);
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible({ timeout: 10000 });
     await page.click('button:has-text("Rush 3min")');
     await page.waitForTimeout(1500);
     // Pode mostrar tabela com "Pontos" ou msg vazia — nao deve dar erro
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible();
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible();
   });
 
   test("B4. switch para tab Nivel funciona sem erro", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/ranking`);
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible({ timeout: 10000 });
     await page.click('button:has-text("Nível")');
     await page.waitForTimeout(1500);
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible();
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible();
   });
 
   test("B5. ranking nao exibe erro apos multiplos switches de tab", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/ranking`);
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible({ timeout: 10000 });
     // Switch rapido entre tabs
     await page.click('button:has-text("Rush 5min")');
     await page.waitForTimeout(500);
     await page.click('button:has-text("Rating")');
     await page.waitForTimeout(500);
     // Sem crash
-    await expect(page.locator("text=Ranking da Companhia")).toBeVisible();
+    await expect(page.locator("text=Ranking da Turma")).toBeVisible();
   });
 });
 
@@ -250,19 +250,19 @@ test.describe.serial("Suite C — Mural", () => {
   test("C1. mural carrega com titulo correto", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/mural`);
-    await expect(page.locator("text=Mural da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Mural da Turma")).toBeVisible({ timeout: 10000 });
   });
 
   test("C2. botao Atualizar existe e funciona", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/mural`);
-    await expect(page.locator("text=Mural da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Mural da Turma")).toBeVisible({ timeout: 10000 });
     const refreshBtn = page.locator('button:has-text("Atualizar")');
     await expect(refreshBtn).toBeVisible();
     await refreshBtn.click();
     // Nao deve dar erro apos refresh
     await page.waitForTimeout(1000);
-    await expect(page.locator("text=Mural da Companhia")).toBeVisible();
+    await expect(page.locator("text=Mural da Turma")).toBeVisible();
   });
 
   test("C3. seed de feed event aparece no mural", async ({ page }) => {
@@ -285,7 +285,7 @@ test.describe.serial("Suite C — Mural", () => {
 
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/mural`);
-    await expect(page.locator("text=Mural da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Mural da Turma")).toBeVisible({ timeout: 10000 });
     // O evento de level_up deve aparecer
     await expect(page.locator("text=nivel").first()).toBeVisible({ timeout: 5000 });
   });
@@ -298,7 +298,7 @@ test.describe.serial("Suite D — Relatorio do Professor", () => {
   test("D1. relatorio carrega com cards agregados", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/relatorio`);
-    await expect(page.locator("text=Relatorio da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Relatorio da Turma")).toBeVisible({ timeout: 10000 });
     // Cards de resumo
     await expect(page.locator("text=Membros")).toBeVisible();
   });
@@ -306,7 +306,7 @@ test.describe.serial("Suite D — Relatorio do Professor", () => {
   test("D2. lista de membros visivel", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/relatorio`);
-    await expect(page.locator("text=Relatorio da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Relatorio da Turma")).toBeVisible({ timeout: 10000 });
     // Pelo menos 2 membros listados (student1 + student2)
     const memberRows = page.locator('a[href*="/relatorio/"]');
     const count = await memberRows.count();
@@ -316,7 +316,7 @@ test.describe.serial("Suite D — Relatorio do Professor", () => {
   test("D3. click em aluno navega para detalhe", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/relatorio`);
-    await expect(page.locator("text=Relatorio da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Relatorio da Turma")).toBeVisible({ timeout: 10000 });
 
     const firstMember = page.locator('a[href*="/relatorio/"]').first();
     await firstMember.click();
@@ -326,7 +326,7 @@ test.describe.serial("Suite D — Relatorio do Professor", () => {
   test("D4. pagina de detalhe mostra secoes de dados", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/relatorio`);
-    await expect(page.locator("text=Relatorio da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Relatorio da Turma")).toBeVisible({ timeout: 10000 });
 
     const firstMember = page.locator('a[href*="/relatorio/"]').first();
     await firstMember.click();
@@ -341,7 +341,7 @@ test.describe.serial("Suite D — Relatorio do Professor", () => {
   test("D5. link de volta funciona", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}/relatorio`);
-    await expect(page.locator("text=Relatorio da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Relatorio da Turma")).toBeVisible({ timeout: 10000 });
 
     const firstMember = page.locator('a[href*="/relatorio/"]').first();
     await firstMember.click();
@@ -351,7 +351,7 @@ test.describe.serial("Suite D — Relatorio do Professor", () => {
     const backLink = page.locator('a[href*="/relatorio"]').filter({ hasText: /voltar|Voltar|←|Relatorio/ }).first();
     await backLink.click();
     await page.waitForURL(`**/turmas/${classId}/relatorio`);
-    await expect(page.locator("text=Relatorio da Companhia")).toBeVisible();
+    await expect(page.locator("text=Relatorio da Turma")).toBeVisible();
   });
 });
 
@@ -362,7 +362,7 @@ test.describe.serial("Suite E — Edge Cases", () => {
   test("E1. codigo invalido mostra erro", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto("/turmas");
-    await expect(page.locator("text=Entrar em uma companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Entrar em uma turma")).toBeVisible({ timeout: 10000 });
     await page.fill('input[placeholder="Codigo de convite"]', "INVALIDO999");
     await page.click('button:has-text("Entrar")');
     // Mensagem de erro deve aparecer
@@ -372,19 +372,19 @@ test.describe.serial("Suite E — Edge Cases", () => {
   test("E2. entrar em turma ja inscrita mostra aviso", async ({ page }) => {
     await loginUser(page, STUDENT1_EMAIL, PASSWORD);
     await page.goto("/turmas");
-    await expect(page.locator("text=Entrar em uma companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Entrar em uma turma")).toBeVisible({ timeout: 10000 });
     await page.fill('input[placeholder="Codigo de convite"]', inviteCode);
     await page.click('button:has-text("Entrar")');
-    await expect(page.locator("text=Voce ja faz parte desta companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Voce ja faz parte desta turma")).toBeVisible({ timeout: 10000 });
   });
 
   test("E3. criar turma com nome curto mostra erro", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto("/turmas");
-    await page.click("text=Criar Companhia");
+    await page.click("text=Criar Turma");
     // Esperar modal abrir
-    await expect(page.locator('input[placeholder="Nome da companhia"]')).toBeVisible({ timeout: 5000 });
-    await page.fill('input[placeholder="Nome da companhia"]', "X");
+    await expect(page.locator('input[placeholder="Nome da turma"]')).toBeVisible({ timeout: 5000 });
+    await page.fill('input[placeholder="Nome da turma"]', "X");
     // Clicar no submit dentro do modal (type="submit")
     await page.click('button[type="submit"]');
     // Deve mostrar erro (min 2 chars)

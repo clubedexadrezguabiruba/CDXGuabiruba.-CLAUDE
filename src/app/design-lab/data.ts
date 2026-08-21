@@ -4,8 +4,8 @@
  * Nada aqui toca Supabase. A vitrine existe para poder ser fotografada sem
  * login e sem tocar em produção — ver DESIGN.md e a skill design-recruta64.
  *
- * O conteúdo é o do Quartel-General real (src/app/(main)/dashboard/page.tsx):
- * cabeçalho com patente, três atalhos, Ordens do Dia, Sequência de Campanha e
+ * O conteúdo é o do Saguão real (src/app/(main)/dashboard/page.tsx):
+ * cabeçalho com título, três atalhos, Missões do Dia, Sequência de Presença e
  * a prévia do Quadro de Honra. Comparar direções em conteúdo diferente não
  * compara nada.
  */
@@ -35,9 +35,9 @@ export const ATALHOS = [
 ] as const;
 
 export const ORDENS = [
-  { texto: "Concluir 10 desafios táticos", feito: 7, total: 10, xp: 40 },
-  { texto: "Completar 1 treinamento", feito: 1, total: 1, xp: 25 },
-  { texto: "Vencer 1 duelo da campanha", feito: 0, total: 1, xp: 60 },
+  { texto: "Resolver 10 desafios", feito: 7, total: 10, xp: 40 },
+  { texto: "Concluir 1 aula", feito: 1, total: 1, xp: 25 },
+  { texto: "Vencer 1 duelo", feito: 0, total: 1, xp: 60 },
 ] as const;
 
 export const HONRA = [
@@ -49,7 +49,7 @@ export const HONRA = [
 ] as const;
 
 export const INSIGNIAS = [
-  { nome: "Primeira Campanha", ganha: true },
+  { nome: "Primeira Vitória", ganha: true },
   { nome: "Sete Dias", ganha: true },
   { nome: "Cem Desafios", ganha: true },
   { nome: "Duelo Perfeito", ganha: false },

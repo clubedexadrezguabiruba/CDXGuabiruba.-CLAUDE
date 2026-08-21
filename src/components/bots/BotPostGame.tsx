@@ -312,7 +312,7 @@ export default function BotPostGame({
                 onClick={onViewReview}
                 className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white transition-all duration-150 hover:bg-green-500 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#262522] focus-visible:outline-none"
               >
-                Revisão de Batalha
+                Revisão da Partida
               </button>
             )}
             <div className="flex gap-2">

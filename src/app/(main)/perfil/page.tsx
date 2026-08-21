@@ -14,7 +14,7 @@ export interface ProfileData {
   puzzleRating: number;
   puzzleBestStreak: number;
   title: string;
-  /** O NÚMERO da patente, para a <MolduraPatente> do palco. 0 = Aprendiz. */
+  /** O NÚMERO do título, para a <MolduraPatente> do palco. 0 = Calouro. */
   achievedTier: number;
   currentStreak: number;
   longestStreak: number;
@@ -110,8 +110,8 @@ export default async function PerfilPage() {
     xp: profile?.xp ?? 0,
     puzzleRating: profile?.puzzle_rating ?? 1000,
     puzzleBestStreak: profile?.puzzle_best_streak ?? 0,
-    title: titleData?.current_title ?? "Aprendiz",
-    // Sem linha em `user_titles` o aluno é Aprendiz, tier 0 — o mesmo default que
+    title: titleData?.current_title ?? "Calouro",
+    // Sem linha em `user_titles` o aluno é Calouro, tier 0 — o mesmo default que
     // o COALESCE da matview aplica. As duas fontes têm de concordar.
     achievedTier: titleData?.achieved_tier ?? 0,
     currentStreak: streakData?.current_streak ?? 0,

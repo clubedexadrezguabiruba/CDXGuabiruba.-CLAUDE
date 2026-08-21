@@ -180,7 +180,7 @@ export default function AvatarUniformeClient() {
                 ))}
               </select>
               <span className="mt-1 block text-xs text-zinc-500">
-                &quot;nenhuma&quot; é o Aprendiz, tier 0
+                &quot;nenhuma&quot; é o Calouro, tier 0
               </span>
             </label>
 
@@ -256,7 +256,7 @@ export default function AvatarUniformeClient() {
                 dpr={dpr}
               />
               <figcaption className="mt-1 text-xs text-zinc-500">
-                Aprendiz
+                Calouro
                 <br />
                 <span className="text-zinc-400">o macacão é da base</span>
               </figcaption>
@@ -353,7 +353,7 @@ export default function AvatarUniformeClient() {
                 peca={null}
                 dpr={dpr}
               />
-              <figcaption className="mt-1 text-xs text-zinc-500">Aprendiz</figcaption>
+              <figcaption className="mt-1 text-xs text-zinc-500">Calouro</figcaption>
             </figure>
             {PECAS.map((p) => (
               <figure key={p.slug} className="m-0 text-center">

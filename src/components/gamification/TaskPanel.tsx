@@ -23,7 +23,7 @@ export default function TaskPanel() {
   if (loading) {
     return (
       <Card>
-        <CardTitle className="mb-0">Tarefas da Companhia</CardTitle>
+        <CardTitle className="mb-0">Tarefas da Turma</CardTitle>
         <p className="mt-2 text-sm text-ink/55">Carregando...</p>
       </Card>
     );
@@ -32,7 +32,7 @@ export default function TaskPanel() {
   if (error) {
     return (
       <Card>
-        <CardTitle className="mb-0">Tarefas da Companhia</CardTitle>
+        <CardTitle className="mb-0">Tarefas da Turma</CardTitle>
         <p className="mt-2 text-sm text-erro">Erro: {error}</p>
       </Card>
     );
@@ -47,7 +47,7 @@ export default function TaskPanel() {
 
   return (
     <Card>
-      <CardTitle className="mb-0">Tarefas da Companhia</CardTitle>
+      <CardTitle className="mb-0">Tarefas da Turma</CardTitle>
 
       {pending.length > 0 && (
         <div className="mt-3 space-y-2">

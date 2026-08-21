@@ -69,7 +69,7 @@ export default async function DashboardPage() {
     .trim()
     .split(" ")[0];
 
-  const title = titleData?.current_title ?? "Aprendiz";
+  const title = titleData?.current_title ?? "Calouro";
 
   const response = ranking as RankingData | null;
   const entries: RankingEntry[] = response?.entries ?? [];
@@ -77,8 +77,8 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-full bg-warm-ivory pb-10 text-ink">
       <FaixaDeComando
-        supertitulo="Reino das 64 Casas"
-        titulo="Quartel-General"
+        supertitulo="Academia 64"
+        titulo="Saguão"
         saudacao={primeiroNome ? `Bom te ver de volta, ${primeiroNome}.` : undefined}
         patente={title}
         xp={perfil?.xp}
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
         {/* Blocos client-side: missões, streak, baús, insígnias */}
         <DailyPanel title={title} level={perfil?.level ?? 1} />
 
-        {/* Tarefas da companhia (só aparece se aluno tem tarefas) */}
+        {/* Tarefas da turma (só aparece se aluno tem tarefas) */}
         <TaskPanel />
 
         {/* Quadro de Honra — preview top 5 */}
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
                     {entry.public_name}
                   </Link>
                   <span className="text-xs text-ink/70">
-                    {entry.title ?? "Aprendiz"}
+                    {entry.title ?? "Calouro"}
                   </span>
                   <span className="w-11 shrink-0 text-right text-xs font-semibold tabular-nums">
                     {entry.metric_value}

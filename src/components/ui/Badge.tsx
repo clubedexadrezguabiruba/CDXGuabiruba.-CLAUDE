@@ -40,10 +40,11 @@ export default function Badge({
    * cai no tone normal, sem inventar cor.
    *
    * ⚠️ **A busca é por STRING, e é acoplamento com o banco.** Quem chama de tela
-   * real passa `user_titles.current_title`. A escada foi renomeada em 2026-08-20
-   * (Soldado→Aprendiz, …, Mestre→Grão-Mestre); enquanto a migration que renomeia
-   * `title_tiers.title` não descer, o nome do banco não bate com o daqui e a
-   * pílula sai **sem o ponto de cor**, em silêncio. Os dois lados sobem juntos.
+   * real passa `user_titles.current_title`. A escada foi renomeada em duas
+   * janelas — `patentes.ts` em 2026-08-20, `title_tiers.title` na migration
+   * `20260821120000_academia_titulos.sql` — e entre elas a pílula saiu **sem o
+   * ponto de cor, em silêncio**. Não é hipótese: aconteceu. Quem renomear um
+   * degrau de novo tem de mover os dois lados na mesma janela.
    */
   patente?: string;
   className?: string;

@@ -149,7 +149,7 @@ export default function TarefasClient({ classId, className }: TarefasClientProps
         </Link>
         <h1 className="mt-1 text-2xl font-bold text-zinc-900">Tarefas</h1>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Gerencie as tarefas da companhia.
+          Gerencie as tarefas da turma.
         </p>
       </div>
 

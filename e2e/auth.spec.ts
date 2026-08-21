@@ -89,7 +89,7 @@ test.describe("fluxo autenticado", () => {
     // aqui era expectativa obsoleta.
     //
     // `exact: true`, e não `.first()`. Desde 2026-08-03 (c0404ed, "o
-    // Quartel-General entra na direção A") o dashboard também SAÚDA pelo nome —
+    // Saguão entra na direção A") o dashboard também SAÚDA pelo nome —
     // "Bom te ver de volta, {nome}." —, então o match por substring passou a
     // achar DOIS elementos e a violar o modo estrito. O `<span>` da navbar tem
     // exatamente o nome; o `<p>` da saudação o tem dentro de uma frase, e só o

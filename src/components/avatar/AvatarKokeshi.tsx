@@ -13,7 +13,7 @@
  *
  * A tradução entre os dois tem de morar em UM lugar. São oito consumidores até o
  * fim do Bloco 6 — `/criar-personagem`, `/perfil`, `/perfil/[userId]`, navbar, os
- * dois rankings, mural e Companhia —, e uma API em hex faria os oito reescreverem
+ * dois rankings, mural e Turma —, e uma API em hex faria os oito reescreverem
  * índice→cor, `null`→careca, texto→slug. Aqui é uma vez, e é aqui.
  *
  * ---------------------------------------------------------------------------

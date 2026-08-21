@@ -11,7 +11,7 @@ const TS = Date.now();
 const TEACHER_EMAIL = `prof+${TS}@cdxguabiruba.test`;
 const STUDENT_EMAIL = `aluno+${TS}@cdxguabiruba.test`;
 const PASSWORD = `Test@${TS}`;
-const CLASS_NAME = `Companhia E2E ${TS}`;
+const CLASS_NAME = `Turma E2E ${TS}`;
 
 let teacherId: string;
 let studentId: string;
@@ -37,21 +37,21 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await expect(turmasLink).toBeVisible();
     await turmasLink.click();
     await page.waitForURL("**/turmas");
-    await expect(page.getByRole("heading", { name: "Companhias" })).toBeVisible();
-    await expect(page.locator("text=Criar Companhia")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Turmas" })).toBeVisible();
+    await expect(page.locator("text=Criar Turma")).toBeVisible();
   });
 
-  test("professor cria companhia e vê código de convite", async ({ page }) => {
+  test("professor cria turma e vê código de convite", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto("/turmas");
 
-    await page.click("text=Criar Companhia");
-    await expect(page.locator('input[placeholder="Nome da companhia"]')).toBeVisible({ timeout: 5000 });
-    await page.fill('input[placeholder="Nome da companhia"]', CLASS_NAME);
+    await page.click("text=Criar Turma");
+    await expect(page.locator('input[placeholder="Nome da turma"]')).toBeVisible({ timeout: 5000 });
+    await page.fill('input[placeholder="Nome da turma"]', CLASS_NAME);
     await page.click('button[type="submit"]');
 
     // Espera modal de sucesso com invite code
-    await expect(page.locator("text=Companhia Criada!")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Turma Criada!")).toBeVisible({ timeout: 10000 });
     const codeEl = page.locator(".font-mono.text-2xl");
     await expect(codeEl).toBeVisible();
     inviteCode = (await codeEl.textContent()) ?? "";
@@ -75,12 +75,12 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await loginUser(page, STUDENT_EMAIL, PASSWORD);
     await page.goto("/turmas");
 
-    await expect(page.locator("text=Entrar em uma companhia")).toBeVisible();
+    await expect(page.locator("text=Entrar em uma turma")).toBeVisible();
     await page.fill('input[placeholder="Codigo de convite"]', inviteCode);
     await page.click('button:has-text("Entrar")');
 
     // Sucesso
-    await expect(page.locator(`text=Voce entrou na companhia`)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=Voce entrou na turma`)).toBeVisible({ timeout: 10000 });
 
     // Turma aparece na lista
     await expect(page.locator(`text=${CLASS_NAME}`)).toBeVisible();
@@ -90,16 +90,16 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
-    // A seção foi renomeada de "Membros" para "Companhia" (tom militar do
+    // A seção foi renomeada de "Membros" para "Turma" (tom militar do
     // projeto) e o subtítulo passou a ser "1 professor, N aluno(s)"
     // — TurmaDetailClient.tsx:118-121.
     //
     // exact: true é necessário porque o match de `name` é por substring, e o
-    // h1 da página é "Companhia E2E <ts>" — sem exact, o locator resolveria
+    // h1 da página é "Turma E2E <ts>" — sem exact, o locator resolveria
     // para 2 elementos. O timeout maior cobre o carregamento do
     // useClassDetail (o conteúdo vem de RPC, não do server component).
     await expect(
-      page.getByRole("heading", { name: "Companhia", exact: true })
+      page.getByRole("heading", { name: "Turma", exact: true })
     ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/1 professor, \d+ aluno\(s\)/)).toBeVisible();
   });
@@ -143,22 +143,22 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await expect(page.locator("text=completaram")).toBeVisible({ timeout: 5000 });
   });
 
-  test("professor acessa mural da companhia", async ({ page }) => {
+  test("professor acessa mural da turma", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
     await page.locator('a[href*="/mural"]').click();
     await page.waitForURL(`**/turmas/${classId}/mural`);
-    await expect(page.locator("text=Mural da Companhia")).toBeVisible();
+    await expect(page.locator("text=Mural da Turma")).toBeVisible();
   });
 
-  test("professor acessa relatório da companhia", async ({ page }) => {
+  test("professor acessa relatório da turma", async ({ page }) => {
     await loginUser(page, TEACHER_EMAIL, PASSWORD);
     await page.goto(`/turmas/${classId}`);
 
     await page.locator('a[href*="/relatorio"]').click();
     await page.waitForURL(`**/turmas/${classId}/relatorio`);
-    await expect(page.locator("text=Relatorio da Companhia")).toBeVisible();
+    await expect(page.locator("text=Relatorio da Turma")).toBeVisible();
     // Pelo menos 1 membro listado
     await expect(page.getByRole("heading", { name: "Membros" }).or(page.locator("text=Membros").first())).toBeVisible();
   });
@@ -171,11 +171,11 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await page.click(`text=${CLASS_NAME}`);
     await page.waitForURL(`**/turmas/${classId}`);
 
-    // A seção é "Companhia" para os dois papéis — "Colegas" não existe mais na
+    // A seção é "Turma" para os dois papéis — "Colegas" não existe mais na
     // UI. A distinção por papel migrou para os links: Tarefas e Relatorios são
     // gated por isTeacher (TurmaDetailClient.tsx:243), Mural é para todos.
     await expect(
-      page.getByRole("heading", { name: "Companhia", exact: true })
+      page.getByRole("heading", { name: "Turma", exact: true })
     ).toBeVisible({ timeout: 15_000 });
 
     await expect(page.locator('a[href*="/mural"]')).toBeVisible();
@@ -188,7 +188,7 @@ test.describe.serial("Fase 9 — Painel do Professor", () => {
     await page.goto("/dashboard");
 
     // TaskPanel deve aparecer com a tarefa criada
-    await expect(page.locator("text=Tarefas da Companhia")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Tarefas da Turma")).toBeVisible({ timeout: 10000 });
     await expect(page.locator("text=Completar aula 1")).toBeVisible();
   });
 
