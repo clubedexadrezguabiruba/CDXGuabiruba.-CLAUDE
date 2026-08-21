@@ -8,7 +8,7 @@
 > |---|---|
 > | **slug** | `traje-<nome>` (convenção nova: **sem patente no nome**) |
 > | **raridade** | `common` / `rare` / `epic` / `legendary` — e ela decide **quantos padrões repetidos** a peça tem (doc 22 §3) |
-> | **o que a peça é** | uma linha do menu de `docs/avatar/22-catalogo-de-trajes.md` |
+> | **o que a peça é** | uma linha do menu de `docs/avatar/22-catalogo-de-pecas.md` |
 > | **a paleta** | **as cores finais da peça**, escolhidas por você. Ver "A cor é final" abaixo |
 >
 > **REVISADO EM 2026-08-13**, com a virada de direção (doc 21 §0). Duas coisas
@@ -180,6 +180,12 @@ doc 21 §6.1, *"roupa veste, não pinta"*. Quanto ela pode exceder, medido:
 > roupa PASSA da borda do corpo, aí sim ela leva contorno próprio, da mesma
 > espessura, e ele é a borda externa do boneco naquele trecho.
 >
+> **PRETO PURO QUER DIZER PRETO PURO: `#000000`, e cinza escuro não serve.** Não
+> redesenhe o contorno que já existe no boneco — e se redesenhar algum trecho dele,
+> redesenhe em preto puro. Um traço cinza parece mais **fino** que um preto da mesma
+> largura, e é o defeito mais comum desta rota: medido em lum 70 numa peça que está
+> em produção. A régua é `npm run arte:borda`.
+>
 > Sem ruído, sem textura de trama fotográfica, sem brilho metálico exagerado. Um
 > degradê suave é aceito quando ele é o assunto da peça; fora disso, prefira áreas
 > de cor — **muitas áreas**, uma por evento de construção, não duas grandes.
@@ -247,7 +253,7 @@ naturalmente**: a túnica pertence ao mundo.
 brutalidade, humor pastelão, estética caótica, dark fantasy no core.
 
 O menu de peças que a Academia comporta está em
-`docs/avatar/22-catalogo-de-trajes.md` — **e ele é menu, não fila**: só vira pedido
+`docs/avatar/22-catalogo-de-pecas.md` — **e ele é menu, não fila**: só vira pedido
 a peça que o Doug chamar pelo nome.
 
 ## O volume é TODO seu

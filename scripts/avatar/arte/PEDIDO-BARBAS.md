@@ -1,50 +1,80 @@
-# As 5 barbas — o elenco e os pedidos
+# As barbas — o elenco e os pedidos
 
-O slot `rosto` fica em **6 barbas**: 5 decididas pelo Doug em 2026-08-18
-(**2 common · 1 rare · 1 epic · 1 legendary**) mais o `bigode` (rare), aprovado em
-2026-08-19 depois de a D16 cair por medição — ver o registro. Todas de baú — no banco, raridade só
-existe com `origem = 'bau'` (`CHECK avatar_catalogo_origem_coerente`).
+> ⚠️ **REESCRITO EM 2026-08-21, e o motivo é que o pedido antigo produzia peça que a
+> esteira REPROVA.**
+>
+> Ele exigia *"três tons chapados de ciano… sem gradiente, sem textura, sem fios, sem
+> mechas, sem textura de pelo"*. A esteira nova extrai o **tom** da luminância da arte
+> e reprova peça chapada por construção (`hi <= lo`) — então o pedido antigo
+> **empobrecia o tom na origem**: era pedir exatamente a peça de dois tons que a
+> esteira existe para não produzir.
+>
+> A trancaça, que é hoje a peça-padrão da linha de arte, **veio castanha, é feita de
+> fios e tem 917 tons** — ela desobedece cada linha do pedido antigo e é a melhor
+> peça que esta rota já produziu.
+>
+> **E o ciano saiu do pedido.** Ele continua sendo a língua interna da esteira (o
+> Gate −1 e o `extrair.ts` colhem por ele, `arte:cor-proibida` protege a janela de
+> ±30°), mas **quem o produz é o programa** — `restaurar-peca.ts` leva o matiz para
+> 180° preservando saturação e luminância. Pedir cor instrumental ao gerador para
+> repintar depois é uma das quatro coisas que a Regra Inviolável nº 4 do `CLAUDE.md`
+> proíbe por nome, e o ciano do gerador morreu em 2026-08-13.
+
+O elenco vive em [doc 22 §5-B.1](../../../docs/avatar/22-catalogo-de-pecas.md) — **8
+barbas**, e a lei de arte que julga cada uma está em
+[doc 23](../../../docs/avatar/23-linha-de-arte.md). Este arquivo é só o **molde do
+pedido**.
 
 | raridade | slug | estado |
 |---|---|---|
-| legendary | `cheia` | ✅ **aprovada** — `barba-cheia.png` |
-| common | `cavanhaque` | ✅ **aprovada** — `barba-cavanhaque.png` |
-| rare | `bigode` | ✅ **aprovada** — `barba-bigode.png` (bigode em ferradura + cavanhaque pontudo) |
-| common | `aparada` | a fazer |
-| rare | `quadrada` | a fazer |
-| epic | `bipartida` | a fazer |
+| `legendary` | `rosto-barba-trancada` | ✅ **promovida** em 2026-08-21 — a peça-padrão da linha de arte |
+| as outras 7 | ver doc 22 §5-B.1 | a fazer, **uma por vez, quando o Doug chamar pelo nome** |
 
-O registro rodada a rodada de como a `cheia` chegou está em
-[ESTADO-DA-ROTA.md](ESTADO-DA-ROTA.md), entrada de 2026-08-18.
+⚠️ **O elenco de 6 barbas de 2026-08-18 foi cortado para 1 em 2026-08-21**, e as
+artes da `cheia`, do `cavanhaque` e do `bigode` foram apagadas. O registro rodada a
+rodada de como elas chegaram, e o de como a trancaça foi promovida, está em
+[ESTADO-DA-ROTA.md](ESTADO-DA-ROTA.md).
 
 ---
 
-## O fluxo, em duas ferramentas
+## O fluxo, em três imagens
 
-**Duas imagens, sempre, nesta ordem:**
+Eram duas até 2026-08-21. A terceira entrou porque o nível de acabamento não estava
+sendo pedido a ninguém — e **os papéis passam a ser nomeados**, porque este gerador é
+literal e uma imagem sem papel declarado vira contradição com a anterior:
 
-1. **`C:\Users\Lenovo\Downloads\barbas\BASE-OFICIAL.png`** — o avatar base oficial,
-   **careca e sem barba**. É a moldura: o boneco dela é o único que o Gate −1
-   aceita, e é ele que tem de sobreviver intacto.
-2. **A barba nova, feita antes no ChatGPT** — o boneco com a barba que se quer.
+| imagem | papel | o que se diz dela |
+|---|---|---|
+| **1ª** | **a base** | `BASE-OFICIAL.png` — o avatar base, careca e sem barba. **Não muda um pixel.** É o único boneco que o Gate −1 aceita |
+| **2ª** | **a forma** | o boneco com a barba que se quer, feito antes no ChatGPT. **Só a silhueta**: ignore o personagem, o estilo e o fundo dela |
+| **3ª** | **o acabamento** | `barba-trancada.png` — **só o NÍVEL de acabamento**: os fios, a serrilha da borda, a variação de luz, a espessura da linha interna |
 
-O Gemini **transplanta**: fica com o boneco da primeira e a barba da segunda. É o
-gesto que funcionou na `cheia` e a única coisa que seis rodadas provaram que ele faz
-bem.
+⚠️ **A 3ª define o NÍVEL, não a TEXTURA.** O nível atravessa slots; a textura não. A
+trancaça é uma barba, e citá-la como textura para um chapéu de feltro arrastaria pelo
+para onde não cabe. Ver [doc 23 §9](../../../docs/avatar/23-linha-de-arte.md).
 
-**Por que a segunda imagem manda, e o texto só a reforça:** medido nas rodadas 4 e
-5 — instrução específica vence instrução genérica, e o gerador obedece ao texto
-quando texto e imagem discordam. Por isso todo pedido abaixo diz, com todas as
-letras, que em caso de dúvida se segue a imagem.
+⚠️ **E ela não pode contradizer a 2ª.** A 2ª imagem já diz *"ignore o estilo dela"*;
+por isso a 3ª entra com o papel escrito — **acabamento**, não forma e não personagem.
+O registro da rota mostra por que isto importa: *"na dúvida, passe menos"* produziu
+transbordo **zero**, porque gerador em dúvida passa zero.
 
-**Por que as cláusulas de cor e de "sem braços" estão nos quatro:** a segunda imagem
-vem de **outro gerador**, com outra paleta e outro boneco. O ChatGPT vai devolver a
-barba na cor que ele quiser, e pode dar braços, orelhas e pescoço ao boneco. As
-cláusulas existem para o Gemini ignorar tudo isso e copiar **só a forma**.
+O Gemini **transplanta**: fica com o boneco da 1ª, a forma da 2ª e o acabamento da
+3ª. É o gesto que funcionou na `cheia` e na `trancada`, e a única coisa que as
+rodadas provaram que ele faz bem.
 
-Ordem sugerida: `cavanhaque` → `aparada` → `quadrada` → `bipartida`. As duas mais
-distantes da lendária primeiro, porque é nelas que a rota pode falhar de um jeito
-ainda não visto. **Uma por vez**, com folha de contato antes da seguinte.
+**Por que a imagem manda, e o texto só a reforça:** medido nas rodadas 4 e 5 —
+instrução específica vence instrução genérica, e o gerador obedece ao texto quando
+texto e imagem discordam. Por isso todo pedido abaixo diz, com todas as letras, que
+em caso de dúvida se segue a imagem.
+
+**Por que as cláusulas de cor e de "sem braços" estão em todos:** a 2ª imagem vem de
+**outro gerador**, com outra paleta e outro boneco. Ele vai devolver a barba na cor
+que quiser, e pode dar braços, orelhas e pescoço ao boneco. As cláusulas existem para
+o Gemini copiar **só a forma**.
+
+**O bloco de estilo comum mora no [doc 23 §10](../../../docs/avatar/23-linha-de-arte.md)**,
+e cada pedido o cola. Antes de 2026-08-21 o mesmo parágrafo estava repetido em quatro
+lugares deste arquivo, que é como uma regra vira quatro regras que discordam.
 
 ---
 
@@ -77,10 +107,19 @@ Todas medidas na peça que passou. Valem para toda barba nova, sem exceção.
 | linha da boca | **0 px** por cima |
 | miolo acima da boca | **vazio nas cinco; o `bigode` é a exceção medida** — com o contorno pintado pelo gerador sobra 1 px de vão a 56 e a 32 px, e o Doug aprovou a olho; com o `kk-traco` de 12 u ele funde. A segunda morte do bigode (2026-08-18) foi medida com colunas fora da boca (G27) e com o traço que não foi decidido (G29) |
 | pele nua abaixo da boca | **NÃO TEM PISO, e agora está medido por que** — ver o bloco logo abaixo (achado **G28**, fechado em 2026-08-20) |
-| contorno | 12 u, igual ao do boneco |
+| contorno | 12 u de espessura **e `#000000` de cor**, igual ao do boneco. As duas metades são medidas em separado: `arte:espessura` e `arte:borda` |
 | menor detalhe | ≥ 11 u para existir · ≥ 33 u para ler |
-| tinta | 1 componente contínuo · ciano instrumental · sem sombra projetada |
+| tinta | 1 componente contínuo · **na cor que o gerador quiser** · sem sombra projetada |
+| luz | **amplitude**, não faixa: `hi > lo` no esticão p2/p98. Peça chapada reprova na esteira |
 | o boneco | não se mexe: 0 px de deslocamento, escala 100,00% |
+
+⚠️ **O ciano instrumental saiu desta tabela em 2026-08-21, e não morreu — mudou de
+dono.** Ele continua sendo como a esteira reconhece a peça (o Gate −1 e o
+`extrair.ts` colhem por ele, `arte:cor-proibida` protege a janela de ±30°), mas
+**quem o cria é `restaurar-peca.ts`**, levando o matiz da arte para 180° e
+preservando saturação e luminância. Pedi-lo ao gerador é o que a Regra Inviolável
+nº 4 lista como *"pedir arte em cor instrumental para repintar depois"*, e ele
+morreu como pedido em 2026-08-13.
 
 ### Por que a "pele nua abaixo da boca" não vira piso — medido, não abandonado
 
@@ -223,17 +262,24 @@ bigode.*
 > de sino, e a cabeça senta direto em cima dela. Não acrescente nenhuma dessas partes,
 > nem desenhando, nem sugerindo com uma sombra — **mesmo que a segunda imagem tenha**.
 >
-> **IGNORE COMPLETAMENTE AS CORES DA SEGUNDA IMAGEM.** Pinte a barba com esta paleta
-> técnica:
+> **A COR DA BARBA É SUA — pinte na cor que ficar melhor.** Um castanho, um preto,
+> um ruivo, o que a peça pedir. Não existe paleta técnica a seguir, e você não precisa
+> acertar cor nenhuma: a cor que você escolher **será trocada por programa depois**,
+> e quem escolhe a cor final é a criança que usa o avatar.
 >
-> - massa principal: ciano médio, #00C8C8
-> - sombra: ciano escuro, #00696E
-> - luz: ciano claro, #7DF0F0
-> - contorno da barba: preto, #000000, da mesma espessura das outras linhas do boneco
+> **O QUE IMPORTA É A LUZ, e é isto que decide se a peça é aceita:** a barba tem de
+> ter **amplitude de luz** — partes claras e partes escuras, com a luz acompanhando a
+> forma. Não são três tons chapados, e não é um degradê liso de aerógrafo: é claro e
+> escuro nascendo da própria estrutura do pelo.
 >
-> Cores chapadas, sem gradiente, sem textura, sem ruído — cada tom é uma área única e
-> contínua, de borda nítida. Sem fios, sem ranhuras, sem mechas, sem textura de pelo,
-> sem pontas finas. Não use ciano em nenhum outro lugar da imagem.
+> **A ESTRUTURA:** fios, mechas, ranhuras, pontas — unidades que se contam. A borda da
+> barba não é uma curva lisa: ela é serrilhada pelas pontas do pelo. Veja a terceira
+> imagem para o nível de acabamento.
+>
+> **O CONTORNO DA BARBA É PRETO PURO — `#000000`**, da mesma espessura das outras
+> linhas do boneco. Preto puro quer dizer preto puro: **cinza escuro não serve**, e um
+> traço cinza é o defeito mais comum desta rota (medido: lum 70 em vez de 0, e a peça
+> reprova em `npm run arte:borda`).
 >
 > **A BARBA NÃO PROJETA SOMBRA.** Não escureça a roupa, o corpo, o fundo nem a pele
 > por causa dela. Tudo que está fora da barba fica exatamente com a cor que já tinha,
@@ -293,17 +339,24 @@ peito. A boca fica livre, sem bigode.*
 > de sino, e a cabeça senta direto em cima dela. Não acrescente nenhuma dessas partes,
 > nem desenhando, nem sugerindo com uma sombra — **mesmo que a segunda imagem tenha**.
 >
-> **IGNORE COMPLETAMENTE AS CORES DA SEGUNDA IMAGEM.** Pinte a barba com esta paleta
-> técnica:
+> **A COR DA BARBA É SUA — pinte na cor que ficar melhor.** Um castanho, um preto,
+> um ruivo, o que a peça pedir. Não existe paleta técnica a seguir, e você não precisa
+> acertar cor nenhuma: a cor que você escolher **será trocada por programa depois**,
+> e quem escolhe a cor final é a criança que usa o avatar.
 >
-> - massa principal: ciano médio, #00C8C8
-> - sombra: ciano escuro, #00696E
-> - luz: ciano claro, #7DF0F0
-> - contorno da barba: preto, #000000, da mesma espessura das outras linhas do boneco
+> **O QUE IMPORTA É A LUZ, e é isto que decide se a peça é aceita:** a barba tem de
+> ter **amplitude de luz** — partes claras e partes escuras, com a luz acompanhando a
+> forma. Não são três tons chapados, e não é um degradê liso de aerógrafo: é claro e
+> escuro nascendo da própria estrutura do pelo.
 >
-> Cores chapadas, sem gradiente, sem textura, sem ruído — cada tom é uma área única e
-> contínua, de borda nítida. Sem fios, sem ranhuras, sem mechas, sem textura de pelo,
-> sem pontas finas. Não use ciano em nenhum outro lugar da imagem.
+> **A ESTRUTURA:** fios, mechas, ranhuras, pontas — unidades que se contam. A borda da
+> barba não é uma curva lisa: ela é serrilhada pelas pontas do pelo. Veja a terceira
+> imagem para o nível de acabamento.
+>
+> **O CONTORNO DA BARBA É PRETO PURO — `#000000`**, da mesma espessura das outras
+> linhas do boneco. Preto puro quer dizer preto puro: **cinza escuro não serve**, e um
+> traço cinza é o defeito mais comum desta rota (medido: lum 70 em vez de 0, e a peça
+> reprova em `npm run arte:borda`).
 >
 > **A BARBA NÃO PROJETA SOMBRA.** Não escureça a roupa, o corpo, o fundo nem a pele
 > por causa dela. Tudo que está fora da barba fica exatamente com a cor que já tinha,
@@ -364,17 +417,24 @@ estreita que a cabeça. A boca fica livre, sem bigode.*
 > de sino, e a cabeça senta direto em cima dela. Não acrescente nenhuma dessas partes,
 > nem desenhando, nem sugerindo com uma sombra — **mesmo que a segunda imagem tenha**.
 >
-> **IGNORE COMPLETAMENTE AS CORES DA SEGUNDA IMAGEM.** Pinte a barba com esta paleta
-> técnica:
+> **A COR DA BARBA É SUA — pinte na cor que ficar melhor.** Um castanho, um preto,
+> um ruivo, o que a peça pedir. Não existe paleta técnica a seguir, e você não precisa
+> acertar cor nenhuma: a cor que você escolher **será trocada por programa depois**,
+> e quem escolhe a cor final é a criança que usa o avatar.
 >
-> - massa principal: ciano médio, #00C8C8
-> - sombra: ciano escuro, #00696E
-> - luz: ciano claro, #7DF0F0
-> - contorno da barba: preto, #000000, da mesma espessura das outras linhas do boneco
+> **O QUE IMPORTA É A LUZ, e é isto que decide se a peça é aceita:** a barba tem de
+> ter **amplitude de luz** — partes claras e partes escuras, com a luz acompanhando a
+> forma. Não são três tons chapados, e não é um degradê liso de aerógrafo: é claro e
+> escuro nascendo da própria estrutura do pelo.
 >
-> Cores chapadas, sem gradiente, sem textura, sem ruído — cada tom é uma área única e
-> contínua, de borda nítida. Sem fios, sem ranhuras, sem mechas, sem textura de pelo,
-> sem pontas finas. Não use ciano em nenhum outro lugar da imagem.
+> **A ESTRUTURA:** fios, mechas, ranhuras, pontas — unidades que se contam. A borda da
+> barba não é uma curva lisa: ela é serrilhada pelas pontas do pelo. Veja a terceira
+> imagem para o nível de acabamento.
+>
+> **O CONTORNO DA BARBA É PRETO PURO — `#000000`**, da mesma espessura das outras
+> linhas do boneco. Preto puro quer dizer preto puro: **cinza escuro não serve**, e um
+> traço cinza é o defeito mais comum desta rota (medido: lum 70 em vez de 0, e a peça
+> reprova em `npm run arte:borda`).
 >
 > **A BARBA NÃO PROJETA SOMBRA.** Não escureça a roupa, o corpo, o fundo nem a pele
 > por causa dela. Tudo que está fora da barba fica exatamente com a cor que já tinha,
@@ -435,17 +495,24 @@ pontas. A boca fica livre, sem bigode.*
 > de sino, e a cabeça senta direto em cima dela. Não acrescente nenhuma dessas partes,
 > nem desenhando, nem sugerindo com uma sombra — **mesmo que a segunda imagem tenha**.
 >
-> **IGNORE COMPLETAMENTE AS CORES DA SEGUNDA IMAGEM.** Pinte a barba com esta paleta
-> técnica:
+> **A COR DA BARBA É SUA — pinte na cor que ficar melhor.** Um castanho, um preto,
+> um ruivo, o que a peça pedir. Não existe paleta técnica a seguir, e você não precisa
+> acertar cor nenhuma: a cor que você escolher **será trocada por programa depois**,
+> e quem escolhe a cor final é a criança que usa o avatar.
 >
-> - massa principal: ciano médio, #00C8C8
-> - sombra: ciano escuro, #00696E
-> - luz: ciano claro, #7DF0F0
-> - contorno da barba: preto, #000000, da mesma espessura das outras linhas do boneco
+> **O QUE IMPORTA É A LUZ, e é isto que decide se a peça é aceita:** a barba tem de
+> ter **amplitude de luz** — partes claras e partes escuras, com a luz acompanhando a
+> forma. Não são três tons chapados, e não é um degradê liso de aerógrafo: é claro e
+> escuro nascendo da própria estrutura do pelo.
 >
-> Cores chapadas, sem gradiente, sem textura, sem ruído — cada tom é uma área única e
-> contínua, de borda nítida. Sem fios, sem ranhuras, sem mechas, sem textura de pelo,
-> sem pontas finas. Não use ciano em nenhum outro lugar da imagem.
+> **A ESTRUTURA:** fios, mechas, ranhuras, pontas — unidades que se contam. A borda da
+> barba não é uma curva lisa: ela é serrilhada pelas pontas do pelo. Veja a terceira
+> imagem para o nível de acabamento.
+>
+> **O CONTORNO DA BARBA É PRETO PURO — `#000000`**, da mesma espessura das outras
+> linhas do boneco. Preto puro quer dizer preto puro: **cinza escuro não serve**, e um
+> traço cinza é o defeito mais comum desta rota (medido: lum 70 em vez de 0, e a peça
+> reprova em `npm run arte:borda`).
 >
 > **A BARBA NÃO PROJETA SOMBRA.** Não escureça a roupa, o corpo, o fundo nem a pele
 > por causa dela. Tudo que está fora da barba fica exatamente com a cor que já tinha,

@@ -91,10 +91,10 @@ import { ESCALA, FUNDO, LADO, ORIGEM, PNG_BASE, paraUnidade } from "./base";
 import { TRACO } from "../../../src/lib/avatar/estilo/geometria";
 
 /** O mesmo limiar de "isto difere da base" que `barba-para-formas.ts` usa. */
-const NIVEL = 24;
+export const NIVEL = 24;
 
 /** Luminância abaixo da qual o pixel conta como traço do boneco. */
-const LUM_TRACO = 90;
+export const LUM_TRACO = 90;
 
 /**
  * Luminância a partir da qual o traço não ficou mais claro — ele SUMIU.
@@ -113,7 +113,7 @@ const LUM_APAGADO = 180;
  * baixo. Dois pixels é a franja de mistura de uma borda — varrido de 2 a 5 em
  * 2026-08-20, e acima de 2 nada muda em nenhuma das nove medições.
  */
-const RAIO_DA_MASCARA = 2;
+export const RAIO_DA_MASCARA = 2;
 
 /**
  * O PISO, em pixels por componente conexo. `TRACO` (12 u) × `ESCALA` (1,2 px/u) ÷ 2.
@@ -135,12 +135,12 @@ export interface TracoIntacto {
   reprova: boolean;
 }
 
-const cru = async (p: string | Buffer) =>
+export const cru = async (p: string | Buffer) =>
   sharp(p).flatten({ background: FUNDO }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
 
-const lum = (d: Buffer, i: number) => 0.299 * d[i * 3] + 0.587 * d[i * 3 + 1] + 0.114 * d[i * 3 + 2];
+export const lum = (d: Buffer, i: number) => 0.299 * d[i * 3] + 0.587 * d[i * 3 + 1] + 0.114 * d[i * 3 + 2];
 
-function dilatar(m: Uint8Array, W: number, H: number, r: number): Uint8Array {
+export function dilatar(m: Uint8Array, W: number, H: number, r: number): Uint8Array {
   let cur = m;
   for (let passo = 0; passo < r; passo++) {
     const nx = new Uint8Array(W * H);
@@ -162,7 +162,7 @@ function dilatar(m: Uint8Array, W: number, H: number, r: number): Uint8Array {
 }
 
 /** Componentes conexos por 4-vizinhança, do maior para o menor. */
-function componentes(m: Uint8Array, W: number, H: number): number[][] {
+export function componentes(m: Uint8Array, W: number, H: number): number[][] {
   const n = W * H;
   const visto = new Uint8Array(n);
   const fila = new Int32Array(n);

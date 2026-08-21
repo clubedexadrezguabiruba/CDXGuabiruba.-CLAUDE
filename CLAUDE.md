@@ -276,9 +276,17 @@ quando não há `.env.local` — é assim que funcionam em CI.
     Academia (Bíblia v2 §5)
   - `docs/avatar/18-uniformes-blocos.md` — **para abrir, copiar e fechar.** Os 4
     pedidos prontos (Capitão, Comandante, General, Mestre) e a esteira até o gate
-  - `docs/avatar/22-catalogo-de-trajes.md` — **o menu de onde a próxima arte de
-    traje é escolhida**: 40 peças com raridade, organizadas por corredor da
-    Academia. Não é fila de produção
+  - `docs/avatar/23-linha-de-arte.md` — **a LEI de arte de peça, e é fonte única.**
+    Antes de desenhar, pedir ou julgar qualquer peça de qualquer slot. As cinco
+    leis promovidas de *traje* para *peça*, com o que cada uma quer dizer em cada
+    slot; o traço em **espessura E cor** (a régua `arte:borda` nasceu com ele); as
+    regras do tom; a raridade em desenho por slot; e os **três** tamanhos de
+    julgamento — 56 px tronco, **32 px peça de cabeça**, 340 px extremo. Ele
+    substituiu três cópias do mesmo texto (doc 22 §4, doc 21 §0.4, Bíblia v2 §10),
+    que hoje são ponteiros de uma linha
+  - `docs/avatar/22-catalogo-de-pecas.md` — **o menu de onde a próxima arte é
+    escolhida**, nos 4 slots: 56 peças com raridade, organizadas por corredor da
+    Academia. Não é fila de produção, e a lei de arte não está mais nele
   - `docs/avatar/21-slots-do-avatar-plano.md` — o plano vigente do guarda-roupa
     (traje, chapéu, rosto, pet), e onde o título deixou a roupa e virou moldura
   - `docs/avatar/20-troca-de-pilha-plano.md` — a troca de pilha: apagar o avatar

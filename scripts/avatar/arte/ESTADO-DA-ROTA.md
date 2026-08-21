@@ -4597,3 +4597,146 @@ migration `20260821190000_a_barba_fica_sendo_uma_a_trancada.sql`:
 [FAIL] slot rosto: 1 slug(s) no banco que o código não desenha — rosto-barba-cheia
 [FAIL] slot rosto: 1 peça(s) do código sem linha no banco — rosto-barba-trancada
 ```
+
+---
+
+## 2026-08-21 — a lei de arte vira de PEÇA, e o traço ganha a metade que faltava
+
+### O doc 23 — três cópias viram uma
+
+As cinco leis de arte estavam escritas **três vezes**, quase palavra por palavra:
+doc 22 §4, doc 21 §0.4 e Bíblia Tonal v2 §10 (*"a lei da arte de traje"*). Todas
+escritas para o **tronco**, num produto em que três dos quatro slots do avatar não
+tinham lei nenhuma — `CHAPEUS = {}` e `pet: []`.
+
+`docs/avatar/23-linha-de-arte.md` é a fonte única. As três viraram ponteiro no mesmo
+commit, e a seção da Bíblia mudou de nome para *"a lei da arte de peça"*.
+
+O que ele acrescenta e não existia em cópia nenhuma:
+
+- **o que cada uma das cinco leis quer dizer em cada slot** — e a §2.2 registra que a
+  do transbordo **não se promove literalmente**: é lei de tronco, inaplicável ao pet
+  (que nem está dentro do SVG) e de sinal trocado no chapéu (para os lados e para
+  cima, nunca para baixo);
+- **a cor do traço ao lado da espessura** (§3) — ver abaixo;
+- **as regras do tom** (§4): amplitude e não faixa, esticão por percentil, e os 50%
+  da caixa como número **da barba**, com cada slot tendo direito ao seu;
+- **três tamanhos de julgamento** (§6), não um: 56 px tronco, **32 px peça de
+  cabeça**, 340 px extremo. Uma peça de cabeça julgada a 56 px estava sendo julgada
+  com o dobro da resolução que ela terá;
+- **a raridade em desenho por slot** (§5), que é o que o Bloco H precisava e não
+  tinha para 3 dos 4;
+- **a decisão aberta do `escondeCabelo`** (§8), com o custo de cada valor nomeado.
+
+### `npm run arte:borda` — a régua que faltava, e o achado que ela produziu
+
+`TRACO` respondia por **quão grosso**. `LINHA = #000000` respondia por **de que
+cor**, e **ninguém media**: `arte:traco` mede apagamento de propósito,
+`arte:espessura` mede largura.
+
+O caminho até os números está inteiro no docstring de `cor-da-borda.ts`, e ele tem
+duas lições de método:
+
+**1. Herdar o limiar da régua vizinha pôs a janela do lado errado do defeito.** A
+primeira versão herdou `LUM_TRACO = 90` do `arte:traco`, e **o controle não
+reprovou** — porque o defeito real mora em lum **70**, abaixo de 90. Medido
+(`.scratch/estilo/quao-preto-e-o-traco.ts`), nos pixels de núcleo da base fora da
+peça:
+
+| arte | p50 | p75 | p95 | p99 | **px acima de 40** |
+|---|---|---|---|---|---|
+| `barba-trancada` | 0 | 0 | 0 | 8 | **38** |
+| `chanel` | 0 | 1 | 3 | 12 | **1** |
+| `entrada-2` | 0 | 1 | 5 | 12 | **12** |
+| **`entrada`** | 2 | **68** | **71** | 75 | **9 296** |
+
+40 fica 3,3× acima do pior p99 de arte boa e bem abaixo do p75 da `entrada`. A
+separação é de **300×** — é um vão entre duas populações, não um número escolhido
+para caber.
+
+**2. O lado da base é o NÚCLEO (`lum < 20`), não o `LUM_TRACO`.** A franja da base é
+gradiente por construção, e re-renderizar um gradiente em outro ponto dele não é
+defeito. Com o critério frouxo, arte boa sobe de 38 para **999 px** e a separação cai
+para 10× — a régua passaria a medir antialias.
+
+**3. E a máscara da peça dilata 4 px, o dobro da do `arte:traco`.** A janela desta
+régua cai exatamente na zona em que o rasterizador mistura tinta; a do `arte:traco`
+começa em 180, acima de quase toda mistura. A varredura separa franja de repintura
+sem deixar dúvida:
+
+| arte | raio 2 | 3 | **4** | 5 | 8 |
+|---|---|---|---|---|---|
+| `barba-trancada` | 20 | 4 | **0** | 0 | 0 |
+| `entrada` | 3 945 | 3 945 | **3 945** | 3 945 | 3 945 |
+
+Franja **some** quando a máscara cresce; repintura no meio do traço **não se mexe**.
+
+#### O achado: o `espetado` está em produção com o traço em cinza
+
+**9 296 px, maior componente 3 945, lum p50 70**, em u x 349→385 · y 189→271 —
+indiferente ao raio da máscara em toda a varredura.
+
+Congelado por catraca em `DEFEITO_REGISTRADO`, e **isto não é tolerância afrouxada**:
+o piso não se moveu um número; quem entra na lista é uma arte **nomeada**, com a
+medida escrita, e o gate reprova no instante em que ela piorar. Mesmo desenho de
+`CONGELADAS_NO_VETOR`.
+
+⚠️ **Duas saídas defensáveis, e a escolha é do Doug** — está escrita no docstring e
+na §3 do doc 23: repintar por programa (cabe no critério do G20, mas mexe numa peça
+já promovida e regera `pecas-da-arte.ts`) ou redesenhar.
+
+### O doc 22 vira o catálogo dos 4 slots
+
+`22-catalogo-de-trajes.md` → `22-catalogo-de-pecas.md`. As §3 e §4 saíram e viraram
+ponteiro para o doc 23; a §2 passou a ser a pirâmide **GLOBAL**.
+
+⚠️ **A pirâmide 45/30/18/7 é do baú INTEIRO, não de cada slot** —
+`b6_bau_da_peca.sql:151-156` monta o pool filtrando por `origem` e `raridade`, **sem
+filtrar slot**. Os 17/12/7/3 que o doc trazia desde 2026-08-13 eram a fatia do traje
+lida como se fosse o todo.
+
+O elenco fechado pelo Doug, e a conta bate nos dois eixos:
+
+| slot | c | r | e | l | de baú | total |
+|---|---|---|---|---|---|---|
+| traje | 14 | 8 | 6 | 1 | 29 | **30** (era 40) |
+| rosto | 5 | 4 | 2 | 1 | 12 | **12** — 8 barbas + 4 óculos |
+| chapéu | 5 | 3 | 1 | 1 | 10 | **10** |
+| pet | 1 | 1 | 1 | 1 | 4 | **4**, expansível |
+| **soma** | **25** | **16** | **10** | **4** | **55** | **56** |
+
+45,5% · 29,1% · 18,2% · 7,3% contra o alvo 45/30/18/7.
+
+**A aritmética pegou um erro real na primeira escrita:** o elenco de rosto saiu
+2/6/3/1 em vez de 5/4/2/1, e quatro peças desceram de faixa pela escada do doc 23 §5
+— quem tem *uma forma sem sub-estrutura* é `common`, não `rare`.
+
+Dez trajes cortados, cada um com razão nomeada (a mais dura: `traje-mosaico` é *"o
+sistema do `vitral` com outro nome"*, e ter os dois enfraquece o lendário). A
+`nebulosa` e o `automato` **desceram** de `legendary` para `epic` em vez de sair.
+
+### O pedido ao gerador — o bug era ativo
+
+`PEDIDO-BARBAS.md` exigia *"três tons chapados de ciano… sem gradiente, sem textura,
+sem fios, sem mechas, sem textura de pelo"*. A esteira nova extrai o tom da
+luminância e **reprova peça chapada** por construção (`hi <= lo`): o pedido
+**empobrecia o tom na origem**. A trancaça, que é a peça-padrão, veio **castanha**,
+é feita de fios e tem 917 tons — ela desobedece cada linha do pedido antigo.
+
+- **o ciano saiu do pedido** e continua sendo a língua interna da esteira. Quem o
+  produz é `restaurar-peca.ts`, não o gerador;
+- **o alvo virou amplitude de luz**, e o contorno ganhou a **cor** ao lado da
+  espessura, em todos os 4 pedidos do arquivo;
+- **a trancaça virou a 3ª imagem**, e os papéis passam a ser **nomeados** — 1ª a
+  base, 2ª a forma, 3ª o acabamento. Sem papel escrito, a 3ª contradiria a 2ª (que
+  diz *"ignore o estilo dela"*), e gerador em dúvida passa zero;
+- **o bloco de estilo comum mudou para o doc 23 §10**, e cada PEDIDO o cola. Ele
+  estava repetido em quatro lugares do mesmo arquivo.
+
+`PEDIDO-TRAJE.md` **já estava do lado certo** da inversão — o ciano morreu nele em
+2026-08-17 e ele já proibia peça chapada. Ganhou só a cláusula da cor do traço.
+
+### Gates
+
+`typecheck` 0 · `lint` 0 · **605 testes** · `verify:arte` **exit 0**, agora com
+`arte:borda` dentro.

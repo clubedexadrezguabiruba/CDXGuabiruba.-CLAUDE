@@ -150,22 +150,25 @@ Nenhuma peça vira arte antes de ser chamada, e cada uma passa pela folha.
   (navbar, rankings, mural, dashboard, perfil). Cores de **raridade** só na vitrine e
   nos cards do editor. As duas no mesmo elemento ensinam que cor não significa nada.
 
-### 0.4 Permissiva não é sem lei
+### 0.4 Permissiva não é sem lei — **e a lei mudou de casa**
 
-Morreram a cor-da-patente e os 3 tons exatos. Ficam cinco leis, e **as duas últimas
-são novas e mensuráveis**:
+Morreram a cor-da-patente e os 3 tons exatos. Ficaram cinco leis, e elas **saíram
+deste documento em 2026-08-21**: moram em
+[**doc 23 — a linha de arte**](23-linha-de-arte.md) §2, promovidas de *traje* para
+*peça* e com a coluna que aqui nunca existiu — **o que cada uma quer dizer em cada
+slot**.
 
-1. **Gate −1** — a peça não move o boneco.
-2. **Transbordo obrigatório, com alvo (~10%)** — §6.1 deste doc continua valendo
-   inteira, e é a única parte da §6 que a emenda não toca.
-3. **Legibilidade a 56 px na folha.**
-4. **Contraste com o fundo claro `#FBF8F5`** — peça bege some no card marfim.
-5. **O contorno preto do boneco continua legível.**
+O texto que estava aqui era uma de **três** cópias quase idênticas (as outras: doc 22
+§4 e Bíblia Tonal v2 §10). As três viraram ponteiro no mesmo commit.
 
-A aprovação final continua sendo **o olho do Doug na folha**.
+O que **não** mudou, e é desta emenda:
 
-**Estilo misto é aceito em princípio** — farda chapada ao lado de gambesão
-aerografado. Se destoar, decide-se na folha, lado a lado, peça a peça.
+- **a §6.1 deste doc continua valendo inteira** para o traje, e é a única parte da §6
+  que a emenda não toca. O doc 23 §2.2 registra que ela **não se promove
+  literalmente** aos outros slots — é lei de tronco;
+- a aprovação final continua sendo **o olho do Doug na folha**;
+- **estilo misto é aceito em princípio** — farda chapada ao lado de gambesão
+  aerografado. Se destoar, decide-se na folha, lado a lado, peça a peça.
 
 ### 0.5 O que esta emenda invalida, ponto a ponto
 

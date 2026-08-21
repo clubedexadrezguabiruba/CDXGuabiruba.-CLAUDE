@@ -168,7 +168,7 @@ eles pode ter vindo de qualquer parte e de qualquer tempo.
 São **lugares**, não etapas de marcha. Este mapa é um só, e é o mesmo usado pelo
 elenco de bots, pela landing, pelo catálogo de trajes e por qualquer arte futura.
 Ele **absorve** os corredores que o catálogo de trajes
-([`avatar/22-catalogo-de-trajes.md`](avatar/22-catalogo-de-trajes.md)) já usa — a
+([`avatar/22-catalogo-de-pecas.md`](avatar/22-catalogo-de-pecas.md)) já usa — a
 Casa, as Oficinas, o Arquivo, a Estufa, a Cozinha, o Torneio, o Observatório, os
 Visitantes — e acrescenta os que faltavam.
 
@@ -439,16 +439,16 @@ A **faixa proibida de matiz 0°–44°** declarada em
 era lei do pipeline de recoloração do SVG, onde matiz quente colidia com a pele do
 boneco. Em CSS, fora do SVG, não há colisão — a moldura **pode** usar dourado.
 
-### A lei da arte de traje
+### A lei da arte de peça
 
 Permissiva **não é** sem lei. Morreram duas coisas em 2026-08-13 — a cor
-obrigatória por patente e os 3 tons chapados. Ficaram cinco leis, e todas
-continuam valendo:
+obrigatória por título e os 3 tons chapados. Ficaram cinco leis, e todas continuam
+valendo:
 
 1. **Gate −1** — a peça não move o boneco. É a trava de entrada.
 2. **Transbordo obrigatório, com alvo (~10%)** — traje que não transborda parece
    pintado no corpo, não vestido.
-3. **Legibilidade a 56 px na folha** — se a peça vira mancha, não entra.
+3. **Legibilidade no tamanho de julgamento** — se a peça vira mancha, não entra.
 4. **Contraste com o fundo claro `#FBF8F5`** — peça bege some no card marfim do
    editor.
 5. **O contorno preto do boneco continua legível** — a cor livre não pode engolir
@@ -460,6 +460,20 @@ lado, peça a peça** — não por regra escrita antes de olhar.
 
 A aprovação final é **o olho do Doug na folha de contato**. As cinco leis
 reprovam; nenhuma delas aprova.
+
+> **Esta seção chamava-se *"a lei da arte de traje"*, e o nome era a doença.** As
+> cinco leis foram escritas para o tronco e valiam como se valessem para tudo, num
+> produto em que três dos quatro slots do avatar não tinham lei nenhuma. Desde
+> 2026-08-21 elas vivem em **um** lugar, promovidas de *traje* para *peça*, com o
+> que cada uma quer dizer **em cada slot** — mais a cor do traço, as regras do tom
+> e os três tamanhos de julgamento, que não existiam em cópia nenhuma:
+>
+> **[`docs/avatar/23-linha-de-arte.md`](avatar/23-linha-de-arte.md)**
+>
+> O texto acima fica aqui como a **declaração tonal** — é a Bíblia que diz que a
+> permissividade tem limite. O **detalhe operacional é do doc 23**, e onde os dois
+> divergirem em matéria de execução, ele vence; em matéria de identidade e tom,
+> esta bíblia continua vencendo tudo menos o `CLAUDE.md`.
 
 > **Lei técnica acima desta seção:** só **pele e cabelo** recolorem (`CLAUDE.md`,
 > regra 4 — a emenda à D27). Todo o resto do avatar tem **cor final, assada no
