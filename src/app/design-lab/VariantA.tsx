@@ -3,7 +3,7 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import { ALUNO, ATALHOS, HONRA, INSIGNIAS, ORDENS } from "./data";
 
 /**
- * O comp do Quartel-General — direção A (Continuidade).
+ * O comp do Saguão — direção A (Continuidade).
  *
  * Reconstruído com os primitivos de `src/components/ui/`. É a prova de que a
  * API os expressa: se um primitivo não consegue produzir o comp aprovado, é o
@@ -20,10 +20,10 @@ export default function VariantA() {
       {/* Faixa de comando — o componente-assinatura da direção A */}
       <header className="bg-deep-navy px-5 pb-7 pt-6 text-warm-ivory">
         <p className="font-heading text-[11px] uppercase tracking-[0.22em] text-gold">
-          Reino das 64 Casas
+          Academia 64
         </p>
         <h1 className="mt-1.5 font-heading text-[26px] font-bold leading-tight">
-          Quartel-General
+          Saguão
         </h1>
         <p className="mt-1 text-sm text-warm-ivory/65">
           Bom te ver de volta, {ALUNO.nome}.
@@ -71,7 +71,7 @@ export default function VariantA() {
         </nav>
 
         <Card>
-          <CardTitle>Ordens do Dia</CardTitle>
+          <CardTitle>Missões do Dia</CardTitle>
           <ul className="space-y-3">
             {ORDENS.map((o) => {
               const feita = o.feito >= o.total;
@@ -108,7 +108,7 @@ export default function VariantA() {
             <p className="font-heading text-3xl font-bold tabular-nums">
               {ALUNO.streak}
             </p>
-            <p className="mt-0.5 text-xs text-ink/55">dias de campanha</p>
+            <p className="mt-0.5 text-xs text-ink/55">dias de presença</p>
           </Card>
           <Card>
             <CardTitle>Insígnias</CardTitle>

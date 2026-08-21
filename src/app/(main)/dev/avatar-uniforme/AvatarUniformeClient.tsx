@@ -22,9 +22,10 @@ const RAZAO = W / H;
 /** As variantes que o `avatar:garment` assa. */
 const VARIANTES = [128, 256, 512, 1024, 1920] as const;
 
+/** `slug` é nome de arquivo e não muda; `nome` é o título exibido (Bíblia §6). */
 const PECAS = [
-  { slug: "soldado", nome: "Soldado", tier: 1, pano: "#78833B" },
-  { slug: "aspirante", nome: "Aspirante", tier: 2, pano: "#384966" },
+  { slug: "soldado", nome: "Aprendiz", tier: 1, pano: "#78833B" },
+  { slug: "aspirante", nome: "Estudante", tier: 2, pano: "#384966" },
 ] as const;
 
 const TAMANHOS = [
@@ -179,7 +180,7 @@ export default function AvatarUniformeClient() {
                 ))}
               </select>
               <span className="mt-1 block text-xs text-zinc-500">
-                &quot;nenhuma&quot; é o Aprendiz, tier 0
+                &quot;nenhuma&quot; é o Calouro, tier 0
               </span>
             </label>
 
@@ -255,7 +256,7 @@ export default function AvatarUniformeClient() {
                 dpr={dpr}
               />
               <figcaption className="mt-1 text-xs text-zinc-500">
-                Aprendiz
+                Calouro
                 <br />
                 <span className="text-zinc-400">o macacão é da base</span>
               </figcaption>
@@ -352,7 +353,7 @@ export default function AvatarUniformeClient() {
                 peca={null}
                 dpr={dpr}
               />
-              <figcaption className="mt-1 text-xs text-zinc-500">Aprendiz</figcaption>
+              <figcaption className="mt-1 text-xs text-zinc-500">Calouro</figcaption>
             </figure>
             {PECAS.map((p) => (
               <figure key={p.slug} className="m-0 text-center">
@@ -370,7 +371,7 @@ export default function AvatarUniformeClient() {
           </div>
 
           <p className="mt-8 max-w-3xl text-xs text-zinc-500">
-            Faltam quatro peças — Capitão, Comandante, General e Mestre. As cores estão
+            Faltam quatro peças — Analista, Estrategista, Mestre e Grão-Mestre. As cores estão
             travadas por gate em <code>scripts/avatar/patentes.ts</code>, e os pedidos
             prontos para o gerador de imagem estão no doc 18.
           </p>

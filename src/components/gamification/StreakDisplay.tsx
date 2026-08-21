@@ -57,7 +57,7 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
   if (loading) {
     return (
       <Card>
-        <CardTitle className="mb-0">Sequência de Campanha</CardTitle>
+        <CardTitle className="mb-0">Sequência de Presença</CardTitle>
         <div className="mt-2 text-sm text-ink/45">Carregando...</div>
       </Card>
     );
@@ -72,7 +72,7 @@ export default function StreakDisplay({ streak, loading }: StreakDisplayProps) {
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <CardTitle className="mb-0">Sequência de Campanha</CardTitle>
+        <CardTitle className="mb-0">Sequência de Presença</CardTitle>
         <div className="flex items-center gap-1.5">
           <span className="text-2xl" aria-hidden="true">
             {effective > 0 ? "\uD83D\uDD25" : "\u2744\uFE0F"}

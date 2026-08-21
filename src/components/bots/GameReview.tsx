@@ -352,7 +352,7 @@ export default function GameReview({
       {/* Header */}
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <h2 className="text-lg font-bold text-zinc-800">
-          {"Revisão de Batalha"}
+          {"Revisão da Partida"}
         </h2>
         <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${resultBadge}`}>
           {resultLabel}

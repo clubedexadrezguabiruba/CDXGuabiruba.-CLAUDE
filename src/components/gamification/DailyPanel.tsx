@@ -39,7 +39,7 @@ export default function DailyPanel({
       {/* O XP subiu para a FaixaDeComando — o comp da direção A o põe lá, e
           manter o card aqui deixaria duas barras de XP na mesma tela. */}
 
-      {/* Ordens do Dia */}
+      {/* Missões do Dia */}
       <MissionPanel
         missions={missions}
         allCompleted={allCompleted}
@@ -49,7 +49,7 @@ export default function DailyPanel({
         title={title}
       />
 
-      {/* Sequência de Campanha */}
+      {/* Sequência de Presença */}
       <StreakDisplay streak={streak} loading={loading} />
 
       {/* Baús */}

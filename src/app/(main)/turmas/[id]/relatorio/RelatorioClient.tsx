@@ -169,7 +169,7 @@ export default function RelatorioClient({ classId, className }: RelatorioClientP
         <Link href={`/turmas/${classId}`} className="text-xs text-zinc-400 hover:text-zinc-600">
           &larr; {className}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-zinc-900">Relatorio da Companhia</h1>
+        <h1 className="mt-1 text-2xl font-bold text-zinc-900">Relatorio da Turma</h1>
       </div>
 
       {/* Visão geral */}
@@ -195,7 +195,7 @@ export default function RelatorioClient({ classId, className }: RelatorioClientP
       {/* Lista de membros */}
       {members.length === 0 ? (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-zinc-500">Nenhum membro na companhia.</p>
+          <p className="text-sm text-zinc-500">Nenhum membro na turma.</p>
         </div>
       ) : (
         <div className="space-y-2">

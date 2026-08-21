@@ -36,9 +36,9 @@ export default function RankingClient({ initialData, userId }: Props) {
   return (
     <div className="min-h-full bg-warm-ivory pb-10 text-ink">
       <FaixaDeComando
-        supertitulo="Reino das 64 Casas"
+        supertitulo="Academia 64"
         titulo="Quadro de Honra"
-        saudacao="Mérito da companhia, atualizado a cada campanha."
+        saudacao="Mérito da Academia, atualizado a cada partida."
       />
 
       <div className="mx-auto max-w-2xl px-4 pt-5">

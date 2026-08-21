@@ -1,4 +1,4 @@
-# Currículo Recruta 64 — v1
+# Currículo Academia 64 — v1
 
 > **Status:** aprovado em 2026-07-30 · **revisão 4** (2026-07-31): duas decisões de
 > execução — prática contra o motor e posições vindas dos livros — mais as correções
@@ -42,17 +42,24 @@
 
 **126 aulas · 7 trilhas · as seis áreas em todas elas.**
 
-| # | Trilha | Vira | Referência | Aulas | Acum. | Faixa de referência |
-|---|---|---|---|---|---|---|
-| 1 | Recruta | Soldado | Passo 1 | 26 | 26 | iniciante absoluto |
-| 2 | Soldado | Aspirante | Passo 2 | 21 | 47 | ~600–900 |
-| 3 | Aspirante | Capitão | Passo 3 | 19 | 66 | ~900–1200 |
-| 4 | Capitão | Comandante | Passo 4 | 18 | 84 | ~1200–1500 |
-| 5 | Comandante | General | Passo 5 | 17 | 101 | ~1500–1800 |
-| 6 | General | Grão-Mestre | Passo 6 | 14 | 115 | ~1800–2100 |
-| 7 | Mestre | Lenda | autonomia | 11 | 126 | 2100+ |
+| # | slug (banco) | Trilha (exibida) | Vira | Referência | Aulas | Acum. | Faixa de referência |
+|---|---|---|---|---|---|---|---|
+| 1 | `recruta` | Calouro | Aprendiz | Passo 1 | 26 | 26 | iniciante absoluto |
+| 2 | `soldado` | Aprendiz | Estudante | Passo 2 | 21 | 47 | ~600–900 |
+| 3 | `aspirante` | Estudante | Analista | Passo 3 | 19 | 66 | ~900–1200 |
+| 4 | `capitao` | Analista | Estrategista | Passo 4 | 18 | 84 | ~1200–1500 |
+| 5 | `comandante` | Estrategista | Mestre | Passo 5 | 17 | 101 | ~1500–1800 |
+| 6 | `general` | Mestre | Grão-Mestre | Passo 6 | 14 | 115 | ~1800–2100 |
+| 7 | `mestre` | Grão-Mestre | Lenda | autonomia | 11 | 126 | 2100+ |
 
-> **Régua de patentes:** `title_tiers.lessons_required` passa de `tier * 15` para o
+> **Os nomes exibidos mudaram em 2026-08-20; os slugs não.** A trilha passou a se
+> chamar pelo **título que o aluno carrega enquanto a cursa** (Bíblia v2 §6). Os
+> slugs continuam presos no `CHECK` de `lessons.trail` e `title_tiers.trail` — são
+> chave, não texto. **Os títulos das seções da §6 abaixo ainda usam o nome antigo
+> ("Trilha 1 — Recruta"), porque são o nome do slug** e há referência cruzada a
+> eles; leia-os pela coluna "Trilha (exibida)" desta tabela.
+
+> **Régua de títulos:** `title_tiers.lessons_required` passa de `tier * 15` para o
 > acumulado real — **0 · 26 · 47 · 66 · 84 · 101 · 115 · 126**. É `UPDATE` em dados,
 > nunca edição de função.
 >
@@ -72,10 +79,12 @@
 > (e) do `verify:avatar-db` mede o acumulado real em `lessons`. No dia em que a
 > T1 virar 26 aulas sem o `UPDATE`, o gate reprova nomeando o tier.
 
-> **Sobre os dois rótulos que não coincidem:** completar a T6 veste a patente
-> **Grão-Mestre** (`title_tiers`, tier 6), mas a trilha 7 se chama **Mestre** — o slug
-> `mestre` no `CHECK` de `lessons.trail`. Os dois nomes são dados reais do produto,
-> vindos de decisões diferentes. Fica registrado para ninguém "corrigir" um pelo outro.
+> **O desencontro de rótulos da revisão 4 morreu na revisão 5.** Antes, completar
+> a T6 vestia **Grão-Mestre** enquanto a trilha 7 se chamava **Mestre** — dois
+> nomes reais, vindos de decisões diferentes, que pareciam erro. Com a trilha
+> nomeada pelo título que o aluno carrega, a trilha 7 se **exibe** como
+> Grão-Mestre e concede **Lenda**. O slug `mestre` continua no `CHECK`, e continua
+> sendo só chave.
 
 ### A ementa real do método holandês, e o que fazemos com ela
 
@@ -103,7 +112,7 @@ Lida do site oficial, por Passo. Cada Passo tem manual + caderno básico + cader
 
 **O rótulo "Passo N" já é do produto**: está em `title_tiers.level_name` desde 2026-07-29, e a migration `20260729140000_patente_marcos_15_aulas.sql` registra o motivo. Ele fica. O que **não** afirmamos é equivalência de rating: as fontes públicas divergem entre si em até 500 pontos sobre as faixas de cada Passo.
 
-**As faixas são referência pedagógica, não garantia**, e são medidas na régua do próprio site — o rating de puzzles do Recruta 64 e a escada de Elo dos bots (Léo 250 → Helena 1600). **Não são FIDE** e não se convertem para outras plataformas.
+**As faixas são referência pedagógica, não garantia**, e são medidas na régua do próprio site — o rating de puzzles da Academia 64 e a escada de Elo dos bots (Léo 250 → Helena 1600). **Não são FIDE** e não se convertem para outras plataformas.
 
 ### As outras duas fontes
 
@@ -765,3 +774,28 @@ todos foram corrigidos por edição local.
 - **A grade de 7 trilhas, os cinco princípios, o blueprint por trilha, o faseamento e o professor-guia.** A auditoria confirmou essas estruturas como os pontos fortes do documento.
 - **A T7 sem aula de defesa.** Decisão deliberada e justificada (autonomia), mantida.
 - **A §15 fica como registro histórico da revisão 3** — inclusive onde a revisão 4 a corrige.
+
+---
+
+## 17. O que mudou na revisão 5
+
+**2026-08-20 — a virada para a Academia 64.** Esta revisão **não toca em conteúdo
+pedagógico**: nenhuma aula muda de tema, de ordem, de volume ou de faixa. Muda
+rótulo, e só.
+
+| # | o que mudou | por quê |
+|---|---|---|
+| 1 | A §3 ganhou a coluna **slug (banco)** e a coluna **Trilha (exibida)** | os dois eram a mesma coluna e não são a mesma coisa: slug é chave presa em `CHECK`, nome exibido é texto de aluno |
+| 2 | As 7 trilhas passam a se exibir como **Calouro · Aprendiz · Estudante · Analista · Estrategista · Mestre · Grão-Mestre** | a trilha passa a se chamar pelo **título que o aluno carrega enquanto a cursa** (Bíblia v2 §6) |
+| 3 | "patente" → **título** no texto | a palavra do xadrez, e já é o nome das tabelas (`user_titles`, `title_tiers`) |
+| 4 | A nota **Grão-Mestre × Mestre** (item 27 da rev. 4) foi **substituída**: o desencontro deixou de existir | com a trilha nomeada pelo título, a T7 se exibe como Grão-Mestre e concede Lenda. Não havia erro a documentar — havia um esquema de nomes que produzia a aparência de erro |
+
+### O que **não** mudou
+
+- **As 126 aulas, as 7 trilhas, os volumes, as faixas, os mini-jogos, os duelos,
+  a revisão espaçada e o professor-guia.** Isto é doc aprovado de conteúdo, e a
+  virada temática não tem opinião sobre conteúdo.
+- **Os slugs** `recruta`…`mestre`, e portanto todo `CHECK`, toda migration e todo
+  dado já gravado.
+- **Os títulos das seções da §6** ("Trilha 1 — Recruta" etc.), que são o nome do
+  slug e têm referência cruzada.

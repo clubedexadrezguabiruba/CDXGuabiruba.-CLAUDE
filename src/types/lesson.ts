@@ -106,17 +106,23 @@ export interface TrailConfig {
   iconColor: string;
 }
 
+/**
+ * `key` é CHAVE — bate com `lessons.trail` e `title_tiers.trail` no banco, presa
+ * em `CHECK`, e **não muda**. `name` é o que o aluno lê, e ele mudou em
+ * 2026-08-20: a trilha passou a se chamar pelo TÍTULO que o aluno carrega
+ * enquanto a cursa (Bíblia v2 §6). Daí `key: "recruta"` exibir "Calouro".
+ */
 export const TRAILS: TrailConfig[] = [
   {
     key: "recruta",
-    name: "Recruta",
+    name: "Calouro",
     description: "Fundamentos (0-600)",
     color: "#22c55e",
     iconColor: "#16a34a",
   },
   {
     key: "soldado",
-    name: "Soldado",
+    name: "Aprendiz",
     description: "Intermediário (600-900)",
     color: "#3b82f6",
     iconColor: "#2563eb",

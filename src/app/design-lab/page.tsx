@@ -14,7 +14,7 @@ import DesignLabClient from "./DesignLabClient";
  */
 
 export const metadata: Metadata = {
-  title: "Vitrine de design — Recruta 64",
+  title: "Vitrine de design — Academia 64",
   robots: { index: false, follow: false },
 };
 

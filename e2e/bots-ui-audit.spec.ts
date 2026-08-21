@@ -159,10 +159,10 @@ test.describe("Audit A: Labels tonais na /bots page", () => {
   test("A1: /bots page — labels visíveis estão em português", async ({ page }) => {
     await login(page, EMAIL, PASSWORD);
     await page.goto("/bots");
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Sala de Duelos")).toBeVisible({ timeout: 10_000 });
 
     // Verificar título e subtítulo em português
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible();
+    await expect(page.getByText("Sala de Duelos")).toBeVisible();
     await expect(page.getByText("Escolha seu rival")).toBeVisible();
     await expect(page.getByText(/derrotados/)).toBeVisible();
 
@@ -201,7 +201,7 @@ test.describe("Audit B: Layout da página /bots", () => {
     await page.setViewportSize(MOBILE);
     await login(page, EMAIL, PASSWORD);
     await page.goto("/bots");
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Sala de Duelos")).toBeVisible({ timeout: 10_000 });
     // Capturar screenshot ANTES do assert para ter evidência visual do overflow
     await takeAuditScreenshot(page, "B1-bots-grid-mobile");
     // Medir overflow — se falhar, é achado real de responsividade
@@ -218,7 +218,7 @@ test.describe("Audit B: Layout da página /bots", () => {
     await page.setViewportSize(DESKTOP);
     await login(page, EMAIL, PASSWORD);
     await page.goto("/bots");
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Sala de Duelos")).toBeVisible({ timeout: 10_000 });
     await checkNoHorizontalOverflow(page);
     await takeAuditScreenshot(page, "B1-bots-grid-desktop");
   });
@@ -226,7 +226,7 @@ test.describe("Audit B: Layout da página /bots", () => {
   test("B2: headers de stage visíveis e ordenados", async ({ page }) => {
     await login(page, EMAIL, PASSWORD);
     await page.goto("/bots");
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Sala de Duelos")).toBeVisible({ timeout: 10_000 });
 
     // Verificar que pelo menos os stages com bots estão visíveis
     await expect(page.getByText("Acampamento dos Recrutas")).toBeVisible();
@@ -243,7 +243,7 @@ test.describe("Audit B: Layout da página /bots", () => {
   test("B3: bot bloqueado tem estado disabled + opacidade", async ({ page }) => {
     await login(page, EMAIL, PASSWORD);
     await page.goto("/bots");
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Sala de Duelos")).toBeVisible({ timeout: 10_000 });
 
     // Bot 3 (Tomé) deve estar bloqueado — user só venceu bot 1
     // Use first() because P7 fix makes "Tomé" appear in Sargento Pardo's card too ("Derrote Tomé primeiro")
@@ -259,7 +259,7 @@ test.describe("Audit B: Layout da página /bots", () => {
   test("B4: bot derrotado tem badge dourada", async ({ page }) => {
     await login(page, EMAIL, PASSWORD);
     await page.goto("/bots");
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Sala de Duelos")).toBeVisible({ timeout: 10_000 });
 
     // Bot 1 (Léo) foi derrotado — deve ter badge dourada
     const bot1Card = page.locator("button").filter({ hasText: "Léo" });
@@ -275,7 +275,7 @@ test.describe("Audit B: Layout da página /bots", () => {
   test("B5: progress bar renderiza com porcentagem correta", async ({ page }) => {
     await login(page, EMAIL, PASSWORD);
     await page.goto("/bots");
-    await expect(page.getByText("Duelos da Campanha")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Sala de Duelos")).toBeVisible({ timeout: 10_000 });
 
     // Com 1 vitória em ~10 bots, deveria mostrar "1 de X derrotados"
     await expect(page.getByText(/1 de \d+ derrotados/)).toBeVisible();
@@ -570,7 +570,7 @@ test.describe("Audit E: GameOverModal", () => {
 
     await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
 
-    // P3 corrigido: modal agora diz "Ver Análise" (diferente de "Revisão de Batalha" no PostGame)
+    // P3 corrigido: modal agora diz "Ver Análise" (diferente de "Revisão da Partida" no PostGame)
     const reviewButton = page.getByRole("button", { name: /Ver Análise/i });
     const analyzingButton = page.getByRole("button", { name: /Analisando/i });
     const reviewVisible = await reviewButton.isVisible().catch(() => false);
@@ -623,7 +623,7 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     await expect(page.getByText("Derrota")).toBeVisible({ timeout: 5_000 });
 
     // Esperar análise completar. O botão do MODAL é "Ver Análise"
-    // (GameOverModal.tsx:156) — "Revisão de Batalha" só existe no BotPostGame,
+    // (GameOverModal.tsx:156) — "Revisão da Partida" só existe no BotPostGame,
     // depois deste clique. Esperar aqui pelo nome errado fazia o teste sempre
     // cair no catch e se auto-skipar como "análise não completou", escondendo
     // que a análise leva ~0,9 s.
@@ -665,7 +665,7 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     // "Ver Análise" (GameOverModal.tsx:156) e o post-game diz "Revisão de
     // Batalha" (BotPostGame.tsx:282). Não há duplicidade. Guarda: aqui, já no
     // post-game, o botão do modal não deve mais existir.
-    await expect(page.getByRole("button", { name: /Revisão de Batalha/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Revisão da Partida/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Ver Análise$/i })).toHaveCount(0);
 
     // Sem overflow no mobile
@@ -699,9 +699,9 @@ test.describe("Audit F: BotPostGame e labels (Camada 2)", () => {
     await reviewButton.click();
     await page.waitForTimeout(1000);
 
-    // PostGame → Review. O botão "Revisão de Batalha" existe (BotPostGame.tsx:282);
+    // PostGame → Review. O botão "Revisão da Partida" existe (BotPostGame.tsx:282);
     // se sumir, é regressão — antes isto se auto-pulava e escondia o problema.
-    const secondReview = page.getByRole("button", { name: /Revisão de Batalha/i });
+    const secondReview = page.getByRole("button", { name: /Revisão da Partida/i });
     await expect(secondReview).toBeVisible({ timeout: 5_000 });
 
     await secondReview.click();

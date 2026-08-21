@@ -33,17 +33,32 @@
  *    vira buraco.
  *
  * E a restrição visual: **a 56 px o uniforme é só massa de cor**. Gola, cinto e
- * galão somem nesse tamanho, então a separação entre patentes tem de estar na
+ * galão somem nesse tamanho, então a separação entre títulos tem de estar na
  * cor. Daí os dois pisos de distância abaixo.
  *
- * O TIER 0 NÃO ESTÁ AQUI, E É DE PROPÓSITO
+ * OS TIERS 0 E 7 NÃO ESTÃO AQUI, E É DE PROPÓSITO
  *
- * O APRENDIZ veste o macacão de treino da própria base (`TRAJE_BASE` na paleta) —
- * ele está no Acampamento, ainda em traje de treino. São 6 uniformes, não 7.
+ * O CALOURO (tier 0) veste o macacão de treino da própria base (`TRAJE_BASE` na
+ * paleta) e a LENDA (tier 7) não tem cor própria: os dois usam o tone `neutro`.
+ * São 6 cores na escada, não 8.
  *
- * E não existe patente "Recruta": o tier 0 chama-se Aprendiz (doc 12, D9; doc 14,
- * §escada). "Recruta" é o nome da TRILHA de aulas, e confundir os dois foi o que
- * batizou de `recruta.svg` a peça que o tier 1 concede — que é o Soldado.
+ * OS NOMES MUDARAM EM 2026-08-20, E OS SLUGS NÃO
+ *
+ * A Bíblia v2 (`docs/Academia64_Biblia_Tonal_v2.md` §6) trocou "patente" por
+ * **título** e renomeou os oito degraus. O campo `patente` desta tabela guarda o
+ * nome EXIBIDO, já em v2; o campo `slug` guarda a CHAVE, que não muda — é nome de
+ * arquivo (`soldado.svg`) e valor de `UNIFORME_NOME`. Tradução para quem ler doc
+ * antigo:
+ *
+ *   Soldado→Aprendiz · Aspirante→Estudante · Capitão→Analista ·
+ *   Comandante→Estrategista · General→Mestre · Mestre→Grão-Mestre
+ *
+ * O nome do arquivo, o do script npm (`verify:paleta-patentes`) e o dos tokens
+ * CSS (`patente-*`) continuam dizendo "patente" de propósito: são chave interna,
+ * e renomeá-los é churn sem valor.
+ *
+ * Isto fecha o achado D11: o tier 6 chamava-se "Mestre" aqui e "Grão-Mestre" no
+ * banco. Agora os dois dizem Grão-Mestre.
  */
 
 import { distancia } from "../../src/lib/avatar/palette";
@@ -62,18 +77,19 @@ export type EstadoCor = "alvo" | "medido";
 
 export interface Patente {
   tier: number;
+  /** O nome EXIBIDO do título, já na escada v2 (Bíblia §6). */
   patente: string;
   /**
-   * O nome do arquivo e o valor de `UNIFORME_NOME`.
+   * O nome do arquivo e o valor de `UNIFORME_NOME`. **É chave, e não mudou com a
+   * renomeação de 2026-08-20** — `soldado.svg` continua sendo o arquivo do tier 1,
+   * que agora se exibe como "Aprendiz".
    *
    * Existe como dado em vez de sair de `patente.toLowerCase()` porque "Capitão"
    * transliterado à mão é uma linha de regex que ninguém revisa e que erra em
    * silêncio. Aqui ele é escrito uma vez e conferido pelo gate.
    */
   slug: string;
-  /** Região da Bíblia Tonal (§6) que a patente habita. É de onde vem a cor. */
-  regiao: string;
-  /** Cor dominante do pano. É o sinal da patente. */
+  /** Cor dominante do pano. É o sinal do título. */
   pano: string;
   /** Cor da bota — a camada de oclusão do pé sai dela. */
   bota: string;
@@ -95,14 +111,13 @@ export function caminhoSvg(p: Patente): string {
 
 /**
  * A escada, do primeiro uniforme ao último. A ORDEM É A DA PROMOÇÃO: o gate usa
- * a adjacência do array para exigir mais distância entre patentes vizinhas.
+ * a adjacência do array para exigir mais distância entre títulos vizinhos.
  */
 export const PATENTES: readonly Patente[] = [
   {
     tier: 1,
-    patente: "Soldado",
+    patente: "Aprendiz",
     slug: "soldado",
-    regiao: "Vila dos Soldados",
     pano: "#78833B",
     bota: "#2d3012",
     detalhe: null,
@@ -110,9 +125,8 @@ export const PATENTES: readonly Patente[] = [
   },
   {
     tier: 2,
-    patente: "Aspirante",
+    patente: "Estudante",
     slug: "aspirante",
-    regiao: "Fortaleza dos Estrategistas",
     pano: "#384966",
     bota: "#1e2b44",
     // A listra clara da calça — a mesma forma que, sozinha, virou o fundo de
@@ -122,11 +136,11 @@ export const PATENTES: readonly Patente[] = [
   },
   {
     tier: 3,
-    patente: "Capitão",
+    patente: "Analista",
     slug: "capitao",
-    regiao: "Fortaleza dos Estrategistas → transição para a Cidade",
-    // Verde-petróleo: guarda o verde do campo do Soldado e já entra na família
-    // fria da Fortaleza. É a única cor que faz essa ponte.
+    // Verde-petróleo: guarda o verde do tier 1 e já entra na família fria dos
+    // tiers de cima. É a única cor que faz essa ponte — e é o que a mantém aqui
+    // depois que as 5 regiões da Bíblia v1, que a justificavam, morreram.
     pano: "#3E8C81",
     bota: "#1C4A45",
     detalhe: "#B4D2C9",
@@ -134,11 +148,10 @@ export const PATENTES: readonly Patente[] = [
   },
   {
     tier: 4,
-    patente: "Comandante",
+    patente: "Estrategista",
     slug: "comandante",
-    regiao: "Cidade dos Generais",
-    // "Estandartes elaborados, guardas de elite": o azul mais saturado da escada,
-    // o primeiro que não é discreto.
+    // O azul mais saturado da escada, e o primeiro que não é discreto: é onde a
+    // progressão deixa de sussurrar.
     pano: "#3A55B5",
     bota: "#1D2A63",
     detalhe: "#C6D2E2",
@@ -146,10 +159,10 @@ export const PATENTES: readonly Patente[] = [
   },
   {
     tier: 5,
-    patente: "General",
+    patente: "Mestre",
     slug: "general",
-    regiao: "Cidade dos Generais → Cidadela",
-    // Púrpura é a cor de comando sem cair em vermelho, que o pipeline não aguenta.
+    // Púrpura é a cor de prestígio sem cair em vermelho, que o pipeline não
+    // aguenta.
     pano: "#7A3168",
     bota: "#421539",
     detalhe: "#D9BCD1",
@@ -157,11 +170,10 @@ export const PATENTES: readonly Patente[] = [
   },
   {
     tier: 6,
-    patente: "Mestre",
+    patente: "Grão-Mestre",
     slug: "mestre",
-    regiao: "Cidadela dos Mestres",
     // "Pedra e ouro", "luz controlada". A ÚNICA peça clara da escada, e a menos
-    // ornamentada: a Bíblia pede "nobre, minimalista, econômico" no fim, então a
+    // ornamentada: a Bíblia pede "econômico e marcante" no fim (§8), então a
     // chegada é marcada por tirar ornamento e inverter o valor.
     pano: "#AEBCCE",
     bota: "#4B5A70",

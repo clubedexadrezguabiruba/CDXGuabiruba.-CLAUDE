@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
  * Havia 12 delas, com 5 alturas diferentes e **metade sem `overflow-hidden`** —
  * o preenchimento vazava o canto arredondado do trilho. Aqui é sempre com.
  *
- * O `tone` não é enfeite: sem ele, o Quartel-General teria XP + 3 ordens do dia
+ * O `tone` não é enfeite: sem ele, o Saguão teria XP + 3 missões do dia
  * + sequência + tarefas = **seis barras douradas na mesma tela**, e o One Gold
  * do DESIGN.md morreria na primeira tela migrada. Ouro é mérito; navy é
  * progresso comum.

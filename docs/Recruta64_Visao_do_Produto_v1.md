@@ -1,13 +1,20 @@
-# 🏰 Recruta 64 — Visão Geral do Produto v1.0
+# 🏛️ Academia 64 — Visão Geral do Produto v1.0
 
-> **Recruta 64 — Plataforma Educacional de Xadrez**
+> **Academia 64 — Plataforma Educacional de Xadrez**
 > Documento de Visão do Produto | Fevereiro 2026
+>
+> ⚠️ **Emenda de 2026-08-20.** O produto se chamava *Recruta 64* e o universo, *O
+> Reino das 64 Casas*; os dois passaram a ser **Academia 64**. A lei tonal é
+> [`Academia64_Biblia_Tonal_v2.md`](Academia64_Biblia_Tonal_v2.md), e onde este
+> doc divergir dela, **ela vence**. Este arquivo mantém o nome antigo porque há
+> link para ele em toda parte. A **§5 (aulas) continua superada** pelo currículo
+> (`curriculo/01-curriculo-definitivo-v1.md`).
 
 ---
 
 ## 1. Visão do Produto
 
-Uma plataforma web educacional de xadrez, responsiva (mobile-first), que funciona como extensão digital das aulas presenciais do Clube de Xadrez Guabiruba (Recruta 64). O aluno pratica, evolui e se diverte com gamificação completa — aulas interativas, puzzles, bots com personalidade e um sistema de progressão com avatar vestível.
+Uma plataforma web educacional de xadrez, responsiva (mobile-first), que funciona como extensão digital das aulas presenciais do Clube de Xadrez Guabiruba (Academia 64). O aluno pratica, evolui e se diverte com gamificação completa — aulas interativas, puzzles, bots com personalidade e um sistema de progressão com avatar vestível.
 
 ### 1.1 Objetivos Estratégicos
 
@@ -399,22 +406,24 @@ Conquistas permanentes que dão XP e/ou itens exclusivos. Cada uma é completada
 | Alcance streak de 7 dias | 200 XP + item raro (via sistema de streak, seção 8.2) |
 | Alcance streak de 30 dias | 500 XP + item épico + pet exclusivo (via sistema de streak, seção 8.2) |
 
-### 8.5 Títulos e Patentes Visíveis
+### 8.5 Títulos Visíveis
 
-Além do nível numérico, o aluno recebe um **título/patente** baseado na trilha de aulas que completou. O título aparece no perfil público, no ranking e ao lado do nome em murais.
+Além do nível numérico, o aluno recebe um **título** baseado na trilha de aulas que completou. O título aparece no perfil público, no ranking e ao lado do nome em murais.
 
-| Trilha Concluída | Título/Patente |
+**Renomeado em 2026-08-20** (Bíblia v2 §6): a palavra *patente* saiu, os oito degraus mudaram de nome e os **slugs de trilha no banco não mudaram**. Os marcos por aula desta tabela são os antigos (`tier * 15`); o acumulado real está no currículo §3.
+
+| Trilha concluída (slug) | Título |
 |---|---|
-| Nenhuma (início) | Aprendiz |
-| Recruta (aulas 1–15) | Soldado |
-| Soldado (aulas 16–30) | Aspirante |
-| Aspirante (aulas 31–45) | Capitão |
-| Capitão (aulas 46–60) | Comandante |
-| Comandante (aulas 61–75) | General |
-| General (aulas 76–90) | Grão-Mestre |
-| Mestre (aulas 91–100) | Lenda |
+| Nenhuma (início) | Calouro |
+| `recruta` | Aprendiz |
+| `soldado` | Estudante |
+| `aspirante` | Analista |
+| `capitao` | Estrategista |
+| `comandante` | Mestre |
+| `general` | Grão-Mestre |
+| `mestre` | Lenda |
 
-> O título dá mais significado ao progresso do que só um número. "General João" é mais impactante que "Nível 47".
+> O título dá mais significado ao progresso do que só um número. "Analista João" é mais impactante que "Nível 47".
 
 ### 8.6 Baú de Boas-Vindas
 

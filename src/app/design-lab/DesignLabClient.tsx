@@ -9,7 +9,7 @@ type Vista = "comp" | "primitivos";
 const ABAS: { id: Vista; nome: string; resumo: string }[] = [
   {
     id: "comp",
-    nome: "Quartel-General (comp)",
+    nome: "Saguão (comp)",
     resumo: "A direção A aprovada, montada com os primitivos.",
   },
   {

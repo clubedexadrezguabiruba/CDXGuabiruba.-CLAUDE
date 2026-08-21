@@ -35,9 +35,16 @@ export default function Badge({
   children: React.ReactNode;
   tone?: BadgeTone;
   /**
-   * Nome da patente. Quando bate com a escada, a pílula ganha o ponto de cor
-   * daquele degrau. Quando não bate — títulos como "Aprendiz", que não são
-   * patente — cai no tone normal, sem inventar cor.
+   * Nome EXIBIDO do título. Quando bate com a escada, a pílula ganha o ponto de
+   * cor daquele degrau. Quando não bate — "Calouro" e "Lenda", que não têm cor —
+   * cai no tone normal, sem inventar cor.
+   *
+   * ⚠️ **A busca é por STRING, e é acoplamento com o banco.** Quem chama de tela
+   * real passa `user_titles.current_title`. A escada foi renomeada em duas
+   * janelas — `patentes.ts` em 2026-08-20, `title_tiers.title` na migration
+   * `20260821120000_academia_titulos.sql` — e entre elas a pílula saiu **sem o
+   * ponto de cor, em silêncio**. Não é hipótese: aconteceu. Quem renomear um
+   * degrau de novo tem de mover os dois lados na mesma janela.
    */
   patente?: string;
   className?: string;

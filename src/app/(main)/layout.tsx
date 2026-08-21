@@ -29,8 +29,8 @@ export default async function MainLayout({
     avatar_rosto: string | null;
     avatar_chosen: boolean;
   } | null = null;
-  let title: string = "Aprendiz";
-  // O NÚMERO da patente, para a moldura. 0 é Aprendiz, e é degrau real: quem não
+  let title: string = "Calouro";
+  // O NÚMERO do título, para a moldura. 0 é Calouro, e é degrau real: quem não
   // tem linha em `user_titles` continua vendo um anel — o neutro, desenhado pela
   // <MolduraPatente>. Sai da MESMA consulta que já buscava o nome; nenhuma ida a
   // mais ao banco.

@@ -56,9 +56,9 @@ import { expect, type Page } from "@playwright/test";
  * página que era o gate de avatar. No trace não havia nenhuma chamada a
  * `update_avatar_base`, o que provou que o helper nunca tocou o gate.
  *
- * A espera correta é por CONTEÚDO RENDERIZADO: o h1 do gate ("Criação do
- * Recruta", que a `FaixaDeComando` emite a partir do `titulo` que
- * `CriarPersonagemClient.tsx:42` passa) ou o h1 do dashboard ("Quartel-General",
+ * A espera correta é por CONTEÚDO RENDERIZADO: o h1 do gate ("Matrícula",
+ * que a `FaixaDeComando` emite a partir do `titulo` que
+ * `CriarPersonagemClient.tsx:42` passa) ou o h1 do dashboard ("Saguão",
  * dashboard/page.tsx:61). Só um dos dois existe por vez, e ambos vêm no HTML do
  * servidor — não dependem dos RPCs do dashboard.
  *
@@ -72,8 +72,8 @@ import { expect, type Page } from "@playwright/test";
  * run completo e estourou o orçamento de 30 s de 43 testes.
  */
 export async function settleAfterLogin(page: Page): Promise<void> {
-  const gateHeading = page.locator("h1", { hasText: "Criação do Recruta" });
-  const dashboardHeading = page.locator("h1", { hasText: "Quartel-General" });
+  const gateHeading = page.locator("h1", { hasText: "Matrícula" });
+  const dashboardHeading = page.locator("h1", { hasText: "Saguão" });
 
   await expect(gateHeading.or(dashboardHeading)).toBeVisible({ timeout: 20_000 });
 
@@ -108,7 +108,7 @@ export async function settleAfterLogin(page: Page): Promise<void> {
   // overlay de dev do Next**, que existe em toda página e que o Playwright enxerga
   // porque atravessa shadow DOM. Medido no snapshot de uma falha real: ele é o
   // terceiro nó da árvore, antes de o app começar. Com ele no `.or()`, a espera
-  // resolvia na hora e o helper morria com "A criação do recruta falhou:" e
+  // resolvia na hora e o helper morria com "A matrícula falhou:" e
   // mensagem VAZIA — o teste acusando o próprio detector.
   //
   // Exigir texto é o que separa os dois sem depender da cópia do produto nem da
@@ -117,7 +117,7 @@ export async function settleAfterLogin(page: Page): Promise<void> {
   const erroDoServidor = page.getByRole("alert").filter({ hasText: /\S/ });
   await expect(dashboardHeading.or(erroDoServidor)).toBeVisible({ timeout: 20_000 });
   if (await erroDoServidor.isVisible()) {
-    throw new Error(`A criação do recruta falhou: ${await erroDoServidor.innerText()}`);
+    throw new Error(`A matrícula falhou: ${await erroDoServidor.innerText()}`);
   }
 }
 

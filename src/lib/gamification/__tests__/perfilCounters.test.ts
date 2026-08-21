@@ -60,7 +60,7 @@ describe("PerfilClient — contadores", () => {
     linhas.forEach((linha, i) => {
       const m = linha.match(TOTAL_HARDCODED);
       if (!m) return;
-      // /10 de bots é fixo por design (10 bots na campanha).
+      // /10 de bots é fixo por design (10 bots na Sala de Duelos).
       if (m[1] === "10") return;
       ofensores.push(`${PERFIL_CLIENT}:${i + 1} → ${linha.trim()}`);
     });

@@ -5,7 +5,7 @@ export default function AppHeader() {
     <header className="border-b">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/" className="font-semibold">
-          Recruta 64
+          Academia 64
         </Link>
         <nav className="flex items-center gap-3 text-sm">
           <Link href="/dashboard" className="underline-offset-4 hover:underline">

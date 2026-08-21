@@ -195,14 +195,14 @@ function main() {
   for (const tier of TIERS_DO_BANCO) {
     const cor = corDaMoldura(tier);
     if (tier === 0) {
-      // O Aprendiz não está na escada de cores e nunca esteve. O `null` aqui é o
+      // O Calouro não está na escada de cores e nunca esteve. O `null` aqui é o
       // contrato com a <MolduraPatente>, que desenha o fio neutro.
       checar(
         cor === null,
-        "tier 0 (Aprendiz) · sem cor de patente",
+        "tier 0 (Calouro) · sem cor de título",
         cor === null
           ? "null, como esperado — o componente desenha o fio neutro"
-          : `devolveu ${cor}; inventar cor para o Aprendiz é dizer que ele é uma patente`,
+          : `devolveu ${cor}; inventar cor para o Calouro é dizer que ele é um título`,
       );
       continue;
     }

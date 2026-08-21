@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 /**
- * O botão do Recruta 64 — direção A (Continuidade).
+ * O botão da Academia 64 — direção A (Continuidade).
  *
  * Antes deste arquivo havia 117 elementos clicáveis com **13 cores diferentes
  * de "primário"**, 5 raios, 7 escalas de padding, e foco visível em apenas 7

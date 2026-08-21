@@ -163,9 +163,9 @@ export default function LessonMap({ lessons, reviewGates }: LessonMapProps) {
     <div className="min-h-full bg-warm-ivory pb-10 text-ink">
       {/* "Aulas" violava o vocabulário oficial da Bíblia Tonal §8. */}
       <FaixaDeComando
-        supertitulo="Reino das 64 Casas"
-        titulo="Trilhas de Formação"
-        saudacao="Sua rota de campanha, trilha a trilha."
+        supertitulo="Academia 64"
+        titulo="Trilhas"
+        saudacao="Sua formação, trilha a trilha."
       />
 
       <div className="mx-auto max-w-2xl space-y-8 px-4 pt-6">

@@ -88,14 +88,14 @@ test.describe("aulas — smoke tests", () => {
     }
   });
 
-  test("A2: mapa exibe trilha Recruta com aulas", async ({ page }) => {
+  test("A2: mapa exibe trilha `recruta` (exibida como Calouro) com aulas", async ({ page }) => {
     await loginUser(page, TEST_EMAIL, TEST_PASSWORD);
     await page.goto("/aulas");
 
     await expect(page.getByRole("heading", { name: "Aulas" })).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText("Recruta")).toBeVisible();
+    await expect(page.getByText("Calouro")).toBeVisible();
     await expect(page.getByText("O Tabuleiro e as Casas")).toBeVisible();
     await expect(page.locator('a[href="/aulas/1"]')).toBeVisible();
   });

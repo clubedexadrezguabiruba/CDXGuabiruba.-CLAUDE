@@ -238,7 +238,7 @@ test.describe("Nível C: fluxo integrado real", () => {
     // 2. Navigate to bots
     await page.goto("/bots");
     await expect(
-      page.getByText("Duelos da Campanha")
+      page.getByText("Sala de Duelos")
     ).toBeVisible({ timeout: 10_000 });
 
     // 3. Click first bot (Léo) — BotCard is a <button> with bot name text
@@ -269,7 +269,7 @@ test.describe("Nível C: fluxo integrado real", () => {
     //
     // O botão do GameOverModal é "Ver Análise" (GameOverModal.tsx:156) e fica
     // disabled mostrando "Analisando..." enquanto roda. O teste esperava aqui
-    // por "Revisão de Batalha", que só existe DEPOIS, no BotPostGame — ou seja,
+    // por "Revisão da Partida", que só existe DEPOIS, no BotPostGame — ou seja,
     // esperava 60s por um elemento que só aparece após este clique. Medi a
     // análise de verdade: ~0,9 s numa partida de 4-5 lances. Nunca foi lentidão,
     // era o alvo errado.
@@ -285,9 +285,9 @@ test.describe("Nível C: fluxo integrado real", () => {
     // 12. Verify BotPostGame renders (accuracy gauge visible)
     await expect(page.locator("svg").first()).toBeVisible({ timeout: 10_000 });
 
-    // 13. Click "Revisão de Batalha" no BotPostGame → review (GameReview)
+    // 13. Click "Revisão da Partida" no BotPostGame → review (GameReview)
     await page
-      .getByRole("button", { name: /Revisão de Batalha/i })
+      .getByRole("button", { name: /Revisão da Partida/i })
       .click();
 
     // 14. Verify GameReview renders
@@ -373,7 +373,7 @@ test.describe("Nível C: fluxo integrado real", () => {
     await page.locator('button:has-text("Sim"):visible').first().click();
 
     // Análise concluída = botão "Ver Análise" do GameOverModal sai de disabled
-    // (ele mostra "Analisando..." enquanto roda). Não usar "Revisão de Batalha":
+    // (ele mostra "Analisando..." enquanto roda). Não usar "Revisão da Partida":
     // esse só existe no BotPostGame, depois de clicar em "Ver Análise".
     await expect(
       page.getByRole("button", { name: /Ver Análise|Analisando/i })
@@ -463,7 +463,7 @@ test.describe("Nível B: UI com estado preparado", () => {
     await login(page, B_EMAIL, B_PASSWORD);
     await page.goto("/bots");
     await expect(
-      page.getByText("Duelos da Campanha")
+      page.getByText("Sala de Duelos")
     ).toBeVisible({ timeout: 10_000 });
 
     // Bot 2 should be clickable (not locked/disabled)

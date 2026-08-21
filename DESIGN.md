@@ -4,7 +4,7 @@ escolhida. Rodar `/impeccable document` de novo depois que os primitivos de
 src/components/ui/ existirem, para capturar componentes reais. -->
 
 ---
-name: Recruta 64
+name: Academia 64
 description: A Academia 64 — a formação em xadrez do Clube de Xadrez Guabiruba, no celular do aluno
 colors:
   deep-navy: "#0F1A2E"
@@ -38,19 +38,21 @@ typography:
     fontWeight: 600
 ---
 
-# Design System: Recruta 64
+# Design System: Academia 64
 
 ## Overview
 
-**Creative North Star: "A Academia 64"** — uma academia extraordinária de
-estratégia onde se estuda xadrez, e onde o aluno sobe de patente conforme aprende.
-Fantasia leve e mistério, **sem época**: a coerência vem do lugar compartilhado, não
-de um século compartilhado.
+**Creative North Star: "Academia 64"** — uma academia extraordinária de
+estratégia onde se estuda xadrez, e onde o aluno **conquista títulos** conforme
+aprende. Fantasia leve e mistério, **sem época**: a coerência vem do lugar
+compartilhado, não de um século compartilhado.
 
-> Substituiu *"O Reino das 64 Casas"* em 2026-08-13. O porquê está medido na Bíblia
-> Tonal §3b; o que ainda não migrou (a interface ainda diz "Reino das 64 Casas" em
-> 5 telas e na landing) está na §5b de lá. **Não conserte a interface de carona** —
-> é bloco próprio.
+> O universo e o produto passaram a ter o mesmo nome em 2026-08-20. *Recruta 64* é
+> nome histórico — sobrevive em nome de arquivo de doc, migration e diretório do
+> repositório, e em lugar nenhum que o aluno leia. A lei é
+> [`docs/Academia64_Biblia_Tonal_v2.md`](docs/Academia64_Biblia_Tonal_v2.md); o
+> porquê medido está no Apêndice A de lá. **Slogan oficial:** *"Uma academia
+> inteira, e 64 casas para explorar."*
 
 **Direção macro: Continuidade** — decidida em 2026-07-31, comparando três
 candidatas lado a lado em `/design-lab`. O app passa a falar a língua que a
@@ -67,23 +69,23 @@ devem voltar como sugestão:
   ainda não tem nem primitivos.
 
 A personalidade é **premium e limpa, não barulhenta**. A fantasia entra pelo
-vocabulário e pela cor da patente, quase nunca por ornamento: o objeto central de
+vocabulário e pela cor do título, quase nunca por ornamento: o objeto central de
 quase toda tela é um tabuleiro de xadrez, e ele não disputa atenção com moldura.
-A **moldura de patente é a única exceção**, e é pequena de propósito: um anel em
+A **moldura de título é a única exceção**, e é pequena de propósito: um anel em
 volta do avatar, nunca em volta do tabuleiro.
 A densidade é **alta em informação, baixa em decoração** — o aluno abre o produto
 em intervalos de minutos, no celular, e precisa ver onde parou antes de ler
 qualquer número.
 
-A curva tonal da Bíblia Tonal §14 é regra de sistema, não de texto: **início
-acolhedor e humano → meio firme e técnico → fim nobre, silencioso e memorável.**
-Uma tela de primeira aula e uma tela de patente Mestre não devem ter a mesma
+A curva tonal da Bíblia Tonal §8 é regra de sistema, não de texto: **início
+acolhedor e humano → meio curioso e preciso → fim econômico e marcante.**
+Uma tela de primeira aula e uma tela de Grão-Mestre não devem ter a mesma
 temperatura.
 
 **Key Characteristics:**
 - Fantasia leve e mistério, com símbolos de estudo, estratégia e reconhecimento
 - Interface premium e limpa; o tabuleiro é o herói, a moldura recua
-- Progressão visível por patente — a cor é o degrau, e o lugar dela é a **moldura
+- Progressão visível por título — a cor é o degrau, e o lugar dela é a **moldura
   em volta do avatar**, não a roupa do boneco
 - Celular primeiro, a sério: 375px é o alvo de projeto
 - Prestígio sem humilhação
@@ -91,11 +93,11 @@ temperatura.
 ## Colors
 
 Duas famílias que **não se misturam**: a paleta de marca (navy/ouro/creme, que
-ambienta) e a escada de patentes (que sinaliza progresso, e é medida por gate).
+ambienta) e a escada de títulos (que sinaliza progresso, e é medida por gate).
 
 ### Primary
 - **Deep Navy** (`#0F1A2E`): o fundo de seção escura e a cor de comando. É o
-  "dentro da fortaleza" — usado em faixas, cabeçalhos e superfícies de destaque,
+  "dentro da Academia" — usado em faixas, cabeçalhos e superfícies de destaque,
   nunca como fundo de leitura longa.
 - **Gold** (`#C9A84C`): o acento de honra. CTA primário, marco alcançado,
   destaque de mérito. É o ouro do estandarte, não de moeda.
@@ -128,23 +130,31 @@ Além dos 8 de marca, três tokens que a direção A pediu:
   — foi herdado do que o código já usava (green-600/red-600) para a migração ser
   neutra. Refiná-los dentro da direção A é trabalho registrado, não feito.
 
-### A escada de patentes
+### A escada de títulos
 As seis cores de progressão. **Não são decorativas: são a régua do produto**, e
 vêm de `scripts/avatar/patentes.ts`, que é a fonte única e é medida por
 `npm run verify:paleta-patentes`.
 
-| Patente | Cor | Matiz |
-|---|---|---|
-| Soldado | `#78833B` | oliva |
-| Aspirante | `#384966` | aço |
-| Capitão | `#3E8C81` | verde-azulado |
-| Comandante | `#3A55B5` | azul |
-| General | `#7A3168` | púrpura |
-| Mestre | `#AEBCCE` + latão `#B5AE4A` | prata |
+| tier | título | token CSS | Cor | Matiz |
+|---|---|---|---|---|
+| 1 | Aprendiz | `patente-soldado` | `#78833B` | oliva |
+| 2 | Estudante | `patente-aspirante` | `#384966` | aço |
+| 3 | Analista | `patente-capitao` | `#3E8C81` | verde-azulado |
+| 4 | Estrategista | `patente-comandante` | `#3A55B5` | azul |
+| 5 | Mestre | `patente-general` | `#7A3168` | púrpura |
+| 6 | Grão-Mestre | `patente-mestre` | `#AEBCCE` + latão `#B5AE4A` | prata |
+
+**Os tokens CSS e o nome do arquivo continuam dizendo "patente"** — e é de
+propósito. Renomear token, componente e script npm é churn sem valor: ninguém os
+lê a não ser quem programa. O nome **exibido** é a coluna "título"; o token é
+chave, não texto de aluno. Passivo conhecido e declarado (Bíblia v2 §6).
+
+Os tiers **0 (Calouro)** e **7 (Lenda)** não têm cor na escada — usam o tone
+`neutro`.
 
 ### Named Rules
 
-**The Patente Ladder Rule.** As seis cores da escada só significam patente. Usar
+**The Title Ladder Rule.** As seis cores da escada só significam título. Usar
 `#3A55B5` porque "ficou bonito nesse botão" quebra o único sinal de progressão
 que o produto tem. Se a cor não está dizendo *em que degrau o aluno está*, ela
 não é dessa família.
@@ -152,53 +162,54 @@ não é dessa família.
 **The Two Color Languages Rule.** Existem **duas** linguagens de cor com significado
 no produto, e elas nunca ocupam o mesmo elemento:
 
-| | patente | raridade |
+| | título | raridade |
 |---|---|---|
 | responde | quem o aluno **é** | quanto uma peça é **rara** |
-| onde vive | **moldura em volta do avatar** — navbar, rankings, mural, dashboard, perfil | **vitrine e cards do editor de avatar** |
+| onde vive | **moldura em volta do avatar** — navbar, rankings, mural, saguão, perfil | **vitrine e cards do editor de avatar** |
 | fonte | `scripts/avatar/patentes.ts` | as cores de raridade do editor |
 
-Cor de raridade em volta de um avatar, ou cor de patente num card de vitrine, ensina
-o aluno que cor não significa nada. A escada de patentes **deixou de vestir o
-boneco** em 2026-08-13 — o traje é peça de catálogo com cor livre, e a patente
-aparece só na moldura.
+Cor de raridade em volta de um avatar, ou cor de título num card de vitrine, ensina
+o aluno que cor não significa nada. A escada **deixou de vestir o boneco** em
+2026-08-13 — o traje é peça de catálogo com cor livre, e o título aparece só na
+moldura.
 
-**The Frame Is Not Art Rule.** A moldura de patente é **CSS fora do SVG** e é
+**The Frame Is Not Art Rule.** A moldura de título é **CSS fora do SVG** e é
 **automática** — sai de `achieved_tier`, sem slot, sem escolha, sem estado novo.
 Custo de arte zero, e é por isso que ela cabe. Uma moldura que precisasse de asset
-por patente seria seis assets para manter, e não valeria.
+por título seria seis assets para manter, e não valeria.
 
 **Ela tem duas camadas, e a de fora é a que a faz existir** (2026-08-17, achado
-G23): o anel da patente, e um **fio de 1 px de `ink` por fora dele**. Sem o fio, o
-anel do Mestre `#AEBCCE` fica em razão de contraste **1,82** contra o marfim —
+G23): o anel do título, e um **fio de 1 px de `ink` por fora dele**. Sem o fio, o
+anel do Grão-Mestre `#AEBCCE` fica em razão de contraste **1,82** contra o marfim —
 abaixo do piso 3 da WCAG 1.4.11, e portanto invisível justamente no aluno mais
 avançado do produto. Trocar a cor dele não resolve: contra o navy quem reprova são
-Aspirante (1,92), General (2,04) e Comandante (2,61), e o Mestre passa em 9,01. A
+Estudante (1,92), Mestre (2,04) e Estrategista (2,61), e o Grão-Mestre passa em
+9,01. A
 luminância das seis vai de 0,066 a 0,494, e **nenhuma superfície única cobre essa
 faixa nas duas pontas** — é aritmética, não gosto. O fio tira a questão do eixo da
 cor e a põe no da forma, que é a regra 8 da direção Continuidade aplicada ao
 avatar: *separação por fio tingido, não por sombra*.
 
-O fio é **token da superfície, não da patente**: sobre o marfim ele é `ink`; sobre
+O fio é **token da superfície, não do título**: sobre o marfim ele é `ink`; sobre
 uma superfície escura ele terá de ser claro. Quando isso acontecer, o que muda é o
 fio — as seis cores da escada não se mexem. `verify:paleta-patentes` mede as duas
 metades separadamente: o **fio contra o fundo** em razão de contraste (≥ 3 — faz a
-forma existir) e cada **patente contra o fio** em distância RGB (≥ 40 — faz a cor
+forma existir) e cada **título contra o fio** em distância RGB (≥ 40 — faz a cor
 ainda ser cor). E `moldura-fio.test.ts` renderiza o componente para provar que as
 duas camadas chegam à tela, porque foi a distância entre régua e render que deixou
-o Mestre invisível com o gate verde.
+o Grão-Mestre invisível com o gate verde.
 
 A **faixa proibida de matiz 0°–44°** (doc 17) era lei do pipeline de recoloração do
 SVG, onde matiz quente colidia com a pele do boneco. Fora do SVG não há colisão: **a
-moldura pode usar dourado.** As distâncias mínimas — ≥40 entre patentes quaisquer,
-≥60 entre vizinhas — continuam valendo e continuam medidas.
+moldura pode usar dourado.** As distâncias mínimas — ≥40 entre títulos quaisquer,
+≥60 entre vizinhos — continuam valendo e continuam medidas.
 
-**The Measured Palette Rule.** Nenhuma cor entra perto da escada de patentes sem
+**The Measured Palette Rule.** Nenhuma cor entra perto da escada de títulos sem
 passar por `verify:paleta-patentes`. Existe lei de distância mínima de matiz entre
-patentes vizinhas, e ela já reprovou um dourado: **`#C9B37E` é proibido** — cai a
-3° de outra patente. Cuidado especial porque o `gold #C9A84C` da marca vive na
+títulos vizinhos, e ela já reprovou um dourado: **`#C9B37E` é proibido** — cai a
+3° de outro título. Cuidado especial porque o `gold #C9A84C` da marca vive na
 mesma vizinhança: ele é cor de *marca*, e nunca deve aparecer como se fosse
-patente.
+título.
 
 **The One Gold Rule.** O ouro é raro por definição. Numa tela, ele marca **uma**
 coisa: a ação principal ou o mérito alcançado. Dois ouros disputando é nenhum
@@ -216,14 +227,15 @@ crianças, e daltonismo é comum.
 
 **Character:** Cinzel é capitalis romana — pedra, inscrição, honra. É de onde vem
 toda a gravidade do produto sem precisar de um único ornamento; na Academia 64 ela
-lê como inscrição de fachada e placa de sala, não como pergaminho de reino. Inter
+lê como inscrição de fachada e placa de sala, não como pergaminho de reino — é a
+fachada de pedra da Academia, e a fantasia mora dentro do prédio. Inter
 faz o trabalho de leitura no celular, invisível de propósito. O par funciona
 porque um fala e o outro informa; **quando os dois falam, nenhum é ouvido.**
 
 ### Hierarchy
-- **Display** (Cinzel 700): título de tela e nome de patente. Aparição rara.
-- **Headline** (Cinzel 600): título de bloco — "Ordens do Dia", "Sequência de
-  Campanha".
+- **Display** (Cinzel 700): título de tela e título do aluno. Aparição rara.
+- **Headline** (Cinzel 600): título de bloco — "Missões do Dia", "Sequência de
+  Presença".
 - **Title** (Inter 600): título de card e de item de lista.
 - **Body** (Inter 400): todo texto corrido. Português para leitor iniciante —
   frase curta, voz ativa.
@@ -247,12 +259,12 @@ degradado. O layout se desenha em coluna única e cresce; nunca se desenha em
 grade de desktop e encolhe.
 
 Duas superfícies com regras distintas:
-- **Telas de prática** (Desafios Táticos, Bots, exercício de aula): o tabuleiro
+- **Telas de prática** (Desafios, Sala de Duelos, exercício de aula): o tabuleiro
   ocupa a largura, e tudo que não for o tabuleiro ou a ação seguinte sai de cima
   da dobra. Nenhuma dessas telas pode exigir rolagem entre ver a posição e fazer
   o lance.
-- **Telas de leitura** (Quartel-General, Perfil, Quadro de Honra, Turmas): blocos
-  empilhados, o mais mutável no topo. Sensação de **mesa de comando**: cada bloco
+- **Telas de leitura** (Saguão, Perfil, Quadro de Honra, Turmas): blocos
+  empilhados, o mais mutável no topo. Sensação de **mesa de estudo**: cada bloco
   com uma pergunta só, respondida em um relance.
 
 **Alvo de toque: 44px mínimo.** A mão é de criança e a tela é pequena.
@@ -276,8 +288,8 @@ hierarquia sumiu.
   fio.
 - **Sobreposto** (`shadow-md`): só o que flutua de fato — modal, popover, menu.
 - **Glow de honra** (`shadow-glow-gold`, `0 0 20px rgba(201,168,76,.15)`): a
-  sombra-assinatura, reservada ao momento de mérito — patente alcançada, baú
-  concedido, marco de campanha. É o único brilho do sistema.
+  sombra-assinatura, reservada ao momento de mérito — título conquistado, baú
+  concedido, marco de formação. É o único brilho do sistema.
 
 ### Named Rules
 
@@ -293,7 +305,7 @@ Raio moderado e consistente, herdado da landing:
 
 - **`rounded-lg` (8px)** — o padrão. Card, botão, campo, linha de lista.
 - **`rounded-xl` (12px)** — bloco grande e contêiner de seção.
-- **`rounded-full`** — só pílula: badge de patente, avatar, barra de XP.
+- **`rounded-full`** — só pílula: badge de título, avatar, barra de XP.
 
 Sem canto vivo (`rounded-none`) e sem canto exagerado (`rounded-3xl`): o
 primeiro lê como planilha, o segundo como brinquedo. A silhueta do produto é
@@ -331,15 +343,16 @@ overlay — 4 deles, nenhum com ESC, foco preso ou `role="dialog"`.
 - **Padding:** 16px; 20px em bloco de seção.
 - **Título:** Cinzel 13px, versalete, `tracking-[0.14em]`, em `/70` de opacidade.
 
-### Badge de patente
-- **Style:** pílula com o ponto de cor da patente vindo de
+### Badge de título
+- **Style:** pílula com o ponto de cor do título vindo de
   `scripts/avatar/patentes.ts` (importado, nunca copiado) — e **o nome escrito
   junto**, nunca a cor sozinha.
-- **Onde:** só onde a patente é protagonista — faixa de comando, perfil, tela de
+- **Onde:** só onde o título é protagonista — faixa de comando, perfil, tela de
   promoção. **Não em linha de lista.** A "Colorblind Rule" pede cor nunca
   sozinha, não cor sempre: cinco pílulas coloridas numa lista de cinco competem
-  com o nome e o número, que são a informação. Em lista, a patente é texto.
-- Título que não é patente ("Aprendiz") usa o tone `neutro`, sem inventar cor.
+  com o nome e o número, que são a informação. Em lista, o título é texto.
+- Título sem cor na escada ("Calouro", "Lenda") usa o tone `neutro`, sem
+  inventar cor.
 
 ### Inputs / Fields
 - **Style:** fundo branco, fio `border-[#1B2432]/10`, `rounded-lg`, altura 44px.
@@ -352,17 +365,17 @@ overlay — 4 deles, nenhum com ESC, foco preso ou `role="dialog"`.
 
 ### Faixa de comando (componente-assinatura)
 O cabeçalho de tela em `deep-navy`, com o supertítulo em Cinzel/versalete/ouro
-("REINO DAS 64 CASAS", "PATENTE CAPITÃO"), o título grande em Cinzel, e a barra
+("ACADEMIA 64", "TÍTULO ANALISTA"), o título grande em Cinzel, e a barra
 de XP em ouro sobre `warm-ivory/15`. É o que faz o app parecer o mesmo produto
 que a landing — ver `VariantA.tsx`.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** usar o vocabulário oficial da Bíblia Tonal §8 em todo título e bloco:
-  Quartel-General, Trilhas de Formação, Desafios Táticos, Ordens do Dia, Revisão
-  de Batalha, Quadro de Honra, Sequência de Campanha, Insígnias, Equipamentos,
-  Companhias. A **navegação principal** fica em palavra clara (Início, Trilhas,
+- **Do** usar o vocabulário oficial da Bíblia Tonal §7 em todo título e bloco:
+  Saguão, Trilhas, Desafios, Missões do Dia, Revisão da Partida, Quadro de Honra,
+  Sequência de Presença, Insígnias, Guarda-roupa, Turmas, Sala de Duelos,
+  Matrícula. A **navegação principal** fica em palavra clara (Início, Trilhas,
   Desafios, Bots, Quadro de Honra, Perfil, Turmas) — o tema entra dentro da tela,
   não no menu.
 - **Do** tratar `#FAF8F3` como o branco do produto. Branco puro brilha demais.
@@ -371,18 +384,21 @@ que a landing — ver `VariantA.tsx`.
 - **Do** projetar acerto e erro com **forma além da cor**.
 - **Do** mostrar recompensa apenas depois que o servidor concedeu. XP, baú e
   level-up são reação a fato confirmado — nunca promessa otimista na tela.
-- **Do** aplicar a curva tonal §14: a tela de primeira aula é mais acolhedora, a
-  tela de patente alta é mais silenciosa e mais nobre.
+- **Do** aplicar a curva tonal §8: a tela de primeira aula é mais acolhedora, a
+  tela de título alto é mais econômica e mais marcante.
 
 ### Don't:
-- **Don't** cair em militarismo realista, brutalidade explícita, humor pastelão,
+- **Don't** cair em guerra realista, brutalidade explícita, humor pastelão,
   estética caótica ou dark fantasy pesada. São as cinco rejeições nomeadas na
-  Bíblia Tonal §12, e valem para ilustração, ícone e cor.
-- **Don't** humilhar no Quadro de Honra. Nada de "pior colocado", vermelho de
+  Bíblia Tonal §3, e valem para ilustração, ícone e cor.
+- **Don't** humilhar no Quadro de Honra (Bíblia §12.5). Nada de "pior colocado", vermelho de
   fracasso ou queda destacada. Crianças da mesma turma se conhecem pessoalmente.
 - **Don't** usar `#C9B37E` — reprovado pelo gate de matiz por 3°.
-- **Don't** usar cor da escada de patentes para qualquer coisa que não seja
-  patente.
+- **Don't** usar cor da escada de títulos para qualquer coisa que não seja
+  título.
+- **Don't** escrever palavra banida em texto de aluno (Bíblia §7): campanha,
+  patente, recruta, companhia, quartel, batalha, tropa, reino, "falha tática".
+  Elas vivem só em `docs/_superado/`, migration antiga e nome interno de código.
 - **Don't** deixar `zinc-*`, `amber-*` ou qualquer cor crua do Tailwind numa tela
   já migrada. Hoje o app tem 171 usos de `text-zinc-500` — é exatamente o débito
   que este arquivo existe para pagar.
@@ -421,15 +437,15 @@ bloqueados por `deny` em `.claude/settings.json`, e o bloqueio é para ficar.
 - **Tema escuro.** Hoje `color-scheme: light` está fixo. A direção A tem navy
   como cor de comando, o que torna um tema escuro plausível — mas ele não foi
   decidido nem projetado.
-- **A curva tonal §14 dentro de uma direção só.** A direção C resolvia isso por
-  temperatura de tela inteira. Na A, a diferença entre "primeira aula" e "patente
-  Mestre" ainda precisa de um mecanismo — provavelmente densidade de ouro e
+- **A curva tonal §8 dentro de uma direção só.** A direção C resolvia isso por
+  temperatura de tela inteira. Na A, a diferença entre "primeira aula" e
+  "Grão-Mestre" ainda precisa de um mecanismo — provavelmente densidade de ouro e
   silêncio, não cor de fundo.
-- **Onde a patente aparece.** Ficou como badge e como cor de marca no ranking. Se
+- **Onde o título aparece.** Ficou como badge e como cor de marca no ranking. Se
   isso é sinal suficiente de progressão só se descobre com o aluno.
 
 As duas direções descartadas **foram removidas do código** (commit da wave 1 de
 primitivos). O registro do que foi comparado, e por que cada uma caiu, está na
 seção *Overview* deste arquivo — que é onde ele sobrevive a um `git log`.
-`/design-lab` agora tem duas abas: o comp do Quartel-General e a folha de
+`/design-lab` agora tem duas abas: o comp do Saguão e a folha de
 estados dos primitivos.

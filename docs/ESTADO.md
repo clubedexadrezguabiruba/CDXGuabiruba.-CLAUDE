@@ -10,6 +10,121 @@
 ## Agora
 
 <!-- AGORA:inicio -->
+🏛️ **A VIRADA PARA A ACADEMIA 64 — em execução desde 2026-08-20, branch
+`tema/academia-64`** (a partir de `avatar/bloco5-rosto`, não de `main`: `main`
+estava 15 commits atrás e não tinha nem a regra 4 do `CLAUDE.md`).
+
+O produto deixa de se chamar **Recruta 64** e passa a se chamar **Academia 64**; a
+espinha militar sai da lei. A virada de 2026-08-13 tinha feito metade — trocou o
+universo e a direção de arte, mas manteve a fórmula 70/20/10, a palavra "patente",
+as 5 regiões e o vocabulário de interface. Esta fecha a outra metade.
+
+- **Bloco 0 — a lei. FECHADO.** `docs/Academia64_Biblia_Tonal_v2.md`: um doc, uma
+  era. A v1 foi para `docs/_superado/`. Fórmula nova **50/25/15/10**, mapa da
+  Academia (10 lugares + 5 alas de bot), escada de **títulos**, vocabulário
+  oficial, palavras banidas de tela. Slogan escolhido pelo Doug: *"Uma academia
+  inteira, e 64 casas para explorar."*
+- **Bloco 1 — lei derivada e código de referência. FECHADO.** `DESIGN.md`,
+  `PRODUCT.md`, `CLAUDE.md`, a skill `design-recruta64`, `scripts/avatar/
+  patentes.ts` (nomes novos; o campo `regiao` **morreu** — era o espelho das 5
+  regiões e ninguém o lia), `TRAILS.name`, os mocks do design-lab, e emendas
+  datadas nos docs 12 e 17, no currículo (revisão 5), na Visão do Produto e na
+  Diretriz dos Bots v1 (marcada como **superada**).
+- **Bloco 2 — banco + interface. FECHADO em 2026-08-21.** A ordem foi invertida
+  de propósito em relação ao plano — interface primeiro, banco por último —,
+  porque não há banco separado (D3) e toda migration bate em produção na hora:
+  descer o banco antes da tela deixaria a produção dizendo "Analista" dentro de
+  um "Quartel-General". **53 arquivos, 264 linhas trocadas**, e o grep de
+  fechamento dá **zero** para `Reino das 64 Casas`, `Quartel-General`, `Duelos da
+  Campanha`, `Revisão de Batalha`, `Criação do Recruta`, `Ordens do Dia`,
+  `Sequência de Campanha` e `Companhia` em `src/` e `e2e/`. A migration
+  `20260821120000_academia_titulos.sql` **está aplicada**, e `verify:all=0`
+  medido depois dela.
+- **Bloco 3 — os bots. EM EXECUÇÃO desde 2026-08-21, parado no Ponto 5 (a arte).**
+  A lei do elenco existe: `docs/Academia64_Diretriz_dos_Bots_v2.md` substitui a
+  Diretriz v1. **Elenco aprovado pelo Doug** — 10 personagens, **2 por ala nas 5
+  alas** (Pátio · Salas de Treino · Biblioteca · Observatório · Arena), variedade
+  medida em natureza (6 humanos · 1 autômato · 1 criatura · 1 animal · 1 não
+  declarada) e função. `elo`, `skill_level`, `depth` e `unlock_order` **não mudam**:
+  o elenco novo entra por cima da calibração que já existe. Falta: os 10 retratos
+  (arte do Doug, **sem prazo**) e as **110 falas — as duas ficam com o Doug, por
+  decisão dele em 2026-08-21**; depois delas, a migration de `UPDATE`, e
+  `BotGrid.tsx:8-22` + as 4 asserções de `e2e/bots-ui-audit.spec.ts` que ainda
+  procuram as regiões do Reino. Os **10 pedidos de arte estão escritos**:
+  `docs/Academia64_Pedidos_de_Retrato_dos_Bots.md`.
+
+⚠️ **O retrato de bot é um CÍRCULO de no máximo 96 px, e a arte atual foi feita para
+outro frame.** `BotAvatar.tsx` recorta o PNG no círculo inscrito (`rounded-full` +
+`object-cover`) e o produto só o usa em 32 · 48 · 64 · 80 · 96 px — `md` (64) na grade
+da Sala de Duelos. Medido nos dois extremos do elenco velho: o rosto da `helena.png`
+tem **13% da largura do quadro**, ou **8 pixels na tela**; o cenário inteiro dela
+(castelo, mapas, globos, astrolábio) cai fora do círculo ou some. A progressão que a
+arte velha tinha — fundo do bot fraco borrado (lapVar 16) contra fundo do forte nítido
+(lapVar 1346–2819), **~100× mais detalhe** — nunca chegou ao aluno. Os pedidos novos
+pedem **close**, fundo simples, e a progressão por **valor, temperatura e silhueta**,
+que é o que sobrevive a 64 px. **A saída oposta — dar ao produto uma superfície que
+mostre o retrato grande — foi posta ao Doug e descartada por ele:** o frame fica como
+está, e é ele que manda no enquadramento.
+
+✅ **Um defeito de produção achado ao escrever a Diretriz v2, consertado e medido no
+mesmo dia.** `on_win` e `on_loss` estão **invertidos entre banco e código**: o
+código lê as duas chaves na perspectiva do bot ([`GameOverModal.tsx:94`](../src/components/bots/GameOverModal.tsx#L94)
+sobre `result`, que é o resultado *do aluno*), e os 10 bots semeados em
+`20260307120000` foram escritos na perspectiva do aluno. Efeito: o aluno dava
+xeque-mate no Sargento Pardo e ouvia *"Revise os fundamentos, recruta."* Medido nos 10
+com `.scratch/medir-perspectiva-falas.ts` — **os 10 estavam trocados, e consistentes
+entre si**. A migration `20260821170000_bots_perspectiva_das_falas.sql` **foi aplicada
+pelo Doug em 2026-08-21**, e a medição depois mostra os 10 trocados de volta: o
+`on_win` do `sargento-pardo` agora é *"Revise os fundamentos, recruta."* e o `on_loss`
+é *"Aprovado, soldado. Pode seguir."* `verify:phase6` 18/0 e `verify:seeds` OK depois.
+Não há gate permanente possível ("esta frase
+foi dita por quem venceu?" não é decidível por máquina); a evidência é a medição
+antes/depois. O que **é** verificável, e entra junto com a migration do elenco, é a
+contagem por chave da lei das falas (3 · 4 · 2 · 2) — hoje 9 dos 10 já batem, só o
+`leo` tem `during` 5.
+
+✅ **A janela do `Badge` durou uma sessão e fechou.** `Badge` casa o título por
+**string** (`Badge.tsx:45`), e entre o Bloco 1 (que renomeou `patentes.ts`) e esta
+migration a pílula saiu **sem o ponto de cor, em silêncio**. Medido depois de aplicar:
+**os 8 degraus batem** — tiers 1 a 6 com nome idêntico dos dois lados, tiers 0 e 7 sem
+cor dos dois lados.
+
+⚠️ **E esse casamento continua sem régua.** Nenhum gate compara `title_tiers.title` com
+`PATENTES[].patente`: `verify:paleta-patentes` mede **cor**, não nome. Foi conferido à
+mão nesta sessão, com script descartável. Quem renomear um degrau de novo não será
+avisado — é o candidato natural a uma conferência nova dentro do `verify:paleta-patentes`.
+
+✅ **A suíte e2e foi atualizada junto.** `Quartel-General`→`Saguão`,
+`Criação do Recruta`→`Matrícula`, `Duelos da Campanha`→`Sala de Duelos`,
+`Revisão de Batalha`→`Revisão da Partida`, `Companhia`→`Turma`, e a trilha exibida
+`Recruta`→`Calouro` (que o Bloco 1 já tinha quebrado sem ninguém acusar).
+**`Acampamento dos Recrutas` e `Vila dos Soldados` FICARAM de propósito** em
+`bots-ui-audit.spec.ts:170,232-237`: são valores de `bots.stage` no banco, que só
+mudam no Bloco 3 junto com `BotGrid.tsx`. Trocá-los agora quebraria a suíte.
+O e2e **não foi rodado** — bate no Supabase de produção.
+
+⚠️ **A migration achou uma coisa que o plano não previa, e ela é a razão de a
+migration ser maior que três UPDATEs.** Havia **três** lugares gravando `'Aprendiz'`
+como título inicial — o `DEFAULT` da coluna `user_titles.current_title`, a
+`ensure_user_profile` e a `handle_new_user`. Como o nome "Aprendiz" **desce um
+degrau** (era tier 0, vira tier 1), todo aluno novo nasceria com nome de tier 1 sobre
+o degrau 0, e a conferência (d) do `verify:avatar-db` reprovaria na primeira matrícula
+seguinte. As duas funções passam a **ler o primeiro degrau de `title_tiers`**, como a
+`recompute_user_title` já fazia. Isso custou **+2 no `rpc-baseline.json`**
+(`handle_new_user` 2→3, `ensure_user_profile` 1→2): é o escape sancionado pelo próprio
+ratchet, e está justificado aqui e no commit.
+
+✅ **As duas confirmações que o plano exigia antes da migration foram medidas no banco,
+não presumidas.** `recompute_user_title` **lê** o nome de `title_tiers` — renomear a
+régua propaga sozinho, e a função não precisou ser recriada. E **nenhuma** função viva
+cita `v_title_map` (zero linhas em `pg_get_functiondef` sobre todo o `public`).
+
+✅ **Ensaio a seco da migration, em transação com `ROLLBACK`:** escada nova com `trail`
+e `lessons_required` intactos; os 19 alunos reconciliados (17 Calouro, 2 Aprendiz);
+`DEFAULT` em `'Calouro'`; as duas funções lendo a régua; e a **conferência (d) do
+`verify:avatar-db` com 0 atrasados dentro da transação** — que é a prova de que o gate
+passa depois de aplicar.
+
 ✅ **PASSE DE ACHADOS DO AVATAR — 2026-08-20.** Nove entradas fechadas com número
 medido: **D2 · D8 · D12 · D14 · G5 · G16 · G27 · G28 · G30**, mais o **G32**
 remedido (23,1% → **1,3%**). Um gate novo (`arte:traco`, 20º do `verify:arte`), uma
@@ -258,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 1 |
-| **Árvore** | **21 arquivos sujos** |
-| **Último commit** | 7649eed · 2026-08-21 · feat(avatar): a barba de 917 tons deixa de chegar com DOIS — o vetor carrega a forma, o raster carrega o tom |
+| **Commits à frente de `origin/main`** | 2 |
+| **Árvore** | **74 arquivos sujos** |
+| **Último commit** | 276ee1f · 2026-08-21 · fix(avatar): a máscara sai de dentro do SVG — o gzip do ranking cai de 753 KB para 15,4 KB |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -309,7 +424,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 89 |
+| **Migrations** | 91 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 22 |
 | **Primitivos de UI** | 4 |

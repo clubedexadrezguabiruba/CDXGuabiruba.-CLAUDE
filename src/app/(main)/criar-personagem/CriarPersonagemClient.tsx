@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * A CRIAÇÃO DO RECRUTA — as três escolhas do avatar kokeshi.
+ * A MATRÍCULA — as três escolhas do avatar kokeshi.
  *
  * Substitui a tela do avatar v2, que oferecia macho/fêmea em dois PNGs e gravava
  * pela `update_avatar_base` (deprecada no Bloco C). Aqui a identidade é
@@ -63,8 +63,8 @@ export default function CriarPersonagemClient({
   return (
     <div className="min-h-screen bg-warm-ivory font-sans text-ink">
       <FaixaDeComando
-        supertitulo="Reino das 64 Casas"
-        titulo="Criação do Recruta"
+        supertitulo="Academia 64"
+        titulo="Matrícula"
         saudacao="Monte o seu boneco. Dá para trocar depois, no seu perfil."
       />
 

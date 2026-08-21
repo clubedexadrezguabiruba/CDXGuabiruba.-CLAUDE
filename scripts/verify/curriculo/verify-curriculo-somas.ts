@@ -155,13 +155,15 @@ function main() {
   //    O acumulado vira UPDATE em title_tiers.lessons_required. Errar aqui é
   //    aluno promovido cedo ou preso — ver [[patente-update-sem-upsert]].
   // -------------------------------------------------------------------------
-  console.log(`\n2. A grade da §3, e o acumulado que vira régua de patentes\n`);
-  const grade = tabela(secao(3), 7);
+  console.log(`\n2. A grade da §3, e o acumulado que vira régua de títulos\n`);
+  // A tabela ganhou duas colunas na revisão 5 (slug do banco e nome exibido):
+  // são 8 agora, e `aulas`/`acum.` andaram uma casa para a direita.
+  const grade = tabela(secao(3), 8);
   checar(grade.length === 7, "§3: linhas da grade", `${grade.length} encontradas`);
 
   let acumulado = 0;
   grade.forEach((c, i) => {
-    const [, , , , aulas, acum] = c;
+    const [, , , , , aulas, acum] = c;
     acumulado += num(aulas);
     const t = trilhas[i];
     checar(
@@ -173,10 +175,10 @@ function main() {
   checar(acumulado === totalAulas, "grade: total", `soma da grade ${acumulado} = aulas escritas ${totalAulas}`);
 
   const regua = doc.match(/\*\*((?:\d+ · )+\d+)\*\*/);
-  const esperada = [0, ...grade.map((_, i) => grade.slice(0, i + 1).reduce((a, c) => a + num(c[4]), 0))];
+  const esperada = [0, ...grade.map((_, i) => grade.slice(0, i + 1).reduce((a, c) => a + num(c[5]), 0))];
   checar(
     regua?.[1]?.replace(/\s/g, "") === esperada.join("·"),
-    "régua de patentes",
+    "régua de títulos",
     `documento diz "${regua?.[1] ?? "não encontrada"}" · acumulados reais ${esperada.join(" · ")}`,
   );
   despejar();

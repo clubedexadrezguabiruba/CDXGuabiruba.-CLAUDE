@@ -39,7 +39,7 @@ export default async function ClassRankingPage({ params }: Props) {
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="rounded-xl border bg-red-50 p-4 text-sm text-red-600">
           {error.message.includes("Sem permissão")
-            ? "Você não tem acesso ao ranking desta companhia."
+            ? "Você não tem acesso ao ranking desta turma."
             : "Erro ao carregar ranking."}
         </div>
       </div>
