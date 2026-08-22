@@ -44,9 +44,35 @@ const RECORTE = {
 
 /** A largura da célula grande, e a do boneco no tamanho do produto. */
 const GRANDE = 300;
+
+/**
+ * OS DOIS TAMANHOS DE JULGAMENTO, e o 32 é o que manda aqui.
+ *
+ * Doc 23 §6: peça de **cabeça** — chapéu, rosto, óculos — julga-se a **32 px**,
+ * porque a cabeça ocupa ~metade da altura do boneco; os 56 px são o tamanho do
+ * BONECO no ranking, e servem para o traje. Esta folha nasceu só com 56, o que
+ * julgava a barba com o dobro da resolução que ela tem na tela. Os dois ficam
+ * lado a lado: o 56 continua útil para ver a peça no contexto do boneco inteiro.
+ */
+const P32 = 32;
 const P56 = 56;
-/** O 56 px ampliado, para o olho ver o que a redução fez. Vizinho mais próximo. */
-const ZOOM = 4;
+
+/**
+ * A AMPLIAÇÃO — 224 px, e ela agora estica o BITMAP em vez de redesenhar o SVG.
+ *
+ * ⚠️ Estava mentindo, e mentia para o lado mais caro: `transform: scale(4)` sobre
+ * um SVG faz o navegador **re-rasterizar o vetor no tamanho grande**, então a
+ * célula mostrava detalhe que o tamanho real não tem — quem aprovasse por ela
+ * estaria aprovando uma peça que a 32 px vira mancha. Achado em 2026-08-22.
+ *
+ * O conserto: os bitmaps de 32 e 56 px são capturados ANTES, em DPR 1 (que é o
+ * pior caso real), e ampliados por vizinho mais próximo no `sharp`. O que aparece
+ * na folha é o quadradão que o aluno vê, esticado — não um desenho novo.
+ *
+ * 224 é múltiplo dos dois — 32 × 7 e 56 × 4 —, então as duas colunas de ampliação
+ * saem com a MESMA largura e o olho compara área por área.
+ */
+const AMPLIADO = 224;
 
 /** A cor que o gerador pintou na massa da `cheia`, medida por `reparo-cheia-um-tom.ts`. */
 const COR_DA_ARTE = "#2AA8A9";
@@ -181,20 +207,54 @@ async function principal(): Promise<void> {
     },
   ];
 
+  const nav = await chromium.launch();
+
+  // ------------------------------------------------- passo 1: os bitmaps REAIS
+  //
+  // Em DPR **1**, que é o pior caso: 32 CSS px viram 32 pixels de verdade. É este
+  // bitmap que é ampliado depois — e é por isso que a ampliação parou de mentir.
+  const pgReal = await nav.newPage({ deviceScaleFactor: 1 });
+  const ampliar = async (b: Buffer) => {
+    const m = await sharp(b).metadata();
+    return uri(
+      await sharp(b)
+        .resize(AMPLIADO, Math.round((AMPLIADO * m.height!) / m.width!), { kernel: "nearest" })
+        .png()
+        .toBuffer(),
+    );
+  };
+  const mini: { p32: string; p56: string; z32: string; z56: string }[] = [];
+  for (let i = 0; i < COLUNAS.length; i++) {
+    const capturar = async (l: number, ns: string) => {
+      await pgReal.setContent(
+        `<body style="margin:0;background:#FFF">` +
+          `<div id="c" style="width:${l}px;line-height:0">${COLUNAS[i].celula(l, ns)}</div>`,
+      );
+      return (await pgReal.locator("#c").screenshot({ type: "png" })) as Buffer;
+    };
+    const b32 = await capturar(P32, `r32${i}`);
+    const b56 = await capturar(P56, `r56${i}`);
+    mini.push({ p32: uri(b32), p56: uri(b56), z32: await ampliar(b32), z56: await ampliar(b56) });
+  }
+  await pgReal.close();
+
+  // ------------------------------------------------------- passo 2: a folha
+  const par = (rot: string, src: string, larg: number) =>
+    `<div><img src="${src}" style="width:${larg}px;display:block;image-rendering:pixelated">` +
+    `<div style="font:11px system-ui;color:#777;margin-top:4px">${rot}</div></div>`;
+
   const coluna = (c: (typeof COLUNAS)[number], i: number) =>
     `<td style="vertical-align:top;padding:0 10px">` +
     `<div style="font:600 12px/1.35 system-ui;color:#333;height:32px">${c.rotulo}</div>` +
     c.celula(GRANDE, `g${i}`) +
     `<div style="display:flex;align-items:flex-end;gap:14px;margin-top:14px">` +
-    `<div>${c.celula(P56, `p${i}`)}` +
-    `<div style="font:11px system-ui;color:#777;margin-top:4px">56 px</div></div>` +
-    `<div style="image-rendering:pixelated;transform-origin:top left">` +
-    `<div style="width:${P56 * ZOOM}px;height:${Math.round((P56 * 7) / 5) * ZOOM}px;overflow:hidden">` +
-    `<div style="transform:scale(${ZOOM});transform-origin:top left;image-rendering:pixelated">` +
-    c.celula(P56, `z${i}`) +
-    `</div></div>` +
-    `<div style="font:11px system-ui;color:#777;margin-top:4px">56 px, ampliado ${ZOOM}×</div>` +
-    `</div></div></td>`;
+    par("32 px — o tamanho de julgamento", mini[i].p32, P32) +
+    par("56 px", mini[i].p56, P56) +
+    `</div>` +
+    `<div style="display:flex;align-items:flex-end;gap:14px;margin-top:14px">` +
+    par(`32 px · bitmap ampliado ${AMPLIADO / P32}×`, mini[i].z32, AMPLIADO) +
+    par(`56 px · bitmap ampliado ${AMPLIADO / P56}×`, mini[i].z56, AMPLIADO) +
+    `</div></td>`;
 
   const html =
     `<body style="margin:0;background:#FFF;padding:22px;width:max-content">` +
@@ -203,12 +263,14 @@ async function principal(): Promise<void> {
     `<div style="font:13px/1.5 system-ui;color:#555;margin-bottom:16px">` +
     `as duas primeiras colunas são o mesmo recorte (px ${RECORTE.left}→${RECORTE.left + RECORTE.width} × ` +
     `${RECORTE.top}→${RECORTE.top + RECORTE.height}, que é o viewBox de 500×700). ` +
+    `<b>o 32 px é o tamanho de julgamento de peça de cabeça</b> (doc 23 §6); ` +
+    `as duas células de baixo são o BITMAP de 32 e 56 esticado por vizinho mais ` +
+    `próximo — não é o vetor redesenhado grande. ` +
     `os números estão no terminal, não aqui.</div>` +
     `<table style="border-collapse:collapse"><tr>` +
     COLUNAS.map(coluna).join("") +
     `</tr></table></body>`;
 
-  const nav = await chromium.launch();
   const pg = await nav.newPage({ deviceScaleFactor: 2 });
   await pg.setContent(html);
   const png = await pg.screenshot({ fullPage: true, type: "png" });
