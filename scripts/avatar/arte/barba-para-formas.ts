@@ -328,6 +328,10 @@ export interface RostoDeArte {
   pxNoRosto: number;
   ruidoDaPeca: number;
   componentes: number;
+  /** Furos sem feição dentro, preenchidos pela regra da figurinha (passo 2c). */
+  pxPreenchidos: number;
+  /** Janelas com feição dentro — as únicas que a figurinha mantém abertas. */
+  janelasDeFeicao: number;
   /** A máscara final da peça, para quem quiser medir fidelidade contra o render. */
   mascara: Uint8Array;
 }
@@ -463,6 +467,95 @@ export async function construirRosto(
     );
   }
 
+  // --- 2c. A FIGURINHA — todo furo sem feição dentro é preenchido ---
+  //
+  // Decisão do Doug, 2026-08-22: *"a barba é colada como figurinha — nada atrás
+  // dela pode ser visto"*. O defeito que a fundou: a v10 da `trancada` chegou ao
+  // render com o traço do maxilar do boneco aparecendo DENTRO da barba, e a causa
+  // era o passo 1 — a peça é "o que difere da base", e fio escuro pintado sobre o
+  // traço PRETO da base difere em ~0. O pixel ficava fora da máscara, o `potrace`
+  // o devolvia como FURO na silhueta, e pelo furo aparecia o que estivesse por
+  // baixo no produto: `cabeca-contorno`, pele, e o traje que o aluno vestir.
+  //
+  // O furo não é reparo de arte — é topologia da máscara. O pixel preenchido entra
+  // no TOM com a luminância que a arte tem ali (passo 3), então onde a arte é
+  // escura o render mostra `var(--av-linha)` contínuo com os fios vizinhos, e onde
+  // ela é clara mostra a cor do cabelo — o render passa a reproduzir a arte que o
+  // Doug aprovou, em vez das camadas de baixo.
+  //
+  // As ÚNICAS janelas que ficam abertas são as que contêm FEIÇÃO — a espinha da
+  // boca e as cápsulas dos olhos, as mesmas regiões que o recorte do passo 2
+  // protege. A linha da boca é da base, nunca da peça (doc 24 §3: "0 px de tinta
+  // na boca, sem tolerância"), então a janela dela é desenho, não defeito.
+  //
+  // Medido na v10 no dia da decisão: 4 furos sem feição (644 px), o maior com
+  // 373 px colado no contorno do maxilar. O gate é `__tests__/figurinha.test.ts`.
+  const alcancaBorda = new Uint8Array(n);
+  {
+    const fila: number[] = [];
+    const põe = (i: number) => {
+      if (!pecaLimpa.m[i] && !alcancaBorda[i]) {
+        alcancaBorda[i] = 1;
+        fila.push(i);
+      }
+    };
+    for (let x = 0; x < W; x++) {
+      põe(x);
+      põe((H - 1) * W + x);
+    }
+    for (let y = 0; y < H; y++) {
+      põe(y * W);
+      põe(y * W + W - 1);
+    }
+    while (fila.length) {
+      const i = fila.pop()!;
+      const x = i % W;
+      const y = (i / W) | 0;
+      if (x > 0) põe(i - 1);
+      if (x < W - 1) põe(i + 1);
+      if (y > 0) põe(i - W);
+      if (y < H - 1) põe(i + W);
+    }
+  }
+  // Cada furo é uma componente do que sobrou; a pergunta é uma por componente.
+  let pxPreenchidos = 0;
+  let janelasDeFeicao = 0;
+  {
+    const visto = new Uint8Array(n);
+    for (let i0 = 0; i0 < n; i0++) {
+      if (pecaLimpa.m[i0] || alcancaBorda[i0] || visto[i0]) continue;
+      visto[i0] = 1;
+      const pilha = [i0];
+      const furo: number[] = [];
+      let temFeicao = false;
+      while (pilha.length) {
+        const i = pilha.pop()!;
+        furo.push(i);
+        const x = i % W;
+        const y = (i / W) | 0;
+        const u = paraUnidade(x, y);
+        if (naEspinhaDaBoca(u.x, u.y) || naCapsulaDoOlho(u.x, u.y)) temFeicao = true;
+        for (const q of [
+          x > 0 ? i - 1 : -1,
+          x < W - 1 ? i + 1 : -1,
+          y > 0 ? i - W : -1,
+          y < H - 1 ? i + W : -1,
+        ])
+          if (q >= 0 && !pecaLimpa.m[q] && !alcancaBorda[q] && !visto[q]) {
+            visto[q] = 1;
+            pilha.push(q);
+          }
+      }
+      if (temFeicao) {
+        janelasDeFeicao++;
+        continue;
+      }
+      for (const i of furo) pecaLimpa.m[i] = 1;
+      pxPreenchidos += furo.length;
+    }
+  }
+  pecaLimpa.mantidos += pxPreenchidos;
+
   // --- 3. O TOM — a caixa da peça, o esticão por percentil, e o PNG cinza ---
   //
   // A partição contorno × miolo MORREU AQUI. Ela existia para dar duas cores a uma
@@ -575,6 +668,8 @@ export async function construirRosto(
     pxNoRosto,
     ruidoDaPeca: peca0.descartados,
     componentes: pecaLimpa.quantas,
+    pxPreenchidos,
+    janelasDeFeicao,
     mascara: pecaLimpa.m,
   };
 }
@@ -607,6 +702,10 @@ BARBA -> silhueta + tom — ${arte}
       `${semLimite ? "MANTIDOS (--sem-limite)" : "recortados, como na extração"}`,
   );
   console.log(`  a peça, afinal                 ${p.pxPeca} px`);
+  console.log(
+    `  figurinha (passo 2c)           ${p.pxPreenchidos} px de furo preenchido · ` +
+      `${p.janelasDeFeicao} janela(s) de feição aberta(s)`,
+  );
   console.log(
     `
   esticão (p${PERCENTIS[0] * 100}/p${PERCENTIS[1] * 100})            ` +

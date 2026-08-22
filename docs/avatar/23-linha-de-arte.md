@@ -310,6 +310,36 @@ nº 4 lida do lado da esteira:
 `traje-farda` e `traje-gambesao` estão **congeladas no vetor** por decisão do Doug,
 com trava mecânica em `traje.ts`.
 
+### 4.5 A PEÇA É FIGURINHA — opaca por dentro, e vale para os dois lados
+
+*Decidida em 2026-08-22, depois de a `trancada` v10 chegar ao render com o traço do
+maxilar do boneco aparecendo dentro da barba.*
+
+> **"A peça é colada como figurinha: nada atrás dela pode ser visto."** — o Doug
+
+A peça cobre o que ela cobre, inteiro. As **únicas** janelas que uma peça de rosto
+mantém abertas são as **feições** — a espinha da boca e as cápsulas dos olhos —, e
+elas são abertas de propósito pelo recorte da esteira, porque a linha da boca é da
+base e nunca da peça (doc 24 §3: *0 px de tinta na boca, sem tolerância*).
+
+**Por que isto virou lei e não conserto de uma peça:** a esteira reconhece a peça
+pelo que *difere da base careca*, então **fio escuro pintado sobre o traço preto do
+boneco não entra na peça** — a diferença é ~0. O furo que sobra não é escolha de
+ninguém: é o critério de reconhecimento falhando em silêncio, e ele **piora quanto
+maior a peça** (a `trancada` v4 tinha 2 furos, a v10 tinha 4). Nenhuma régua de arte
+pega isso, porque a arte está certa.
+
+Quem garante é a esteira, no **passo 2c** de `barba-para-formas.ts`: furo interior
+sem feição dentro é preenchido, e o pixel preenchido carrega a luminância que a arte
+tem ali — então o tom continua saindo do desenho, e a Regra Inviolável nº 4 continua
+de pé. **Não se pede isso ao gerador e não se conserta na arte** — as duas coisas
+foram tentadas em 2026-08-22 e as duas foram reprovadas a olho.
+
+⚠️ **A régua que decide é a PROVA DA FIGURINHA, e ela é do render:** trocar a cor da
+pele do boneco não pode mudar pixel nenhum dentro da pegada da silhueta, fora das
+janelas de feição. Ela não precisa saber a causa nem olhar a arte. Gate:
+`scripts/avatar/arte/__tests__/figurinha.test.ts`.
+
 ---
 
 ## 5. Raridade em desenho, por slot

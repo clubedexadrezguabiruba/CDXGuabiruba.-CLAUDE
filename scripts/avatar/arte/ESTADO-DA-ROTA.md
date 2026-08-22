@@ -4740,3 +4740,79 @@ luminância e **reprova peça chapada** por construção (`hi <= lo`): o pedido
 
 `typecheck` 0 · `lint` 0 · **605 testes** · `verify:arte` **exit 0**, agora com
 `arte:borda` dentro.
+
+---
+
+## 2026-08-22 — a v10 da `trancada`, e a FIGURINHA
+
+A `barba-trancada` v10 (`7d348ea3f198f0de97a7bed0c549ff1b`, 92 831 px) entrou pela
+esteira e **aprovou em tudo** — Gate −1, traço, borda, rostos-check — e chegou ao
+`/dev/avatar-kokeshi` com o traço do maxilar do boneco **aparecendo dentro da
+barba**. O Doug pegou a olho, como sempre.
+
+### A causa, e o que ela ensina sobre a régua
+
+Não era camada (`cabeca-contorno` é a 303, `rosto-sob-cabelo` a 346 — a barba já ia
+por cima) e não era desenho (a arte foi aprovada de perto, ampliada, antes de
+qualquer conserto).
+
+Era o **passo 1 de `construirRosto`**: a peça é *"o que difere da base careca em
+> 24 por canal"*. Fio de barba pintado exatamente sobre o traço PRETO da base
+difere em ~0 — o pixel ficava fora da máscara, o `potrace` o devolvia como **furo**,
+e pelo furo aparecia o que estivesse por baixo: o contorno do maxilar, a pele, e o
+traje que o aluno vestir. **É sistêmico e piora com o tamanho da peça:** a v4 tinha
+2 furos, a v10 tinha 4.
+
+Duas tentativas anteriores morreram aqui, e as duas por medir a coisa errada:
+
+1. **o reparo por programa** (interpolação horizontal dos vizinhos, 2026-08-22 de
+   manhã) — mexia na ARTE. Todas as réguas melhoraram e o Doug reprovou a olho.
+   Revertido inteiro;
+2. **o laudo que disse "tapar o furo não basta"** — mediu o cinza da máscara nos
+   pixels do maxilar (5 de 255) e concluiu que sairia preto do mesmo jeito. Está
+   certo e é irrelevante: preto ali é o **desenho**. O que o olho via era a **pele**
+   vazando e o arco com forma de maxilar, não a falta de luz.
+
+### O conserto — passo 2c, e é topologia
+
+> *"a barba é colada como figurinha — nada atrás dela pode ser visto"* — o Doug,
+> 2026-08-22, e é a regra que ficou.
+
+Depois do recorte das feições, **todo furo interior da máscara é preenchido**,
+exceto o que contém feição dentro (a espinha da boca, as cápsulas dos olhos — as
+mesmas regiões que o passo 2 já protege). A arte **não é tocada**: o pixel
+preenchido entra no tom com a luminância que a arte tem ali, então o render passa a
+reproduzir a arte aprovada em vez das camadas de baixo.
+
+| régua | antes | depois |
+|---|---|---|
+| furos sem feição na máscara | 4 (o maior 373 px, u x341→368 y341→412) | **0** |
+| subcaminhos do `d` | 6 | **2** — contorno + boca |
+| `d` das duas formas | 14 656 B | **12 040 B** |
+| máscara de tom | 26 231 B | 26 246 B (os furos passam a carregar tom) |
+| **prova da figurinha** (troca pele clara ↔ escura; nada dentro pode mudar) | 512 px mudam, 364 no furo do maxilar | **141 px, todos na franja da boca** — maxilar **0** |
+
+**A prova da figurinha é a régua que faltava**, e ela é do RENDER: se nada atrás da
+peça é visto, trocar a pele não pode mudar pixel dentro da pegada da silhueta. Ela
+não depende de conhecer a causa nem de olhar a arte — e teria pego este defeito no
+dia em que ele nasceu.
+
+### O gate
+
+`scripts/avatar/arte/__tests__/figurinha.test.ts` — falhou com os 4 furos antes do
+fix, passa com 0 depois. Ele vale para **todo o slot `rosto`**, não só para esta
+peça.
+
+### O selo de bytes estava vermelho no HEAD
+
+O wip `41bef8f` entrou com o `d` em 14 656 B contra o selo de 14 800 e **a suíte
+ficou vermelha no commit** — ninguém rodou `npm test`. Fica registrado porque o selo
+existe justamente para isso: mudança de esteira que passe despercebida.
+
+### Gates
+
+`typecheck` 0 · `lint` 0 · **608 testes** · `verify:arte` **exit 0**, com o
+`peso-baseline` regravado em 26 274 B depois da aprovação do Doug.
+
+**Aprovada e promovida** — parecer do Doug no `localhost`: *"ficou perfeito, a melhor
+arte, quero este padrão sempre"*.
