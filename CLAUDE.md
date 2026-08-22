@@ -284,6 +284,13 @@ quando não há `.env.local` — é assim que funcionam em CI.
     julgamento — 56 px tronco, **32 px peça de cabeça**, 340 px extremo. Ele
     substituiu três cópias do mesmo texto (doc 22 §4, doc 21 §0.4, Bíblia v2 §10),
     que hoje são ponteiros de uma linha
+  - `docs/avatar/24-cabelo-e-barba-ficha-do-slot.md` — **antes de pedir barba ou
+    cabelo, leia esta.** É a ficha MEDIDA que o doc 23 pede e não tinha: o envelope
+    espacial da família que recolore — massa, largura contra a cabeça, topo, piso,
+    teto de tronco coberto — mais a quadra curta que vai no pedido. Nasceu de duas
+    barbas que obedeceram cada linha escrita e foram reprovadas assim mesmo (uma
+    cobria 16,1% do tronco, a outra a boca). O doc 23 vence em *como desenhar*;
+    este responde por *onde cabe*
   - `docs/avatar/22-catalogo-de-pecas.md` — **o menu de onde a próxima arte é
     escolhida**, nos 4 slots: 56 peças com raridade, organizadas por corredor da
     Academia. Não é fila de produção, e a lei de arte não está mais nele

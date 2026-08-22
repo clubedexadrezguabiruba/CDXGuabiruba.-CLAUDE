@@ -53,6 +53,13 @@ literal e uma imagem sem papel declarado vira contradição com a anterior:
 trancaça é uma barba, e citá-la como textura para um chapéu de feltro arrastaria pelo
 para onde não cabe. Ver [doc 23 §9](../../../docs/avatar/23-linha-de-arte.md).
 
+⚠️ **Desde 2026-08-22 a 3ª imagem é OPCIONAL para cabelo e barba.** O acabamento da
+trancaça foi medido e escrito em palavras — estrutura tonal, sombra, traço, unidade e
+borda — em [doc 24 §5](../../../docs/avatar/24-cabelo-e-barba-ficha-do-slot.md), com
+o bloco pronto para colar na §5.6. Anexá-la continua valendo e é mais forte quando a
+peça nova for da mesma textura; **para as outras, o texto evita a contradição** que a
+§9 do doc 23 alerta.
+
 ⚠️ **E ela não pode contradizer a 2ª.** A 2ª imagem já diz *"ignore o estilo dela"*;
 por isso a 3ª entra com o papel escrito — **acabamento**, não forma e não personagem.
 O registro da rota mostra por que isto importa: *"na dúvida, passe menos"* produziu
@@ -112,6 +119,17 @@ Todas medidas na peça que passou. Valem para toda barba nova, sem exceção.
 | tinta | 1 componente contínuo · **na cor que o gerador quiser** · sem sombra projetada |
 | luz | **amplitude**, não faixa: `hi > lo` no esticão p2/p98. Peça chapada reprova na esteira |
 | o boneco | não se mexe: 0 px de deslocamento, escala 100,00% |
+| **massa** | **≤ ~70 000 px.** A `trancada` promovida tem 54 264 — o dobro já é outra peça |
+| **largura** | **≤ 1,00 da cabeça** (364 u). A aprovada mede 325 u, 0,89 |
+| **topo** | **≥ y 270 u**, a base do olho. Acima disso encosta na cápsula |
+| **piso e tronco** | **≤ y 545 u** (≥ 58 u até o fim do tronco, y 603) e **≤ 12% do corpo coberto**. A aprovada mede y 530 e 8,93% |
+
+⚠️ **As quatro últimas nasceram em 2026-08-22, e nasceram de duas reprovações.** Duas
+barbas obedeceram cada linha desta tabela e foram reprovadas assim mesmo: uma cobria
+16,1% do tronco (a arte do traje some por baixo dela — a camada de rosto é pintada
+POR CIMA da do traje), a outra cobria a linha da boca. O envelope inteiro, com o
+porquê de cada número e a faixa equivalente para **cabelo**, está no
+[doc 24](../../../docs/avatar/24-cabelo-e-barba-ficha-do-slot.md).
 
 ⚠️ **O ciano instrumental saiu desta tabela em 2026-08-21, e não morreu — mudou de
 dono.** Ele continua sendo como a esteira reconhece a peça (o Gate −1 e o

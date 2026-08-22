@@ -372,10 +372,10 @@ de alunos menores de idade.
 <!-- VOLATIL:inicio -->
 | | |
 |---|---|
-| **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 4 |
-| **Árvore** | **11 arquivos sujos** |
-| **Último commit** | 3f39ea8 · 2026-08-21 · feat(avatar): a barba fica sendo UMA — a trancaça vira a peça-padrão da linha de arte |
+| **Branch** | `main` |
+| **Commits à frente de `origin/main`** | 5 |
+| **Árvore** | **3 arquivos sujos** |
+| **Último commit** | 4fbddd2 · 2026-08-21 · feat(avatar): a lei de arte deixa de ser de TRAJE e vira de PEÇA — e o traço ganha a metade que faltava |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto

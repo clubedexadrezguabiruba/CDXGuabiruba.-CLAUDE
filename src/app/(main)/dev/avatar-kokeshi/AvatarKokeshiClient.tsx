@@ -16,7 +16,11 @@ import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { IDS_DA_ARTE, PECAS_DA_ARTE, type IdDaArte } from "@/lib/avatar/estilo/pecas-da-arte";
+import { ROSTOS } from "@/lib/avatar/catalogo";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
+
+/** Os slugs do slot `rosto` que existem hoje. Vazio até a primeira peça entrar. */
+const SLUGS_DE_ROSTO = Object.keys(ROSTOS);
 
 /** Os quatro tamanhos do `SIZE_CONFIG`. 56 é o do ranking e é o que manda. */
 const TAMANHOS = [
@@ -43,6 +47,7 @@ function Boneco({
   pele,
   cabelo,
   modelo,
+  rosto,
   h,
   animado,
   ns,
@@ -51,11 +56,13 @@ function Boneco({
   cabelo: string;
   /** Modelo do catálogo, peça traçada da arte, ou `undefined` para careca. */
   modelo: ModeloCabelo | Cabelo | undefined;
+  /** A peça do slot `rosto` — barba ou óculos —, ou `undefined` para nenhuma. */
+  rosto?: Parameters<typeof compor>[0]["rosto"];
   h: number;
   animado: boolean;
   ns: string;
 }) {
-  const svg = compor({ pele, cabelo, modeloCabelo: modelo, animado, ns })
+  const svg = compor({ pele, cabelo, modeloCabelo: modelo, rosto, animado, ns })
     .replace("<svg ", `<svg width="${Math.round((h * VIEWBOX.w) / VIEWBOX.h)}" height="${h}" `);
   return <span dangerouslySetInnerHTML={{ __html: svg }} />;
 }
@@ -79,6 +86,14 @@ export default function AvatarKokeshiClient() {
    */
   const [daArte, setDaArte] = useState<IdDaArte | undefined>(undefined);
   const peca = daArte ? (PECAS_DA_ARTE[daArte] as Cabelo) : modelo;
+  /**
+   * A peça do slot `rosto`, por slug. Ela é escolhida à parte do cabelo porque é
+   * outro slot: no produto o aluno veste as duas ao mesmo tempo, e é justamente
+   * o par que precisa ser olhado — a barba recolore com o cabelo (D17), então
+   * cabelo escuro e barba escura podem fundir numa massa só a 56 px.
+   */
+  const [barba, setBarba] = useState<string | undefined>(undefined);
+  const rosto = barba ? ROSTOS[barba] : undefined;
   const [animado, setAnimado] = useState(true);
   const [fundo, setFundo] = useState<string>("#EFEAE2");
 
@@ -173,6 +188,30 @@ export default function AvatarKokeshiClient() {
             </button>
           ))}
         </div>
+        {/*
+          O SLOT `rosto` — outro slot, outro seletor. Ele fica ao lado do cabelo
+          porque o par é o que precisa ser conferido: a barba recolore junto com o
+          cabelo (D17), então a única coisa que separa uma da outro é a silhueta.
+        */}
+        {SLUGS_DE_ROSTO.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">rosto:</span>
+            {SLUGS_DE_ROSTO.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                onClick={() => setBarba(barba === slug ? undefined : slug)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  barba === slug
+                    ? "border-emerald-700 bg-emerald-700 text-white"
+                    : "border-emerald-500 text-emerald-700"
+                }`}
+              >
+                {ROSTOS[slug].nome}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-1">
           <span className="text-zinc-500">fundo:</span>
           {["#EFEAE2", "#FF00FF", "#1B1B1F", "#FFFFFF"].map((f) => (
@@ -206,6 +245,7 @@ export default function AvatarKokeshiClient() {
               pele={pele}
               cabelo={cabelo}
               modelo={peca}
+              rosto={rosto}
               h={t.h}
               animado={animado}
               ns={`kk-${t.h}`}
@@ -270,12 +310,21 @@ export default function AvatarKokeshiClient() {
             pele={pele}
             cabelo={cabelo}
             modelo={PECAS_DA_ARTE[id] as Cabelo}
+            rosto={rosto}
             h={56}
             animado={false}
             ns={`kkp-${id}`}
           />
         ))}
-        <Boneco pele={pele} cabelo={cabelo} modelo="coque" h={56} animado={false} ns="kkp-c" />
+        <Boneco
+          pele={pele}
+          cabelo={cabelo}
+          modelo="coque"
+          rosto={rosto}
+          h={56}
+          animado={false}
+          ns="kkp-c"
+        />
         <span className="self-center text-[10px] text-zinc-500">
           ← 56 px, o tamanho do ranking
         </span>
@@ -313,6 +362,9 @@ export default function AvatarKokeshiClient() {
             skin={i % PELE.length}
             hair={MODELOS_CABELO[i % MODELOS_CABELO.length]}
             hairColor={i % CABELO.length}
+            // O slot `rosto` entra aqui pelo SLUG, como o banco o guarda — é a
+            // tradução do componente sendo exercitada, igual aos índices acima.
+            rosto={barba ?? null}
             altura={78}
             animado={animado}
             ns={`kkr-${i}`}
