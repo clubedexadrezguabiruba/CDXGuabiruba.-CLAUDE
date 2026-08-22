@@ -372,10 +372,10 @@ de alunos menores de idade.
 <!-- VOLATIL:inicio -->
 | | |
 |---|---|
-| **Branch** | `main` |
-| **Commits à frente de `origin/main`** | 5 |
-| **Árvore** | **3 arquivos sujos** |
-| **Último commit** | 4fbddd2 · 2026-08-21 · feat(avatar): a lei de arte deixa de ser de TRAJE e vira de PEÇA — e o traço ganha a metade que faltava |
+| **Branch** | `avatar/barba-trancada-v10` |
+| **Commits à frente de `origin/main`** | 12 |
+| **Árvore** | **19 arquivos sujos** |
+| **Último commit** | 4ce3ba7 · 2026-08-22 · fix(avatar): a boca preta na coluna `traçado` — faltava `fill-rule=evenodd`, e agora um gate vigia a divergência |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -391,9 +391,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **34 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **35 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:rostos-check` · `arte:traco` · `arte:borda` · `arte:peso`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:rostos-check` · `arte:cabelos-check` · `arte:traco` · `arte:borda` · `arte:peso`
 
 ## Frentes
 
@@ -434,7 +434,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-21 |
+| `CLAUDE.md` | 2026-08-22 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-11 |

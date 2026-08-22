@@ -4816,3 +4816,159 @@ existe justamente para isso: mudança de esteira que passe despercebida.
 
 **Aprovada e promovida** — parecer do Doug no `localhost`: *"ficou perfeito, a melhor
 arte, quero este padrão sempre"*.
+
+---
+
+# 2026-08-22 · O ELENCO DE CABELO VAI PARA O PADRÃO TONAL — Bloco A, a espinha
+
+> *"ficou perfeito, a melhor arte, quero este padrão sempre"* — o Doug sobre a
+> `rosto-barba-trancada` v10. A decisão que saiu daí: **os cinco modelos de cabelo
+> são refeitos no padrão dela**, elenco inteiro, arte a arte, com parecer dele entre
+> uma peça e a seguinte. Coerência visual vale mais que o trabalho já feito.
+
+Este bloco **não desenhou nada e não promoveu nada**. Ele construiu a espinha e
+mediu, no dia 1, os dois riscos técnicos que o plano declarou.
+
+## A decisão de arquitetura: o cabelo REUSA a esteira do rosto
+
+`barba-para-formas.ts` nunca foi a esteira da barba — o docstring do gate da aresta
+nua já dizia *"vale para todo o slot rosto"*. Base careca, diferença contra a base,
+recorte de feições, aresta nua, figurinha (2c), esticão por percentil e traçado são
+os mesmos para quem recolore, seja no queixo ou no crânio. Copiar tudo isso para um
+`cabelo-para-formas.ts` criaria duas descrições da mesma esteira.
+
+O que varia por slot são **dois campos**, e eles viraram tabela (`ESTEIRA`):
+
+| campo | `rosto` | `cabelo` |
+|---|---|---|
+| `prefixo` do slug | `rosto-` | `cabelo-` |
+| `resolucaoDoTom` | 0,5 | 0,5 — **provisório declarado**, herdado da barba |
+
+A resolução do cabelo é medida na primeira peça real (escada 100% → 50% → 35%,
+contando tons distintos no render, doc 23 §4.1). O campo existe justamente para que
+o número da barba não vire o número de todo mundo por omissão.
+
+## O que nasceu
+
+| arquivo | o que é |
+|---|---|
+| `Cabelo.tonal` (`cabelo.ts`) | a 3ª família: `{ formas: {d,cor,semTraco}[]; tom: TomDaPeca }` — o mesmo shape do braço `formas` de `PecaSobreposta`, de propósito |
+| `MODELOS_TONAIS` + `completudeDasFamilias()` | a lista escrita (vazia hoje) e a régua que cobra que as TRÊS somem `MODELOS_CABELO` |
+| ramo tonal em `compor()` | `sobrepor({…}, ns, "cabelo")`, na MESMA posição da pilha do cabelo traçado. **Zero função de render nova** |
+| `construirPecaTonal(arte, slot)` | a esteira parametrizada. `construirRosto` continua existindo, com a assinatura de sempre |
+| `scripts/avatar/arte/cabelos.ts` | o gerador de `cabelos-da-arte.ts` + o PNG de tom em `public/items/cabelo/`. `arte:cabelos` / `arte:cabelos-check`, e o `--check` entrou em `verify:arte` |
+| `scripts/avatar/arte/folha-cabelo.ts` | a folha do slot: 5 colunas — arte · traçado · só o cabelo · **+ trancada** · + trancada em outra cor —, minis a 32 e 56 px |
+| `.scratch/estilo/bancada-cabelo-tonal.ts` | a bancada dos dois riscos |
+
+`Tonal` no nome não é enfeite: **`peca-de-arte.ts` já exporta um `construirPeca`**, e
+é o do outro braço da Regra Inviolável nº 4 (cor assada). As duas assinaturas aceitam
+um caminho de PNG e devolvem uma peça, então trocar uma pela outra **compilaria**.
+Achado e consertado dentro do bloco.
+
+## A bancada — as 3 artes do elenco VELHO, sem promover nenhuma
+
+`entrada.png`, `chanel.png` e `entrada-2.png` foram desenhadas para a família
+traçada e têm 2–3 tons chapados. Elas provam a **mecânica**, nunca o padrão.
+
+### Risco 1 — o canal do traço da calota: **existe na máscara e não vira mordida**
+
+A hipótese: fio escuro pintado sobre o traço PRETO do crânio difere ~0 da base, cai
+fora da máscara, e — como no cabelo o traço corre pela calota inteira — o buraco
+alcança a borda da peça. Buraco que alcança a borda **não é furo**: a inundação do 2c
+vem de fora e passa por ele, e o que sobra é uma mordida na silhueta.
+
+A régua: fechamento morfológico. `canal = fecha(máscara, R=9 px) − máscara` é
+exatamente o conjunto de reentrâncias que o 2c não fechou, porque toda cavidade
+fechada já foi preenchida antes. O vazamento é medido no RENDER a 340 px, trocando
+pele **e** traje: pixel que muda é pixel por onde se vê o que está atrás.
+
+| arte | canal na máscara | sobre o traço da base | vazou sobre o traço | vazou em concavidade do desenho |
+|---|---|---|---|---|
+| `entrada` (espetado) | 3 036 px | 368 px (12,1%) | **4 px** de 115 | 443 px de 725 |
+| `chanel` | 850 px | 810 px (**95,3%**) | **0 px** de 260 | 6 px de 11 |
+| `entrada-2` (assimétrico) | 1 433 px | 1 026 px (71,6%) | **1 px** de 320 | 132 px de 145 |
+
+**A linha do `chanel` é a que decide.** É a arte cujo canal é quase todo do traço — e
+ela vaza **zero**. O motivo: o que aparece pelo canal ali é o próprio contorno preto
+do boneco, que não muda ao trocar pele e traje e é da mesma cor que a camada de baixo
+da peça (`var(--av-linha)`). O canal é **preto sobre preto**: existe topologicamente e
+é invisível.
+
+O vazamento que sobra mora na outra coluna — concavidade do DESENHO, a fenda entre
+dois espetos, que o fechamento a R=9 preenche por ser estreita e que peça nenhuma
+quer preenchida. Ali a régua é que está larga, não a peça furada.
+
+**Conclusão: nenhum conserto no 2c hoje.** O plano previa a bifurcação (*"se aparecer:
+conserto no passo 2c"*) e ela não apareceu.
+
+⚠️ **A ressalva, declarada:** as três artes são do elenco velho e nenhuma foi
+desenhada como figurinha. Uma arte nova com fio **claro** sobre o traço do crânio
+abriria canal onde o que aparece é PELE, e aí o vazamento é visível. A régua está
+escrita e roda em um comando — ela é reaplicada na primeira peça real do Bloco B.
+
+### Risco 2 — o peso do composto contra a janela do DEFLATE: **folga em todos**
+
+| caso | 1 boneco | folga na janela (32 768 B) | 30 bonecos, gzip |
+|---|---|---|---|
+| careca + trancada | 19 314 B | +13 454 | 14,6 KB |
+| `chanel` **tonal** + trancada | 24 307 B | +8 461 | **16,9 KB** |
+| `chanel` **traçado** (o de hoje) + trancada | 24 328 B | +8 440 | 17,8 KB |
+| `entrada-2` tonal + trancada | 28 910 B | +3 858 | 19,3 KB |
+| `entrada` tonal + trancada | 29 374 B | +3 394 | 19,6 KB |
+
+Nenhum cruza a janela, e o tonal é **mais leve em gzip** que o traçado de hoje na
+mesma peça (16,9 contra 17,8 KB) — porque o tonal é um `d` repetido duas vezes, que
+o DEFLATE deduz, contra massa + núcleo + claras + pretas, todos diferentes.
+
+⚠️ **O teto real está declarado:** o pior caso deixa **3 394 B** de folga com 9 666 B
+de `d`. Uma peça com ~13 KB de `d` cruzaria a janela e o gzip dos 30 despencaria.
+`coque` e `moicano` são as candidatas — se uma delas chegar grande, a saída medida é
+`optTolerance` maior no `potrace` do cabelo, e o número vai ao Doug antes.
+
+## Os gates que nasceram junto
+
+- **`arte:cabelos --check`** em `verify:arte` — o literal gerado confere caractere a
+  caractere, e o PNG de tom byte a byte. Vazio hoje, e conferir o vazio é honesto:
+  ele reprova quem escrever peça à mão no arquivo gerado;
+- **`pilha-de-camadas.test.ts` ganhou a 3ª variante.** A linha `cabelo-tracado` virou
+  `cabelo-sobreposto` e `FamiliaDeCabelo` passou a nomear **conjuntos** de famílias
+  (`sobreposto` = {traçado, tonal}, `temExtensao` = {paramétrico, traçado}) — nenhuma
+  camada nova. Provado não-vácuo: movendo a peça para antes das feições, os dois
+  elencos tonais reprovam na asserção 3;
+- **`figurinha.test.ts` atravessa os DOIS slots**, com contagem exata de janelas de
+  feição — 1 na barba (a boca, cuja linha é da base) e 0 no cabelo;
+- **`tom-da-peca.test.ts`** ganhou o bloco que prova a tese da esteira única: a MESMA
+  arte pelos dois slots dá `d`, máscara, esticão, contagens e caixa **idênticos** — só
+  o slug muda;
+- **`arteDaPecaNoDeploy.test.ts`** já lê `CABELOS_DA_ARTE`, então a primeira promoção
+  nasce coberta sem ninguém lembrar de plugar o slot;
+- **`cabelo.test.ts`** ganhou o bloco da família tonal, medido sobre um literal
+  sintético: as duas formas com o mesmo `d`, a máscara com o slot no id, `evenodd` nas
+  duas, `semTraco` nas duas, **nenhuma regra de CSS de cabelo** e a base careca
+  intocada;
+- **`folha-nao-diverge.test.ts`** vigia a folha do cabelo desde o dia zero.
+
+## O que NÃO mudou — e é o que os selos provam
+
+Os cinco modelos atuais continuam em produção, byte a byte. `arte:rostos --check`
+confere `rostos-da-arte.ts` caractere a caractere e o PNG da `barba-trancada` byte a
+byte; `arte:pecas --check` idem para as três peças traçadas; os 11 selos de
+`parametrico-congelado.ts` não se moveram. Nenhuma migration (cabelo é escolha livre
+da D27, não catálogo). `tracar-cabelo.ts` continua de pé — é biblioteca.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**641 testes** (eram 612) · `verify:arte` **exit 0** com 35 scripts · `verify:estado`
+**exit 0** depois de `npm run estado`.
+
+## O que fica pendente, declarado
+
+1. **A prova da figurinha no RENDER não virou gate de suíte.** Ela roda na bancada e
+   mede o que precisa medir; virar teste hoje custaria um chromium por rodada para
+   medir uma arte que nunca será promovida. Entra no Bloco B, sobre a peça real;
+2. **`MODELOS_TONAIS` está vazia**, e há uma asserção escrita **para cair** na
+   primeira promoção (`linhas-cabelo.test.ts`), com a instrução no texto da falha:
+   regravar o selo DAQUELA peça, nunca em lote;
+3. **`PEDIDO-CABELOS.md` é do Bloco B** — ele nasce do prompt aprovado da trancada,
+   com o parágrafo do "onde cabe" trocado pelo do cabelo (doc 24 §5.6).

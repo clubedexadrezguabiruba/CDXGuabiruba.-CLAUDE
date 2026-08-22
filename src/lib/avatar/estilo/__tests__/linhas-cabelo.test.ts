@@ -32,7 +32,9 @@ import {
   CABELOS,
   MODELOS_CABELO,
   MODELOS_PARAMETRICOS,
+  MODELOS_TONAIS,
   MODELOS_TRACADOS,
+  completudeDasFamilias,
   arcosDeTraco,
   coberturaDaSobrancelha,
   pathCabelo,
@@ -91,14 +93,57 @@ const conferirSelo = (chave: string, svg: string) => {
   expect(sha(svg), `${chave}: algum byte fora do <style> mudou`).toBe(antes.sha);
 };
 
-describe("as duas famílias do catálogo são declaradas, não inferidas", () => {
-  it("toda peça do catálogo está em EXATAMENTE uma das duas listas", () => {
-    // Sem esta amarra, um modelo novo nasceria fora das duas listas e escaparia dos
-    // dois blocos de selo abaixo — em silêncio, e justamente no primeiro dia dele.
-    // É o modo de falha por vacuidade, escrito na forma que este arquivo permite.
-    const declarados = [...MODELOS_PARAMETRICOS, ...MODELOS_TRACADOS];
+describe("as TRÊS famílias do catálogo são declaradas, não inferidas", () => {
+  it("toda peça do catálogo está em EXATAMENTE uma das três listas", () => {
+    // Sem esta amarra, um modelo novo nasceria fora das listas e escaparia dos blocos
+    // de selo abaixo — em silêncio, e justamente no primeiro dia dele. É o modo de
+    // falha por vacuidade, escrito na forma que este arquivo permite.
+    //
+    // A régua mora em `cabelo.ts` (`completudeDasFamilias`) e não aqui porque a
+    // TERCEIRA lista nasceu vazia: uma soma escrita neste arquivo teria de ser
+    // reescrita a cada promoção, e é exatamente o tipo de número que este
+    // repositório já pagou para não manter em dois lugares.
+    const { foraDasListas, emDuasListas } = completudeDasFamilias();
+    expect(foraDasListas, "modelo do catálogo fora das três listas").toEqual([]);
+    expect(emDuasListas, "modelo em mais de uma lista").toEqual([]);
+  });
+
+  it("as três listas somam o catálogo, e a soma é conferida contra `MODELOS_CABELO`", () => {
+    // O par da amarra acima, pelo lado do conjunto: `completudeDasFamilias` responde
+    // pelas duas queixas, mas não afirma que a UNIÃO é o catálogo — ela poderia
+    // aprovar um id declarado que não existisse em `CABELOS`.
+    const declarados = [...MODELOS_PARAMETRICOS, ...MODELOS_TRACADOS, ...MODELOS_TONAIS];
     expect([...declarados].sort()).toEqual([...MODELOS_CABELO].sort());
-    expect(new Set(declarados).size, "um modelo aparece nas duas listas").toBe(declarados.length);
+  });
+
+  it("`MODELOS_TONAIS` está vazia hoje — e o dia em que encher, é aqui que se lê", () => {
+    // ⚠️ ESTA LINHA É PARA CAIR. Ela não defende nada: declara o estado de
+    // 2026-08-22, que é a espinha do padrão tonal pronta e nenhuma peça promovida.
+    //
+    // Quando a primeira peça for aprovada e migrar de `MODELOS_TRACADOS` para
+    // `MODELOS_TONAIS`, este teste reprova, e a mensagem diz o que fazer: conferir
+    // que a promoção regravou os selos daquela peça, e então mover o número.
+    // Sem ela, o bloco de selos dos traçados encolheria em silêncio.
+    expect(
+      MODELOS_TONAIS.length,
+      "uma peça migrou para a família tonal: regrave o selo DELA (`npm run avatar:congelar`) " +
+        "e atualize este número — nunca em lote",
+    ).toBe(0);
+    expect(MODELOS_TRACADOS.length).toBe(3);
+    expect(MODELOS_PARAMETRICOS.length).toBe(2);
+  });
+
+  it("nenhum modelo declara duas famílias ao mesmo tempo — `pontos` × `massa` × `tonal`", () => {
+    // A exclusividade é lei desde 2026-08-06 (`Cabelo`, docstring): duas descrições
+    // da mesma borda divergem sempre. Com o braço tonal ela passa a ter três lados, e
+    // o mais caro é `massa` + `tonal`: a máscara de tom é recortada na silhueta EXATA
+    // do potrace, então uma massa decimada por corda ao lado dela poria o
+    // claro-escuro fora de registro com a peça que o pinta.
+    for (const m of MODELOS_CABELO) {
+      const c = CABELOS[m];
+      const familias = [c.pontos && "pontos", c.massa && "massa", c.tonal && "tonal"].filter(Boolean);
+      expect(familias.length, `${m} declara ${familias.join(" + ")}`).toBeLessThanOrEqual(1);
+    }
   });
 });
 

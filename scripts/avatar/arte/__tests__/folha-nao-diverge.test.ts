@@ -72,3 +72,58 @@ describe("a coluna `traçado` da folha não diverge do produto", () => {
     );
   });
 });
+
+/**
+ * A MESMA VIGILÂNCIA NA FOLHA DO CABELO — e ela nasce vigiada.
+ *
+ * `arte:folha-cabelo` tem a mesma coluna `traçado` montada à mão, com o mesmo par de
+ * `<path>` e a mesma máscara. Os dois defeitos de 2026-08-22 são reproduzíveis nela
+ * letra por letra, e o segundo — `fill-rule` faltando — é ainda mais fácil de
+ * cometer numa cópia.
+ *
+ * ⚠️ **Este bloco lê TEXTO, e é de propósito.** Em 2026-08-22 nenhum cabelo tonal
+ * está promovido (`CABELOS_DA_ARTE` nasce vazio, arte a arte), então não há peça de
+ * onde montar as duas colunas e comparar pixel. O que existe para vigiar é o
+ * emissor, e o emissor é código-fonte. No dia em que a primeira peça for promovida,
+ * este bloco ganha o par de colunas de verdade — e até lá ele não é vácuo: a
+ * asserção que pegou o defeito real do rosto era exatamente desta forma.
+ *
+ * O primeiro defeito daquela folha — o `href="/items/…"` que não resolve sem
+ * servidor — **não é reproduzível aqui**, e isso é estrutura e não sorte:
+ * `folha-cabelo.ts` monta a peça a partir do BUFFER que a esteira devolveu
+ * (`construirPecaTonal`), então o `data:` não é uma troca que alguém precise lembrar
+ * de fazer. A asserção abaixo trava esse desenho.
+ */
+describe("a coluna `traçado` da folha do CABELO não diverge do produto", () => {
+  const fonte = readFileSync("scripts/avatar/arte/folha-cabelo.ts", "utf8");
+
+  it("os dois `<path>` do traçado carregam a MESMA regra de preenchimento", () => {
+    const paths = [...fonte.matchAll(/<path d="\$\{peca\.tonal!\.formas\[\d\]\.d\}"([^`]*?)fill=/g)];
+    expect(paths, "os dois `<path>` do traçado montados à mão").toHaveLength(2);
+    for (const [, atributos] of paths)
+      expect(atributos, "`fill-rule` faltando num `<path>` do traçado").toContain("REGRA");
+  });
+
+  it("a folha embute o tom em `data:` — e o embute a partir do BUFFER da esteira", () => {
+    // `uri()` é `data:image/png;base64,…`. O que importa é de onde vêm os bytes: de
+    // `p.tom.png`, que é o que a esteira acabou de produzir. Ler o arquivo de
+    // `public/` obrigaria a peça a estar promovida, e a folha existe justamente para
+    // decidir se ela merece ser.
+    expect(fonte).toContain("tom: { ...p.tom, arte: uri(p.tom.png) }");
+    expect(fonte).toContain("data:image/png;base64,");
+  });
+
+  it("a folha recusa desenhar quando o literal e a esteira divergem", () => {
+    // O defeito nº 1 da rota é o produto desenhar uma peça e a folha julgar outra.
+    // Aqui isso não vira aviso: vira `process.exit(1)`.
+    expect(fonte).toContain("CABELOS_DA_ARTE[chave]");
+    expect(fonte).toContain("o defeito nº 1 desta rota");
+  });
+
+  it("a coluna do par traz a barba APROVADA, e não uma qualquer", () => {
+    // Refazer o cabelo muda a leitura da `rosto-barba-trancada`, que já passou pelo
+    // olho do Doug. A folha que não mostrasse o par pediria uma aprovação cega.
+    expect(fonte).toContain('const BARBA_DO_PAR = "rosto-barba-trancada"');
+    expect(ROSTOS["rosto-barba-trancada"], "a barba do par saiu do catálogo").toBeDefined();
+  });
+});

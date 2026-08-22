@@ -1,6 +1,10 @@
 /**
  * A PEÇA É FIGURINHA — opaca por dentro, decisão do Doug em 2026-08-22.
  *
+ * ⚠️ **Vale para os DOIS slots que recolorem**, e não só para a barba onde o
+ * defeito apareceu: a esteira é uma (`construirPecaTonal`), a base careca é a
+ * mesma e o passo 2c é o mesmo. Ver `ARTES`, logo abaixo dos imports.
+ *
  * O defeito que fundou este gate: a v10 da `barba-trancada` chegou ao render com o
  * traço do maxilar do boneco aparecendo DENTRO da barba. A causa não era camada nem
  * desenho: `construirRosto` reconhece a peça pelo que difere da base (> 24 por
@@ -22,12 +26,36 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { construirRosto } from "../barba-para-formas";
+import { construirPecaTonal, type SlotTonal } from "../barba-para-formas";
 import { LADO, naCapsulaDoOlho, naEspinhaDaBoca, paraUnidade } from "../base";
 
-const ARTE = "scripts/avatar/arte/barba-trancada.png";
+/**
+ * AS ARTES QUE ESTE GATE ATRAVESSA — e são DUAS, nos dois slots que recolorem.
+ *
+ * A regra da figurinha não é da barba: é da esteira, e a esteira é uma só
+ * (`construirPecaTonal`, com dois parâmetros de slot). Rodá-la só sobre a barba
+ * deixaria o slot `cabelo` inteiro fora do gate justamente no bloco em que ele
+ * nasceu.
+ *
+ * ⚠️ **`chanel.png` é FIXTURE, não peça em promoção.** É a arte do elenco VELHO — a
+ * mesma que hoje vira `CABELOS.chanel` pela família traçada — e está aqui porque é
+ * arte de cabelo de verdade, versionada, desenhada sobre a base oficial. Quando o
+ * chanel novo for aprovado (Bloco B), esta linha troca de arquivo e o gate segue
+ * medindo a mesma coisa.
+ *
+ * O contraste entre as duas é o que torna o teste interessante: a barba tem UMA
+ * janela de feição (a boca, cuja linha é da base e nunca da peça) e o cabelo não tem
+ * nenhuma — ele mora acima das feições. O gate cobra o número certo em cada caso, em
+ * vez de "pelo menos uma".
+ */
+const ARTES: { arte: string; slot: SlotTonal; janelas: number }[] = [
+  { arte: "scripts/avatar/arte/barba-trancada.png", slot: "rosto", janelas: 1 },
+  { arte: "scripts/avatar/arte/chanel.png", slot: "cabelo", janelas: 0 },
+];
 
-const peca = await construirRosto(ARTE);
+const PECAS = await Promise.all(
+  ARTES.map(async (a) => ({ ...a, p: await construirPecaTonal(a.arte, a.slot) })),
+);
 
 /**
  * Os buracos interiores da máscara, agrupados: pixel fora da peça que NÃO alcança a
@@ -99,8 +127,8 @@ function buracos(m: Uint8Array) {
  */
 const TURD = 50;
 
-describe("a peça de rosto é figurinha — opaca fora das feições", () => {
-  const comps = buracos(peca.mascara);
+describe.each(PECAS)("$slot · $arte — figurinha, opaca fora das feições", ({ p, janelas }) => {
+  const comps = buracos(p.mascara);
   const grandes = comps.filter((c) => c.px >= TURD);
 
   it("nenhum furo fora das feições sobrevive na máscara", () => {
@@ -111,16 +139,20 @@ describe("a peça de rosto é figurinha — opaca fora das feições", () => {
     expect(ilegais, `furos sem feição dentro — a figurinha está furada:\n${laudo}`).toHaveLength(0);
   });
 
-  it("a janela da BOCA continua aberta — a linha da boca é da base, nunca da peça", () => {
-    const daBoca = grandes.filter((c) => c.temFeicao);
-    expect(daBoca.length).toBeGreaterThanOrEqual(1);
+  it("as janelas de feição são exatamente as declaradas — nem uma a mais, nem a menos", () => {
+    // CONTAGEM, e não `toBeGreaterThan(0)`: a barba abre a janela da boca porque a
+    // linha da boca é da base (doc 24 §3, "0 px de tinta na boca, sem tolerância"), e
+    // o cabelo não abre nenhuma porque mora acima das feições. Uma janela a mais no
+    // cabelo é a esteira recortando o que o desenho não pediu; uma a menos na barba é
+    // a peça tapando a boca — que é o defeito que este slot mais teme.
+    expect(grandes.filter((c) => c.temFeicao)).toHaveLength(janelas);
   });
 
   it("o `d` traçado tem os subcaminhos da figurinha: o contorno + um por janela", () => {
     // Cada `M` do `d` é um subcaminho. A figurinha certa tem 1 (contorno externo)
     // + 1 por janela de feição. Um `d` com mais subcaminhos que isso está
     // desenhando furo que nenhuma feição explica.
-    const sub = (peca.formas[0].d.match(/M/g) ?? []).length;
-    expect(sub).toBe(1 + grandes.filter((c) => c.temFeicao).length);
+    const sub = (p.formas[0].d.match(/M/g) ?? []).length;
+    expect(sub).toBe(1 + janelas);
   });
 });

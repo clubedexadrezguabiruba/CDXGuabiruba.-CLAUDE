@@ -219,19 +219,27 @@ function estilo(ns: string, animado: boolean, modelo: CabeloOuModelo | undefined
   //    arte é a cabeça do BONECO, que é `descarte`. Fill e stroke passam a ser dois
   //    elementos porque passam a ter GEOMETRIA diferente: a massa inteira pintada,
   //    e só os arcos que a arte traça de fato levando linha. Ver `Cabelo.linhas`.
+  //  - **tonal** (`tonal`): NENHUMA regra de cabelo, e a ausência é a resposta certa.
+  //    A peça sai por `sobrepor()`, que pinta `fill="${cor}"` direto no `<path>` — a
+  //    cor mora no dado da peça, não numa classe. Emitir `.kk-cabelo*` para ela seria
+  //    CSS morto: regra sem elemento correspondente, que ninguém vê e todo boneco
+  //    paga. É o avesso do que `folha-unica.test.ts` mede (classe sem regra), e o
+  //    avesso também custa — a mesma economia que faz a base careca não pagar por
+  //    uma camada que ela não tem.
   const c = modelo ? resolverCabelo(modelo) : undefined;
   // O arco pode vir da massa OU de uma das formas irmãs, e a regra do traço sai se
   // qualquer uma declarar — senão uma peça cuja única linha está numa forma extra
   // sairia sem contorno nenhum.
   const temArco = Boolean(c?.linhas?.length) || Boolean(c?.formas?.some((f) => f.linhas?.length));
-  const cabelo = !c
-    ? ""
-    : regra(ns, "kk-cabelo") +
-      (c.massa
-        ? // A peça sobreposta não tem extensão: as formas irmãs são a própria peça,
-          // pintadas pela mesma `.kk-cabelo-m`, então `.kk-cabelo-e` não sai.
-          regra(ns, "kk-cabelo-m") + (temArco ? regra(ns, "kk-cabelo-l") : "")
-        : regra(ns, "kk-cabelo-s") + regra(ns, "kk-cabelo-e"));
+  const cabelo =
+    !c || c.tonal
+      ? ""
+      : regra(ns, "kk-cabelo") +
+        (c.massa
+          ? // A peça sobreposta não tem extensão: as formas irmãs são a própria peça,
+            // pintadas pela mesma `.kk-cabelo-m`, então `.kk-cabelo-e` não sai.
+            regra(ns, "kk-cabelo-m") + (temArco ? regra(ns, "kk-cabelo-l") : "")
+          : regra(ns, "kk-cabelo-s") + regra(ns, "kk-cabelo-e"));
 
   return (
     regra(ns, "kk-traco") +
@@ -994,14 +1002,31 @@ export function compor(estado: EstadoAvatar): string {
         `${n(VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s)}) scale(${s})">`;
   const fecha = s === 1 ? "" : `</g>`;
 
-  // AS DUAS FAMÍLIAS SEGUEM CAMINHOS DIFERENTES, e é o `massa` que decide qual.
+  // AS TRÊS FAMÍLIAS SEGUEM CAMINHOS DIFERENTES, e é o dado declarado que decide.
   //
   //  - **paramétrica** (`pontos`): dentro do clip da cabeça, como sempre. É o que
-  //    os cinco modelos do catálogo são, e nada aqui os toca;
-  //  - **traçada** (`massa`): peça sobreposta, depois do contorno, sem clip.
-  const traçada = modeloCabelo ? Boolean(resolverCabelo(modeloCabelo).massa) : false;
-  const cabeloNoLugarDeSempre = traçada ? "" : cabeloNoCranio(modeloCabelo);
-  const sobreposta = traçada ? pecaSobreposta(modeloCabelo) : "";
+  //    dois modelos do catálogo são, e nada aqui os toca;
+  //  - **traçada** (`massa`): peça sobreposta, depois do contorno, sem clip;
+  //  - **tonal** (`tonal`): a MESMA posição da traçada, pela MESMA função que
+  //    desenha barba e chapéu. Silhueta em vetor, claro-escuro em máscara de
+  //    luminosidade — ver `Cabelo.tonal` e `TomDaPeca` (`tipos.ts`).
+  //
+  // **Zero função de render nova, e isso é o ponto.** A peça tonal de cabelo e a
+  // peça de rosto são a mesma coisa desenhada em dois lugares da pilha; escrever um
+  // segundo emissor para ela criaria duas descrições do mesmo `<path>`.
+  //
+  // O slot entra em `sobrepor()` como `"cabelo"`, e é ele que faz o id da máscara
+  // (`${ns}-tom-cabelo`) não colidir com o do rosto no MESMO boneco — que é
+  // exatamente o caso do aluno de barba e cabelo, ou seja, o caso comum.
+  const c = modeloCabelo ? resolverCabelo(modeloCabelo) : undefined;
+  const traçada = Boolean(c?.massa);
+  const tonal = c?.tonal;
+  const cabeloNoLugarDeSempre = traçada || tonal ? "" : cabeloNoCranio(modeloCabelo);
+  const sobreposta = tonal
+    ? sobrepor({ id: c!.id, nome: c!.nome, formas: [...tonal.formas], tom: tonal.tom }, ns, "cabelo")
+    : traçada
+      ? pecaSobreposta(modeloCabelo)
+      : "";
 
   /**
    * O SLOT `rosto`, PARTIDO EM DUAS PASSADAS pelo `cabeloPorCima` da própria peça.

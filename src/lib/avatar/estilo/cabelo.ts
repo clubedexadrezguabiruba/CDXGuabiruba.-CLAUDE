@@ -76,6 +76,9 @@ import {
   spline,
 } from "./geometria";
 import { PECAS_DA_ARTE } from "./pecas-da-arte";
+// Só o TIPO, e o ciclo com `tipos.ts` (que importa `CabeloOuModelo` daqui) é
+// inofensivo por isso: `import type` some na compilação, não há módulo em runtime.
+import type { TomDaPeca } from "./tipos";
 
 /**
  * Os 7 do catálogo. O `criar-personagem` escolhe um destes.
@@ -84,11 +87,18 @@ import { PECAS_DA_ARTE } from "./pecas-da-arte";
  * 2026-08-07, vindos da **rota de arte** (`docs/avatar/19-rota-de-arte-runbook.md`)
  * depois de aprovação visual do Doug — o espetado no Bloco 9, o chanel no 14.
  *
- * **As duas famílias convivem, e a diferença é medível:** as listas
- * `MODELOS_PARAMETRICOS` e `MODELOS_TRACADOS` dizem quem é quem, e elas são
- * **explícitas de propósito**. Um filtro automático por `massa` deixaria um
+ * **As TRÊS famílias convivem, e a diferença é medível:** as listas
+ * `MODELOS_PARAMETRICOS`, `MODELOS_TRACADOS` e `MODELOS_TONAIS` dizem quem é quem, e
+ * elas são **explícitas de propósito**. Um filtro automático por `massa` deixaria um
  * paramétrico que mudasse de família acidentalmente sumir do teste de selo que
  * existe justamente para pegar isso.
+ *
+ * ⚠️ **A terceira nasceu vazia em 2026-08-22, e é a que vai comer as outras duas.**
+ * O Doug decidiu refazer os cinco modelos no padrão tonal da `barba-trancada` — ver
+ * `Cabelo.tonal`. Cada peça migra de lista na promoção dela, uma por vez; quando as
+ * cinco tiverem migrado, as outras duas listas ficam vazias e o código sem usuário
+ * sai (Bloco G do plano). Até lá, as três convivem, e é por isso que
+ * `completudeDasFamilias` soma três.
  */
 export type ModeloCabelo =
   | "coque"
@@ -371,6 +381,64 @@ export interface Cabelo {
    */
   formas?: readonly FormaDaPeca[];
   extensoes?: readonly Extensao[];
+  /**
+   * A TERCEIRA FAMÍLIA — **silhueta em vetor, claro-escuro em raster.**
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ELA EXISTE, E NÃO É UM ACRÉSCIMO À TRAÇADA
+   * ---------------------------------------------------------------------------
+   *
+   * A traçada (`massa`) descreve a peça em PONTOS `{t, y}` decimados por erro de
+   * corda, e pinta o claro-escuro em regiões chapadas (`clara`, `nucleo`,
+   * `pretas`). Ela nasceu quando a única saída era posterizar: `potrace` traça
+   * CONTORNO, contorno é binário, e toda arte de N tons chegava ao boneco com dois
+   * ou três. **A causa não era a D17 — era a esteira** (ver `TomDaPeca` em
+   * `tipos.ts`, e o mesmo argumento em `barba-para-formas.ts`).
+   *
+   * A `rosto-barba-trancada` provou o contrário em 2026-08-22: a mesma silhueta
+   * vetorial, vestida por uma **máscara de luminosidade** servida como PNG cinza,
+   * entrega ~250 tons no render. O Doug aprovou olhando (*"ficou perfeito, a melhor
+   * arte, quero este padrão sempre"*) e decidiu refazer o elenco de cabelo inteiro
+   * neste padrão.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ELA NÃO CONVIVE COM `massa`, E ISSO É A MESMA LEI DE SEMPRE
+   * ---------------------------------------------------------------------------
+   *
+   * As três famílias são **exclusivas por modelo**: um cabelo tem `pontos`, OU
+   * `massa`, OU `tonal` — nunca dois. A razão é a de 2026-08-06, palavra por
+   * palavra: com dois, existiriam **duas descrições da mesma borda**, e duas
+   * descrições da mesma fronteira divergem sempre. Aqui o custo seria pior que
+   * divergência de forma — a máscara de tom é recortada na silhueta EXATA que o
+   * `potrace` devolveu, então uma `massa` decimada por corda ao lado dela poria o
+   * claro-escuro fora de registro com a peça que o pinta.
+   *
+   * `MODELOS_TONAIS` diz quem é quem, como as outras duas listas, e pelo mesmo
+   * motivo escrito lá: **lista, nunca filtro.**
+   *
+   * ---------------------------------------------------------------------------
+   * É O MESMO SHAPE DO BRAÇO `formas` DE `PecaSobreposta`, DE PROPÓSITO
+   * ---------------------------------------------------------------------------
+   *
+   * `compor()` entrega este objeto direto a `sobrepor()`, a mesma função que já
+   * desenha barba e chapéu — zero função de render nova, e a máscara sai com id
+   * `${ns}-tom-cabelo`, único no eixo do slot como já era no do boneco. A peça de
+   * cabelo e a de rosto passam a ser **a mesma coisa desenhada em dois lugares da
+   * pilha**, que é o que elas sempre foram na prática.
+   *
+   * `semTraco` sai `true` nas duas formas, pela decisão **G29**: peça de arte usa o
+   * contorno que o gerador pintou, não o `kk-traco` de 12 u do compositor.
+   */
+  tonal?: {
+    /**
+     * As duas formas, na ordem de desenho, e elas têm o **MESMO `d`**: a de baixo é
+     * o preto que aparece onde a máscara cede, a de cima é a cor do cabelo vestida
+     * por ela.
+     */
+    readonly formas: readonly { d: string; cor: string; semTraco?: boolean }[];
+    /** O claro-escuro por máscara de luminosidade. Ver `TomDaPeca` em `tipos.ts`. */
+    readonly tom: TomDaPeca;
+  };
 }
 
 /**
@@ -798,8 +866,8 @@ export const MODELOS_CABELO = Object.keys(CABELOS) as ModeloCabelo[];
  * Com as listas escritas, esse mesmo acidente reprova em duas amarras: a de família
  * (*"os paramétricos continuam paramétricos"*) e a de bytes.
  *
- * `completudeDasFamilias` cobra que as duas somem `MODELOS_CABELO` — sem isso um
- * modelo novo nasceria fora das duas e escaparia dos dois blocos de selo.
+ * `completudeDasFamilias` cobra que as TRÊS somem `MODELOS_CABELO` — sem isso um
+ * modelo novo nasceria fora delas e escaparia de todos os blocos de selo.
  */
 export const MODELOS_PARAMETRICOS = ["coque", "moicano"] as const satisfies readonly ModeloCabelo[];
 
@@ -809,6 +877,42 @@ export const MODELOS_TRACADOS = [
   "chanel",
   "assimetrico",
 ] as const satisfies readonly ModeloCabelo[];
+
+/**
+ * OS TONAIS — silhueta em vetor, claro-escuro em máscara de luminosidade.
+ *
+ * **Está vazia, e a lista vazia é o estado honesto de hoje** (2026-08-22): a espinha
+ * do padrão existe, e nenhum dos cinco modelos passou pela esteira ainda. Ela enche
+ * uma peça por vez, na promoção, depois do parecer do Doug sobre a folha — que é a
+ * única aprovação que existe (doc 23 §6).
+ *
+ * Vazia ela **ainda mede**: `completudeDasFamilias` cobra que as TRÊS listas somem
+ * `MODELOS_CABELO`, então um modelo novo continua sem ter onde nascer fora delas. O
+ * dia em que a primeira peça entrar aqui, ela sai de `MODELOS_TRACADOS` no MESMO
+ * commit — um id nas duas listas reprova.
+ */
+export const MODELOS_TONAIS = [] as const satisfies readonly ModeloCabelo[];
+
+/**
+ * TODO MODELO ESTÁ EM EXATAMENTE UMA DAS TRÊS LISTAS — e esta função é a régua.
+ *
+ * Ela existe porque as listas são ESCRITAS (ver o docstring acima), e lista escrita
+ * envelhece: um modelo novo nasceria fora das três e escaparia de todos os blocos de
+ * selo — em silêncio, e justamente no primeiro dia dele. É o modo de falha por
+ * vacuidade, na forma que este arquivo permite medir.
+ *
+ * Devolve as duas queixas possíveis. Vazio é aprovado; quem reprova é
+ * `linhas-cabelo.test.ts`, que é onde as três famílias já são conferidas.
+ */
+export function completudeDasFamilias(): { foraDasListas: string[]; emDuasListas: string[] } {
+  const declarados = [...MODELOS_PARAMETRICOS, ...MODELOS_TRACADOS, ...MODELOS_TONAIS] as string[];
+  const conta = new Map<string, number>();
+  for (const m of declarados) conta.set(m, (conta.get(m) ?? 0) + 1);
+  return {
+    foraDasListas: MODELOS_CABELO.filter((m) => !conta.has(m)),
+    emDuasListas: [...conta].filter(([, n]) => n > 1).map(([m]) => m),
+  };
+}
 
 /**
  * UM CABELO DO CATÁLOGO, **ou um literal** — e o "ou" existe para o desenho.

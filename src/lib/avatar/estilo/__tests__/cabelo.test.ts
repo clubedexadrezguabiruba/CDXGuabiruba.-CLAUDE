@@ -106,6 +106,12 @@ const CURTO_PARAMETRICO: Cabelo = {
  */
 const camadasDaTouca = (c: Cabelo): number => {
   if (c.pontos) return 2;
+  // A TONAL NÃO TEM TOUCA — e devolver 0 aqui é o certo, não uma falta.
+  //
+  // Ela não é clipada pelo crânio: é peça sobreposta, e as duas passadas dela saem
+  // por `sobrepor()`, longe de `cabeloNoCranio`. Quem conta as camadas dela é o
+  // bloco "a família tonal" no fim deste arquivo, e o censo da pilha.
+  if (c.tonal) return 0;
   if (!c.massa) return 0;
   if (c.nucleo?.length) return 2 + (c.clara ? 1 : 0) + (c.pretas?.length ? 1 : 0);
   return 1 + (c.clara ? 1 : 0) + (c.linhas?.length ? 1 : 0);
@@ -189,10 +195,19 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     expect(cobertura).toBe(1);
   });
 
-  it("está em UMA família só: `pontos` ou `massa`, nunca os dois", () => {
-    // Com os dois, existiriam duas descrições da mesma borda — e `pathCabelo`
+  it("está em UMA família só: `pontos`, `massa` ou `tonal` — nunca duas", () => {
+    // Com duas, existiriam duas descrições da mesma borda — e `pathCabelo`
     // desenharia uma delas em silêncio, enquanto as réguas mediriam a outra.
-    expect(Boolean(cabelo.pontos) && Boolean(cabelo.massa)).toBe(false);
+    //
+    // O par mais caro é `massa` + `tonal`: a máscara de luminosidade é recortada na
+    // silhueta EXATA que o `potrace` devolveu, então uma massa decimada por corda ao
+    // lado dela poria o claro-escuro fora de registro com a peça que o pinta.
+    const familias = [
+      cabelo.pontos && "pontos",
+      cabelo.massa && "massa",
+      cabelo.tonal && "tonal",
+    ].filter(Boolean);
+    expect(familias.length, `declara ${familias.join(" + ")}`).toBeLessThanOrEqual(1);
   });
 
   it("não tem região clara vazando da massa", () => {
@@ -483,5 +498,119 @@ describe("o laço fechado", () => {
     const chapado: Cabelo = { id: "coque", nome: "chapado", massa: MASSA };
     expect(pathCabeloClaro(chapado)).toBe("");
     expect(pathCabelo(chapado)).not.toBe("");
+  });
+});
+
+/**
+ * A FAMÍLIA TONAL — silhueta em vetor, claro-escuro em máscara de luminosidade.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ELA É MEDIDA POR UM LITERAL SINTÉTICO, E NÃO POR UM MODELO DO CATÁLOGO
+ * ---------------------------------------------------------------------------
+ *
+ * Porque **o catálogo não tem nenhum**, e esse é o estado correto de 2026-08-22: o
+ * Doug decidiu refazer os cinco modelos neste padrão, arte a arte, com parecer dele
+ * entre uma e outra. `MODELOS_TONAIS` está vazia de propósito.
+ *
+ * Um teste que esperasse a primeira promoção para nascer deixaria a espinha inteira
+ * — o tipo, o ramo do compositor, o CSS que ela **não** emite — sem gate no bloco em
+ * que ela foi escrita. A união `CabeloOuModelo` já permite compor um literal, e é o
+ * mesmo recurso que `pilha-de-camadas.test.ts` usa pelo mesmo motivo.
+ *
+ * O `d` é um triângulo qualquer: aqui não se mede desenho, mede-se EMISSÃO.
+ */
+describe("a família tonal", () => {
+  const D = "M 120 120 L 380 120 L 380 300 Z";
+  const TONAL: Cabelo = {
+    id: "chanel",
+    nome: "sintético tonal",
+    tonal: {
+      formas: [
+        { d: D, cor: "var(--av-linha)", semTraco: true },
+        { d: D, cor: "var(--av-cabelo, #262626)", semTraco: true },
+      ],
+      tom: { arte: "/items/cabelo/zz-tonal-tom.png", x: 120, y: 120, w: 260, h: 180 },
+    },
+  };
+  const svg = compor({ pele: PELE[1], cabelo: CABELO[1], modeloCabelo: TONAL, ns: "t" });
+
+  it("emite as duas formas com o MESMO `d`, e a de cima vestida pela máscara", () => {
+    // A de baixo é o preto que aparece onde a máscara cede; a de cima é a cor do
+    // cabelo. `d` diferentes fariam o preto vazar pelas beiradas ou sumir.
+    const paths = [...svg.matchAll(/<path d="([^"]+)"([^/]*)\/>/g)].filter((m) => m[1] === D);
+    expect(paths, "as duas passadas da silhueta").toHaveLength(2);
+    expect(paths[0][2]).toContain('fill="var(--av-linha)"');
+    expect(paths[0][2]).not.toContain("mask=");
+    expect(paths[1][2]).toContain('fill="var(--av-cabelo, #262626)"');
+    expect(paths[1][2]).toContain('mask="url(#t-tom-cabelo)"');
+  });
+
+  it("a máscara leva o SLOT no id — é o que a impede de colidir com a do rosto", () => {
+    // Um aluno de barba E cabelo põe DUAS máscaras no mesmo `<svg>`, e o ranking põe
+    // 30 bonecos num documento só. `${ns}-tom-${slot}` é único nos dois eixos, pelo
+    // mesmo motivo que `${ns}-fe` e `${ns}-fd` já são.
+    expect(svg).toContain('<mask id="t-tom-cabelo"');
+    expect(svg).not.toContain('id="t-tom-rosto"');
+    expect(svg).toContain('href="/items/cabelo/zz-tonal-tom.png"');
+  });
+
+  it("`fill-rule=\"evenodd\"` nas duas — sem ela a janela de feição vira mancha", () => {
+    // O `d` vem do `potrace`, que declara a regra na saída dele; a esteira extrai só
+    // o `d`, então quem reemite é o compositor. Sem ela o SVG cai em `nonzero`, que
+    // PREENCHE os buracos — foi assim que 100% do traço do sorriso virou barba em
+    // 2026-08-20.
+    const comRegra = [...svg.matchAll(/<path d="([^"]+)" fill-rule="evenodd"/g)].filter(
+      (m) => m[1] === D,
+    );
+    expect(comRegra).toHaveLength(2);
+  });
+
+  it("NÃO emite regra de CSS de cabelo — a cor mora no dado, não na classe", () => {
+    // `sobrepor()` escreve `fill` direto. Emitir `.kk-cabelo*` aqui seria CSS morto:
+    // regra sem elemento correspondente, que ninguém vê e todo boneco paga. É o
+    // avesso do que `folha-unica.test.ts` mede, e o avesso também custa.
+    for (const classe of ["kk-cabelo", "kk-cabelo-s", "kk-cabelo-m", "kk-cabelo-l", "kk-cabelo-e"])
+      expect(svg, `${classe} saiu sem elemento que a use`).not.toContain(`.${classe}{`);
+    expect(svg).not.toContain('class="kk-cabelo');
+  });
+
+  it("`semTraco` nas duas: nenhum `kk-traco` por cima da peça (G29)", () => {
+    // Peça de arte usa o contorno que o gerador pintou (5,2 u), não o `kk-traco` de
+    // 12 u do compositor — com ele, bigode e boca fundem a 56 e a 32 px.
+    const traco = [...svg.matchAll(/<path class="kk-traco"[^>]*d="([^"]+)"/g)];
+    expect(traco.filter((m) => m[1] === D)).toHaveLength(0);
+  });
+
+  it("recolore: `--av-cabelo` e `--av-cabelo-s` continuam sendo emitidas", () => {
+    // A cor é escolha do aluno (emenda à D27) e chega por custom property. Sem elas
+    // o `fill` cai na reserva `#262626` e o boneco aparece de cabelo preto com loiro
+    // escolhido — o defeito que `rosto-cor.test.ts` mede do lado da barba.
+    expect(svg).toContain(`--av-cabelo:${CABELO[1]}`);
+    expect(svg).toContain("--av-cabelo-s:");
+  });
+
+  it("passa no contrato do SVG e cabe no orçamento de FORMAS", () => {
+    // Nenhuma custom property nova: a Regra Inviolável nº 4 continua de pé, e
+    // `svgContrato.ts` reprovaria qualquer `--av-*` fora do contrato.
+    expect(conferirSvg(svg)).toEqual([]);
+    expect(formas(svg)).toBeLessThanOrEqual(ORCAMENTO_COMPOSTO.formas);
+  });
+
+  it("não emite touca nem extensão — a peça é UMA silhueta", () => {
+    // `cabeloNoCranio` não é chamada (o ramo gateia antes), e `Cabelo.tonal` não tem
+    // onde declarar extensão. Ver `temExtensao` em `camadas.ts`: uma extensão numa
+    // peça tonal sairia como classe sem regra.
+    expect(camadasDaTouca(TONAL)).toBe(0);
+    expect(pathCabelo(TONAL)).toBe("");
+    expect(pathCabeloClaro(TONAL)).toBe("");
+  });
+
+  it("a base careca continua intocada — o tonal não vaza para quem não tem cabelo", () => {
+    // O teto de regressão da base é o teto absoluto do estilo, e o controle negativo
+    // de todo bloco que mexe no slot.
+    const careca = svgDe();
+    expect(careca).not.toContain("--av-cabelo");
+    expect(careca).not.toContain("-tom-cabelo");
+    expect(formas(careca)).toBe(19);
   });
 });
