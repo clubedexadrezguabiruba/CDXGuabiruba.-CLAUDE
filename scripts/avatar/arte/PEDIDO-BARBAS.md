@@ -119,17 +119,32 @@ Todas medidas na peça que passou. Valem para toda barba nova, sem exceção.
 | tinta | 1 componente contínuo · **na cor que o gerador quiser** · sem sombra projetada |
 | luz | **amplitude**, não faixa: `hi > lo` no esticão p2/p98. Peça chapada reprova na esteira |
 | o boneco | não se mexe: 0 px de deslocamento, escala 100,00% |
-| **massa** | **≤ ~70 000 px.** A `trancada` promovida tem 54 264 — o dobro já é outra peça |
-| **largura** | **≤ 1,00 da cabeça** (364 u). A aprovada mede 325 u, 0,89 |
 | **topo** | **≥ y 270 u**, a base do olho. Acima disso encosta na cápsula |
-| **piso e tronco** | **≤ y 545 u** (≥ 58 u até o fim do tronco, y 603) e **≤ 12% do corpo coberto**. A aprovada mede y 530 e 8,93% |
+| **massa, largura, piso, tronco** | **não têm teto** — ver o bloco logo abaixo |
 
-⚠️ **As quatro últimas nasceram em 2026-08-22, e nasceram de duas reprovações.** Duas
-barbas obedeceram cada linha desta tabela e foram reprovadas assim mesmo: uma cobria
-16,1% do tronco (a arte do traje some por baixo dela — a camada de rosto é pintada
-POR CIMA da do traje), a outra cobria a linha da boca. O envelope inteiro, com o
-porquê de cada número e a faixa equivalente para **cabelo**, está no
-[doc 24](../../../docs/avatar/24-cabelo-e-barba-ficha-do-slot.md).
+⚠️ **OS TETOS DE TAMANHO CAÍRAM EM 2026-08-22, e não é afrouxamento — é medição.**
+Eles diziam massa ≤ 70 000 px, largura ≤ 1,00 da cabeça, piso ≤ y 545 e tronco ≤ 12%.
+Tinham nascido dias antes, da única barba que existia então (a v4: 54 264 px, 0,89,
+y 530, 8,93%).
+
+A **v10** os estoura em todos os quatro — 92 831 px, 1,02, y 581, 15,52% — e é a
+peça-padrão do slot: *"ficou perfeito, a melhor arte"*. E a **v8**, que tinha
+praticamente o mesmo tamanho dela (96 530 px, 1,02), reprovou **pela BOCA**, não pelo
+tamanho. Ou seja: **estes quatro números nunca reprovaram peça nenhuma.** Pedir 1,00
+de largura hoje é pedir uma barba menor que a aprovada.
+
+O quinto argumento, o do tronco, caiu por **decisão do Doug**: *"a barba pode sim
+cobrir parte da silhueta"* — sabendo que a peça de rosto é pintada POR CIMA da do
+traje, e que cada ponto de tronco coberto é traje que some. A troca é consciente.
+
+**O que continua reprovando é a BOCA, os olhos, a peça furada, a peça chapada e o
+contorno de baixo** — e nenhum deles é tamanho. A faixa observada nas quatro barbas,
+para o pedido ter escala concreta sem virar teto, está no
+[doc 24 §3.3](../../../docs/avatar/24-cabelo-e-barba-ficha-do-slot.md).
+
+⚠️ **O próximo teto de tamanho nasce da próxima barba reprovada por ser grande** — e
+o dia de escrevê-lo é aquele, não hoje. Um limite herdado sem medir é pior que
+nenhum.
 
 ⚠️ **O ciano instrumental saiu desta tabela em 2026-08-21, e não morreu — mudou de
 dono.** Ele continua sendo como a esteira reconhece a peça (o Gate −1 e o

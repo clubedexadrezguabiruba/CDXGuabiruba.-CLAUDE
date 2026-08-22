@@ -83,36 +83,94 @@ forma são precisos ~33 u (doc 23 §6 e `PEDIDO-BARBAS.md`).
 
 ---
 
-## 3. O envelope da BARBA
+## 3. O envelope da BARBA — o que REPROVA e o que só se relata
 
-Medido na `rosto-barba-trancada`, a peça promovida — p1/p99 da massa, não a caixa
-crua (a caixa crua é puxada por dezenas de pixels soltos e mente).
+⚠️ **Esta seção foi reescrita em 2026-08-22, e a mudança é de natureza.** Ela era
+uma lista de tetos que reprovavam. Não é mais: **quase nada aqui reprova.** O que
+mudou não foi um número — foi descobrir que os números nunca tinham reprovado
+ninguém, e uma decisão do Doug que derrubou o único argumento que os sustentava.
 
-| | a peça aprovada | **o limite** | por quê |
-|---|---|---|---|
-| massa | **54 264 px** | **≤ ~70 000 px** | o dobro já é outra peça: a v7 tinha 100 mil e engoliu o tronco |
-| largura | 325 u — **0,89 da cabeça** | **≤ 1,00 da cabeça** (364 u) | barba mais larga que o crânio lê como cabeça peluda, não como barba (é a mesma razão do G33) |
-| topo | y **270** — a base do olho | **≥ y 270**, e **nunca** dentro da região `ROSTO` protegida | acima disso ela encosta no olho |
-| **a boca** | **0 px de tinta** | **0 px**, sem tolerância | linha da boca coberta = a peça reprova na esteira, não no gate |
-| piso | y **530** | **≤ y 545** — deixa **≥ 58 u** até o fim do tronco (603) | ver §3.1 |
-| cobertura do tronco | **8,93%** | **≤ 12%** | ver §3.1 |
-| desce do queixo | **176,8 u** | — | é o que faz dela a lendária: o comprimento é a assinatura |
+### 3.0 Os quatro vereditos, que são todo o lastro que existe
 
-### 3.1 Por que existe teto de tronco, e ele não é estético
+Quatro barbas foram julgadas. Lidas juntas, elas dizem o contrário do que esta
+seção dizia antes:
+
+| | massa | largura ÷ cabeça | tronco coberto | veredito, e por quê |
+|---|---|---|---|---|
+| `trancada` **v4** | 54 264 px | 0,89 | 8,93% | aprovada — **e era a única quando os tetos foram escritos** |
+| **v8** | 96 530 px | **1,02** | — | **reprovada pela BOCA** — 87,6% da caixa da boca coberta |
+| **v7** | 100 121 px | 1,07 | 16,1% | reprovada — *"a arte do traje some por baixo dela"* |
+| `trancada` **v10** | **92 831 px** | **1,02** | **15,52%** | **APROVADA** — *"ficou perfeito, a melhor arte"* |
+
+Duas leituras saem daí, e as duas custam um teto:
+
+1. **A v8 e a v10 têm praticamente o mesmo tamanho** — 96 530 contra 92 831 px,
+   largura 1,02 nas duas. Uma reprovou e a outra é a peça-padrão. O que separou as
+   duas foi **a boca**, não o tamanho. Ou seja: os tetos de massa (≤70 000) e de
+   largura (≤1,00) **nunca reprovaram peça nenhuma** — foram extrapolados da v4,
+   no dia em que ela era o único dado, e a v10 os estoura e é a melhor arte que o
+   slot já teve;
+2. **o teto de tronco caiu por decisão**, e ela está na §3.1.
+
+### 3.1 O tronco: a decisão do Doug de 2026-08-22
+
+> **"A barba pode sim cobrir parte da silhueta."** — o Doug, ao ser perguntado se
+> os limites subiam ou se a próxima barba nasceria menor que a v10.
+
+O teto de 12% existia por um argumento de catálogo, e ele continua **verdadeiro**
+como custo — só deixou de ser veto. O argumento, para quem for reabrir isto:
 
 **A peça de rosto é pintada POR CIMA da arte do traje.** A ordem está declarada em
-[`camadas.ts`](../../src/lib/avatar/estilo/camadas.ts): `traje-arte` é a camada 238,
-`rosto-sob-cabelo` a 346 e `rosto-sobre-cabelo` a 364.
+[`camadas.ts`](../../src/lib/avatar/estilo/camadas.ts): `traje-arte` é a camada
+238, `rosto-sob-cabelo` a 346. Então cada ponto de tronco que a barba cobre é
+traje que **some** — e a conta é assimétrica, porque o slot `traje` tem **30**
+peças e o slot `rosto` tem **12** (doc 22 §5-B). Uma barba volumosa gasta o slot
+grande para engordar o pequeno.
 
-Então cada ponto percentual de tronco que a barba cobre é traje que **some**. E a
-conta de catálogo é assimétrica: o slot `traje` tem **30 peças**, o slot `rosto` tem
-**12** (doc 22 §5-B). Uma lendária de barba que esconde a túnica gasta o slot grande
-para engordar o pequeno.
+O Doug ouviu o argumento com o número na frente (15,52% na peça que ele aprovou) e
+decidiu que **cobrir parte da silhueta é aceitável**. Fica registrado que a troca é
+consciente: a lendária de barba esconde parte da túnica, e isso é o desenho, não um
+defeito.
 
-Os 12% saem daí: a aprovada mede 8,93%, e o teto dá folga de uma peça mais volumosa
-sem chegar aos 16,1% da v7, em que a túnica deixa de ser vista.
+⚠️ **Consequência honesta, e ela precisa estar escrita:** o veredito da **v7** era
+exatamente *"cobre 16,1% do tronco"*. Com esta decisão, **a razão registrada da v7
+deixa de valer** — e o slot fica sem nenhum limite superior de tamanho provado por
+reprovação. Não invento um: **o próximo teto de tamanho nasce da próxima barba que
+o Doug reprovar por ser grande**, e o dia de escrevê-lo é aquele. Um limite
+herdado sem medir é pior que nenhum, e é a advertência que abre este documento.
 
-### 3.2 O contorno de baixo — a metade que o gerador larga
+### 3.2 O que REPROVA, e é uma coisa só
+
+| | régua | o que acontece |
+|---|---|---|
+| **a boca** | a esteira (`naEspinhaDaBoca`, passo 2 de `construirRosto`) | **0 px de tinta, sem tolerância.** A peça é recortada ali, e se o recorte passar pelo miolo a esteira **lança exceção** — aresta nua. Foi o que matou a v8 |
+| **os olhos** | a esteira (`naCapsulaDoOlho`) | idem |
+| **a peça furada** | `figurinha.test.ts` (doc 23 §4.5) | furo sem feição dentro reprova. Nada atrás da peça pode ser visto |
+| **peça chapada** | a esteira | `hi <= lo` no esticão p2/p98 — arte de um tom só não tem tom para esticar |
+| **o contorno de baixo** | `de-quem-e-a-borda.ts` | banda preta < 8 px na borda que encosta na roupa — ver §3.3 |
+
+**Nada mais reprova por tamanho.** Nem massa, nem largura, nem piso, nem tronco.
+
+### 3.3 O que se RELATA — a faixa observada, para escrever o pedido
+
+Os números abaixo **não vetam**: eles existem para o pedido ao gerador ter uma
+escala concreta, e para a próxima peça poder ser comparada com as que existiram.
+A régua de verdade é a folha no olho do Doug (doc 23 §6, e agora a **32 px**).
+
+| | a v4 | **a v10, que é a peça-padrão** | a faixa já vista |
+|---|---|---|---|
+| massa | 54 264 px | **92 831 px** | 54 mil a 100 mil |
+| largura | 325 u — 0,89 da cabeça | **1,02 da cabeça** | 0,89 a 1,07 |
+| topo | y 270 — a base do olho | y ~270 | **nunca dentro da região `ROSTO`** — ali a esteira recorta |
+| piso | y 530 | **y 581** | 530 a 581 (o tronco acaba em 603) |
+| tronco coberto | 8,93% | **15,52%** | 8,9% a 16,1% |
+| desce do queixo | 176,8 u | ~228 u | é o comprimento que faz a lendária |
+
+**O que dizer no pedido**, e é o parágrafo da §5.6: que ela começa na altura da
+base dos olhos, desce até um pouco acima do fim do corpo deixando roupa visível
+embaixo, e **não cobre a boca**. A frase *"ela não é mais larga que a cabeça"*
+saiu — a peça-padrão tem 1,02 e é a melhor arte do slot.
+### 3.4 O contorno de baixo — a metade que o gerador larga
 
 Achado de 2026-08-20, e continua valendo: o gerador pinta o contorno nas laterais e
 no topo e **deixa a barba morrer sem preto na borda de baixo**, onde ela encosta no
@@ -274,9 +332,15 @@ Este é o texto que vai ao gerador — o resto deste documento é o porquê dele
 Mais **onde a peça cabe**, que é o único parágrafo que muda entre barba e cabelo:
 
 > **Onde a barba pode existir.** Ela começa **na altura da base dos olhos** e desce
-> até **um pouco acima do fim do corpo**, deixando roupa visível embaixo. Ela **não é
-> mais larga que a cabeça**. Ela **não cobre a boca** — a linha da boca fica inteira
+> até **um pouco acima do fim do corpo**, deixando roupa visível embaixo. Ela pode
+> ser **um pouco mais larga que a cabeça** e pode **cobrir parte do corpo** — isso
+> é o desenho, não defeito. Ela **não cobre a boca** — a linha da boca fica inteira
 > e visível. Ela não toca os olhos.
+
+⚠️ **A cláusula da largura mudou em 2026-08-22** e o motivo está na §3.1: o pedido
+dizia *"ela não é mais larga que a cabeça"*, e a peça-padrão do slot tem **1,02 da
+cabeça** e é a melhor arte que ele já teve. Pedir 1,00 é pedir uma barba menor que
+a aprovada. **A boca continua sendo a única proibição absoluta do parágrafo.**
 
 > **Onde o cabelo pode existir.** Ele veste o crânio por fora e pode passar do topo
 > da imagem. Ele **não passa por cima do ombro** nem por trás da cabeça, e não vira
