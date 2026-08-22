@@ -77,6 +77,16 @@ const AMPLIADO = 224;
 /** A cor que o gerador pintou na massa da `cheia`, medida por `reparo-cheia-um-tom.ts`. */
 const COR_DA_ARTE = "#2AA8A9";
 
+/**
+ * A MESMA REGRA DE PREENCHIMENTO DO COMPOSITOR (`compositor.ts:749`).
+ *
+ * A silhueta é um `d` com vários subcaminhos — o contorno externo mais uma janela
+ * por feição. `evenodd` é o que faz a janela ser buraco; sem ela o navegador
+ * preenche, e a coluna do traçado desenha a boca PRETA. É a única coisa que faz
+ * esta coluna divergir do produto, e ela já divergiu.
+ */
+const REGRA = ` fill-rule="evenodd"`;
+
 const uri = (b: Buffer) => `data:image/png;base64,${b.toString("base64")}`;
 
 async function principal(): Promise<void> {
@@ -120,8 +130,16 @@ async function principal(): Promise<void> {
         `x="${tom.x}" y="${tom.y}" width="${tom.w}" height="${tom.h}" ` +
         `preserveAspectRatio="none"/></mask></defs>`
       : "") +
-    `<path d="${peca.formas[0].d}" fill="#000"/>` +
-    `<path d="${peca.formas[1].d}" fill="${COR_DA_ARTE}"` +
+    // ⚠️ `fill-rule="evenodd"` NÃO É DETALHE — sem ele a JANELA DA BOCA some.
+    //
+    // O `d` da silhueta tem subcaminhos: o contorno externo mais uma janela por
+    // feição (doc 23 §4.5, a figurinha). Com a regra padrão `nonzero` o navegador
+    // PREENCHE a janela, e a coluna desenha a boca preta — medido em 2026-08-22,
+    // 100% da espinha da boca preta sem a regra, 0% com ela. O compositor sempre
+    // emitiu `evenodd` (`compositor.ts:749`); esta coluna é que estava sem, e por
+    // isso mostrava um defeito que o produto não tem.
+    `<path d="${peca.formas[0].d}"${REGRA} fill="#000"/>` +
+    `<path d="${peca.formas[1].d}"${REGRA} fill="${COR_DA_ARTE}"` +
     (tom ? ` mask="url(#fr-tom)"` : "") +
     `/></svg>`;
 
