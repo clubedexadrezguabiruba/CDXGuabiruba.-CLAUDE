@@ -109,12 +109,40 @@ async function principal(): Promise<void> {
     `<img src="${u}" style="width:${largura}px;height:${(largura * 7) / 5}px;display:block">`;
 
   /** O boneco do compositor, num tamanho. `ns` único por célula — a colisão de `id`. */
+  /**
+   * A PEÇA COM O TOM EM `data:` — e sem isto a folha desenha a barba PRETA.
+   *
+   * O compositor emite `<image href="/items/rosto/<slug>-tom.png">` dentro do
+   * `<mask>` (`compositor.ts`, `pecaSobreposta`), que é o certo no produto: o
+   * arquivo é servido, e embuti-lo no SVG custou 753 KB de gzip num ranking de 30
+   * bonecos (ver `TomDaPeca`). Mas esta folha é um HTML montado por `setContent`,
+   * **sem servidor**: uma URL de raiz não resolve, a máscara sai vazia, a forma de
+   * cima cede por inteiro e sobra `var(--av-linha)` — a barba preta.
+   *
+   * A troca vale SÓ para a folha, e é por isso que ela mora aqui e não no
+   * compositor. Medido em 2026-08-22, antes de o conserto entrar: 770.125 px
+   * pretos na folha contra 598.851 com ele.
+   *
+   * ⚠️ Ela é a razão de a folha ser a única aprovação que existe (doc 23 §6). Com
+   * a máscara vazia o instrumento de aprovação MENTE, e mente para o lado de
+   * reprovar peça boa.
+   */
+  const pecaServida = peca.tom
+    ? {
+        ...peca,
+        tom: {
+          ...peca.tom,
+          arte: `data:image/png;base64,${readFileSync(`public${peca.tom.arte}`).toString("base64")}`,
+        },
+      }
+    : peca;
+
   const boneco = (ns: string, largura: number, cabelo?: string, careca = false) =>
     compor({
       pele: "#F0C9A5",
       cabelo: cabelo ?? CABELO[1],
       modeloCabelo: cabelo && !careca ? "chanel" : undefined,
-      rosto: peca,
+      rosto: pecaServida,
       ns,
       escala: 1,
     }).replace("<svg ", `<svg width="${largura}" height="${Math.round((largura * 7) / 5)}" `);
