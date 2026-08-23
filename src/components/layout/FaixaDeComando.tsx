@@ -18,6 +18,7 @@ export default function FaixaDeComando({
   patente,
   xp,
   xpTotal,
+  proximoTitulo,
   className,
 }: {
   /** Versalete pequeno em ouro. Ex.: "Academia 64", "Título Analista". */
@@ -28,6 +29,13 @@ export default function FaixaDeComando({
   patente?: string;
   xp?: number;
   xpTotal?: number;
+  /**
+   * A frase do próximo degrau da escada — pronta, vinda de
+   * `fraseDoProximoTitulo`. A faixa não decide o texto: a lei do ritmo mora em
+   * `lib/gamification/proximoTitulo.ts`, e este componente continua sem dados
+   * próprios.
+   */
+  proximoTitulo?: string | null;
   className?: string;
 }) {
   const temXp = typeof xp === "number" && typeof xpTotal === "number" && xpTotal > 0;
@@ -67,6 +75,17 @@ export default function FaixaDeComando({
             total={xpTotal}
             rotulo={`Experiência: ${xp} de ${xpTotal}`}
           />
+
+          {/*
+            O DESTINO, logo abaixo da barra de XP — e a posição é o argumento.
+            São duas progressões diferentes e o produto nunca disse qual era
+            qual: o NÍVEL mede presença (aparecer rende XP) e o TÍTULO mede
+            formação (concluir trilha). Pôr a frase do título encostada na barra
+            de XP é o que deixa a diferença legível sem uma linha de explicação.
+          */}
+          {proximoTitulo && (
+            <p className="mt-2.5 text-xs text-warm-ivory/60">{proximoTitulo}</p>
+          )}
         </>
       )}
       </div>

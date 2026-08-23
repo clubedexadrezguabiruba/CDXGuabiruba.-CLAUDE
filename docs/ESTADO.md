@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 17 |
-| **Árvore** | **43 arquivos sujos** |
-| **Último commit** | 69ab349 · 2026-08-23 · feat(avatar): a promoção do `assimetrico` fecha — e o TONAL deixa de ser "uma das três famílias" nas réguas |
+| **Commits à frente de `origin/main`** | 18 |
+| **Árvore** | **29 arquivos sujos** |
+| **Último commit** | 8080b53 · 2026-08-23 · feat(tema): a Academia sai do papel e entra no logado — o tier 2 vira Explorador, e o gate que faltava nasce |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -426,7 +426,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 94 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 22 |
+| **Arquivos de teste** | 23 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes

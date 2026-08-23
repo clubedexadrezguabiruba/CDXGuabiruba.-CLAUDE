@@ -503,6 +503,17 @@ export default function PerfilClient({
                   style={{ width: `${xpPercent}%` }}
                 />
               </div>
+              {/*
+                NÍVEL × TÍTULO, dito de uma vez — o registro de formação é o
+                lugar certo, porque é aqui que os dois números aparecem juntos.
+                São duas progressões com ritmos deliberadamente diferentes: o
+                nível sobe com qualquer atividade, o título só com trilha
+                concluída (~um semestre). Sem esta linha, a lentidão do título
+                lê como defeito em vez de projeto.
+              */}
+              <p className="mt-2 text-center text-xs text-ink/55">
+                O nível mede sua presença. O título mede sua formação.
+              </p>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-sm">

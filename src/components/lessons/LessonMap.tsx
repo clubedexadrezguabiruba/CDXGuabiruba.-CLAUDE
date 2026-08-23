@@ -8,6 +8,16 @@ import { TRAILS } from "@/types/lesson";
 interface LessonMapProps {
   lessons: LessonMapEntry[];
   reviewGates: ReviewGateEntry[];
+  /**
+   * Que TÍTULO cada trilha concede quando fecha, por `lessons.trail`. Vem de
+   * `title_tiers` no servidor — não de uma cópia em TS.
+   *
+   * Existe porque a trilha se chama pelo título que o aluno carrega ENQUANTO a
+   * cursa (Bíblia §6), o que é coerente e, sozinho, esconde o prêmio: quem está
+   * na trilha "Calouro" não tem como saber que ela entrega "Aprendiz". A regra
+   * não muda; a tela passa a dizer o destino.
+   */
+  tituloPorTrilha?: ReadonlyMap<string, string>;
 }
 
 function StarDisplay({ count }: { count: number }) {
@@ -158,7 +168,7 @@ function ReviewGateBubble({
   );
 }
 
-export default function LessonMap({ lessons, reviewGates }: LessonMapProps) {
+export default function LessonMap({ lessons, reviewGates, tituloPorTrilha }: LessonMapProps) {
   return (
     <div className="min-h-full bg-warm-ivory pb-10 text-ink">
       {/* "Aulas" violava o vocabulário oficial da Bíblia Tonal §8. */}
@@ -190,6 +200,20 @@ export default function LessonMap({ lessons, reviewGates }: LessonMapProps) {
                   {trail.name}
                 </h2>
                 <p className="text-sm text-ink/55">{trail.description}</p>
+                {/*
+                  O DESTINO da trilha — a formatura do semestre, nomeada.
+                  Sem esta linha a tela só diz onde o aluno ESTÁ; o prêmio de
+                  concluir 15 aulas ficava invisível até a hora em que caía.
+                  Quando a trilha já fechou, o verbo muda: vira registro do que
+                  foi conquistado, não promessa repetida.
+                */}
+                {tituloPorTrilha?.get(trail.key) && (
+                  <p className="mt-0.5 text-xs font-medium text-ink/70">
+                    {allComplete
+                      ? `Trilha concluída — título de ${tituloPorTrilha.get(trail.key)} conquistado.`
+                      : `Conclua esta trilha para se tornar ${tituloPorTrilha.get(trail.key)}.`}
+                  </p>
+                )}
               </div>
             </div>
 
