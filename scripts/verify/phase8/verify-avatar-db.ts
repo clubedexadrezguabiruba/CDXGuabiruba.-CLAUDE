@@ -493,7 +493,13 @@ async function main() {
             ('avatar_traje',  u.avatar_traje),
             ('avatar_chapeu', u.avatar_chapeu),
             ('avatar_rosto',  u.avatar_rosto),
-            ('avatar_pet',    u.avatar_pet)
+            ('avatar_pet',    u.avatar_pet),
+            -- Uma linha, e nada mais: o replace(coluna,'avatar_','') logo abaixo
+            -- traduz avatar_cabelo -> cabelo sozinho. É o dividendo do renome de
+            -- 2026-08-23: com o nome antigo (avatar_hair) seria preciso um mapa
+            -- escrito aqui. Sem crase no comentário -- ela fecha o template
+            -- literal do TypeScript, e o arquivo deixa de compilar.
+            ('avatar_cabelo', u.avatar_cabelo)
           ) as v(coluna, slug)
           where v.slug is not null
         ),

@@ -29,15 +29,20 @@
  * QUEM DECIDE O QUE ESTÁ TRAVADO É O SERVIDOR
  * ---------------------------------------------------------------------------
  *
- * O `min_level` desenhado aqui vem de `avatar_hair_catalog`, lido pela tela no
- * servidor. O cadeado é INFORMAÇÃO, não trava: quem recusa é
- * `update_avatar_identity`, que compara o nível dentro da transação (Regra
+ * O que a tela desenha travado vem de `avatar_catalogo` cruzado com
+ * `avatar_guarda_roupa`, lidos no servidor. O cadeado é INFORMAÇÃO, não trava:
+ * quem recusa é `equipar_peca`, que confere a POSSE dentro da transação (Regra
  * Inviolável nº 1). Editar o DOM para habilitar o botão continua batendo na
- * exceção da RPC, e a mensagem dela aparece no bloco de erro abaixo.
+ * exceção da RPC, e a mensagem dela aparece no bloco de erro da vitrine.
  *
- * A careca não é linha do catálogo — é `avatar_hair IS NULL`, ausência de peça, e
- * por isso é sempre livre. Ela entra na lista aqui, na primeira posição, porque no
- * catálogo do banco ela não existe de propósito (migration do Bloco C).
+ * ⚠️ Até 2026-08-23 este parágrafo descrevia outra coisa, e vale dizer qual: o
+ * cabelo tinha `min_level` lido de `avatar_hair_catalog`, e quem recusava era
+ * `update_avatar_identity` comparando NÍVEL. Aquela gramática morreu inteira — a
+ * tabela não existe mais, e a RPC de identidade parou de tocar no cabelo.
+ *
+ * A ausência de peça nunca é linha do catálogo: careca é `avatar_cabelo IS NULL`
+ * e "sem traje" é `avatar_traje IS NULL`. As duas entram na vitrine na primeira
+ * posição, e são sempre livres — nenhuma régua governa ausência.
  */
 
 import { useState } from "react";

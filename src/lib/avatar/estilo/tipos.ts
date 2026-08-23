@@ -382,7 +382,7 @@ export interface EstadoAvatar {
    * QUAL dos 5 cabelos, contra o `cabelo` acima, que é a COR de um.
    *
    * São dois campos e não um objeto porque são duas escolhas separadas na tela
-   * (`criar-personagem`, 5.10) e duas colunas separadas no banco (`users.avatar_hair`
+   * (`criar-personagem`, 5.10) e duas colunas separadas no banco (`users.avatar_cabelo`
    * e `avatar_hair_color`, Bloco 4). Um objeto aqui teria de ser desmontado nas duas
    * pontas.
    *

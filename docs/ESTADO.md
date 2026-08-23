@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 13 |
-| **Árvore** | **40 arquivos sujos** |
-| **Último commit** | fbfbe83 · 2026-08-22 · feat(avatar): o cabelo ganha a família TONAL — a esteira do rosto passa a ser a de quem RECOLORE, e os dois riscos do dia 1 saem medidos |
+| **Commits à frente de `origin/main`** | 14 |
+| **Árvore** | **45 arquivos sujos** |
+| **Último commit** | fcea1a0 · 2026-08-23 · feat(avatar): o cabelo vira PEÇA DE BAÚ — uma gramática só para tudo que se veste, e quem decidiu foi uma FK |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -424,7 +424,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 92 |
+| **Migrations** | 93 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 22 |
 | **Primitivos de UI** | 4 |

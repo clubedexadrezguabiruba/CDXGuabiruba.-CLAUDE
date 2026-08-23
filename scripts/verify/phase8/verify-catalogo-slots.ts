@@ -73,7 +73,18 @@ import { CATALOGO, SLOTS } from "../../../src/lib/avatar/catalogo";
  * fundo faz os seis anéis de patente lerem —, e o Doug decidiu por um fundo único
  * para todo aluno, que é o marfim que os palcos já usavam.
  */
-const COLUNAS_EQUIPAR = ["avatar_traje", "avatar_chapeu", "avatar_rosto", "avatar_pet"] as const;
+const COLUNAS_EQUIPAR = [
+  "avatar_traje",
+  "avatar_chapeu",
+  "avatar_rosto",
+  "avatar_pet",
+  // Entrou em 2026-08-23, quando o cabelo virou peça de baú. **Ela é o motivo
+  // de a coluna ter sido renomeada de `avatar_hair`**: o nome tem de ser
+  // `avatar_<slot>` para que o `replace(coluna, 'avatar_', '')` de
+  // verify-avatar-db.ts continue traduzindo coluna -> slot sozinho, sem lista
+  // copiada. Com `avatar_hair` esta constante teria um membro fora do padrão.
+  "avatar_cabelo",
+] as const;
 
 /** As duas tabelas da arquitetura B (doc 21 §3.1). */
 const TABELAS = ["avatar_catalogo", "avatar_guarda_roupa"] as const;
@@ -258,7 +269,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
   }
 
   // --- 3. Os dados do catálogo são coerentes -------------------------------
-  console.log("\n3. Origem × colunas, e a economia do traje (1 inicial + o resto de baú)");
+  console.log("\n3. Origem × colunas, e a economia do catálogo (tudo de baú, iniciais common)");
 
   const incoerentes = await db<{ slug: string; origem: string; motivo: string }[]>`
     select slug, origem,
@@ -325,17 +336,56 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     ok("nenhum traje amarrado a patente (a patente dá moldura, não roupa)");
   }
 
-  const iniciais = trajes.filter((t) => t.origem === "marco_nivel");
-  if (iniciais.length > 1) {
+  // A ECONOMIA MUDOU DE FORMA EM 2026-08-23, e esta conferência mudou junto.
+  //
+  // Ela media "no máximo UM traje com origem marco_nivel" — a farda era a única
+  // peça de marco do catálogo inteiro. A farda virou `bau`/`common`/`inicial`, e
+  // manter a régua antiga a deixaria VERDE POR VACUIDADE: zero trajes marco_nivel
+  // cai no ramo "nenhum traje semeado ainda", que é INFO e não reprova nada.
+  //
+  // A regra nova é do catálogo todo, não do traje, e tem dentes nos dois sentidos:
+  //
+  //   (i)  NENHUMA peça fora de `origem = 'bau'`. O CHECK ainda admite marco_nivel
+  //        e marco_patente, e é assim que fica — apagar a forma seria apagar a
+  //        possibilidade. O que não pode é alguém USAR a forma sem decidir: peça
+  //        de marco não tem linha no guarda-roupa e escapa da conferência 4 do
+  //        verify:avatar-db, que é a que mede posse.
+  //   (ii) TODA peça `inicial` é `common`. Uma inicial rara é raridade de graça —
+  //        o aluno começaria com o que o baú existe para dar.
+  const todas = await db<{ slug: string; origem: string; raridade: string | null; inicial: boolean }[]>`
+    select slug, origem, raridade, inicial from public.avatar_catalogo order by slug`;
+
+  const foraDoBau = todas.filter((p) => p.origem !== "bau");
+  if (foraDoBau.length > 0) {
     nok(
-      `${iniciais.length} trajes iniciais: ${iniciais.map((t) => t.slug).join(", ")}`,
-      "a economia decidida é 1 inicial + o resto por baú (doc 22 §1) — dois iniciais é " +
-        "uma segunda peça grátis que ninguém decidiu dar",
+      `${foraDoBau.length} peça(s) fora de origem='bau': ` +
+        foraDoBau.map((p) => `${p.slug} (${p.origem})`).join(", "),
+      "desde 2026-08-23 toda peça vestível tem raridade e vem de baú (doc 22 §1). " +
+        "Peça de marco não tem linha no guarda-roupa e escapa da conferência de posse",
     );
-  } else if (iniciais.length === 1) {
-    ok(`1 traje inicial (${iniciais[0]!.slug}), o resto sai de baú`);
   } else {
-    info("nenhum traje semeado ainda — o inicial chega no B5, e os de baú a partir dele");
+    ok(`as ${todas.length} peças do catálogo são de baú — nenhuma escapa da posse`);
+  }
+
+  const marcadas = todas.filter((p) => p.inicial);
+  const rarasDeGraca = marcadas.filter((p) => p.raridade !== "common");
+  if (marcadas.length === 0) {
+    nok(
+      "nenhuma peça marcada como inicial",
+      "handle_new_user semeia com WHERE inicial — sem nenhuma, o aluno nasce sem " +
+        "poder vestir nada, porque equipar_peca cobra a linha do guarda-roupa",
+    );
+  } else if (rarasDeGraca.length > 0) {
+    nok(
+      `${rarasDeGraca.length} peça(s) inicial(is) fora de common: ` +
+        rarasDeGraca.map((p) => `${p.slug} (${p.raridade})`).join(", "),
+      "inicial rara é raridade de graça — o aluno começaria com o que o baú existe para dar",
+    );
+  } else {
+    ok(
+      `${marcadas.length} peça(s) inicial(is), todas common: ` +
+        marcadas.map((p) => p.slug).join(", "),
+    );
   }
 
   // A pirâmide é MEDIDA e relatada; ela só ganha dentes no Bloco 4, junto do

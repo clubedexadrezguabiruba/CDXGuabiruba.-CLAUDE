@@ -69,7 +69,7 @@ export const HREF_DA_FOLHA = "avatar-kokeshi";
 export interface AvatarKokeshiProps {
   /** `users.avatar_skin` — índice em `PELE`. Fora da faixa cai no default do banco. */
   skin: number;
-  /** `users.avatar_hair` — slug do catálogo. `null` é careca, que é ausência de peça. */
+  /** `users.avatar_cabelo` — slug de `avatar_catalogo`. `null` é careca, que é ausência de peça. */
   hair: string | null;
   /** `users.avatar_hair_color` — índice em `CABELO`. */
   hairColor: number;

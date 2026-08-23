@@ -85,13 +85,20 @@ export interface PublicProfileData {
    * colega via o aluno de macacão porque o TypeScript jogava a farda fora na
    * fronteira, não porque o banco não a tivesse mandado.
    *
-   * Os outros três slugs da RPC (`chapeu`, `rosto`, `pet`) seguem de fora **de
-   * propósito**: entram quando alguma tela os desenhar. Eram quatro — `fundo` foi
-   * apagado em 2026-08-13, e a RPC não o devolve mais. A conferência 7
+   * Os outros slugs da RPC entram quando alguma tela os desenhar. A conferência 7
    * de `verify:perfil-publico` cobra este tipo a partir do que o próprio `/perfil`
-   * passa ao boneco, então o dia em que o chapéu chegar lá ela reprova aqui sozinha.
+   * passa ao boneco, então o dia em que uma peça nova chegar lá ela reprova aqui
+   * sozinha — **e foi exatamente o que aconteceu com o `rosto` em 2026-08-23**,
+   * quando a vitrine passou a vestir aquele slot. O gate reprovou com "o aluno se
+   * vê com a peça e aparece sem ela para os colegas", que é o único lugar onde a
+   * peça tem plateia.
+   *
+   * Sobram de fora `chapeu` e `pet`, que ainda não têm arte. Eram mais um: `fundo`
+   * foi apagado em 2026-08-13, e a RPC não o devolve.
    */
   avatar_traje: string | null;
+  /** `users.avatar_rosto` — barba ou óculos. `null` é rosto limpo. */
+  avatar_rosto: string | null;
   level: number;
   xp: number;
   puzzle_rating: number;

@@ -20,7 +20,7 @@ export default async function MainLayout({
     level: number;
     role: string;
     avatar_skin: number;
-    avatar_hair: string | null;
+    avatar_cabelo: string | null;
     avatar_hair_color: number;
     // As duas peças do recorte de cabeça (achado G22). A navbar é a única das cinco
     // telas que não passa por RPC de lista: ela lê `users` direto, então aqui a
@@ -46,7 +46,7 @@ export default async function MainLayout({
     const { data } = await supabase
       .from("users")
       .select(
-        "display_name, level, role, avatar_skin, avatar_hair, avatar_hair_color, avatar_chapeu, avatar_rosto, avatar_chosen",
+        "display_name, level, role, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_chapeu, avatar_rosto, avatar_chosen",
       )
       .eq("id", user.id)
       .single();
@@ -84,7 +84,7 @@ export default async function MainLayout({
     // novo é ruído, não acessibilidade.
     <AvatarCabeca
       skin={profile.avatar_skin}
-      hair={profile.avatar_hair}
+      hair={profile.avatar_cabelo}
       hairColor={profile.avatar_hair_color}
       chapeu={profile.avatar_chapeu}
       rosto={profile.avatar_rosto}
