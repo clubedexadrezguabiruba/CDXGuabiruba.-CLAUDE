@@ -8,7 +8,10 @@ import { loginAndSettle } from "./helpers/auth-helpers";
  * Sucede `phase8-avatar.spec.ts`, apagado no Bloco D junto com o inventário que ele
  * media (itens, slots, equipar/desequipar). O que aquele teste protegia e continua
  * valendo é a **Regra Inviolável nº 1**: quem decide o que o aluno pode vestir é o
- * servidor. Só mudou o objeto — de `equip_item` para `update_avatar_identity`.
+ * servidor. Só mudou o objeto — de `equip_item` para `update_avatar_identity`, e
+ * deste para **`equipar_peca`** em 2026-08-23, quando o cabelo virou peça de baú.
+ * A régua deixou de ser NÍVEL e passou a ser POSSE; `avatar_hair_catalog` não
+ * existe mais, e `update_avatar_identity` ficou só com as duas cores.
  *
  * ---------------------------------------------------------------------------
  * O QUE ESTE ARQUIVO MEDE E O `verify:` NÃO MEDE
@@ -70,6 +73,20 @@ const SENHA = `Teste@${TIMESTAMP}`;
  * Nenhum dos dois é o default do banco (pele 2, cor 0) — escolher o que já estava
  * escolhido provaria zero.
  */
+/**
+ * Os nomes de raridade que o aluno lê, e eles são COPY de `src/lib/avatar/raridade.ts`.
+ *
+ * Escritos aqui de propósito, como o par nome/índice das paletas: o teste lê o que
+ * está na tela e confere contra o que está no banco, então uma tradução que mudar
+ * de um lado só aparece aqui.
+ */
+const NOME_DA_RARIDADE: Record<string, string> = {
+  common: "Comum",
+  rare: "Rara",
+  epic: "Épica",
+  legendary: "Lendária",
+};
+
 const PELE_ESCOLHIDA = { nome: "Tom 6", indice: 5 };
 const COR_ESCOLHIDA = { nome: "Ruivo", indice: 4 };
 
@@ -81,36 +98,48 @@ const cabecalhoServico = {
 
 interface LinhaDoCatalogo {
   slug: string;
-  min_level: number;
+  raridade: "common" | "rare" | "epic" | "legendary";
+  inicial: boolean;
 }
 
 interface Identidade {
   avatar_skin: number;
-  avatar_hair: string | null;
+  avatar_cabelo: string | null;
   avatar_hair_color: number;
   avatar_chosen: boolean;
   level: number;
 }
 
 /**
- * O catálogo NA MESMA ORDEM em que o editor o desenha: `min_level` crescente, e o
- * slug como desempate (`EditorDeAparencia.tsx:261`). Sem repetir a ordenação aqui,
- * "a segunda ficha da grade" não teria dono conhecido.
+ * O catálogo do slot `cabelo`, NA MESMA ORDEM em que a vitrine o desenha.
+ *
+ * ⚠️ A ORDEM MUDOU EM 2026-08-23 junto com a gramática. Era `min_level` crescente,
+ * lida de `avatar_hair_catalog`; a tabela não existe mais. A vitrine ordena por
+ * **o que o aluno pode usar primeiro**, e o slug como desempate
+ * (`EditorDeAparencia.tsx`, `ordenados`) — a lista lida de cima para baixo é a
+ * progressão. Sem repetir a ordenação aqui, "a segunda ficha da grade" não teria
+ * dono conhecido.
+ *
+ * Quem o aluno pode usar depende de quem ele TEM, então a ordenação recebe o
+ * guarda-roupa: é a mesma conta que o `page.tsx` faz no servidor.
  */
-async function lerCatalogo(): Promise<LinhaDoCatalogo[]> {
+async function lerCatalogo(possuidas: Set<string> = new Set()): Promise<LinhaDoCatalogo[]> {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/avatar_hair_catalog?select=slug,min_level`,
+    `${SUPABASE_URL}/rest/v1/avatar_catalogo?slot=eq.cabelo&select=slug,raridade,inicial`,
     { headers: cabecalhoServico }
   );
   if (!res.ok) throw new Error(`lerCatalogo falhou: ${res.status} ${await res.text()}`);
   const linhas = (await res.json()) as LinhaDoCatalogo[];
-  return linhas.sort((a, b) => a.min_level - b.min_level || a.slug.localeCompare(b.slug));
+  return linhas.sort((a, b) => {
+    const d = Number(possuidas.has(b.slug)) - Number(possuidas.has(a.slug));
+    return d !== 0 ? d : a.slug.localeCompare(b.slug);
+  });
 }
 
 async function lerIdentidade(userId: string): Promise<Identidade> {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/users?id=eq.${userId}` +
-      `&select=avatar_skin,avatar_hair,avatar_hair_color,avatar_chosen,level`,
+      `&select=avatar_skin,avatar_cabelo,avatar_hair_color,avatar_chosen,level`,
     { headers: cabecalhoServico }
   );
   if (!res.ok) throw new Error(`lerIdentidade falhou: ${res.status} ${await res.text()}`);
@@ -119,20 +148,32 @@ async function lerIdentidade(userId: string): Promise<Identidade> {
   return linhas[0];
 }
 
+/** O guarda-roupa do aluno: slug -> fonte. É o que decide silhueta x peça. */
+async function lerGuardaRoupa(userId: string): Promise<Map<string, string>> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/avatar_guarda_roupa?user_id=eq.${userId}&select=slug,fonte`,
+    { headers: cabecalhoServico }
+  );
+  if (!res.ok) throw new Error(`lerGuardaRoupa falhou: ${res.status} ${await res.text()}`);
+  const linhas = (await res.json()) as { slug: string; fonte: string }[];
+  return new Map(linhas.map((l) => [l.slug, l.fonte]));
+}
+
 /**
- * Escreve o nível direto na tabela, com service_role.
+ * Concede a peça com service_role — o que o baú faria, sem abrir baú.
  *
- * Passar por `grant_xp` seria mais fiel ao produto e é caro por nada: aqui o nível
- * é PREMISSA do teste, não o que ele mede. Quem mede a curva de XP é o
- * `verify:xp-curve`.
+ * Substituiu `definirNivel`, que saiu do arquivo com a escada de nível. A premissa
+ * do teste deixou de ser "que nível o aluno tem" e passou a ser "que peça ele
+ * possui": é a POSSE que abre o cadeado agora, e conceder a linha é a forma direta
+ * de estabelecê-la. Quem mede o sorteio é `verify:chest-pool`.
  */
-async function definirNivel(userId: string, level: number): Promise<void> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
-    method: "PATCH",
-    headers: { ...cabecalhoServico, Prefer: "return=minimal" },
-    body: JSON.stringify({ level }),
+async function concederPeca(userId: string, slug: string): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/avatar_guarda_roupa`, {
+    method: "POST",
+    headers: { ...cabecalhoServico, Prefer: "return=minimal,resolution=ignore-duplicates" },
+    body: JSON.stringify({ user_id: userId, slug, fonte: "bau" }),
   });
-  if (!res.ok) throw new Error(`definirNivel falhou: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`concederPeca falhou: ${res.status} ${await res.text()}`);
 }
 
 /** Token do PRÓPRIO aluno — é o que faz a RPC rodar como `authenticated`. */
@@ -228,8 +269,11 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
     // primeira leitura pode chegar antes dela.
     await new Promise((r) => setTimeout(r, 1500));
 
-    catalogo = await lerCatalogo();
-    expect(catalogo.length, "o catálogo de cabelo está vazio — o Bloco C não foi aplicado?").toBeGreaterThan(0);
+    catalogo = await lerCatalogo(new Set((await lerGuardaRoupa(idAluno)).keys()));
+    expect(
+      catalogo.length,
+      "o slot cabelo está vazio em avatar_catalogo — a migration 20260823110000 não foi aplicada?"
+    ).toBeGreaterThan(0);
   });
 
   test.afterAll(async () => {
@@ -239,11 +283,35 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
 
   // ==========================================================================
   test("a criação grava as três colunas, e a folha de estilo sai uma vez", async ({ page }) => {
-    const livre = catalogo[0];
+    // ⚠️ A PREMISSA MUDOU EM 2026-08-23, e a nova é MAIS FORTE que a antiga.
+    //
+    // Era `expect(livre.min_level).toBe(1)` — um número numa coluna. O cabelo virou
+    // peça de baú, e o que abre a peça é POSSE. Então são duas premissas, e a
+    // segunda mede o SEED de verdade em vez de ler um campo:
+    //
+    //   (i)  existe cabelo `common` no catálogo;
+    //   (ii) o aluno recém-criado TEM exatamente as iniciais no guarda-roupa, com
+    //        `fonte = 'inicial'`. Isto prova que `handle_new_user` semeou — se o
+    //        gatilho não rodar, o aluno nasce com o que a tela oferece e o servidor
+    //        nega, que é o defeito que o slot inteiro existe para impedir.
+    const comuns = catalogo.filter((c) => c.raridade === "common");
+    expect(comuns.length, "nenhum cabelo common no catálogo — um aluno novo não teria o que escolher")
+      .toBeGreaterThan(0);
+
+    const guardaRoupa = await lerGuardaRoupa(idAluno);
+    const iniciaisDoAluno = [...guardaRoupa.entries()].filter(([, fonte]) => fonte === "inicial");
+    const cabelosIniciais = catalogo.filter((c) => c.inicial);
+
     expect(
-      livre.min_level,
-      "o cabelo mais barato do catálogo está travado no nível 1 — não há o que um recruta novo escolha"
-    ).toBe(1);
+      cabelosIniciais.length,
+      "o catálogo não marca nenhum cabelo como inicial — a decisão é 2 cabelos common de saída"
+    ).toBe(2);
+    expect(
+      iniciaisDoAluno.map(([slug]) => slug).filter((s) => s.startsWith("cabelo-")).sort(),
+      "o aluno recém-criado não recebeu os cabelos iniciais — handle_new_user não semeou"
+    ).toEqual(cabelosIniciais.map((c) => c.slug).sort());
+
+    const livre = catalogo[0];
 
     // Login CRU, sem `loginAndSettle`: o gate é o objeto do teste, e o helper
     // existe justamente para atravessá-lo. Usá-lo aqui seria medir o helper.
@@ -264,27 +332,33 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
     const fichas = fichasDeCabelo(page);
     await expect(fichas).toHaveCount(catalogo.length + 1);
 
-    // O cadeado desenhado bate com a régua do banco, NÍVEL A NÍVEL — e não só na
-    // contagem. O aluno é nível 1, então travado é exatamente `min_level > 1`, e o
-    // número que a ficha mostra tem de ser o `min_level` daquela linha. Comparar as
-    // duas listas ordenadas cobre catálogo com dois cabelos no mesmo nível, que
-    // uma busca por ficha não cobriria.
+    // O CADEADO DESENHADO BATE COM O GUARDA-ROUPA, PEÇA A PEÇA — e não só na
+    // contagem. Era nível a nível até 2026-08-23; agora travado é exatamente "não
+    // possuo", e a ficha travada não diz mais "Nível 30": ela sai em SILHUETA, com
+    // a raridade escrita ao lado da cor (a "Colorblind Rule" do DESIGN.md).
+    //
+    // Comparar as duas listas ordenadas cobre catálogo com duas peças da mesma
+    // raridade, que uma busca por ficha não cobriria.
     const rotulosTravados = await secaoDeCabelo(page)
       .locator("button[disabled]")
       .evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label") ?? ""));
-    const niveisNaTela = rotulosTravados
-      .map((r) => Number(r.match(/exige nível (\d+)/)?.[1] ?? NaN))
-      .sort((a, b) => a - b);
-    const niveisNoBanco = catalogo
-      .filter((c) => c.min_level > 1)
-      .map((c) => c.min_level)
-      .sort((a, b) => a - b);
-    expect(niveisNaTela, `os cadeados da tela não batem com avatar_hair_catalog`).toEqual(
-      niveisNoBanco
-    );
+    const raridadesNaTela = rotulosTravados
+      // ⚠️ `\w` NÃO CASA ACENTO em JavaScript, e as raridades têm: "rara" passava,
+      // "épica" e "lendária" quebravam o match e viravam "?". Medido no e2e de
+      // 2026-08-23. `.+?` casa qualquer coisa até o resto do rótulo, que é fixo.
+      .map((r) => r.match(/peça (.+?) de baú, você ainda não tem/)?.[1] ?? "?")
+      .sort();
+    const raridadesNoBanco = catalogo
+      .filter((c) => !guardaRoupa.has(c.slug))
+      .map((c) => NOME_DA_RARIDADE[c.raridade].toLowerCase())
+      .sort();
+    expect(
+      raridadesNaTela,
+      "as silhuetas da tela não batem com o que o aluno NÃO tem no guarda-roupa"
+    ).toEqual(raridadesNoBanco);
 
-    // A segunda ficha é o cabelo mais barato do catálogo — a primeira é a careca,
-    // que não é linha do banco (é `avatar_hair IS NULL`).
+    // A segunda ficha é a primeira peça que o aluno PODE vestir — a primeira é a
+    // careca, que não é linha do banco (é `avatar_cabelo IS NULL`).
     await clicarEProvar(fichas.nth(1));
 
     // Pelo NOME que o aluno lê; o `aria-pressed` prova que a amostra ficou
@@ -320,72 +394,120 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
 
     const identidade = await lerIdentidade(idAluno);
     expect(identidade.avatar_skin).toBe(PELE_ESCOLHIDA.indice);
-    expect(identidade.avatar_hair).toBe(livre.slug);
     expect(identidade.avatar_hair_color).toBe(COR_ESCOLHIDA.indice);
+    // ⚠️ O CABELO CHEGOU POR OUTRA PORTA, e é a mudança de comportamento desta
+    // tela: ele gravou no CLIQUE da ficha, por `equipar_peca`, não no "Confirmar".
+    // As duas cores acima é que subiram com o botão, por `update_avatar_identity`.
+    // A asserção continua a mesma porque o resultado é o mesmo — o que mudou é
+    // quando, e é isso que este comentário existe para não deixar esquecer.
+    expect(identidade.avatar_cabelo).toBe(livre.slug);
     // Sem isto o dashboard devolveria o aluno ao gate para sempre.
     expect(identidade.avatar_chosen).toBe(true);
   });
 
   // ==========================================================================
-  test("o cadeado é do servidor: a RPC recusa o cabelo travado", async () => {
-    const travado = [...catalogo].reverse().find((c) => c.min_level > 1);
-    test.skip(!travado, "nenhum cabelo do catálogo é travado — não há régua a testar");
+  test("o cadeado é do servidor: a RPC recusa a peça que o aluno não tem", async () => {
+    // ⚠️ MESMO CAMINHO DE ATAQUE, OBJETO NOVO. Era "cabelo acima do nível" contra
+    // `update_avatar_identity`; virou "peça que não possuo" contra `equipar_peca`.
+    // As três asserções são as mesmas — 4xx, a mensagem, e nenhuma meia gravação.
+    const naoPossui = [...(await lerGuardaRoupa(idAluno)).keys()];
+    const alvo = catalogo.find((c) => !naoPossui.includes(c.slug));
+    test.skip(!alvo, "o aluno possui o catálogo inteiro — não há negação a provar");
 
-    // A premissa é declarada, não herdada do teste anterior: o nível é o que
-    // decide a recusa, e um arquivo em que a ordem dos testes é a premissa quebra
-    // no dia em que alguém rodar um `--grep`.
-    await definirNivel(idAluno, 1);
+    // A premissa é declarada, não herdada do teste anterior: a POSSE é o que decide
+    // a recusa, e um arquivo em que a ordem dos testes é a premissa quebra no dia
+    // em que alguém rodar um `--grep`.
     const antes = await lerIdentidade(idAluno);
+    expect(
+      (await lerGuardaRoupa(idAluno)).has(alvo!.slug),
+      `a premissa deste teste é que o aluno NÃO tenha ${alvo!.slug}`
+    ).toBe(false);
 
     const token = await entrarComSenha(EMAIL_ALUNO, SENHA);
-    const { status, corpo } = await chamarRpcComoAluno(token, "update_avatar_identity", {
-      p_skin: antes.avatar_skin,
-      p_hair: travado!.slug,
-      p_hair_color: antes.avatar_hair_color,
+    const { status, corpo } = await chamarRpcComoAluno(token, "equipar_peca", {
+      p_slot: "cabelo",
+      p_slug: alvo!.slug,
     });
 
-    // É o caminho por onde passa quem edita o DOM para destravar a ficha: o botão
-    // `disabled` é INFORMAÇÃO, e quem recusa é a transação.
-    expect(status, `a RPC aceitou ${travado!.slug} para um aluno de nível 1`).toBeGreaterThanOrEqual(400);
-    expect(corpo).toContain(`exige nível ${travado!.min_level}`);
+    // É o caminho por onde passa quem edita o DOM para destravar a silhueta: o
+    // botão `disabled` é INFORMAÇÃO, e quem recusa é a transação.
+    expect(
+      status,
+      `a RPC aceitou ${alvo!.slug} para um aluno que não tem a peça`
+    ).toBeGreaterThanOrEqual(400);
+    expect(corpo).toContain("você ainda não tem a peça");
 
     // E a recusa não deixou meia gravação para trás.
     const depois = await lerIdentidade(idAluno);
-    expect(depois.avatar_hair).toBe(antes.avatar_hair);
+    expect(depois.avatar_cabelo).toBe(antes.avatar_cabelo);
     expect(depois.avatar_skin).toBe(antes.avatar_skin);
     expect(depois.avatar_hair_color).toBe(antes.avatar_hair_color);
   });
 
   // ==========================================================================
-  test("subir de nível abre o cadeado, e o /perfil salva a troca", async ({ page }) => {
-    const travado = [...catalogo].reverse().find((c) => c.min_level > 1);
-    test.skip(!travado, "nenhum cabelo do catálogo é travado — não há cadeado a abrir");
-
-    // O mesmo aluno, o mesmo código, um nível diferente. Se a tela tivesse a régua
-    // chumbada, o cadeado continuaria lá depois desta linha.
-    await definirNivel(idAluno, travado!.min_level);
+  test("ganhar a peça abre o cadeado, e o clique no /perfil veste na hora", async ({ page }) => {
+    // ⚠️ A PREMISSA TROCOU: era "subir de nível", virou "ganhar a peça". É o que a
+    // virada de 2026-08-23 quer dizer na prática — o baú passou a ser a porta, e
+    // conceder a linha com service_role é o baú sem abrir baú.
+    const possuidasAntes = await lerGuardaRoupa(idAluno);
+    const alvo = catalogo.find((c) => !possuidasAntes.has(c.slug));
+    test.skip(!alvo, "o aluno possui o catálogo inteiro — não há cadeado a abrir");
 
     await loginAndSettle(page, EMAIL_ALUNO, SENHA);
     await page.goto("/perfil");
     await expect(secaoDeCabelo(page)).toBeVisible({ timeout: 20_000 });
 
-    await expect(
-      secaoDeCabelo(page).locator("button[disabled]"),
-      `no nível ${travado!.min_level} nenhuma ficha deveria seguir travada`
-    ).toHaveCount(0);
+    // A TELA É MEDIDA ANTES E DEPOIS, e a peça é identificada pela diferença.
+    //
+    // A alternativa seria uma tabela slug -> nome legível escrita aqui, e ela seria
+    // uma segunda lista para discordar de `CABELOS`. O nome já está no aria-label
+    // da silhueta ("<Nome> — peça <raridade> de baú, você ainda não tem"), então a
+    // tela responde sozinha qual ficha destravou.
+    const nomesTravados = async (): Promise<string[]> =>
+      (
+        await secaoDeCabelo(page)
+          .locator("button[disabled]")
+          .evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label") ?? ""))
+      )
+        .map((r) => r.split(" — ")[0])
+        .sort();
 
-    // A ficha mais cara é a última da grade: o catálogo é ordenado por min_level.
-    const fichas = fichasDeCabelo(page);
-    await clicarEProvar(fichas.last());
+    const travadosAntes = await nomesTravados();
+    expect(
+      travadosAntes.length,
+      "nenhuma ficha em silhueta antes de conceder — não há cadeado a abrir"
+    ).toBeGreaterThan(0);
 
-    await page.getByRole("button", { name: "Salvar aparência", exact: true }).click();
+    // O mesmo aluno, o mesmo código, uma linha a mais no guarda-roupa. Se a tela
+    // tivesse a régua chumbada, a silhueta continuaria lá depois desta linha.
+    await concederPeca(idAluno, alvo!.slug);
+    await page.reload();
+    await expect(secaoDeCabelo(page)).toBeVisible({ timeout: 20_000 });
 
-    // A confirmação é do servidor: `expect.poll` porque a RPC + o `router.refresh`
-    // acontecem depois do clique, e ler o banco na mesma linha leria o estado
-    // anterior.
+    const travadosDepois = await nomesTravados();
+    const destravou = travadosAntes.filter((n) => !travadosDepois.includes(n));
+    expect(
+      destravou,
+      `conceder ${alvo!.slug} deveria tirar EXATAMENTE uma ficha da silhueta`
+    ).toHaveLength(1);
+
+    // Agora o rótulo é só o nome: a ficha vestível não carrega o sufixo da silhueta.
+    const ficha = secaoDeCabelo(page).getByRole("button", {
+      name: destravou[0],
+      exact: true,
+    });
+    await clicarEProvar(ficha);
+
+    // ⚠️ NÃO HÁ "Salvar aparência" AQUI, e é a mudança de comportamento desta
+    // virada: o cabelo é peça e veste NA HORA, por `equipar_peca`, como o traje já
+    // fazia. O botão continua existindo — ele grava as duas CORES, que são o que
+    // sobrou de `update_avatar_identity`.
+    //
+    // `expect.poll` porque a RPC acontece depois do clique, e ler o banco na mesma
+    // linha leria o estado anterior.
     await expect
-      .poll(async () => (await lerIdentidade(idAluno)).avatar_hair, { timeout: 15_000 })
-      .toBe(travado!.slug);
+      .poll(async () => (await lerIdentidade(idAluno)).avatar_cabelo, { timeout: 15_000 })
+      .toBe(alvo!.slug);
   });
 
   // ==========================================================================
@@ -488,9 +610,13 @@ test.describe("Identidade do avatar — a tela, a régua e o perfil público", (
     const tokenColega = await entrarComSenha(EMAIL_COLEGA, SENHA);
     const peleDoColega = eu.avatar_skin === 0 ? 7 : 0;
     const corDoColega = eu.avatar_hair_color === 1 ? 6 : 1;
+    // ⚠️ A ASSINATURA MUDOU EM 2026-08-23: a RPC perdeu o cabelo e ficou com as
+    // duas cores. Chamar com 3 parâmetros devolve **404** — a função não existe —,
+    // e é assim que o PostgREST diz "essa assinatura morreu". O cabelo do colega
+    // não entra aqui de propósito: pele e cor já bastam para os dois saírem
+    // diferentes, e vesti-lo exigiria conceder a peça antes.
     const { status } = await chamarRpcComoAluno(tokenColega, "update_avatar_identity", {
       p_skin: peleDoColega,
-      p_hair: null,
       p_hair_color: corDoColega,
     });
     expect(status, "não consegui dar identidade própria ao colega").toBeLessThan(400);
