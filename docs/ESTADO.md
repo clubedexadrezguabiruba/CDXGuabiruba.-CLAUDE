@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 12 |
-| **Árvore** | **19 arquivos sujos** |
-| **Último commit** | 4ce3ba7 · 2026-08-22 · fix(avatar): a boca preta na coluna `traçado` — faltava `fill-rule=evenodd`, e agora um gate vigia a divergência |
+| **Commits à frente de `origin/main`** | 13 |
+| **Árvore** | **40 arquivos sujos** |
+| **Último commit** | fbfbe83 · 2026-08-22 · feat(avatar): o cabelo ganha a família TONAL — a esteira do rosto passa a ser a de quem RECOLORE, e os dois riscos do dia 1 saem medidos |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -401,7 +401,7 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 |---|---|---|
 | Backlog do avatar | **30 de 67** (45%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
-| Catálogo de cabelo | **5 de 10** no mínimo (faltam **5**) | `docs/avatar/19-rota-de-arte-runbook.md` |
+| Catálogo de cabelo | **6 de 10** no mínimo (faltam **4**) | `docs/avatar/19-rota-de-arte-runbook.md` |
 
 Backlog do avatar, fase a fase:
 

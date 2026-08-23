@@ -134,6 +134,7 @@ export default function ChestPanel() {
           isEgg={claimResult.isEgg}
           xp={claimResult.xp}
           itemSlug={claimResult.itemSlug}
+          itemSlot={claimResult.itemSlot}
           raridade={claimResult.rarity}
           onClose={handleCloseModal}
         />

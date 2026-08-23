@@ -20,7 +20,7 @@ import type { User } from "@supabase/supabase-js";
  * conferência 6 do `verify:perfil-publico` já registra que `avatar_config` pode
  * sair da matview.
  *
- * A identidade viva do avatar são `avatar_skin`, `avatar_hair`, `avatar_hair_color`
+ * A identidade viva do avatar são `avatar_skin`, `avatar_cabelo`, `avatar_hair_color`
  * e os quatro slots de guarda-roupa — e este hook não as busca de propósito: quem
  * desenha o boneco lê da RPC de perfil, não daqui.
  */

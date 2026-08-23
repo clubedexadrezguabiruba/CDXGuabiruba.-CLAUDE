@@ -82,7 +82,7 @@ import { getDbUrl } from "../db-url";
 const RAIZ = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..");
 
 /** As três colunas da identidade kokeshi (Bloco C), que o E.3 levou à matview. */
-const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_hair", "avatar_hair_color"] as const;
+const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_cabelo", "avatar_hair_color"] as const;
 
 /** O que `get_public_profile` deixou de devolver no E.3 — os três da pilha v2. */
 const CHAVES_MORTAS = ["avatar_config", "avatar_base", "equipped_items"] as const;
@@ -116,7 +116,7 @@ const LEGADAS_NA_VIEW = ["avatar_config", "avatar_base"] as const;
  */
 const PROP_PARA_COLUNA: Record<string, string> = {
   skin: "avatar_skin",
-  hair: "avatar_hair",
+  hair: "avatar_cabelo",
   hairColor: "avatar_hair_color",
   traje: "avatar_traje",
   chapeu: "avatar_chapeu",
@@ -342,7 +342,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     select slug, min_level from public.avatar_hair_catalog
     where min_level <= ${cobaia.level} order by min_level, slug`;
 
-  const hairAntes = (perfilAntes["avatar_hair"] as string | null) ?? null;
+  const hairAntes = (perfilAntes["avatar_cabelo"] as string | null) ?? null;
   const alvo = livres.find((l) => l.slug !== hairAntes);
 
   if (!alvo) {
@@ -381,7 +381,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     } else if (!perfilDepois) {
       nok("get_public_profile devolveu NULL depois da gravação", "o refresh pode ter apagado a linha da matview");
     } else {
-      const hairDepois = (perfilDepois["avatar_hair"] as string | null) ?? null;
+      const hairDepois = (perfilDepois["avatar_cabelo"] as string | null) ?? null;
       if (hairDepois === alvo.slug) {
         ok(
           `o perfil público passou de ${hairAntes === null ? "careca" : `"${hairAntes}"`} ` +

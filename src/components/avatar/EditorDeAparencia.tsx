@@ -45,8 +45,9 @@ import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { AvatarTronco } from "@/components/avatar/AvatarTronco";
-import { CABELOS } from "@/lib/avatar/estilo/cabelo";
-import { TRAJES_DA_ARTE } from "@/lib/avatar/estilo/trajes-da-arte";
+import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
+import { nomeDaPeca } from "@/lib/avatar/catalogo";
+import { COR_DA_RARIDADE, NOME_DA_RARIDADE, type Raridade } from "@/lib/avatar/raridade";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { cn } from "@/lib/cn";
 
@@ -57,53 +58,28 @@ export interface Aparencia {
   hairColor: number;
 }
 
-/** Uma linha de `avatar_hair_catalog`, como a tela a lê no servidor. */
-export interface CabeloDoCatalogo {
-  slug: string;
-  min_level: number;
-}
-
 /**
- * Uma linha de `avatar_catalogo` do slot `traje`, como a tela a lê no servidor.
+ * Uma linha de `avatar_catalogo`, de QUALQUER slot, como a tela a lê no servidor.
+ *
+ * Chamava-se `TrajeDoCatalogo` e servia um slot só. Virou genérica em 2026-08-23,
+ * quando o cabelo entrou no catálogo: a vitrine passou a servir três slots com a
+ * mesma linha de banco, e um tipo por slot seria três cópias do mesmo shape.
  *
  * O aluno lê o catálogo INTEIRO, inclusive as peças que ainda não tem — é o que
  * permite a vitrine. Quem recusa é `equipar_peca`, não esta lista.
  */
-export interface TrajeDoCatalogo {
+export interface PecaDoCatalogo {
   slug: string;
   origem: "marco_nivel" | "marco_patente" | "bau";
   min_level: number | null;
   min_tier: number | null;
-  raridade: "common" | "rare" | "epic" | "legendary" | null;
+  raridade: Raridade | null;
   /** `true` se o aluno tem linha em `avatar_guarda_roupa` para este slug. */
   possui: boolean;
 }
 
-/**
- * A cor de cada raridade — a SEGUNDA linguagem de cor do produto.
- *
- * Ela vive **só aqui**, na vitrine e nos cards do editor, e nunca em volta de um
- * avatar: ali quem manda é a cor de PATENTE, pela `<MolduraPatente>`. As duas no
- * mesmo elemento ensinam o aluno que cor não significa nada (DESIGN.md, "The Two
- * Color Languages Rule").
- *
- * Os hexadecimais são os do `EggHatchingModal`, que já desenhava moldura de
- * raridade desde a v2 — reusar em vez de escolher de novo evita a segunda paleta
- * que diverge da primeira.
- */
-const COR_DA_RARIDADE: Record<NonNullable<TrajeDoCatalogo["raridade"]>, string> = {
-  common: "#94A3B8",
-  rare: "#3A55B5",
-  epic: "#7A3168",
-  legendary: "#C9A84C",
-};
-
-const NOME_DA_RARIDADE: Record<NonNullable<TrajeDoCatalogo["raridade"]>, string> = {
-  common: "Comum",
-  rare: "Rara",
-  epic: "Épica",
-  legendary: "Lendária",
-};
+/** Os slots que a vitrine desenha. `chapeu` e `pet` entram nos blocos deles. */
+export type SlotDaVitrine = "cabelo" | "traje" | "rosto";
 
 /**
  * Rótulos das 8 cores de cabelo, na ordem de `CABELO` em `palette.ts`.
@@ -130,21 +106,6 @@ const NOMES_COR_CABELO = [
  * de criança precisa carregar. O número é neutro e a amostra é a informação.
  */
 const NOMES_PELE = Array.from({ length: PELE.length }, (_, i) => `Tom ${i + 1}`);
-
-/** Slug → nome que o aluno lê. Slug fora do catálogo do código sai como slug. */
-function nomeDoModelo(slug: string): string {
-  return (CABELOS as Record<string, { nome: string } | undefined>)[slug]?.nome ?? slug;
-}
-
-/**
- * Slug → nome da peça de traje. `undefined` quando o código ainda não a desenha.
- *
- * O nome vem de `TRAJES_DA_ARTE`, que é GERADO pela esteira: ele é consequência de
- * existir arte renderizável, nunca uma segunda lista que pode discordar do banco.
- */
-function nomeDoTraje(slug: string): string | undefined {
-  return TRAJES_DA_ARTE[slug]?.nome;
-}
 
 function IconeCadeado({ className }: { className?: string }) {
   return (
@@ -320,32 +281,48 @@ function FileiraDeCores({
  * servidor confirma, nunca antes: `aoTrocarTraje` só é chamado depois do `await`.
  */
 function Vitrine({
-  trajes,
+  slot,
+  titulo,
+  rotuloSemPeca,
+  pecas,
   atual,
   nivel,
   tier,
   aoTrocar,
+  preview,
 }: {
-  trajes: TrajeDoCatalogo[];
+  /** Qual slot esta vitrine veste. Decide o nome da peça e a mensagem de erro. */
+  slot: SlotDaVitrine;
+  /** O rótulo do grupo: "Cabelo", "Roupa", "Rosto". */
+  titulo: string;
+  /** Como se chama a AUSÊNCIA de peça neste slot: "Careca", "Sem traje". */
+  rotuloSemPeca: string;
+  pecas: PecaDoCatalogo[];
   atual: string | null;
   nivel: number;
   tier: number;
   aoTrocar: (slug: string | null) => Promise<string | null>;
+  /**
+   * O boneco de cada ficha, e ele é DIFERENTE por slot — as duas medições que já
+   * existem não se trocam sem o olho do Doug. Ver o docstring de cada chamador.
+   */
+  preview: (slug: string | null, chave: string) => React.ReactNode;
 }) {
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
-  // "Sem traje" primeiro porque é o estado que nenhuma régua nega — o espelho exato
-  // do careca. Depois o que o aluno pode usar, e por último o que ele ainda deseja:
-  // a lista lida de cima para baixo é a progressão.
-  const podeUsar = (t: TrajeDoCatalogo) =>
+  // A ausência primeiro porque é o estado que nenhuma régua nega — careca e "sem
+  // traje" são o mesmo objeto em slots diferentes. Depois o que o aluno pode usar,
+  // e por último o que ele ainda deseja: a lista lida de cima para baixo é a
+  // progressão.
+  const podeUsar = (t: PecaDoCatalogo) =>
     t.origem === "bau"
       ? t.possui
       : t.origem === "marco_nivel"
         ? nivel >= (t.min_level ?? 1)
         : tier >= (t.min_tier ?? 0);
 
-  const ordenados = [...trajes].sort((a, b) => {
+  const ordenados = [...pecas].sort((a, b) => {
     const d = Number(podeUsar(b)) - Number(podeUsar(a));
     return d !== 0 ? d : a.slug.localeCompare(b.slug);
   });
@@ -354,7 +331,7 @@ function Vitrine({
 
   async function escolher(slug: string | null) {
     if (ocupado) return;
-    setOcupado(slug ?? "sem-traje");
+    setOcupado(slug ?? `sem-${slot}`);
     setErro(null);
     const msg = await aoTrocar(slug);
     setOcupado(null);
@@ -364,18 +341,18 @@ function Vitrine({
   return (
     <section className="max-w-xs">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className={TITULO_DE_GRUPO}>Roupa</h3>
+        <h3 className={TITULO_DE_GRUPO}>{titulo}</h3>
         <span className="truncate text-xs text-ink/70">
-          {atual ? (nomeDoTraje(atual) ?? atual) : "Sem traje"}
+          {atual ? nomeDaPeca(slot, atual) : rotuloSemPeca}
         </span>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {opcoes.map(({ slug, t }: { slug: string | null; t?: TrajeDoCatalogo }) => {
+        {opcoes.map(({ slug, t }: { slug: string | null; t?: PecaDoCatalogo }) => {
           const selecionado = slug === atual;
           const livre = !t || podeUsar(t);
-          const chave = slug ?? "sem-traje";
-          const nome = slug ? (nomeDoTraje(slug) ?? slug) : "Sem traje";
+          const chave = slug ?? `sem-${slot}`;
+          const nome = slug ? nomeDaPeca(slot, slug) : rotuloSemPeca;
           // Peça de baú não possuída é SILHUETA: o desenho fica escondido, e é
           // isso que cria o desejo. Peça de marco mostra o desenho com cadeado —
           // ela não é surpresa, é degrau, e esconder um degrau não motiva ninguém.
@@ -413,14 +390,7 @@ function Vitrine({
               style={cor && !livre ? { borderColor: cor } : undefined}
             >
               <span className="relative grid place-items-center">
-                <AvatarTronco
-                  skin={2}
-                  hair={null}
-                  hairColor={0}
-                  traje={emSilhueta ? null : slug}
-                  altura={96}
-                  ns={`vit-${chave}`}
-                />
+                {preview(emSilhueta ? null : slug, chave)}
                 {emSilhueta && (
                   // A silhueta é um véu POR CIMA do tronco vazio, com o "?" na cor
                   // da raridade. Desenhar a peça e cobri-la seria pagar o SVG dela
@@ -481,10 +451,12 @@ function Vitrine({
 export default function EditorDeAparencia({
   valor,
   aoMudar,
-  catalogo,
+  cabelos,
   trajes,
   traje,
-  aoTrocarTraje,
+  rostos,
+  rosto,
+  aoTrocarPeca,
   nivel,
   tier = 0,
   rotuloAcao,
@@ -493,22 +465,41 @@ export default function EditorDeAparencia({
 }: {
   valor: Aparencia;
   aoMudar: (proxima: Aparencia) => void;
-  catalogo: CabeloDoCatalogo[];
+  /**
+   * `avatar_catalogo` do slot cabelo, INTEIRO — inclusive o que o aluno não tem.
+   *
+   * Chamava-se `catalogo` e vinha de `avatar_hair_catalog`, com `min_level`. Desde
+   * 2026-08-23 o cabelo é peça de baú como as outras, e a lista tem a mesma forma
+   * das outras duas.
+   */
+  cabelos: PecaDoCatalogo[];
   /**
    * `avatar_catalogo` do slot traje, INTEIRO — inclusive o que o aluno não tem.
-   * Ausente, a aba "Roupa" não aparece: é o que mantém `/criar-personagem` e
-   * qualquer chamador antigo idênticos ao de antes deste bloco.
+   * Ausente, o grupo "Roupa" não aparece: é o que mantém qualquer chamador antigo
+   * idêntico ao de antes daquele bloco.
    */
-  trajes?: TrajeDoCatalogo[];
+  trajes?: PecaDoCatalogo[];
   /** `users.avatar_traje`. `null` é o macacão de treino — ausência de peça. */
   traje?: string | null;
   /**
+   * `avatar_catalogo` do slot rosto. Ausente, o grupo "Rosto" não aparece.
+   *
+   * Ele fechou um buraco vivo: até 2026-08-23 o aluno podia GANHAR a
+   * `rosto-barba-trancada` no baú e não tinha por onde vesti-la — `equipar_peca`
+   * tinha 2 chamadores, os dois com `p_slot: "traje"`.
+   */
+  rostos?: PecaDoCatalogo[];
+  /** `users.avatar_rosto`. `null` é rosto limpo. */
+  rosto?: string | null;
+  /**
    * Chama `equipar_peca` e devolve a MENSAGEM DE ERRO, ou `null` se deu certo.
    *
-   * A tela é quem chama a RPC porque é ela quem repinta o palco: o editor não tem
-   * boneco grande de propósito (ver o docstring do topo).
+   * Recebe o SLOT porque a RPC recebe: ela é `equipar_peca(p_slot, p_slug)` desde
+   * o B5, e um callback por slot seria três cópias da mesma chamada. A tela é quem
+   * chama a RPC porque é ela quem repinta o palco: o editor não tem boneco grande
+   * de propósito (ver o docstring do topo).
    */
-  aoTrocarTraje?: (slug: string | null) => Promise<string | null>;
+  aoTrocarPeca?: (slot: SlotDaVitrine, slug: string | null) => Promise<string | null>;
   /** Nível de XP do aluno. Só decide o que a tela DESENHA travado — ver docstring. */
   nivel: number;
   /** `achieved_tier`. Só decide o que a tela desenha travado, como o nível. */
@@ -522,26 +513,18 @@ export default function EditorDeAparencia({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Careca primeiro porque é o estado que nenhuma escada nega, depois o catálogo
-  // do mais barato ao mais caro — a lista lida de cima para baixo é a progressão.
-  const opcoes = [
-    { slug: null as string | null, nome: "Careca", minLevel: 1 },
-    ...[...catalogo]
-      .sort((a, b) => a.min_level - b.min_level || a.slug.localeCompare(b.slug))
-      .map((c) => ({ slug: c.slug, nome: nomeDoModelo(c.slug), minLevel: c.min_level })),
-  ];
-
-  const escolhido = opcoes.find((o) => o.slug === valor.hair);
-
   async function salvar() {
     if (salvando) return;
     setSalvando(true);
     setErro(null);
 
+    // O CABELO SAIU DAQUI em 2026-08-23. Ele é peça de `avatar_catalogo` e se veste
+    // por `equipar_peca`, na hora, como o traje — a RPC de identidade ficou com o
+    // que de fato é identidade e não é peça: as duas cores que o aluno escolhe
+    // (emenda à D27). Ver o docstring de <Vitrine> sobre a assimetria.
     const supabase = createClient();
     const { error } = await supabase.rpc("update_avatar_identity", {
       p_skin: valor.skin,
-      p_hair: valor.hair,
       p_hair_color: valor.hairColor,
     });
 
@@ -560,124 +543,46 @@ export default function EditorDeAparencia({
 
   return (
     <div className={cn("space-y-6", className)}>
-      <section className="max-w-xs">
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className={TITULO_DE_GRUPO}>Cabelo</h3>
-          <span className="truncate text-xs text-ink/70">{escolhido?.nome ?? "—"}</span>
-        </div>
+      {/*
+        O CABELO É UMA VITRINE COMO AS OUTRAS desde 2026-08-23.
 
-        {/*
-          DUAS COLUNAS, EM QUALQUER LARGURA, COM TETO DE 320px NA SEÇÃO.
+        Ele tinha grade própria, com cadeado de NÍVEL lido de `avatar_hair_catalog`.
+        Agora é peça de baú: o cadeado é de POSSE, a peça não possuída sai em
+        silhueta com a cor e o nome da raridade, e quem recusa continua sendo o
+        servidor — `equipar_peca`, que cobra a linha no guarda-roupa.
 
-          Com três colunas em 375 a ficha tinha 92px e o boneco cabia em 100px de
-          altura — cabeça de 39px. Medido: a crista do moicano ficava com 24px e
-          lia como coroa. Duas colunas dão 150px de boneco e 59px de cabeça.
+        ⚠️ O PREVIEW PRESERVA A MEDIÇÃO QUE JÁ EXISTIA, e ela não se troca sem o
+        olho do Doug: `<AvatarKokeshi altura={150}>` em grade de DUAS colunas. Com
+        três colunas em 375px a ficha tinha 92px, o boneco cabia em 100px de altura
+        (cabeça de 39px) e a crista do moicano ficava com 24px — medido, lia como
+        coroa. Duas colunas dão 150px de boneco e 59px de cabeça. O teto de 320px da
+        seção (`max-w-xs`) é o que faz o seletor medir o mesmo em 375 e em 1280.
 
-          A versão intermediária tinha `sm:grid-cols-3`, e ela estava errada por
-          um motivo que vale registrar: **`sm:` mede a JANELA, não o contêiner.**
-          Num desktop de 1280 a coluna estreita do perfil recebia três colunas de
-          108px para uma arte de 107px fixos — 0,8px de folga. O boneco tem
-          largura em pixel (deriva do `viewBox`), então grade que se estreita sem
-          o desenho estreitar junto é colisão esperando o primeiro monitor largo.
-
-          O TETO É DA SEÇÃO, e é de 320px (`max-w-xs`), medido para caber duas
-          fichas de ~150px em volta de uma arte de 107px de largura. A primeira
-          tentativa pôs 448px e não resolveu nada: com duas colunas isso dá ficha
-          de 220px e **56px de branco de cada lado do desenho** em 1280. Teto em
-          grade não é teto em ficha — e a conta que importa é a segunda.
-
-          Com 320px o seletor mede o mesmo em 375 e em 1280: ficha de ~150px,
-          folga de 14 a 19px. O mesmo objeto nas duas pontas, que é o que
-          "mobile-first a sério" quer dizer.
-
-          O boneco continua de CORPO INTEIRO — 57% dele é o mesmo tronco nas seis
-          fichas. O recorte de cabeça é do Bloco 6 (doc 15); forjá-lo aqui com um
-          `overflow-hidden` de número chutado é o que a régua do projeto proíbe.
-        */}
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {opcoes.map((o) => {
-            const selecionado = o.slug === valor.hair;
-            const bloqueado = nivel < o.minLevel;
-            const chave = o.slug ?? "careca";
-
-            return (
-              <button
-                key={chave}
-                type="button"
-                disabled={bloqueado}
-                aria-pressed={selecionado}
-                aria-label={
-                  bloqueado
-                    ? `${o.nome} — bloqueado, exige nível ${o.minLevel}`
-                    : o.nome
-                }
-                onClick={() => aoMudar({ ...valor, hair: o.slug })}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-lg border px-1 py-2 transition-colors",
-                  FOCO,
-                  // Marfim atrás do boneco na peça que é sua, branco na que ainda
-                  // não é. Com as duas em marfim, livre e travada diferiam por
-                  // 1px de tracejado e mais nada — invisível a distância normal
-                  // de leitura. Superfície + traço são duas pistas, e nenhuma
-                  // delas é cor: a "Colorblind Rule" continua de pé.
-                  bloqueado ? "bg-white" : "bg-warm-stone",
-                  // O travado é fio TRACEJADO, não peça apagada. Duas razões:
-                  // com `opacity-55` no botão inteiro o cabelo preto do Chanel
-                  // virava cinza e lia como "Grisalho" — que é uma das 8 cores
-                  // logo abaixo —, e o "Nível 30" caía para 1,9:1 de contraste,
-                  // atenuado duas vezes (ink/55 dentro de opacity-55). E, de
-                  // produto: a peça travada é a que se quer desejar; mostrá-la
-                  // desbotada vende o contrário. Tracejado é forma, não cor,
-                  // então a "Colorblind Rule" continua atendida.
-                  // O fio tem a MESMA tinta nos dois estados, e só o traço muda:
-                  // com o travado em `ink/25` contra `ink/15` do livre, a opção
-                  // que o aluno não pode ter era a de contorno mais forte da
-                  // grade — o contrário do que ela precisa dizer.
-                  bloqueado
-                    ? "cursor-not-allowed border-dashed border-ink/25"
-                    : selecionado
-                      ? "border-gold bg-gold/10 ring-1 ring-gold"
-                      : "border-ink/25 hover:border-gold/60"
-                )}
-              >
-                <AvatarKokeshi
-                  skin={valor.skin}
-                  hair={o.slug}
-                  hairColor={valor.hairColor}
-                  altura={150}
-                  ns={`cab-${chave}`}
-                />
-                <span className="text-sm font-semibold leading-tight">{o.nome}</span>
-                {/* A linha de meta tem altura fixa: sem ela, as seis fichas
-                    ficariam de alturas diferentes conforme quem está travado.
-
-                    "Em uso" pesa MAIS que "Nível N", e a primeira versão tinha
-                    isso ao contrário: o estado que o aluno não pode usar gritava
-                    mais alto que o ativo. Tinta cheia para o que vale agora,
-                    ink/70 para o que ainda não. Os dois passam AA a 11px. */}
-                <span
-                  className={cn(
-                    "flex min-h-4 items-center gap-1 text-[11px]",
-                    bloqueado ? "font-medium text-ink/70" : "font-semibold text-ink"
-                  )}
-                >
-                  {bloqueado ? (
-                    <>
-                      <IconeCadeado />
-                      Nível {o.minLevel}
-                    </>
-                  ) : selecionado ? (
-                    <>
-                      <IconeCheck />
-                      Em uso
-                    </>
-                  ) : null}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+        O boneco continua de CORPO INTEIRO — 57% dele é o mesmo tronco nas fichas. O
+        recorte de cabeça é do Bloco 6 (doc 15); forjá-lo aqui com um
+        `overflow-hidden` de número chutado é o que a régua do projeto proíbe.
+      */}
+      {aoTrocarPeca && (
+        <Vitrine
+          slot="cabelo"
+          titulo="Cabelo"
+          rotuloSemPeca="Careca"
+          pecas={cabelos}
+          atual={valor.hair}
+          nivel={nivel}
+          tier={tier}
+          aoTrocar={(slug) => aoTrocarPeca("cabelo", slug)}
+          preview={(slug, chave) => (
+            <AvatarKokeshi
+              skin={valor.skin}
+              hair={slug}
+              hairColor={valor.hairColor}
+              altura={150}
+              ns={`cab-${chave}`}
+            />
+          )}
+        />
+      )}
 
       <FileiraDeCores
         titulo="Cor do cabelo"
@@ -701,27 +606,70 @@ export default function EditorDeAparencia({
       />
 
       {/*
-        A VITRINE FICA DEPOIS DA IDENTIDADE, e não em aba separada — por ora.
+        AS VITRINES FICAM DEPOIS DA IDENTIDADE, e não em abas — por ora, e a decisão
+        de não juntar é desta data.
 
         O doc 21 §5.1 decidiu ABAS por slot (`Cabelo | Roupa | Rosto | Fundo | Pet`),
-        e a decisão continua de pé: cinco slots empilhados num rolo comprido é o que
-        ela existe para impedir. Mas hoje há **dois** grupos, e uma casca de abas
-        para dois é mais cerimônia do que navegação — a criança pagaria um clique
-        para ver o que cabe na mesma tela.
-
-        A casca nasce no bloco do terceiro slot, que é quando ela passa a ganhar
-        alguma coisa. Registrado aqui para não ser esquecido nem reinventado.
+        e a decisão continua de pé. Este comentário dizia, até 2026-08-23, que "a
+        casca nasce no bloco do terceiro slot" — e este bloco criou o terceiro E o
+        quarto grupo, então o gatilho disparou. **Não se juntou de propósito:** três
+        vitrines empilhadas deixam `/perfil` LONGO, não quebrado, e abas é decisão
+        visual (`design-recruta64`) que merece bloco próprio com o parecer do Doug.
+        Encurtar a tela por conta própria seria decidir por ele.
 
         A separação que JÁ existe é a que importa, e é do banco: a identidade sobe
-        por `update_avatar_identity` no botão, a roupa por `equipar_peca` na hora.
+        por `update_avatar_identity` no botão, a peça por `equipar_peca` na hora.
       */}
-      {trajes && aoTrocarTraje && (
+      {trajes && aoTrocarPeca && (
         <Vitrine
-          trajes={trajes}
+          slot="traje"
+          titulo="Roupa"
+          rotuloSemPeca="Sem traje"
+          pecas={trajes}
           atual={traje ?? null}
           nivel={nivel}
           tier={tier}
-          aoTrocar={aoTrocarTraje}
+          aoTrocar={(slug) => aoTrocarPeca("traje", slug)}
+          // ⚠️ A medição do traje: `<AvatarTronco altura={96}>`, sem cabelo e com
+          // pele fixa em 2. É o tronco que a peça veste — desenhar a cabeça aqui
+          // gastaria altura de ficha no que a peça não muda.
+          preview={(slug, chave) => (
+            <AvatarTronco
+              skin={2}
+              hair={null}
+              hairColor={0}
+              traje={slug}
+              altura={96}
+              ns={`vit-${chave}`}
+            />
+          )}
+        />
+      )}
+
+      {rostos && aoTrocarPeca && (
+        <Vitrine
+          slot="rosto"
+          titulo="Rosto"
+          rotuloSemPeca="Sem barba"
+          pecas={rostos}
+          atual={rosto ?? null}
+          nivel={nivel}
+          tier={tier}
+          aoTrocar={(slug) => aoTrocarPeca("rosto", slug)}
+          // A peça de rosto é a única cujo preview PRECISA da identidade: a barba
+          // recolore com o cabelo (D17), então uma ficha de pele e cor fixas
+          // mostraria uma cor que o aluno não vai ver. `<AvatarCabeca>` recorta na
+          // cabeça, que é onde a peça inteira mora.
+          preview={(slug, chave) => (
+            <AvatarCabeca
+              skin={valor.skin}
+              hair={valor.hair}
+              hairColor={valor.hairColor}
+              rosto={slug}
+              lado={96}
+              ns={`ros-${chave}`}
+            />
+          )}
         />
       )}
 

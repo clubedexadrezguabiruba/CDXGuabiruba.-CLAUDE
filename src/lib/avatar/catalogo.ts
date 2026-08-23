@@ -50,12 +50,20 @@
  * compara conjuntos.
  */
 
+import { CABELOS, MODELOS_CABELO, type ModeloCabelo } from "./estilo/cabelo";
 import { ROSTOS_DA_ARTE } from "./estilo/rostos-da-arte";
 import { TRAJES_DA_ARTE } from "./estilo/trajes-da-arte";
 import type { PecaDeChapeu, PecaDeRosto, PecaSobreposta } from "./estilo/tipos";
 
-/** Os quatro slots do guarda-roupa. Iguais ao CHECK de `avatar_catalogo.slot`. */
-export const SLOTS = ["traje", "chapeu", "rosto", "pet"] as const;
+/**
+ * Os slots do guarda-roupa. Iguais ao CHECK de `avatar_catalogo.slot`.
+ *
+ * Eram quatro; **o `cabelo` entrou em 2026-08-23**, quando ele deixou de ter
+ * tabela própria e virou peça de baú como as outras. A ordem não é alfabética de
+ * propósito: é a ordem em que os slots nasceram, e é a ordem em que
+ * `verify:catalogo-slots` imprime.
+ */
+export const SLOTS = ["traje", "chapeu", "rosto", "pet", "cabelo"] as const;
 
 export type Slot = (typeof SLOTS)[number];
 
@@ -92,11 +100,19 @@ export const ROSTOS: Record<string, PecaDeRosto> = { ...ROSTOS_DA_ARTE };
 /**
  * O que o código sabe desenhar, slot a slot.
  *
- * O cabelo **não está aqui**: ele tem catálogo próprio (`MODELOS_CABELO` em
- * `estilo/cabelo.ts`), gate próprio (`verify:cabelo-catalogo`) e tabela própria
- * no banco. O doc 21 §3.3 decidiu não migrá-lo — mexer no que funciona seria
- * refatoração além do pedido, e o preço (duas gramáticas convivendo) está
- * declarado.
+ * O CABELO ENTROU EM 2026-08-23, e este docstring dizia o contrário até então:
+ * *"o cabelo não está aqui — ele tem catálogo próprio, gate próprio e tabela
+ * própria"*, citando o doc 21 §3.3. Aquela seção foi **revogada**. O motivo dela
+ * era custo, e o Doug decidiu que todo item vestível tem raridade e vem de baú —
+ * o que é incompatível com ficar fora de `avatar_catalogo`, por constraint:
+ * `avatar_guarda_roupa.slug` referencia essa tabela, então *ter* uma peça exige
+ * estar nela.
+ *
+ * O cabelo é o único slot cujo slug **não é** a chave do registro: no código o
+ * modelo é `espetado`, no banco a peça é `cabelo-espetado`. O prefixo é fronteira
+ * de sistema, não renome — `CABELOS[m].id` continua igual a `m`, e é isso que
+ * `linhas-cabelo.test.ts` afirma. Quem atravessa a fronteira é `modeloDoSlug`,
+ * num lugar só.
  */
 export const CATALOGO: Record<Slot, readonly string[]> = {
   // DERIVADO desde o B5 (2026-08-13), e é o que a nota acima previa: "cada um vira
@@ -108,7 +124,38 @@ export const CATALOGO: Record<Slot, readonly string[]> = {
   chapeu: Object.keys(CHAPEUS),
   rosto: Object.keys(ROSTOS),
   pet: [],
+  // DERIVADO de `MODELOS_CABELO`, que é `Object.keys(CABELOS)`: mesma regra dos
+  // outros dois derivados, com o prefixo aplicado na saída. Cabelo desenhado é
+  // cabelo no catálogo, sem segunda declaração para discordar.
+  cabelo: MODELOS_CABELO.map(slugDoModelo),
 };
+
+/** O modelo, prefixado: `espetado` -> `cabelo-espetado`. A ida da fronteira. */
+export function slugDoModelo(modelo: ModeloCabelo): string {
+  return `cabelo-${modelo}`;
+}
+
+/**
+ * A volta da fronteira: `cabelo-espetado` -> `espetado`, com o desconhecido
+ * virando **careca**.
+ *
+ * Aceita o slug com prefixo e o modelo nu, e é de propósito: o valor nu ainda
+ * chega de `MODELOS_CABELO` e das folhas de arte, e uma função que só entendesse
+ * o prefixado obrigaria cada chamador a saber de que lado da fronteira está.
+ *
+ * O degradar para careca é o mesmo de `pecaDeCabeca` e pelo mesmo motivo medido:
+ * a FK impede slug inválido no banco, mas não cobre o intervalo em que uma peça
+ * sai do catálogo do CÓDIGO antes de sair do banco — foi o que a poda de sete
+ * para cinco cabelos criou uma vez. Sem o modelo, o boneco aparece careca, que é
+ * um estado legítimo do produto; o que não pode é sumir inteiro.
+ */
+export function modeloDoSlug(slug: string | null | undefined): ModeloCabelo | undefined {
+  if (!slug) return undefined;
+  const nu = slug.startsWith("cabelo-") ? slug.slice("cabelo-".length) : slug;
+  return (MODELOS_CABELO as readonly string[]).includes(nu)
+    ? (nu as ModeloCabelo)
+    : undefined;
+}
 
 /**
  * Slug → peça, com o desconhecido virando **ausência**.
@@ -119,6 +166,31 @@ export const CATALOGO: Record<Slot, readonly string[]> = {
  * poda de sete para cinco cabelos criou uma vez. Sem a peça, o boneco aparece
  * sem ela, que é um estado legítimo do produto; o que não pode é sumir inteiro.
  */
+/**
+ * Slug → nome que o aluno lê, em qualquer slot da vitrine.
+ *
+ * **A tabela `avatar_catalogo` não tem coluna de nome, e isso é do desenho dela**:
+ * o nome é texto de interface e muda sem migration. Ele vem sempre do registro que
+ * também carrega o desenho — `TRAJES_DA_ARTE` e `ROSTOS` são GERADOS pela esteira
+ * de arte, então o nome é consequência de existir peça renderizável, nunca uma
+ * segunda lista que pode discordar do banco.
+ *
+ * Mora aqui, e não no `<EditorDeAparencia>`, porque tem **dois consumidores
+ * reais**: a vitrine e o `<ChestOpeningModal>`. Sem isto, o modal do baú anunciava
+ * um cabelo sorteado pelo slug cru — ele lia o nome só de `TRAJES_DA_ARTE`.
+ *
+ * O slug desconhecido sai como ele mesmo: é o degradar de sempre, e não inventa
+ * nome para peça que o código ainda não desenha.
+ */
+export function nomeDaPeca(slot: string, slug: string): string {
+  if (slot === "cabelo") {
+    const modelo = modeloDoSlug(slug);
+    return modelo ? CABELOS[modelo].nome : slug;
+  }
+  const registro = slot === "traje" ? TRAJES_DA_ARTE[slug] : ROSTOS[slug];
+  return registro?.nome ?? slug;
+}
+
 export function pecaDeCabeca(
   slot: "chapeu" | "rosto",
   slug: string | null | undefined,

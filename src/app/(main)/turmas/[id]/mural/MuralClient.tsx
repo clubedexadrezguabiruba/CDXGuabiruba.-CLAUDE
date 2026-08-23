@@ -122,7 +122,7 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
                   <MolduraPatente tier={event.achieved_tier}>
                     <AvatarCabeca
                       skin={event.avatar_skin}
-                      hair={event.avatar_hair}
+                      hair={event.avatar_cabelo}
                       hairColor={event.avatar_hair_color}
                       chapeu={event.avatar_chapeu}
                       rosto={event.avatar_rosto}

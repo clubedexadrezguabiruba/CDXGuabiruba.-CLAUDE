@@ -153,7 +153,7 @@ export default async function DashboardPage() {
                   <MolduraPatente tier={entry.achieved_tier}>
                     <AvatarCabeca
                       skin={entry.avatar_skin}
-                      hair={entry.avatar_hair}
+                      hair={entry.avatar_cabelo}
                       hairColor={entry.avatar_hair_color}
                       chapeu={entry.avatar_chapeu}
                       rosto={entry.avatar_rosto}

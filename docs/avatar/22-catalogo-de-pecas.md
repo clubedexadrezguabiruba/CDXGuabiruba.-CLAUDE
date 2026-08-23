@@ -14,6 +14,13 @@
 >
 > **Não prepare prompt de nada daqui sem o Doug pedir a peça pelo nome.**
 
+> **O título diz 4 slots, e desde 2026-08-23 os slots vestíveis são 5.** O quinto
+> é o `cabelo`, e ele não está no título nem nas tabelas de pirâmide **de
+> propósito**: as 6 peças dele **já existem e já estão desenhadas** — não são menu,
+> são inventário. Elas ficam na **§5-E**, que é uma seção de natureza diferente das
+> outras quatro. Quando o Doug fechar o elenco, a recontagem acontece de uma vez só
+> e o título muda junto (§2).
+
 Criado em 2026-08-13 como *catálogo de trajes*, junto com a emenda §0 do doc 21.
 **Estendido aos quatro slots em 2026-08-21**, quando o Bloco H precisou de um
 lendário em cada um e ficou claro que três dos quatro não tinham menu nenhum.
@@ -26,24 +33,49 @@ lendário em cada um e ficou claro que três dos quatro não tinham menu nenhum.
 
 ## 1. A economia, em uma linha
 
-**1 peça inicial + 55 por baú.**
+**As peças iniciais são as marcadas `inicial` no catálogo, e toda peça vestível
+tem raridade.** Não há mais peça sem raridade e não há mais lista de iniciais
+escrita à mão em lugar nenhum.
 
 | | |
 |---|---|
-| **inicial** | `traje-farda` — `origem = 'marco_nivel'`, `min_level = 1`. Livre desde a criação do avatar, sem raridade. É a única peça de marco do catálogo inteiro |
-| **as outras 55** | `origem = 'bau'`, com raridade. O baú é a **única** porta |
-| **"sem traje"** | continua válido — `NULL` = o macacão de treino da base. Espelha o careca do cabelo: o inicial é **opção**, não obrigação |
+| **iniciais** | as linhas com `inicial = true` em `avatar_catalogo` — hoje `traje-farda`, `cabelo-espetado` e `cabelo-assimetrico`, todas `common`. `handle_new_user` as semeia com `INSERT … SELECT … WHERE inicial`: **quem decide é a coluna, não uma lista no corpo da função** |
+| **as demais** | `origem = 'bau'`, com raridade. O baú é a **única** porta |
+| **"sem traje" e "careca"** | continuam válidos — `NULL` nos dois. O inicial é **opção**, não obrigação |
 
-O inicial **não** é semeado como "baú grátis". Peça de `origem = 'bau'` exige linha
-em `avatar_guarda_roupa`, e a conferência 4 do `verify:avatar-db` reprovaria em
-bloco.
+**O inicial É semeado no guarda-roupa, com `fonte = 'inicial'`** — e isto inverte,
+em 2026-08-23, a nota que este parágrafo trazia desde 2026-08-13 (*"o inicial não é
+semeado como baú grátis"*). O motivo da inversão é o mesmo que sustentava a nota
+antiga, lido ao contrário: peça de `origem = 'bau'` **exige** linha em
+`avatar_guarda_roupa`, e a conferência 4 do `verify:avatar-db` reprova quem veste o
+que não tem. Enquanto a única inicial era a farda, dava para mantê-la fora do baú
+como `origem = 'marco_nivel'`; com o cabelo dentro do catálogo, o aluno precisa
+**possuir** os dois cabelos iniciais para vesti-los. A `fonte = 'inicial'` é o que
+distingue, no guarda-roupa, a peça dada de saída da peça sorteada — e a conferência
+4 passa a ser a prova de que o seed aconteceu.
 
-**Por que a farda é a inicial:** é a peça lisa do catálogo, a de menos detalhe — e é
+**A farda deixou de ser peça de marco.** Ela era a única peça sem raridade do
+catálogo inteiro; virou `origem = 'bau'`, `raridade = 'common'`, `inicial = true`.
+O `min_level` continua existindo na tabela, e o CHECK ainda admite peça de marco —
+mas nenhuma peça usa mais essa forma.
+
+**Por que a farda é inicial:** é a peça lisa do catálogo, a de menos detalhe — e é
 dela que a raridade sobe. Um aluno que começa com a peça mais ornamentada não tem
 para onde subir. O **gambesão** entra como peça de baú acima de `common`, porque
-carrega canaletas, ilhoses e cordão.
+carrega canaletas, ilhoses e cordão. O mesmo raciocínio escolheu os dois cabelos
+iniciais (§5-E).
 
 ## 2. A pirâmide — e ela é **GLOBAL**, não do traje
+
+> ⚠️ **Nada nesta seção foi recontado em 2026-08-23, e é decisão do Doug.** O
+> cabelo entrou no catálogo naquele dia (§5-E), e a tentação seria refazer a
+> pirâmide e as contagens por slot para acomodá-lo. Não se fez: *"não mude a regra
+> de quantidade de arte nem a porcentagem de raridade agora — estou elaborando as
+> artes e isso vai variar"*. As porcentagens 45/30/18/7 e as contagens por slot
+> ficam **exatamente** como estavam, e o slot `cabelo` fica **fora** das duas
+> tabelas abaixo até o elenco fechar. Menu não é estoque, e contagem em revisão
+> não vira número escrito.
+
 
 ⚠️ **A correção de 2026-08-21, e ela muda a conta.** A pirâmide 45/30/18/7 é do
 **baú inteiro**, somando os quatro slots — não de cada slot. Está no SQL:
@@ -101,6 +133,28 @@ Organizadas por **corredor da Academia**, que é o que dá coerência ao conjunt
 precisar de época. Um aluno com o traje da forja e outro com o do observatório
 pertencem visivelmente ao mesmo lugar.
 
+> **A lista de corredores não mora aqui.** Desde a decisão D4 (2026-08-22), a
+> tabela de lugares da [Bíblia Tonal v2 §5](../Academia64_Biblia_Tonal_v2.md) é
+> a **fonte única**, e a coluna *corredor* deste catálogo lê de lá. Existiam
+> três listas divergentes — o mapa, este catálogo e as alas dos bots — e a
+> própria Bíblia dizia absorver corredores que a tabela dela não continha.
+>
+> Duas consequências já aplicadas neste documento: **"a Estufa" virou "os
+> Jardins"** (D5, um lugar com um nome só) e **"o Torneio"** passa a ser também
+> o nome do lugar e da ala ★★★★★ dos bots, onde a Bíblia dizia "a Arena" (D1 —
+> *Arena* ficou reservada ao **formato de aula** do currículo, que já está
+> gravado em títulos de aula no banco).
+>
+> **"a Casa" continua existindo, e só aqui**: quer dizer *a própria Academia* —
+> a peça que ela dá a quem entra (`traje-farda`, `traje-gambesao`,
+> `traje-alamares`). É **etiqueta de prateleira, nunca gate**: não desbloqueia
+> por nível, por título nem por lugar visitado. Traje não presta contas a
+> degrau — só a moldura marca o título (doc 21 §0).
+>
+> **O slot `rosto` não tem corredor, e isso é decisão**: barba e óculos são do
+> aluno, não da Academia. A ausência da coluna nas tabelas 5-B.1 e 5-B.2 é
+> deliberada, não esquecimento.
+
 A coluna **textura** é o padrão repetido que faz a peça ler no tamanho de julgamento
 — 56 px para o traje, **32 px para peça de cabeça** (doc 23 §6). **Se uma peça nova
 não tiver o que escrever ali, ela ainda não está desenhada.** É a régua que decide se
@@ -142,9 +196,9 @@ existem para dar variedade, não para impressionar.
 | 5 | `traje-avental-forja` | as Oficinas | fileira de rebites nas tiras | avental de couro grosso, tira no peito, barra irregular |
 | 6 | `traje-macacao-oficina` | as Oficinas | pespontos duplos correndo por toda a peça | macacão de brim, peitilho quadrado |
 | 7 | `traje-guarda-po` | o Arquivo | pregas verticais soltas | guarda-pó longo, cordão fino na cintura |
-| 8 | `traje-flanela` | a Estufa | xadrez grande de flanela | camisa de flanela, decote aberto |
-| 9 | `traje-tricot-trancado` | a Estufa | tranças verticais de tricô | suéter pesado de tranças |
-| 10 | `traje-sueter-nordico` | a Estufa | faixa de padrão nórdico repetido no peito | suéter liso com uma faixa de padrão |
+| 8 | `traje-flanela` | os Jardins | xadrez grande de flanela | camisa de flanela, decote aberto |
+| 9 | `traje-tricot-trancado` | os Jardins | tranças verticais de tricô | suéter pesado de tranças |
+| 10 | `traje-sueter-nordico` | os Jardins | faixa de padrão nórdico repetido no peito | suéter liso com uma faixa de padrão |
 | 11 | `traje-avental-cozinha` | a Cozinha | a tira cruzada + a barra dupla | avental de peito claro sobre peça escura |
 | 12 | `traje-camisa-time` | o Torneio | duas faixas laterais correndo do alto à barra | camisa de time, gola careca |
 | 13 | `traje-moletom` | o Torneio | o franzido do cordão + o bolso canguru | moletom, capuz **caído não** — sem capuz (§4) |
@@ -160,7 +214,7 @@ Dois padrões, ou um padrão mais um fecho que se destaca.
 | 16 | `traje-blazer-academia` | a Casa | debrum de contraste em toda a borda **+** fileira de botões | blazer da Academia, lapela pequena |
 | 17 | `traje-colete-arquivista` | o Arquivo | fileira dupla de bolsos pequenos, todos iguais | colete de muitos bolsos, cada um com sua costura |
 | 18 | `traje-cotele` | as Oficinas | canelas grossas de veludo cotelê **+** botões forrados | conjunto de cotelê, decote reto |
-| 19 | `traje-argyle` | a Estufa | losangos de argyle **+** as linhas finas cruzando | suéter de losangos — a textura mais forte do catálogo a 56 px |
+| 19 | `traje-argyle` | os Jardins | losangos de argyle **+** as linhas finas cruzando | suéter de losangos — a textura mais forte do catálogo a 56 px |
 | 20 | `traje-quimono-escola` | os Visitantes | franzido da faixa **+** o nó | quimono de treino, faixa larga na cintura |
 | 21 | `traje-dashiki` | os Visitantes | painel geométrico bordado no peito **+** barra bordada igual | dashiki, decote em V com bordado |
 | 22 | `traje-anorak` | o Torneio | franzido do cordão na cintura **+** faixa refletiva horizontal | anorak de expedição, sem capuz (§4) |
@@ -255,11 +309,11 @@ que desce come a testa e as sobrancelhas.
 | # | slug | raridade | corredor | `escondeCabelo` | textura repetida | construção |
 |---|---|---|---|---|---|---|
 | 42 | `chapeu-boina` | `common` | a Casa | `franja` | uma forma, mais o cabinho no topo | boina inclinada; a aba não existe |
-| 43 | `chapeu-gorro` | `common` | a Estufa | `franja` | o canelado da barra virada | gorro de tricô, barra dobrada |
+| 43 | `chapeu-gorro` | `common` | os Jardins | `franja` | o canelado da barra virada | gorro de tricô, barra dobrada |
 | 44 | `chapeu-bone` | `common` | o Torneio | `franja` | a aba **+** as costuras dos gomos | boné de gomos, aba para a frente |
 | 45 | `chapeu-bandana` | `common` | as Oficinas | `franja` | o nó **+** as pontas | bandana amarrada — **o nó fica de LADO**, nunca atrás da cabeça |
 | 46 | `chapeu-toca-de-cozinha` | `common` | a Cozinha | `tudo` | o franzido regular da copa | toca alta e franzida; é a peça que testa o `tudo` |
-| 47 | `chapeu-chapeu-de-palha` | `rare` | a Estufa | `franja` | o trançado da palha **+** a fita da copa | aba larga e plana; o transbordo lateral é o assunto da peça |
+| 47 | `chapeu-chapeu-de-palha` | `rare` | os Jardins | `franja` | o trançado da palha **+** a fita da copa | aba larga e plana; o transbordo lateral é o assunto da peça |
 | 48 | `chapeu-capelo` | `rare` | o Arquivo | `tudo` | a placa quadrada **+** a borla pendente | o capelo de formatura — a peça mais reconhecível do slot |
 | 49 | `chapeu-turbante` | `rare` | os Visitantes | `tudo` | as voltas do pano, contadas **+** a dobra da frente | turbante de voltas visíveis |
 | 50 | `chapeu-oculos-de-forja` | `epic` | as Oficinas | `nada` | as duas lentes **+** a tira **+** os rebites da tira | óculos de forja **erguidos na testa** — não é óculos: mora no slot da cabeça e não cobre os olhos |
@@ -287,10 +341,57 @@ A régua de raridade aqui é **atitude legível na silhueta**, não detalhe: um 
 
 | # | slug | raridade | corredor | textura repetida | construção |
 |---|---|---|---|---|---|
-| 52 | `pet-passarinho` | `common` | a Estufa | uma silhueta, uma cor, uma pose | pardal pousado, de perfil. A peça de referência do slot |
+| 52 | `pet-passarinho` | `common` | os Jardins | uma silhueta, uma cor, uma pose | pardal pousado, de perfil. A peça de referência do slot |
 | 53 | `pet-gato-de-arquivo` | `rare` | o Arquivo | a silhueta **+** as listras contadas | gato sentado, enrolado na própria cauda |
 | 54 | `pet-tartaruga-de-bronze` | `epic` | as Oficinas | a silhueta **+** as placas do casco **+** os rebites de cada placa | tartaruga mecânica; o casco é o `traje-automato` em miniatura |
 | 55 | `pet-coruja-do-observatorio` | `legendary` | o Observatório | as penas contadas **+** o disco facial **+** a constelação no peito | a coruja é um **personagem**: a atitude está na silhueta, e ela lê a 32 px sem detalhe nenhum. É o `legendary` do slot |
+
+---
+
+## 5-E. CABELO — as 6 peças que EXISTEM
+
+> **Esta seção é de natureza diferente das quatro acima.** As §5-A a §5-D são
+> **menu**: peças pensadas, nenhuma desenhada. Esta é **inventário**: as 6 peças
+> aqui já existem, já passaram pela folha de contato e já estão em
+> `MODELOS_CABELO`. Ela não propõe nada e não entra nas tabelas de pirâmide do §2 —
+> ver a nota daquela seção.
+
+O slot `cabelo` entrou em `avatar_catalogo` em **2026-08-23**, quando o Doug
+revogou a razão de custo que o mantinha numa gramática à parte (doc 21 §3.3). Até
+ali ele tinha tabela própria (`avatar_hair_catalog`), era travado **por nível** e
+não caía no baú. Agora é peça como qualquer outra: raridade, posse em
+`avatar_guarda_roupa`, e o baú como porta.
+
+**A raridade espelha o gate de nível que existia** — é tradução, não redesenho.
+Cabelo livre virou `common`; nível 10 virou `rare`; nível 20, `epic`; nível 30,
+`legendary`. O `burst-fade` nunca teve linha de nível (chegou depois da última
+migration) e entra como `rare`, ao lado do `coque`.
+
+| # | slug | raridade | inicial | era | família | textura repetida |
+|---|---|---|---|---|---|---|
+| — | `cabelo-espetado` | `common` | ✅ | nível 1 | traçada | as pontas repetidas, todas do mesmo comprimento, saindo em leque do topo |
+| — | `cabelo-assimetrico` | `common` | ✅ | nível 1 | tonal | a mecha longa de um lado só **+** a queda contínua de luz dentro dela |
+| — | `cabelo-coque` | `rare` | | nível 10 | paramétrica | o volume enrolado do coque **+** o contorno próprio que o separa da massa |
+| — | `cabelo-burst-fade` | `rare` | | *(sem linha)* | tonal | o degradê em leque atrás da orelha — o tom mais contínuo do elenco, 256 valores distintos |
+| — | `cabelo-moicano` | `epic` | | nível 20 | tonal | a crista central **+** as laterais rentes, com a luz correndo pela crista |
+| — | `cabelo-chanel` | `legendary` | | nível 30 | tonal | as pontas contadas da barra reta **+** a luz descendo por dentro de cada mecha |
+
+**A coluna `#` fica vazia de propósito:** a numeração 1–56 é do menu, e estas peças
+não são menu. Elas ganham número quando o elenco fechar e a recontagem acontecer de
+uma vez só.
+
+**Por que estas duas são as iniciais:** mesmo raciocínio da farda (§1). São as duas
+que já eram livres — o aluno nunca teve de subir de nível para usá-las —, e são as
+de menos sub-estrutura do elenco: uma forma em leque e uma mecha só. É delas que a
+raridade sobe. O aluno começa podendo escolher entre as duas, **mais a careca**,
+que continua sendo `NULL` e não é peça.
+
+**A careca não é linha do catálogo.** Ela é a ausência de peça, como o "sem traje" —
+e o gate `verify:cabelo-catalogo` guarda essa asserção desde que existe.
+
+**O prefixo `cabelo-` é fronteira, não renome.** No banco a peça é
+`cabelo-espetado`; no código o modelo continua sendo `espetado`, e `CABELOS[m].id`
+continua igual a `m`. Quem traduz é `modeloDoSlug()`, num lugar só.
 
 ---
 

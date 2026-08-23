@@ -5,7 +5,7 @@ export interface RankingEntry {
    * A identidade do avatar kokeshi, como as RPCs de ranking a devolvem desde o
    * Bloco 6 (`20260811140000_bloco6_identidade_nas_listas.sql`): índice de paleta
    * e slug, a mesma língua das colunas do Bloco C e a mesma que `<AvatarCabeca>`
-   * recebe. `avatar_hair` NULL é a careca — ausência de peça, não dado faltando.
+   * recebe. `avatar_cabelo` NULL é a careca — ausência de peça, não dado faltando.
    *
    * Saíram junto `avatar_config` (o cache de itens da pilha v2, cujos 69 itens o
    * Bloco B apagou) e `avatar_base`. **`avatar_base` fecha o achado G11**: ele
@@ -14,7 +14,7 @@ export interface RankingEntry {
    * `undefined` num campo que o tipo prometia `string`.
    */
   avatar_skin: number;
-  avatar_hair: string | null;
+  avatar_cabelo: string | null;
   avatar_hair_color: number;
   /**
    * As duas peças que o RECORTE DE CABEÇA mostra — `null` é ausência de peça.
@@ -66,14 +66,14 @@ export interface PublicProfileData {
   /**
    * A identidade do avatar kokeshi, como `get_public_profile` a devolve desde o
    * E.3: índice de paleta e slug, a mesma língua das colunas do Bloco C e a mesma
-   * que `<AvatarKokeshi>` recebe. `avatar_hair` NULL é a careca — ausência de
+   * que `<AvatarKokeshi>` recebe. `avatar_cabelo` NULL é a careca — ausência de
    * peça, não dado faltando.
    *
    * Saíram no E.3 `avatar_config`, `avatar_base` e `equipped_items`: os três da
    * pilha v2, e a RPC não os devolve mais.
    */
   avatar_skin: number;
-  avatar_hair: string | null;
+  avatar_cabelo: string | null;
   avatar_hair_color: number;
   /**
    * `users.avatar_traje` — o slug da peça equipada, `null` para o macacão de treino.

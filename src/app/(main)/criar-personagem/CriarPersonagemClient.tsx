@@ -19,8 +19,8 @@ import FaixaDeComando from "@/components/layout/FaixaDeComando";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import EditorDeAparencia, {
   type Aparencia,
-  type CabeloDoCatalogo,
-  type TrajeDoCatalogo,
+  type PecaDoCatalogo,
+  type SlotDaVitrine,
 } from "@/components/avatar/EditorDeAparencia";
 import { createClient } from "@/lib/supabase/client";
 import Card from "@/components/ui/Card";
@@ -28,35 +28,56 @@ import Card from "@/components/ui/Card";
 export default function CriarPersonagemClient({
   nivel,
   inicial,
-  catalogo,
+  catalogoCabelo,
   catalogoTraje,
+  catalogoRosto,
   trajeInicial,
+  rostoInicial,
 }: {
   nivel: number;
   inicial: Aparencia;
-  catalogo: CabeloDoCatalogo[];
+  /** `avatar_catalogo` do slot cabelo, com `possui` já resolvido no servidor. */
+  catalogoCabelo: PecaDoCatalogo[];
   /** `avatar_catalogo` do slot traje, com `possui` já resolvido no servidor. */
-  catalogoTraje: TrajeDoCatalogo[];
+  catalogoTraje: PecaDoCatalogo[];
+  /** `avatar_catalogo` do slot rosto, com `possui` já resolvido no servidor. */
+  catalogoRosto: PecaDoCatalogo[];
   /** `users.avatar_traje` — NULL na criação, que é o macacão de treino. */
   trajeInicial: string | null;
+  /** `users.avatar_rosto` — NULL na criação. */
+  rostoInicial: string | null;
 }) {
   const router = useRouter();
   const [aparencia, setAparencia] = useState<Aparencia>(inicial);
   const [traje, setTraje] = useState<string | null>(trajeInicial);
+  const [rosto, setRosto] = useState<string | null>(rostoInicial);
 
   /**
    * A criança veste o boneco NA CRIAÇÃO, e não só depois da primeira promoção.
    *
    * Duas RPCs em sequência, e elas são independentes de propósito: `equipar_peca`
    * grava na hora, `update_avatar_identity` no Confirmar. **Falha parcial não
-   * deixa boneco errado, deixa boneco padrão** — se a roupa não gravar, o aluno
-   * fica sem traje, que é o macacão de treino e é um estado legítimo.
+   * deixa boneco errado, deixa boneco padrão** — se a peça não gravar, o aluno
+   * fica sem ela, e "sem traje" e "careca" são estados legítimos.
+   *
+   * ⚠️ **O CABELO PASSOU A GRAVAR ANTES DO "CONFIRMAR"** em 2026-08-23, e isto é a
+   * única mudança de comportamento desta tela. Antes ele subia junto com as cores,
+   * no botão. Agora é peça de baú e veste como o traje — que já era assim desde o
+   * B5. `avatar_chosen` continua com dono único: `update_avatar_identity`, no
+   * Confirmar. Quem chega aqui, escolhe cabelo e vai embora sem confirmar volta a
+   * cair nesta tela, agora com o cabelo já escolhido — que é o mesmo que já
+   * acontecia com o traje.
    */
-  async function trocarTraje(slug: string | null): Promise<string | null> {
+  async function trocarPeca(
+    slot: SlotDaVitrine,
+    slug: string | null,
+  ): Promise<string | null> {
     const supabase = createClient();
-    const { error } = await supabase.rpc("equipar_peca", { p_slot: "traje", p_slug: slug });
+    const { error } = await supabase.rpc("equipar_peca", { p_slot: slot, p_slug: slug });
     if (error) return `Não foi possível vestir essa peça. ${error.message}`;
-    setTraje(slug);
+    if (slot === "traje") setTraje(slug);
+    else if (slot === "rosto") setRosto(slug);
+    else setAparencia((a) => ({ ...a, hair: slug }));
     return null;
   }
 
@@ -78,6 +99,7 @@ export default function CriarPersonagemClient({
             hair={aparencia.hair}
             hairColor={aparencia.hairColor}
             traje={traje}
+            rosto={rosto}
             altura={210}
             animado
             ns="palco"
@@ -89,10 +111,12 @@ export default function CriarPersonagemClient({
           <EditorDeAparencia
             valor={aparencia}
             aoMudar={setAparencia}
-            catalogo={catalogo}
+            cabelos={catalogoCabelo}
             trajes={catalogoTraje}
             traje={traje}
-            aoTrocarTraje={trocarTraje}
+            rostos={catalogoRosto}
+            rosto={rosto}
+            aoTrocarPeca={trocarPeca}
             nivel={nivel}
             rotuloAcao="Confirmar"
             aoSalvar={() => router.push("/dashboard")}

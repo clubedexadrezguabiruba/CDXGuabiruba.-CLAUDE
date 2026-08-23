@@ -44,7 +44,7 @@
  * cabelo do perfil, que troca a peça na mão do aluno) pelo mesmo caminho.
  */
 
-import { pecaDeCabeca } from "@/lib/avatar/catalogo";
+import { modeloDoSlug, pecaDeCabeca } from "@/lib/avatar/catalogo";
 import { compor, folhaAvatar } from "@/lib/avatar/estilo/compositor";
 import { MODELOS_CABELO, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { TRAJES_DA_ARTE } from "@/lib/avatar/estilo/trajes-da-arte";
@@ -136,15 +136,15 @@ const corDe = (paleta: readonly string[], i: number, padrao: number) =>
 /**
  * Slug → modelo, com o desconhecido virando careca.
  *
- * A FK do banco já impede slug inválido; isto cobre o intervalo em que uma peça sai
- * do catálogo do CÓDIGO antes de sair do banco — foi o que a poda de sete para cinco
- * modelos criou uma vez. Careca é um estado válido do produto, então degradar para
- * ela não inventa nada.
+ * Desde 2026-08-23 quem faz a tradução é `modeloDoSlug`, no catálogo: o cabelo
+ * virou peça de `avatar_catalogo` e o slug do banco passou a ter o prefixo
+ * (`cabelo-espetado`), enquanto o modelo do código continua nu (`espetado`). A
+ * função aceita as duas formas, então esta chamada não precisa saber de que lado
+ * da fronteira o valor veio — e o degradar para careca é o mesmo de antes, pelo
+ * mesmo motivo medido: a FK impede slug inválido, mas não cobre o intervalo em que
+ * uma peça sai do catálogo do CÓDIGO antes de sair do banco.
  */
-function modeloDe(hair: string | null): ModeloCabelo | undefined {
-  if (!hair) return undefined;
-  return (MODELOS_CABELO as string[]).includes(hair) ? (hair as ModeloCabelo) : undefined;
-}
+const modeloDe = modeloDoSlug;
 
 /**
  * Slug → peça de traje, com o desconhecido virando **ausência**.

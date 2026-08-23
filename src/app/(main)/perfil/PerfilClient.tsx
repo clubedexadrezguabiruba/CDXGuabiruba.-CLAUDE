@@ -9,8 +9,8 @@ import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import MolduraPatente from "@/components/avatar/MolduraPatente";
 import EditorDeAparencia, {
   type Aparencia,
-  type CabeloDoCatalogo,
-  type TrajeDoCatalogo,
+  type PecaDoCatalogo,
+  type SlotDaVitrine,
 } from "@/components/avatar/EditorDeAparencia";
 import { createClient } from "@/lib/supabase/client";
 import Card, { CardTitle } from "@/components/ui/Card";
@@ -65,12 +65,16 @@ interface PerfilClientProps {
   profile: ProfileData;
   /** As 3 colunas do Bloco C, como o servidor as gravou. É o palco em repouso. */
   aparencia: Aparencia;
-  /** `avatar_hair_catalog` inteiro — inclusive o que este aluno ainda não alcança. */
-  catalogoCabelo: CabeloDoCatalogo[];
+  /** `avatar_catalogo` do slot cabelo, inteiro, com `possui` já resolvido. */
+  catalogoCabelo: PecaDoCatalogo[];
   /** `avatar_catalogo` do slot traje, inteiro, com `possui` já resolvido. */
-  catalogoTraje: TrajeDoCatalogo[];
+  catalogoTraje: PecaDoCatalogo[];
+  /** `avatar_catalogo` do slot rosto, inteiro, com `possui` já resolvido. */
+  catalogoRosto: PecaDoCatalogo[];
   /** `users.avatar_traje`. `null` é o macacão de treino — ausência de peça. */
   trajeInicial: string | null;
+  /** `users.avatar_rosto`. `null` é rosto limpo. */
+  rostoInicial: string | null;
   botsDefeated: number;
   lessonsCompleted: number;
   puzzlesSolved: number;
@@ -297,7 +301,9 @@ export default function PerfilClient({
   aparencia,
   catalogoCabelo,
   catalogoTraje,
+  catalogoRosto,
   trajeInicial,
+  rostoInicial,
   botsDefeated,
   lessonsCompleted,
   puzzlesSolved,
@@ -312,16 +318,22 @@ export default function PerfilClient({
   // diferença entre os dois é o que o aviso de "não salvo" mede.
   const [salvo, setSalvo] = useState<Aparencia>(aparencia);
   const [emProva, setEmProva] = useState<Aparencia>(aparencia);
+  // O cabelo saiu desta conta em 2026-08-23: ele grava no clique, então nunca
+  // está "não salvo". Sobraram as duas cores, que são o que o botão manda.
   const naoSalvo =
-    emProva.skin !== salvo.skin ||
-    emProva.hair !== salvo.hair ||
-    emProva.hairColor !== salvo.hairColor;
+    emProva.skin !== salvo.skin || emProva.hairColor !== salvo.hairColor;
 
-  // O TRAJE NÃO TEM ESTADO "EM PROVA", e a assimetria é do banco: `equipar_peca`
-  // recebe um slot por chamada e é idempotente, então vestir já é o fato. Este
-  // estado só existe para o palco repintar sem esperar o `router.refresh()` — e
-  // ele só muda DEPOIS de o servidor confirmar.
+  // AS PEÇAS NÃO TÊM ESTADO "EM PROVA", e a assimetria é do banco: `equipar_peca`
+  // recebe um slot por chamada e é idempotente, então vestir já é o fato. Estes
+  // estados só existem para o palco repintar sem esperar o `router.refresh()` — e
+  // eles só mudam DEPOIS de o servidor confirmar.
+  //
+  // ⚠️ O CABELO ENTROU NESSE REGIME EM 2026-08-23, e é a única mudança de
+  // comportamento que o aluno percebe: ele deixou de ser "em prova" junto com as
+  // cores e passou a gravar no clique, como o traje. O `naoSalvo` acima continua
+  // medindo só o que ainda espera o botão — as duas cores da emenda à D27.
   const [traje, setTraje] = useState<string | null>(trajeInicial);
+  const [rosto, setRosto] = useState<string | null>(rostoInicial);
 
   /**
    * A PRIMEIRA CHAMADORA DE `equipar_peca` — ela existia desde o Bloco 1 e nunca
@@ -335,14 +347,25 @@ export default function PerfilClient({
    * já está no estado local. Recarregar a árvore inteira por uma troca de roupa
    * custaria as seis consultas do `page.tsx` a cada clique.
    */
-  async function trocarTraje(slug: string | null): Promise<string | null> {
+  async function trocarPeca(
+    slot: SlotDaVitrine,
+    slug: string | null,
+  ): Promise<string | null> {
     const supabase = createClient();
     const { error } = await supabase.rpc("equipar_peca", {
-      p_slot: "traje",
+      p_slot: slot,
       p_slug: slug,
     });
     if (error) return `Não foi possível vestir essa peça. ${error.message}`;
-    setTraje(slug);
+    if (slot === "traje") setTraje(slug);
+    else if (slot === "rosto") setRosto(slug);
+    else {
+      // O cabelo mora nos DOIS estados de aparência porque é o palco que o
+      // desenha: `emProva` para repintar agora, `salvo` para o aviso de "não
+      // salvo" não acusar uma peça que o servidor já gravou.
+      setEmProva((a) => ({ ...a, hair: slug }));
+      setSalvo((a) => ({ ...a, hair: slug }));
+    }
     return null;
   }
 
@@ -444,6 +467,7 @@ export default function PerfilClient({
                   hair={emProva.hair}
                   hairColor={emProva.hairColor}
                   traje={traje}
+                  rosto={rosto}
                   altura={168}
                   animado
                   ns="palco"
@@ -606,10 +630,12 @@ export default function PerfilClient({
               <EditorDeAparencia
                 valor={emProva}
                 aoMudar={setEmProva}
-                catalogo={catalogoCabelo}
+                cabelos={catalogoCabelo}
                 trajes={catalogoTraje}
                 traje={traje}
-                aoTrocarTraje={trocarTraje}
+                rostos={catalogoRosto}
+                rosto={rosto}
+                aoTrocarPeca={trocarPeca}
                 nivel={profile.level}
                 tier={profile.achievedTier}
                 rotuloAcao="Salvar aparência"

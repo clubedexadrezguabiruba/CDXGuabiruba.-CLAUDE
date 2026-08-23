@@ -15,7 +15,7 @@ interface Props {
  * O avatar saiu daqui no Bloco D e voltou no E.4.
  *
  * Ele não é buscado: as colunas chegam prontas dentro de `get_public_profile`,
- * que o E.3 reescreveu para devolver `avatar_skin`/`avatar_hair`/`avatar_hair_color`
+ * que o E.3 reescreveu para devolver `avatar_skin`/`avatar_cabelo`/`avatar_hair_color`
  * no lugar do `equipped_items` fixo em `[]` da pilha v2. Índice e slug, a mesma
  * língua do banco — a tradução para hex é do `<AvatarKokeshi>`.
  *
@@ -60,7 +60,7 @@ export default function PublicProfileClient({ profile }: Props) {
           <span className="grid place-items-center bg-warm-stone px-2 py-2">
             <AvatarKokeshi
               skin={profile.avatar_skin}
-              hair={profile.avatar_hair}
+              hair={profile.avatar_cabelo}
               hairColor={profile.avatar_hair_color}
               traje={profile.avatar_traje}
               altura={104}

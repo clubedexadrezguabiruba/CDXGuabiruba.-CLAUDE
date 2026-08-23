@@ -93,7 +93,7 @@ const RAIZ = resolve(fileURLToPath(import.meta.url), "../../../..");
  */
 const PROP_PARA_COLUNA: Record<string, string> = {
   skin: "avatar_skin",
-  hair: "avatar_hair",
+  hair: "avatar_cabelo",
   hairColor: "avatar_hair_color",
   traje: "avatar_traje",
   chapeu: "avatar_chapeu",

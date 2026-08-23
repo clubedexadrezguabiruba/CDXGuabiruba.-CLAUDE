@@ -183,13 +183,15 @@ export interface EsteiraDoSlot {
   /**
    * O prefixo do slug — `rosto-`, `cabelo-`.
    *
-   * No slot `rosto` ele é obrigatório porque `avatar_catalogo` tem chave primária
-   * única para os quatro slots: `chapeu-bone` e `rosto-bone` são peças diferentes
-   * que sem o prefixo colidiriam. **No cabelo não há catálogo** — ele é escolha
-   * livre da D27, coluna própria (`users.avatar_hair`), sem linha em
-   * `avatar_catalogo` — e o prefixo fica pela mesma razão que o nome do arquivo de
-   * tom fica: `public/items/cabelo/cabelo-chanel-tom.png` diz de si mesmo o que é,
-   * e a peça atravessa laudo, folha e literal com um nome só.
+   * Ele é obrigatório porque `avatar_catalogo` tem chave primária única para
+   * **todos** os slots: `chapeu-bone` e `rosto-bone` são peças diferentes que sem o
+   * prefixo colidiriam. **Desde 2026-08-23 isso vale para o cabelo também** — ele
+   * deixou de ser escolha livre com tabela própria e virou peça de baú, com linha em
+   * `avatar_catalogo` e `users.avatar_cabelo` referenciando-a (doc 22 §5-E). Antes
+   * dessa data o prefixo do cabelo era só convenção de nome de arquivo; agora é o
+   * slug de verdade. O nome continua dizendo de si mesmo o que é —
+   * `public/items/cabelo/cabelo-chanel-tom.png` —, e a peça atravessa laudo, folha,
+   * literal e banco com um nome só.
    */
   readonly prefixo: string;
   /**
