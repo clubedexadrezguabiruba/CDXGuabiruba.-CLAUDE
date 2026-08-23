@@ -98,7 +98,7 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
       {events.length === 0 ? (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-zinc-500">
-            Nenhum evento no mural ainda. As conquistas dos membros aparecerao aqui.
+            Nenhum evento no mural ainda. As conquistas dos membros aparecerão aqui.
           </p>
         </div>
       ) : (

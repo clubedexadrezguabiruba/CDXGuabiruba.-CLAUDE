@@ -106,7 +106,7 @@ export default function PublicProfileClient({ profile }: Props) {
       {/* Stats grid */}
       <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-zinc-700">
-          Histórico de Combate
+          Histórico de Partidas
         </h2>
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           <StatItem label="Rating" value={profile.puzzle_rating.toString()} />
@@ -148,7 +148,7 @@ export default function PublicProfileClient({ profile }: Props) {
       {/* Conquistas desbloqueadas */}
       <div className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-zinc-700">
-          Insígnias Conquistadas
+          Suas Conquistas
           <span className="ml-1 text-xs font-normal text-zinc-400">
             ({profile.achievements_count})
           </span>
@@ -156,7 +156,7 @@ export default function PublicProfileClient({ profile }: Props) {
 
         {profile.achievements.length === 0 ? (
           <p className="py-4 text-center text-sm text-zinc-400">
-            Nenhuma insígnia conquistada ainda.
+            Nenhuma conquista ainda.
           </p>
         ) : (
           <div className="grid gap-2">

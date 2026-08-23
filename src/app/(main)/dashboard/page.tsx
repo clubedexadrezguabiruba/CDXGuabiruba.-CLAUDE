@@ -12,7 +12,7 @@ import type { RankingData, RankingEntry } from "@/types/ranking";
 
 const ATALHOS = [
   { href: "/aulas", titulo: "Continuar Treinamento" },
-  { href: "/puzzles/rating", titulo: "Desafio Tático" },
+  { href: "/puzzles/rating", titulo: "Desafio do Dia" },
   { href: "/bots", titulo: "Enfrentar Bot" },
 ] as const;
 
@@ -106,7 +106,19 @@ export default async function DashboardPage() {
           ))}
         </nav>
 
-        {/* Blocos client-side: missões, streak, baús, insígnias */}
+        {/*
+          A insinuação — a única do produto, e é o que entrega os 25% de
+          descoberta da fórmula tonal dentro do login. Até aqui o mundo da
+          Academia morava todo na landing, que o aluno logado nunca mais vê.
+          A frase é o exemplo pronto da Bíblia §8 (o meio da curva), e obedece
+          a regra 6 da §9: insinua que há mais Academia, sem esconder nada de
+          que o aluno precise para agir.
+        */}
+        <p className="px-1 text-sm text-ink/55 italic">
+          Há uma sala da Academia que você ainda não visitou.
+        </p>
+
+        {/* Blocos client-side: missões, streak, baús, conquistas */}
         <DailyPanel title={title} level={perfil?.level ?? 1} />
 
         {/* Tarefas da turma (só aparece se aluno tem tarefas) */}

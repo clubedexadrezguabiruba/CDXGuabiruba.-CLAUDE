@@ -83,10 +83,16 @@ export default function CriarPersonagemClient({
 
   return (
     <div className="min-h-screen bg-warm-ivory font-sans text-ink">
+      {/*
+        A saudação carrega o tom de embarque: é o momento em que o aluno entra
+        na Academia, e a curva de tom da Bíblia §8 pede acolhimento aqui — tirar
+        o medo antes de qualquer coisa. A segunda frase é a que faz isso: ela
+        diz que nada aqui é definitivo.
+      */}
       <FaixaDeComando
         supertitulo="Academia 64"
         titulo="Matrícula"
-        saudacao="Monte o seu boneco. Dá para trocar depois, no seu perfil."
+        saudacao="Sua aventura começa pelo espelho. Monte o seu boneco — dá para trocar quando quiser, no seu perfil."
       />
 
       <div className="mx-auto max-w-2xl px-5 py-6">

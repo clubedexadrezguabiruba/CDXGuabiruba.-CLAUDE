@@ -312,7 +312,7 @@ export default function ActivityToasts({
           <div className="rounded-xl border border-purple-300 bg-purple-50 px-5 py-3 shadow-lg">
             <div className="text-center">
               <div className="text-sm font-bold text-purple-700">
-                Insígnia Desbloqueada!
+                Conquista Desbloqueada!
               </div>
               <div className="mt-1 text-base font-semibold text-purple-900">
                 {current.data.title}

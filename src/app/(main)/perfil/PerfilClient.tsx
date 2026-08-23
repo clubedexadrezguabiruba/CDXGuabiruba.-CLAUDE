@@ -397,7 +397,7 @@ export default function PerfilClient({
     {
       label: "Tática",
       stats: [
-        { icon: <IconTarget />, value: puzzlesSolved.toString(), label: "Puzzles", accent: true },
+        { icon: <IconTarget />, value: puzzlesSolved.toString(), label: "Desafios", accent: true },
         { icon: <IconBolt />, value: profile.puzzleBestStreak > 0 ? profile.puzzleBestStreak.toString() : "—", label: "Melhor Seq.", accent: false },
         { icon: <IconFlame />, value: profile.longestStreak > 0 ? profile.longestStreak.toString() : "—", label: "Rec. Streak", accent: false },
       ],
@@ -415,7 +415,7 @@ export default function PerfilClient({
       stats: [
         { icon: <IconBook />, value: lessonsCompleted.toString(), label: "Aulas", accent: false },
         { icon: <IconBot />, value: `${botsDefeated}/10`, label: "Bots", accent: false },
-        { icon: <IconTrophy />, value: `${unlockedCount}/${achievements.length}`, label: "Insígnias", accent: false },
+        { icon: <IconTrophy />, value: `${unlockedCount}/${achievements.length}`, label: "Conquistas", accent: false },
       ],
     },
   ];
@@ -572,7 +572,7 @@ export default function PerfilClient({
               <div className="border-l-[3px] border-amber-400 px-5 py-4">
                 <div className="flex items-center justify-between pl-3">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-stone-600">
-                    Insígnias
+                    Conquistas
                   </h3>
                   <span className="text-xs font-bold tabular-nums text-amber-700">
                     {unlockedCount}/{achievements.length}
@@ -598,7 +598,7 @@ export default function PerfilClient({
                   </div>
                 ) : (
                   <p className="py-4 text-center text-sm text-stone-400">
-                    Nenhuma insígnia desbloqueada ainda.
+                    Nenhuma conquista desbloqueada ainda.
                   </p>
                 )}
 
@@ -606,7 +606,7 @@ export default function PerfilClient({
                   onClick={() => setShowAllAchievements(!showAllAchievements)}
                   className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-300 py-2.5 text-sm font-semibold text-stone-500 transition-colors hover:border-amber-400 hover:text-amber-700"
                 >
-                  {showAllAchievements ? "Ocultar detalhes" : "Ver todas as insígnias"}
+                  {showAllAchievements ? "Ocultar detalhes" : "Ver todas as conquistas"}
                   <IconChevron open={showAllAchievements} />
                 </button>
 

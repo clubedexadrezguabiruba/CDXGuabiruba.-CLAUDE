@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 14 |
-| **Árvore** | **45 arquivos sujos** |
-| **Último commit** | fcea1a0 · 2026-08-23 · feat(avatar): o cabelo vira PEÇA DE BAÚ — uma gramática só para tudo que se veste, e quem decidiu foi uma FK |
+| **Commits à frente de `origin/main`** | 17 |
+| **Árvore** | **43 arquivos sujos** |
+| **Último commit** | 69ab349 · 2026-08-23 · feat(avatar): a promoção do `assimetrico` fecha — e o TONAL deixa de ser "uma das três famílias" nas réguas |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -424,7 +424,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 93 |
+| **Migrations** | 94 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 22 |
 | **Primitivos de UI** | 4 |

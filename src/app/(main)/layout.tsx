@@ -124,7 +124,24 @@ export default async function MainLayout({
                   <span className="sr-only">Monte seu personagem</span>
                 </Link>
               ) : (
-                <MolduraPatente tier={tier}>{boneco}</MolduraPatente>
+                /*
+                  O boneco é a porta de volta ao Saguão, e isso resolve um
+                  buraco de navegação: a §7 da Bíblia lista "Início" como o
+                  primeiro item do menu, e não havia NENHUM caminho de volta —
+                  nem link, nem logo clicável. Um oitavo link de texto era a
+                  saída óbvia e é a errada: o comentário medido logo abaixo diz
+                  que os 7 atuais + "Sair" já somam 451 px numa tela de 375.
+                  O boneco já está aqui, já é o elemento mais reconhecível da
+                  barra, e levar o aluno para casa não lhe custa um pixel de
+                  largura.
+                */
+                <Link
+                  href="/dashboard"
+                  className="inline-flex shrink-0 rounded-lg transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-warm-ivory"
+                >
+                  <MolduraPatente tier={tier}>{boneco}</MolduraPatente>
+                  <span className="sr-only">Ir para o Saguão</span>
+                </Link>
               )}
               <div className="min-w-0 text-sm">
                 <span className="block max-w-30 truncate font-medium sm:max-w-none">

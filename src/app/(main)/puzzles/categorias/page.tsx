@@ -63,7 +63,7 @@ export default async function CategoriasPage() {
           className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700"
         >
           <ArrowLeft className="h-4 w-4" />
-          Puzzles
+          Desafios
         </Link>
       </div>
 

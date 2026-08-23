@@ -355,7 +355,7 @@ export default function PuzzleRevanchePage() {
     return (
       <div className="mx-auto max-w-2xl space-y-6 p-4">
         <Link href="/puzzles" className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700">
-          <ArrowLeft className="h-4 w-4" /> Puzzles
+          <ArrowLeft className="h-4 w-4" /> Desafios
         </Link>
         <div className="rounded-xl border bg-zinc-50 p-8 text-center">
           <CheckCircle className="mx-auto mb-3 h-10 w-10 text-green-500" />
@@ -529,7 +529,7 @@ export default function PuzzleRevanchePage() {
         className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700"
       >
         <ArrowLeft className="h-4 w-4" />
-        Puzzles
+        Desafios
       </Link>
 
       <div className="flex items-center justify-between">
@@ -541,9 +541,18 @@ export default function PuzzleRevanchePage() {
         )}
       </div>
 
+      {/*
+        A assinatura dos Jardins, e é a única dose de tema desta tela (Bíblia
+        §9, regra 7). O encaixe já existia: repetição espaçada é literalmente
+        coisa que amadurece com o tempo — o lugar do mapa que "serve a revisão
+        espaçada, sequência, progresso lento" estava descrito e sem uso.
+        O como-funciona vem logo depois, em linguagem clara: mistério insinua,
+        nunca esconde o que o aluno precisa para agir.
+      */}
       <p className="text-sm text-zinc-500">
-        Puzzles que você errou ficam disponíveis para revisão.
-        Acerte 3 vezes para dominar cada puzzle (1 dia → 3 dias → dominado).
+        <span className="text-ink/70">Nos Jardins, o que você revisa cresce devagar.</span>{" "}
+        Desafios que você errou ficam disponíveis para revisão.
+        Acerte 3 vezes para dominar cada um (1 dia → 3 dias → dominado).
       </p>
 
       {/* Progress bar */}

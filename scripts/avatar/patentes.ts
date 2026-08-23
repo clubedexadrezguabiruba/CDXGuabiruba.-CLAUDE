@@ -50,8 +50,13 @@
  * arquivo (`soldado.svg`) e valor de `UNIFORME_NOME`. Tradução para quem ler doc
  * antigo:
  *
- *   Soldado→Aprendiz · Aspirante→Estudante · Capitão→Analista ·
+ *   Soldado→Aprendiz · Aspirante→Explorador · Capitão→Analista ·
  *   Comandante→Estrategista · General→Mestre · Mestre→Grão-Mestre
+ *
+ * EMENDA DE 2026-08-23: o tier 2 nasceu "Estudante" na virada de 08-20 e passa
+ * a ser **Explorador** (Bíblia v2 §6, decisão D2). O motivo é o público real,
+ * de 7 a 15 anos: era o único degrau que premiava a criança com o que ela já é.
+ * Nada mais na escada muda, e o slug `aspirante` continua sendo a chave.
  *
  * O nome do arquivo, o do script npm (`verify:paleta-patentes`) e o dos tokens
  * CSS (`patente-*`) continuam dizendo "patente" de propósito: são chave interna,
@@ -125,7 +130,7 @@ export const PATENTES: readonly Patente[] = [
   },
   {
     tier: 2,
-    patente: "Estudante",
+    patente: "Explorador",
     slug: "aspirante",
     pano: "#384966",
     bota: "#1e2b44",

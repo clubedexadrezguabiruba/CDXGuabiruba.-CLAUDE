@@ -56,6 +56,7 @@
 
 import postgres from "postgres";
 import { getDbUrl } from "../db-url";
+import { PATENTES } from "../../avatar/patentes";
 
 /** Apagadas no Bloco B. Se qualquer uma voltar, a pilha v2 está ressuscitando. */
 const TABELAS_PROIBIDAS = ["items", "user_inventory", "user_equipped"];
@@ -267,6 +268,39 @@ async function main() {
         );
       } else {
         ok(`marcos crescentes: ${tiers.map((t) => t.lessons_required).join(" → ")}`);
+      }
+
+      // (a2) O NOME do degrau tem de ser o mesmo nos dois donos: `title_tiers`
+      //      no banco e `PATENTES` em scripts/avatar/patentes.ts.
+      //
+      //      Esta conferência nasceu em 2026-08-23, e nasceu de uma lacuna
+      //      registrada: `src/components/ui/Badge.tsx` casa o título por
+      //      STRING contra a régua, e nenhum gate comparava as duas pontas. O
+      //      resultado medido foi a Badge perder o ponto de cor em silêncio
+      //      entre o Bloco 1 e a migration da virada — ninguém viu porque
+      //      nada media. O comentário da coluna `title_tiers.title` já mandava
+      //      "renomear aqui exige renomear em patentes.ts na mesma janela";
+      //      mandar em comentário não reprova nada.
+      //
+      //      Só os tiers que a régua conhece entram: ela tem 6 linhas (1 a 6),
+      //      porque Calouro e Lenda não têm cor própria e ficam fora dela de
+      //      propósito. Os dois degraus sem cor não são conferidos aqui.
+      const divergentes = PATENTES.flatMap((p) => {
+        const noBanco = tiers.find((t) => t.tier === p.tier);
+        if (!noBanco) return [`tier ${p.tier} existe na régua e não no banco`];
+        if (noBanco.title !== p.patente) {
+          return [`tier ${p.tier}: banco diz "${noBanco.title}", régua diz "${p.patente}"`];
+        }
+        return [];
+      });
+
+      if (divergentes.length > 0) {
+        nok(
+          `nome do título diverge entre banco e régua em ${divergentes.length} degrau(s)`,
+          `${divergentes.join(" · ")} — a Badge casa por string, então o degrau divergente perde o ponto de cor em silêncio`,
+        );
+      } else {
+        ok(`nome do título casa com scripts/avatar/patentes.ts nos ${PATENTES.length} degraus com cor`);
       }
 
       // (b) A wiring. Se alguém reescrever complete_lesson_step a partir de
