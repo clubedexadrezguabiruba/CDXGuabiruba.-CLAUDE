@@ -78,6 +78,104 @@ export const NOMES_CABELO: Record<string, string> = {
   // do elenco antigo, e por isso ele não saiu de família nenhuma na promoção: entrou
   // direto em `CABELOS` e em `MODELOS_TONAIS`.
   "burst-fade": "Burst Fade",
+  // ─────────────────────────────────────────────────────────────────────────
+  // O LOTE DE 2026-08-24 — seis artes novas do Doug, a primeira leva depois de o
+  // elenco ter sido cortado a quatro. Atravessaram a esteira JUNTAS e passaram nas
+  // três réguas: Gate −1 APROVADA nas seis (deslocamento 0/0 px, escala 100,00%,
+  // **0 ladrilho de forma** em rosto e em corpo), `arte:traco` com o traço do
+  // boneco inteiro e `arte:borda` com 0 px de cinza.
+  //
+  // ⚠️ Estar aqui é estar no seletor *"da arte · tonal"* do `/dev/avatar-kokeshi`,
+  // e mais nada. O parecer do Doug passou a ser no RENDER em vez de na folha de
+  // contato (decisão dele, 2026-08-24), e a aprovação continua morando em
+  // `CABELOS` — que é o que a criança vê.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // 88 175 px em 1 componente · 0 px de tinta em rosto e corpo. A mais limpa do
+  // lote nas protegidas, junto com a `curto-repartido`.
+  "cachos-anjo": "Cachos de Anjo",
+  // 81 253 px — a MENOR massa do lote, e abaixo da faixa de 113–196 mil que o
+  // doc 24 §4 observou nas três artes de 2026-08-19. A faixa é observação, não
+  // teto, e o `moicano` promovido tem 39 452 px; fica registrado porque massa
+  // baixa é o que faz um cabelo ler "ralo", e isso é julgamento de olho.
+  "curto-repartido": "Curto Repartido",
+  // 149 717 px, a maior do lote. É a que desce sobre o tronco: 25 084 px (8,07%)
+  // de tinta em "corpo" e 1 091 px (17,83%) em "sobrancelha" — medidos contra o
+  // `assimetrico` JÁ PROMOVIDO, que dá 27 147 px (8,74%) e 1 096 px (17,91%).
+  // A peça nova é mais leve que a que está em produção nas duas contas.
+  "longo-unilateral": "Longo Unilateral",
+  // 86 827 px · 64 px (1,05%) na sobrancelha, o mesmo patamar do `chanel` (65 px).
+  "pixie": "Pixie",
+  // 106 803 px · 1 007 px (0,32%) em "corpo", numa caixa em u x 108→141 y 353→486
+  // — o rabo caindo nas costas, em frente ao tronco.
+  "rabo-baixo": "Rabo Baixo",
+  // 121 920 px em **2 componentes** (107 539 + 14 381 px) — a primeira peça do slot
+  // que não é uma mancha só. O segundo componente tem 13,4% da maior, bem acima do
+  // piso de ruído de 5%, então é trança e não sujeira. A esteira TONAL traça por
+  // `potrace`, que emite subcaminhos no mesmo `d`; a limitação de UM laço era da
+  // família traçada (`Cabelo.massa`), que hoje está vazia.
+  "trancas-duplas": "Tranças Duplas",
+  // A SÉTIMA do dia, e ela chegou por reentrada: o Doug apagou a arte velha do
+  // `coque` e desenhou outra com o mesmo nome — *"são artes novas já, apaguei as
+  // velhas e coloquei o mesmo nome"*. Conferido por hash contra o blob que o commit
+  // `404fca2` apagou, e é arquivo diferente. 62.788 px em 1 componente · Gate −1
+  // **APROVADA** com 0 px e 0 ladrilho em rosto, corpo e sobrancelha. O defeito que
+  // matou a versão anterior — 9,0% da peça guilhotinada acima do `viewBox` — não se
+  // repete: a caixa da máscara começa dentro do quadro.
+  "coque-simples": "Coque Simples",
+  // A OITAVA do dia, entregue às 09:30 e passada na esteira em seguida. 83 375 px em
+  // 1 componente · Gate −1 **APROVADA** com 0 px e 0 ladrilho em rosto, corpo e
+  // sobrancelha.
+  //
+  // ⚠️ **É a arte mais limpa do dia na régua que derrubou a `espetado`**: 0 px de
+  // peça abaixo do piso de saturação do Gate −1, contra 46 836 na `espetado` e 6 990
+  // no `chanel` que está em produção. Ela não exercita o buraco — o que quer dizer
+  // que ela também não o prova consertado.
+  "tigela-franja": "Tigela com Franja",
+  // A NONA, e ela é a REENTRADA do `espetado` — a terceira tentativa do modelo, e a
+  // primeira que atravessa. 95 495 px em 1 componente · Gate −1 **APROVADA** com 0 px
+  // e 0 ladrilho em rosto e corpo (458 px na sobrancelha, que só relata).
+  //
+  // ⚠️ **Ela reusa o nome limpo, e a arte anterior não foi apagada.** A versão que
+  // reprovou continua no disco como `espetado-vetado*.png`: ela é a única cobaia do
+  // buraco do piso de saturação do Gate −1 (531 px de peça invisível num bloco só), e
+  // régua sem exemplo-ruim é detector de fumaça sem fumaça. O slug `cabelo-espetado`
+  // estava livre porque a migration de ontem fez `DELETE`, não marcação.
+  //
+  // O que separa a que passou da que não passou, medido: **8 495 px invisíveis, 0
+  // deles em região protegida** — contra 46 836 px, sendo 531 no rosto.
+  espetado: "Espetado",
+  // A REENTRADA da maria chiquinha — a primeira arte dela foi reprovada pelo Doug no
+  // desenho e apagada. Esta é outra (hash `1d66558e2e11` contra `d8fc2e0604f3`).
+  //
+  // 84 650 px em **3 componentes** — a massa da cabeça e as duas chiquinhas —, e é a
+  // única peça do catálogo com mais de dois. Gate −1 **APROVADA** com 0 px em rosto,
+  // corpo E sobrancelha, as três zeradas.
+  //
+  // Ela é também a peça que traz de volta o caso real de `coroa-multicomponente.test.ts`:
+  // foi a versão anterior desta arte que revelou que as réguas achatavam o `d` e
+  // apagavam uma sobrancelha do boneco.
+  "maria-chiquinha": "Maria Chiquinha",
+  // 91 308 px em 1 componente. Gate −1 com **0 ladrilho até na região permitida** —
+  // a arte mais limpa que já passou por aqui nessa conta.
+  //
+  // ⚠️ É a família que morreu no teto do `viewBox` (o `coque`, 9,0% guilhotinados),
+  // e o `PEDIDO-CABELOS.md` cobra que peça que prende cabelo em cima nasça mais
+  // baixa. Medido: ver a entrada em `CABELOS`.
+  "coques-duplos": "Coques Duplos",
+  // 81 225 px em 1 componente. Gate −1 **APROVADA** com 0 px em rosto e corpo (21 px
+  // na sobrancelha, que só relata) e traço do boneco inteiro — 19 ilhas de 1 px,
+  // contra piso de 8 por componente.
+  //
+  // A terceira arte do slot na família do coque, depois das duas reprovadas em
+  // 2026-08-24 de manhã. Ver a folga do teto na entrada de `CABELOS`.
+  "coque-individual": "Coque Individual",
+  // 144 331 px em 1 componente — a segunda maior massa do slot, atrás só da
+  // `longo-unilateral` (149 717). Gate −1 **APROVADA**: 0 px em rosto e sobrancelha,
+  // 1 963 px em "corpo" dos quais **98,7% é a própria peça caindo sobre o tronco** —
+  // o mesmo mecanismo do `assimetrico` e da `longo-unilateral`, os dois já em
+  // produção. `arte:traco` 11 px em 5 ilhas, maior de 7, contra piso de 8.
+  dreadlocks: "Dreadlocks",
 };
 
 /**

@@ -184,11 +184,30 @@ describe("as TRÊS famílias do catálogo são declaradas, não inferidas", () =
     // com 9,0% da peça fora do `viewBox`), e decidiu desenhar arte nova em vez de
     // refazer aquelas. Traçado 1 -> 0 e paramétrico 1 -> 0 **sem** o tonal subir: é o
     // terceiro caso que este bloco vê, depois de "migrou" e "entrou de fora".
+    // ⚠️ **2026-08-24, algumas horas depois: SETE entraram de fora, de uma vez.** É o
+    // quarto caso, e ele é o primeiro que a instrução "nunca em lote" da mensagem
+    // abaixo não previa — ela nasceu quando a promoção era peça a peça, com o Doug
+    // olhando a folha de contato entre cada duas. Ele trocou o lugar do parecer para
+    // o render do `/dev/avatar-kokeshi`, onde as peças ainda não promovidas aparecem
+    // no seletor "da arte · tonal", e julgou as sete numa sessão só.
+    //
+    // O que a instrução protegia continua protegido, e é o que importa: **os selos
+    // foram regravados porque as peças são novas, nunca para calar vermelho.** A
+    // prova está no diff de `parametrico-congelado.ts`, 13 selos -> 23:
+    //
+    //   +14  as 7 peças novas × 2 (parado/animado)
+    //   − 4  os selos ÓRFÃOS do `espetado` e do `coque`, apagados do catálogo de
+    //        manhã e esquecidos aqui. `conferirSelo` percorre as listas, então selo
+    //        de peça inexistente nunca é lido — ele não reprovava, e por isso ficou
+    //     0  **nenhum dos 8 selos tonais anteriores mudou de bytes ou de SHA**
+    //
+    // Selo que se move numa promoção que não é dele continua sendo defeito.
     expect(
       MODELOS_TONAIS.length,
       "uma peça migrou para a família tonal: regrave o selo DELA (`npm run avatar:congelar`) " +
-        "e atualize este número — nunca em lote",
-    ).toBe(4);
+        "e atualize este número — nunca em lote, a menos que o lote seja de peças NOVAS " +
+        "e nenhum selo anterior tenha se mexido",
+    ).toBe(14);
     expect(
       MODELOS_TRACADOS.length,
       "a família traçada está VAZIA desde 2026-08-24: se alguém entrou, os selos dos " +

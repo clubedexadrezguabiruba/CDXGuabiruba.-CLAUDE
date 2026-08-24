@@ -152,7 +152,16 @@ const camadasDaTouca = (c: Cabelo): number => {
  * aprovada mudou?* — e a resposta não é editar este número.
  */
 const BYTES_DA_ARTE = {
-  espetado: 13319,
+  // ⚠️ **O NÚMERO MUDOU PORQUE A PEÇA MUDOU, e o `espetado` é o único caso do
+  // arquivo.** Ele valia 13 319 para a peça TRAÇADA que o Doug reprovou a olho e
+  // mandou apagar em 2026-08-24. O modelo voltou no mesmo dia, com arte nova, tonal e
+  // aprovada — e o slug `cabelo-espetado` estava livre porque a migration daquela
+  // manhã fez `DELETE`, sem lápide. Mesma chave, outra peça: 13 319 -> **14 372**.
+  //
+  // É a única circunstância em que um destes números se move sem ser defeito, e ela
+  // fica escrita aqui para que a pergunta continue sendo *"por que uma peça aprovada
+  // mudou?"* em todos os outros casos.
+  espetado: 14372,
   // TONAL, promovida em 2026-08-22 — e o número CAIU de 14 074 para 12 176 nessa
   // migração, o que é o padrão da família e não uma peça que encolheu: a tonal
   // troca massa + núcleo + claras + pretas por silhueta + máscara, e o DEFLATE
@@ -174,6 +183,44 @@ const BYTES_DA_ARTE = {
   // e o servidor nega. Ela entrou no catálogo em 20260823110000, já na gramática
   // nova, como `rare`.
   "burst-fade": 11616,
+
+  // ---------------------------------------------------------------------------
+  // O LOTE DE 2026-08-24 — seis promovidas de uma vez, e o elenco fecha em DEZ
+  //
+  // Todas tonais, todas medidas na promoção. O que este bloco de seis ensina, e
+  // que peça a peça não deixava ver: **o peso do composto não segue a massa da
+  // arte.** A `cachos-anjo` tem 93 715 px e sai com 16 255 B; a `longo-unilateral`
+  // tem 149 717 px — 60% mais massa — e sai com 10 949 B. Quem manda é o `d`, e o
+  // `d` é contorno recortado: cacho recorta, mecha lisa não.
+  // ---------------------------------------------------------------------------
+
+  // A MAIS PESADA DO ELENCO INTEIRO — 16 255 B, contra 13 319 do `espetado`
+  // apagado, que era o recorde. 9 012 B de `d` pagos duas vezes (a silhueta e a
+  // mesma forma vestida pela máscara) é o que um cacho custa.
+  "cachos-anjo": 16255,
+  // **A PRIMEIRA PEÇA DE ARTE QUE FICA ABAIXO DA MAIS LEVE ATÉ HOJE** — 9 663 B
+  // contra os 9 731 do moicano, que era "a primeira que cabe". Ela cabe com folga
+  // em `ORCAMENTO_COMPOSTO.bytes` (10 240) e passa a ser a peça mais leve do slot.
+  "curto-repartido": 9663,
+  // 10 949 B com a MAIOR massa do elenco (149 717 px). Estoura o teto por 709 B, e
+  // a decisão A continua valendo: teto não veta arte aprovada.
+  "longo-unilateral": 10949,
+  pixie: 10837,
+  "rabo-baixo": 10768,
+  // 14 622 B, a segunda mais pesada. É a única peça do slot com DOIS componentes
+  // na máscara, e os 7 372 B de `d` são o preço de traçar os dois.
+  "trancas-duplas": 14622,
+  // A reentrada do `coque` apagado nesta mesma manhã, aprovada horas depois das
+  // seis acima. 10 865 B — estoura o teto por 625 B, e a decisão A vale.
+  "coque-simples": 10865,
+  // A SEGUNDA arte com esse nome — a primeira foi reprovada no desenho e apagada.
+  // Única peça do catálogo com 3 componentes, e 11 755 B com apenas 4 506 B de `d`:
+  // três mechas custam menos que um cacho (a `cachos-anjo` paga 9 012 B por uma só).
+  "maria-chiquinha": 11755,
+  // **O NOVO RECORDE DE LEVEZA — 9 649 B**, tomado da `curto-repartido` (9 663) no
+  // mesmo dia em que ela o tomou do `moicano` (9 731). É a terceira peça do slot que
+  // CABE em `ORCAMENTO_COMPOSTO.bytes`, e as três são de arte.
+  "tigela-franja": 9649,
 } as const;
 
 describe("a base careca não paga nada pelo slot de cabelo", () => {

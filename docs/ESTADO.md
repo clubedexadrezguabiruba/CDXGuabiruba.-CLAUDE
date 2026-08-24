@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 20 |
-| **Árvore** | **42 arquivos sujos** |
-| **Último commit** | ad77054 · 2026-08-24 · feat(avatar): o código da promoção tonal, que o commit anterior deixou na mesa |
+| **Commits à frente de `origin/main`** | 23 |
+| **Árvore** | **54 arquivos sujos** |
+| **Último commit** | a3d0953 · 2026-08-24 · docs(avatar): o registro da rota fecha o dia — o crash do laço vazio, as três réguas sem cobaia e a conta das esteiras |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -401,7 +401,7 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 |---|---|---|
 | Backlog do avatar | **30 de 67** (45%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
-| Catálogo de cabelo | **3 de 10** no mínimo (faltam **7**) | `docs/avatar/19-rota-de-arte-runbook.md` |
+| Catálogo de cabelo | **14 de 10** no mínimo ✅ | `docs/avatar/19-rota-de-arte-runbook.md` |
 
 Backlog do avatar, fase a fase:
 
@@ -424,9 +424,9 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 95 |
+| **Migrations** | 96 |
 | **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 23 |
+| **Arquivos de teste** | 24 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes
