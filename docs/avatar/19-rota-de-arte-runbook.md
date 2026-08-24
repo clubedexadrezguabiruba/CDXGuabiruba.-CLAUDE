@@ -59,6 +59,17 @@ Réguas de diagnóstico, fora da esteira, para quando algo não fecha:
 `arte:escala` (os 92% e o hash da base), `arte:reguas` (as 15 asserções com
 controle), `arte:cor-proibida` (nenhuma cor da base cai na janela do ciano).
 
+⚠️ **`arte:figurinha` NÃO é diagnóstico — ela está no `verify:arte` e reprova.**
+É a única régua da rota que mede a **máscara final contra a arte**, e não a arte
+contra a base: ela pergunta se o passo 2c tapou rosto que a artista deixou à mostra.
+Nasceu em 2026-08-24, depois de **duas** artes de coque duplo passarem em todos os
+gates e serem reprovadas pelo olho do Doug com a mesma frase — *"onde indiquei deve
+ser o rosto do avatar"*. Custa 6 s sobre o elenco inteiro. O piso é `2 × TRACO ×
+ESCALA` (28,8 px de largura inscrita) e a pior arte aprovada mede 15,3 px; quando ela
+reprovar, **o conserto é pelo DESENHO** — vão que desemboca na borda de fora do cabelo
+nunca é preenchido. Ver o docstring de `figurinha-sobre-pele.ts` e a parte 5 do
+`ESTADO-DA-ROTA.md`.
+
 ## 3. A régua da espessura decide a variante — e ela decide antes de custar tipo
 
 `espessuraDoTraco` mede a **banda preta da arte** pela normal do contorno denso, e

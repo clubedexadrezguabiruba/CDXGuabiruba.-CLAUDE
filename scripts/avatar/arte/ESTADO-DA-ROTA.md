@@ -6350,3 +6350,332 @@ corrida seguinte — é instabilidade do arquivo que renderiza por Playwright, n
    espalhados. A cobaia está preservada em `espetado-vetado*.png`. Três saídas medidas
    na parte 2 — e, depois do episódio da figurinha, vale dizer: **qualquer uma delas
    mexe na esteira, então meça o respingo nas 15 peças ANTES de tocar no arquivo.**
+
+---
+
+# 2026-08-24 (parte 5) · O `duplo-coque-real` volta, morre de novo na MESMA bochecha — e desta vez deixa uma régua
+
+O Doug entregou `coque_duplo_real_novo(legendary).jpg` e mudou o pedido de lugar:
+*"sem folha, quer aprovar visualmente direto no localhost dev"*. A arte é nova de
+verdade — hash `f2ec8ea0cf60`, que não bate com nenhum `-crua` do repositório.
+
+**Ela atravessou a esteira inteira sem uma reprovação de máquina, e foi reprovada
+pelo olho dele em uma frase: *"erro na bochecha"*.** É a segunda arte desta família a
+morrer do mesmo jeito no mesmo dia.
+
+## A peça, medida — e ela é a maior do slot
+
+| | |
+|---|---|
+| peça (difere da base) | **234 198 px** em 1 componente — a maior que já passou por aqui (a 2ª é a `assimetrico`, 173 283) |
+| linha instrumental | 74 729 px = 31,9% da peça |
+| Gate −1 | **APROVADA** — 0 ladrilho em rosto e corpo, deslocamento 0/0, escala 100,00%. Dos 6 639 px nas protegidas, 88,4% é peça cobrindo o boneco, 557 px (8,4%) não explicado |
+| `arte:traco` | **0 px** apagado, 0 ilhas |
+| `arte:borda` | **0 px** de cinza |
+| `d` | 11 012 B — o maior do slot (o 2º é `dreadlocks`, 9 436) |
+| tom | 309×389 · **59,1 KB** — o maior do slot (o 2º é `assimetrico`/`longo-unilateral`, 38,1) |
+| caixa da máscara | u x −14,2 y **−37,5** w 515 h 647,5 |
+
+**O teto do `viewBox` NÃO foi tocado**, e foi a primeira coisa conferida — é o eixo
+que matou o `coque` de manhã. A régua validada contra o render na parte 4
+(`folga_px = 74,6 + 0,92 × topoU`, conferida em 4 peças com 1 px de erro) dá
+**40,1 px de folga**. A terceira mais apertada do elenco, e sobra.
+
+## O DEFEITO, e ele não está no desenho
+
+A mancha da bochecha **não existe na arte** — ali ela tem pele lisa. Quem a inventa é o
+passo **2c da esteira, a "figurinha"** (`barba-para-formas.ts:572`), que preenche todo
+furo FECHADO sem olho ou boca dentro.
+
+| | |
+|---|---|
+| figurinha (2c) | **5 633 px** de furo preenchido, 0 janela de feição aberta |
+| desses, cabelo sobre PELE | **3 390 px** |
+| **num bloco só** | **3 160 px**, em u x 84→134 · y 242→339 |
+
+A caixa que o Doug marcou na versão de manhã — u x 103→128 · y 259→329 — **cabe
+inteira dentro desta**. Mesmo lugar, maior.
+
+**Nenhum gate podia ter pego isso, e o motivo é estrutural:** todos eles medem a ARTE
+contra a BASE, e a arte está certa. O defeito nasce depois, na máscara.
+
+## A decisão dele: apagar, e o elenco fica em 14
+
+Com três saídas medidas na mesa — redesenhar com o vão aberto, pôr piso de tamanho na
+figurinha, ou apagar — ele escolheu **apagar**. *"Apagar e ficar em 14."* É a terceira
+arte da família do coque duplo a cair.
+
+**A saída foi conferida byte a byte:** `git diff` **vazio** contra o índice depois de
+remover a entrada de `promovidas.ts`, regerar `cabelos-da-arte.ts`, apagar o `.png`, o
+`-crua.jpg`, a pasta do painel do gate e a máscara de tom. Nenhuma das 14 peças
+aprovadas moveu um byte — o critério de fronteira da §7 do runbook.
+
+## A RÉGUA QUE FICA — `arte:figurinha`, e ela é a amarra do §14 cumprida
+
+*"Reprovação do Doug vira régua antes da próxima arte entrar na esteira."* Esta não
+tinha, e é por isso que o custo não caiu entre a primeira e a segunda arte.
+
+`scripts/avatar/arte/figurinha-sobre-pele.ts` é **a primeira régua da rota que mede a
+MÁSCARA FINAL contra a arte**, em vez da arte contra a base. Depois do
+`restaurar-peca`, fora da peça o pixel é idêntico ao da base — então *"a máscara cobre
+e a arte não tem peça aqui"* é `mascara[i] && arte == base`, sem limiar escolhido a
+dedo. Sob o furo, três classes, e só uma é defeito: base **preta** (furo falso, o caso
+que fundou a regra), base **fundo**, base **pele**.
+
+### A área foi tentada primeiro e NÃO separa nada
+
+| | cabelo sobre pele, no total |
+|---|---|
+| `cachos-anjo` — **aprovada, em produção** | **5 060 px** |
+| `duplo-coque-real` — reprovado pelo Doug | **3 390 px** |
+
+Um piso por área reprovaria peça aprovada. É o erro do G28 na letra: medir o piso nas
+peças em vez de no boneco.
+
+### O eixo que separa é a LARGURA, e o piso sai do traço
+
+A figurinha existe para tapar fio que a máscara perdeu por cair sobre traço preto, e
+**fio tem a espessura do traço**. Então a pergunta é *que disco cabe dentro do furo*, e
+o piso é `2 × TRACO × ESCALA` = **28,8 px** — dois traços perdidos lado a lado é onde o
+benefício da dúvida acaba.
+
+| alvo | maior bloco sobre pele | **largura inscrita** |
+|---|---|---|
+| `chanel` · `longo-unilateral` · `coque-simples` · `tigela-franja` · `maria-chiquinha` | 0 px | **0,0 px** |
+| `barba-trancada` · `curto-repartido` · `pixie` · `rabo-baixo` · `dreadlocks` | 2 a 39 px | **2,0 px** |
+| `coques-duplos` · `coque-individual` | 22–23 px | **2,7 px** |
+| `burst-fade` | 14 px | **4,0 px** |
+| `moicano` · `assimetrico` · `espetado` | 106–172 px | **4,7 px** |
+| `trancas-duplas` | 94 px | **6,7 px** |
+| **`cachos-anjo` — a pior das aprovadas** | 640 px | **15,3 px** = 1,06× o traço |
+| **CONTROLE** `chanel` + bochecha fechada r16 | 796 px | **31,3 px ✗** |
+| **CONTROLE** `chanel` + bochecha fechada r24 | 1 792 px | **45,3 px ✗** |
+
+**Vão de 1,88× entre a pior aprovada e o piso.** Os números baixos das 18 são
+consequência da régua, não a origem dela.
+
+### O controle é o defeito montado sobre arte APROVADA
+
+Como em `traco-intacto`: um anel da cor da peça, fechado sobre a bochecha do `chanel`,
+mais uma barra que o prende à massa de cabelo — sem a barra o anel vira componente
+solto e a esteira o descarta como ruído, e o controle mediria zero por vacuidade.
+
+**O centro sai de medição, não de coordenada escrita à mão:** o ponto da metade
+esquerda do rosto mais longe de qualquer borda — fio, contorno, fundo e as cápsulas de
+feição. A primeira versão escolhia por coordenada e caiu **dentro do olho esquerdo**; o
+recorte do passo 2 rasgou o anel e a esteira reprovou com *"o recorte das feições
+cortou o MIOLO da peça"*. Há um contra-controle: o `chanel` limpo tem de PASSAR.
+
+### ⚠️ O ponto cego, declarado
+
+**Ela não julga ONDE o furo está.** O maior furo da `cachos-anjo` fica no alto da testa
+e lê como cabelo; o da arte reprovada ficava na bochecha e lia como mancha. A régua
+separa os dois pela LARGURA e acerta nestes dois casos — mas um furo estreito e
+comprido sobre a bochecha passaria. Se aparecer, o conserto é acrescentar região, não
+afrouxar o piso.
+
+### O que ela NÃO faz, e é de propósito
+
+Ela **não conserta** e **não toca na esteira**. O conserto do passo 2c foi tentado em
+2026-08-24 de manhã, mudou a geometria de 15 peças, derrubou 18 testes e o Doug mandou
+reverter. A saída que fica é pelo DESENHO — *vão que desemboca na borda de fora do
+cabelo nunca é preenchido* —, e o papel desta régua é dizer isso **antes** de ele ter
+de olhar.
+
+## Gates
+
+`typecheck` **0** · `arte:figurinha` **18 artes passam, controle reprova nos dois
+raios** · `verify:arte` **PASS** · `npm test` **836 testes**.
+
+⚠️ Na corrida com a arte ainda no repositório, `arteDaPecaNoDeploy.test.ts` reprovou
+**corretamente**: o PNG de tom novo não estava rastreado pelo git. O gate estava
+fazendo o trabalho dele.
+
+## Onde parou
+
+O elenco segue em **14**, e as três pendências da parte 4 continuam de pé — a
+migration não aplicada, a segunda peça inicial e o buraco do piso de saturação do
+Gate −1. Há um `coque_duplov2(legendary).jpg` em `~/Downloads` que **não** foi
+processado: não é a arte que ele mandou passar.
+
+---
+
+# 2026-08-24 (parte 6) · O coque duplo lendário atravessa na TERCEIRA — e a régua nova estreia julgando
+
+`coque_duplov2(legendary).jpg`, hash `64ed8d666f9c`, entregue às 13:38 — **antes** da
+arte da parte 5, e sem bater com nenhum `-crua` do repositório. É a terceira tentativa
+do modelo. As duas anteriores morreram pela mesma mancha na bochecha.
+
+## A estreia da `arte:figurinha`, e ela responde a pergunta que custou duas artes
+
+| | v2 (reprovada, parte 5) | **v3 (esta)** | piso |
+|---|---|---|---|
+| cabelo sobre pele | 3 390 px | **664 px** em 188 ilhas | — |
+| **maior bloco** | **3 160 px** | **77 px** | — |
+| **largura inscrita** | acima do piso | **2,7 px** | **28,8 px** |
+
+2,7 px é exatamente o número da `coques-duplos` e da `coque-individual`, as duas
+aprovadas da mesma família. **A mancha não existe nesta**, e desta vez quem disse isso
+foi a máquina, em 6 segundos, antes de o Doug abrir o navegador. É a amarra do §14
+funcionando pela primeira vez.
+
+## A peça
+
+| | |
+|---|---|
+| peça (difere da base) | **321 461 px** em 1 componente — **a maior massa do slot**, mais que o dobro da `longo-unilateral` (149 717) |
+| linha instrumental | 99 841 px = 31,2% |
+| Gate −1 | **APROVADA** — 0 ladrilho em rosto e corpo, deslocamento 0/0, escala 100,00%. Dos 11 533 px nas protegidas, **94,4% é peça cobrindo o boneco**, 417 px (3,6%) não explicado |
+| `arte:traco` · `arte:borda` | **0 px** · **0 px** de cinza |
+| figurinha (2c) | 1 589 px preenchidos · 0 janela de feição |
+| esticão lum | 17 → 169 |
+| tom | 379×408 · **78,8 KB** — o maior do slot |
+| `d` | **9 626 B** nas 2 formas |
+| caixa da máscara | u x **−70,8** y **−55,8** w 630,8 h 678,3 |
+
+## ⚠️ DUAS PRIMEIRAS VEZES NO EIXO DO ENQUADRAMENTO, e uma delas não tem régua
+
+**1. Folga do topo: 23,3 px — a mais apertada já medida.** Pela régua validada na
+parte 4 (`folga_px = 74,6 + 0,92 × topoU`, conferida contra o render em 4 peças com
+1 px de erro) ela **cabe**, mas por menos que a `coque-individual` (24,0) e o `moicano`
+(24,7), que eram as duas mais justas.
+
+**2. É a PRIMEIRA peça do elenco que sai do `viewBox` DE LADO.** Medidas as 18 caixas:
+
+| peça | x0 | x1 | transborda |
+|---|---|---|---|
+| **`duplo-coque-real`** | **−70,8** | **560,0** | **70,8 esq · 60,0 dir** |
+| `dreadlocks` — a mais larga das aprovadas | 0,0 | 485,0 | 0 · 0 |
+| `coques-duplos` | 18,3 | 480,8 | 0 · 0 |
+| `moicano` — a mais estreita | 136,7 | 395,0 | 0 · 0 |
+
+**As 17 aprovadas cabem todas em 0→500. Nenhuma encosta.** Não existe régua validada
+para a guilhotina lateral — a da parte 4 foi medida contando tinta na **primeira
+linha** do quadro, e o eixo horizontal nunca foi exercitado porque nenhuma peça tinha
+chegado perto. Fica **declarado como não medido**, e é o que foi dito ao Doug antes de
+ele olhar.
+
+⚠️ `arte:revisao` **não serve para peça tonal** — ela recusa com *"a peça não está em
+`pecas-da-arte.ts`"*, porque é a folha da família **traçada**. Não é defeito: o parecer
+do tonal é no render do `/dev/avatar-kokeshi`, por decisão do Doug de 2026-08-24. Fica
+registrado para ninguém gastar 3 minutos de Playwright descobrindo isso de novo.
+
+## Onde parou
+
+A peça foi ao seletor *"da arte · tonal"* e o Doug aprovou o desenho — *"gostei da
+peça"* —, **vendo o corte**. A promoção começou e **não terminou**: ver a parte 7, em
+que um gate que já existia reprovou o eixo lateral numa segunda superfície, e o modelo
+inteiro acabou abolido.
+
+---
+
+# 2026-08-24 (parte 7) · O duplo coque real é ABOLIDO — quatro artes, e o que fica é uma régua e um número para a Frente B
+
+*"delete a peça. não vou regenerar. vou abolir esta peça."* O modelo sai do projeto
+depois de **quatro** artes em um dia. Nenhuma delas está no repositório; o que fica é
+o que elas ensinaram.
+
+## As quatro, e por que cada uma caiu
+
+| | o que reprovou | quem pegou |
+|---|---|---|
+| v1 (manhã) | mancha de cabelo na bochecha | **o olho do Doug**, no render |
+| v2 (parte 5) | a mesma mancha, maior — 3 160 px num bloco | **o olho do Doug** de novo; a régua nasceu aqui |
+| v3 (parte 6) | sangra fora do `viewBox` **e** fora do retrato de 32 px | `arte:figurinha` limpou a bochecha; **`recorte-cabeca.test.ts`** pegou o resto |
+| v4 (esta) | sangra 19,2 u fora do retrato, **só pela esquerda** | a mesma régua, na qualificação, antes da promoção |
+
+## O que a v4 provou, e é o que faz a abolição ser decisão e não desistência
+
+O Doug refez a arte *"com volume de cabelo lateral menor"*, e o alvo foi acertado quase
+inteiro numa volta:
+
+| | v3 | **v4** | teto |
+|---|---|---|---|
+| corte no quadro grande | 20 504 px = **6,38%** | **63 px = 0,02%** | — |
+| folga que o RETRATO pede | **145,8 u** | **99,2 u** | 80 |
+| folga do topo | 23,3 px | **42,4 px** | > 0 |
+| `arte:figurinha` | 2,7 px | 4,7 px | 28,8 |
+| Gate −1 · `arte:traco` · `arte:borda` | aprovada · 0 · 0 | **aprovada · 0 · 0** | |
+
+**Faltavam 19,2 u de uma mecha só.** A peça morreu qualificada em tudo menos num eixo,
+e por menos de 4% da própria largura.
+
+## O ACHADO QUE FICA: a promoção tem uma SEGUNDA superfície, e eu não a tinha na conta
+
+Quando o Doug perguntou *"promover agora ou esperar?"*, a recomendação saiu com **um**
+custo na mesa: 6,38% cortados no quadro grande, que somem sozinhos quando a Frente B
+alargar o `viewBox` (doc 21 §b). **A premissa estava incompleta**, e quem mostrou foi o
+`npm test` da própria promoção:
+
+```
+FAIL  recorte-cabeca.test.ts > duplo-coque-real cabe inteiro na janela
+AssertionError: duplo-coque-real sangra pela ESQUERDA: expected 0 to be >= 15.4
+```
+
+`RECORTE_CABECA` (`src/lib/avatar/estilo/recorte.ts`) é o retrato de 32/40 px que
+`AvatarCabeca` serve na **navbar, dashboard, ranking, mural e ranking de turma** — cinco
+telas. Ele **não** deriva do `viewBox`: deriva de `FOLGA_LATERAL_DO_CABELO`, uma
+constante própria, hoje **80 u**, cujo comentário diz *"medido: 68,7 no pior caso do
+catálogo (o `assimetrico`)"*.
+
+Quanto cada peça pede, medido nas 18:
+
+| peça | pede |
+|---|---|
+| `moicano` (a mais estreita) | −44,8 |
+| as outras 15 | 8,3 a 56,7 |
+| **`dreadlocks`, a pior aprovada** | **75,0** — cabe por 5 |
+| `duplo-coque-real` v3 | 145,8 |
+| `duplo-coque-real` v4 | **99,2** |
+
+**A lição é da ORDEM, e é irmã da lição da manhã.** Aquela dizia *"meça o respingo nas
+peças aprovadas ANTES de tocar num passo compartilhado"*. Esta diz: **meça TODAS as
+superfícies que a peça atravessa antes de recomendar promover.** O quadro grande é uma;
+o retrato é outra; e nada avisa que existe uma segunda até o gate dela reprovar.
+
+## O que NÃO foi feito, e é de propósito
+
+**`FOLGA_LATERAL_DO_CABELO` não subiu.** Ela caberia a v4 em 80 → 100, e o custo era
+mensurável e pequeno: a janela alarga 7,6% e a cabeça de todo aluno fica ~7% menor nas
+cinco telas (a asserção irmã, *"a cabeça ocupa pelo menos metade da janela"*, seguiria
+passando com 64,5%). Foi levado ao Doug com esse número e **ele escolheu abolir a peça**.
+
+O argumento que decidiu, e ele fica escrito porque vale para a próxima:
+
+- o custo de subir a folga é pago por **todo aluno, para sempre, na tela mais vista**, e
+  por causa de uma peça **lendária** que a maioria nunca terá;
+- e aquele 80 é número que **acompanha o elenco**: se sobe para caber uma peça, sobe de
+  novo na próxima peça grande. É catraca sem freio, e a hora de não puxar é a primeira.
+
+Afrouxar o gate por peça nunca esteve na mesa.
+
+## O NÚMERO QUE A FRENTE B GANHOU, e é o que sobra de material
+
+O doc 21 §b decidiu alargar o `viewBox` para `0 −80 500 780` e travou em *"as 80
+unidades são chute"*, esperando um chapéu de prova para medir o eixo **vertical**. Estas
+artes mediram o **horizontal**, que ninguém tinha exercitado porque nenhuma peça tinha
+chegado perto:
+
+- as 17 promovidas cabem todas em u x **0 → 500**; nenhuma encosta;
+- a v3 pedia **−70,8 → 559,2**; a v4, **−24,2 → 504,2**;
+- **e o `viewBox` não é a única janela.** A Frente B tem de dimensionar `RECORTE_CABECA`
+  junto, senão ela conserta o quadro grande e deixa o retrato cortando.
+
+## A régua que fica
+
+`arte:figurinha` (parte 5) provou-se em produção nesta parte: nas v3 e v4 ela respondeu
+a bochecha em 6 s, antes de o Doug abrir o navegador. **O modo de falha que custou duas
+artes não volta.**
+
+## Gates
+
+Depois de apagar tudo: `git diff` **vazio** contra o índice em `src/`, `promovidas.ts` e
+`peso-baseline.json`. O catálogo segue em **14**, `MODELOS_TONAIS` em 14, e o seletor
+*"da arte · tonal"* com as 17 de sempre.
+
+## Onde o dia parou
+
+As três pendências da parte 4 continuam de pé — a migration não aplicada, a segunda
+peça inicial e o buraco do piso de saturação do Gate −1 — e agora há uma quarta: a
+**Frente B precisa cobrir três janelas**, não uma (`viewBox` vertical, `viewBox`
+horizontal, `RECORTE_CABECA`).
