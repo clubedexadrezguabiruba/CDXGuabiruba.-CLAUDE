@@ -74,8 +74,23 @@ aprovado**: o slot ainda não tem peça-padrão, e a primeira aprovada passa a s
 |---|---|
 | massa | **113 a 196 mil px** — o cabelo é 2 a 4× a barba. Cabelo com massa de barba está ralo |
 | largura | **nunca abaixo de ~430 u** — o crânio tem 364 e o cabelo o veste por fora |
-| topo | **pode passar do topo da imagem** (y negativo). A base tem 92 px de folga acima justamente para a ponta chegar medida |
+| topo | **pode passar do topo da IMAGEM, nunca do `viewBox`.** São coisas diferentes e a `coque` morreu na diferença — ver o aviso abaixo |
 | piso | quem desce, desce muito (596 u) ou quase nada (239 u). Isso é o elenco atual, não uma lei |
+
+⚠️ **O TETO REAL É O `viewBox`, e ele corta reto.** A base tem 92 px de folga acima da
+coroa no PNG de 1024, e é fácil ler isso como "a peça pode subir o quanto quiser". Não
+pode: o avatar montado é um `viewBox` de **500 × 700 que começa em y = 0**, e tudo
+acima disso **some com um corte horizontal**, não com uma ponta.
+
+A `coque` de 2026-08-22 foi reprovada por causa disto, medido: a caixa da máscara dela
+começava em **u y −47,5**, e **8 921 px — 9,0% da peça — ficavam fora**, guilhotinados
+numa linha reta de **214 px de largura**. O `chanel` aprovado começa em u y **8,3** e
+tem **0 px** cortados.
+
+Na prática, para o pedido: **peça que prende cabelo em cima — coque, rabo, crista —
+precisa nascer mais baixa do que o gerador quer desenhar.** Vale dizer com todas as
+letras que a peça inteira tem de caber na imagem com folga, e que o alto dela não
+encosta na borda de cima.
 
 ⚠️ **O que o cabelo NÃO pode**, e é do compositor, não de gosto (doc 23 §7.1): capuz,
 capa, gola por trás, ou cabelo passando **por cima do ombro**. O que fica atrás da
@@ -92,6 +107,35 @@ O gerador devolve na cor que quiser, e é **`restaurar-peca.ts`** que leva o mat
 180° preservando saturação e luminância. Pedir cor instrumental ao gerador para
 repintar depois é uma das quatro coisas que a Regra Inviolável nº 4 proíbe por nome, e
 o ciano do gerador morreu em 2026-08-13.
+
+## O contorno da peça se pede em AZUL-MARINHO — decisão do Doug, 2026-08-22
+
+**A causa, nas palavras dele:** *"a linha do contorno do cabelo é igual ao contorno do
+boneco e, quando a linha do contorno do cabelo se conflita com o do avatar, a esteira
+erra."* O passo 1 da esteira é *peça = o que difere da base*, e *preto sobre preto
+difere ~0*. É UM mecanismo com dois sintomas, os dois já pagos:
+
+- fio preto **sobre** o traço do boneco fica FORA da máscara — o furo do maxilar da
+  `trancada` v10, o canal da calota medido no Bloco A;
+- traço preto **novo** rente ao do boneco é indecidível — a mancha no ombro do
+  `chanel` de 2026-08-22 (1.928 px na esquerda + 93 na direita), que o Doug pegou a
+  olho com todos os gates verdes.
+
+**A regra: o contorno da peça vem em azul-marinho `#000080`, e FICA assim no PNG.**
+Não é o ciano proibido — o ciano era cor instrumental para repintar cor FINAL, e isto
+é desambiguação de LINHA numa peça que recolore inteira. Os dois porquês medidos:
+
+- **luminância ~9**: no render o contorno sai PRETO de graça — a máscara de tom
+  carrega luminância, e onde ela é ~0 aparece a forma de baixo, `var(--av-linha)`.
+  Nenhum passo de "voltar ao preto" existe, nem pode existir: `arte:cabelos --check`
+  re-roda a esteira sobre o PNG do repositório, e um PNG re-escurecido à mão
+  recriaria a ambiguidade a cada verificação. Cor mais clara que lum 40 é proibida —
+  é o defeito registrado da `entrada.png` (traço cinza lum 70, `arte:borda` reprova);
+- **128 níveis no canal azul** contra o preto do boneco: a esteira separa com 24 por
+  canal — são 5× a margem, com sobra para o reencode do Gemini (que o Gate −1 já
+  tolera, medido q95→q60).
+
+Para o olho é quase preto. Quem precisa da diferença é a máquina.
 
 ---
 
@@ -155,8 +199,8 @@ tiverem substituta aprovada.
 > quem escolhe a cor final é a criança que usa o avatar.
 >
 > **O acabamento.** A peça é feita de **fios (ou mechas) contados**, não de massa
-> lisa. Cerca de **um quinto** dela é linha preta — o contorno externo mais as linhas
-> finas que separam as mechas por dentro. **Todo o resto é meia-luz que varia**: a luz
+> lisa. Cerca de **um quinto** dela é linha azul-marinho `#000080` — o contorno
+> externo mais as linhas finas que separam as mechas por dentro. **Todo o resto é meia-luz que varia**: a luz
 > corre por dentro da forma, no sentido dos fios, em muitos tons contínuos. **Não
 > pinte a peça com uma cor chapada e não use degradê liso de aerógrafo.** O brilho é
 > pontual, na crista dos fios — **sem mancha de reflexo**.
@@ -166,18 +210,23 @@ tiverem substituta aprovada.
 > roupa encostada na peça fica **exatamente com a cor que já tem**. O volume vem da
 > própria luz interna da peça.
 >
-> **O contorno.** A peça é contornada por uma linha preta **da mesma espessura da
-> linha que contorna o corpo do boneco** — compare com ela na imagem e iguale.
-> **Preto puro, não cinza escuro.** A linha **dá a volta completa** e não afina em
-> lugar nenhum, **inclusive embaixo**, onde a peça encosta na roupa ou no fundo. A
-> peça nunca termina com a cor dela encostando direto em outra coisa.
+> **O contorno.** A peça é contornada por uma linha **da mesma espessura da linha
+> que contorna o corpo do boneco** — compare com ela na imagem e iguale. **A cor
+> dessa linha é AZUL-MARINHO BEM ESCURO, `#000080`** — não preta, não cinza: um azul
+> tão escuro que quase parece preto. TODA linha da peça usa esse azul: o contorno
+> externo e as linhas finas que separam as mechas por dentro. As linhas pretas do
+> BONECO continuam pretas como estão — o azul é só das linhas do CABELO. A linha
+> **dá a volta completa** e não afina em lugar nenhum, **inclusive embaixo**, onde a
+> peça encosta na roupa ou no fundo. A peça nunca termina com a cor dela encostando
+> direto em outra coisa.
 >
 > **A borda é serrilhada** pelo fim de cada fio — não é curva lisa nem reta.
 >
 > **O que não fazer, de novo, porque cada um destes já apareceu:** não acrescente
 > braços, mãos, orelhas nem pescoço. Não desenhe sombra projetada. Não mude o fundo.
-> Não escreva texto. Não deixe o contorno da peça em cinza escuro. Não cubra os olhos
-> nem toque na boca.
+> Não escreva texto. Não deixe o contorno da peça em preto nem em cinza — ele é o
+> azul-marinho `#000080` descrito acima. Não pinte o cabelo por cima da linha do
+> ombro do boneco. Não cubra os olhos nem toque na boca.
 >
 > Devolva um único PNG de 1024 × 1024.
 

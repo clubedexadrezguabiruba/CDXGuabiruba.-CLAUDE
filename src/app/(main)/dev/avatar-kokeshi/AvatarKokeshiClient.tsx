@@ -16,11 +16,26 @@ import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { IDS_DA_ARTE, PECAS_DA_ARTE, type IdDaArte } from "@/lib/avatar/estilo/pecas-da-arte";
+import { CABELOS_DA_ARTE } from "@/lib/avatar/estilo/cabelos-da-arte";
 import { ROSTOS } from "@/lib/avatar/catalogo";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
 
 /** Os slugs do slot `rosto` que existem hoje. Vazio até a primeira peça entrar. */
 const SLUGS_DE_ROSTO = Object.keys(ROSTOS);
+
+/**
+ * AS PEÇAS TONAIS DA ARTE — as que atravessaram a esteira, promovidas ou não.
+ *
+ * Elas precisam de seletor próprio pelo mesmo motivo das traçadas: uma arte que
+ * ainda não tem parecer do Doug não está em `CABELOS` e não tem `id` de catálogo,
+ * então não há como escolhê-la pelo seletor de cima. É o passo 9 da esteira
+ * (doc 19 §2) — o parecer acontece AQUI, antes da promoção, não depois.
+ *
+ * Quem já foi promovida aparece nos dois seletores, e isso é de propósito: o botão
+ * do catálogo e o botão daqui desenham o mesmo objeto, então divergência entre eles
+ * seria defeito visível.
+ */
+const CHAVES_TONAIS = Object.keys(CABELOS_DA_ARTE);
 
 /** Os quatro tamanhos do `SIZE_CONFIG`. 56 é o do ranking e é o que manda. */
 const TAMANHOS = [
@@ -85,7 +100,20 @@ export default function AvatarKokeshiClient() {
    * artes diferentes se diziam `"curto"`.
    */
   const [daArte, setDaArte] = useState<IdDaArte | undefined>(undefined);
-  const peca = daArte ? (PECAS_DA_ARTE[daArte] as Cabelo) : modelo;
+  /**
+   * A peça TONAL da arte, por chave. Terceiro estado pelo mesmo motivo do segundo:
+   * ela é um `Cabelo` inteiro sem `id` de catálogo enquanto não for promovida.
+   *
+   * A ordem de precedência é tonal → traçada → catálogo, e os três seletores se
+   * limpam entre si: dois botões acesos ao mesmo tempo fariam a página mostrar uma
+   * peça e o botão dizer outra, que é o defeito nº 1 desta rota.
+   */
+  const [tonal, setTonal] = useState<string | undefined>(undefined);
+  const peca = tonal
+    ? CABELOS_DA_ARTE[tonal]
+    : daArte
+      ? (PECAS_DA_ARTE[daArte] as Cabelo)
+      : modelo;
   /**
    * A peça do slot `rosto`, por slug. Ela é escolhida à parte do cabelo porque é
    * outro slot: no produto o aluno veste as duas ao mesmo tempo, e é justamente
@@ -155,9 +183,10 @@ export default function AvatarKokeshiClient() {
               onClick={() => {
                 setModelo(m);
                 setDaArte(undefined);
+                setTonal(undefined);
               }}
               className={`rounded border px-2 py-1 text-xs ${
-                m === modelo && !daArte
+                m === modelo && !daArte && !tonal
                   ? "border-zinc-900 bg-zinc-900 text-white"
                   : "border-zinc-300 text-zinc-600"
               }`}
@@ -177,7 +206,10 @@ export default function AvatarKokeshiClient() {
             <button
               key={id}
               type="button"
-              onClick={() => setDaArte(daArte === id ? undefined : id)}
+              onClick={() => {
+                setTonal(undefined);
+                setDaArte(daArte === id ? undefined : id);
+              }}
               className={`rounded border px-2 py-1 text-xs ${
                 daArte === id
                   ? "border-amber-600 bg-amber-600 text-white"
@@ -188,6 +220,33 @@ export default function AvatarKokeshiClient() {
             </button>
           ))}
         </div>
+        {/*
+          AS PEÇAS TONAIS DA ARTE — silhueta em vetor + máscara de luminosidade.
+          Seletor separado do traçado porque são famílias diferentes, e separado do
+          catálogo porque estar aqui NÃO é estar promovido. Ver `CHAVES_TONAIS`.
+        */}
+        {CHAVES_TONAIS.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">tonal:</span>
+            {CHAVES_TONAIS.map((chave) => (
+              <button
+                key={chave}
+                type="button"
+                onClick={() => {
+                  setDaArte(undefined);
+                  setTonal(tonal === chave ? undefined : chave);
+                }}
+                className={`rounded border px-2 py-1 text-xs ${
+                  tonal === chave
+                    ? "border-violet-600 bg-violet-600 text-white"
+                    : "border-violet-400 text-violet-700"
+                }`}
+              >
+                {CABELOS_DA_ARTE[chave].nome}
+              </button>
+            ))}
+          </div>
+        )}
         {/*
           O SLOT `rosto` — outro slot, outro seletor. Ele fica ao lado do cabelo
           porque o par é o que precisa ser conferido: a barba recolore junto com o

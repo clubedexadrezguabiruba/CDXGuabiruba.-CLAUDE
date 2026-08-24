@@ -75,17 +75,25 @@ import {
   n,
   spline,
 } from "./geometria";
+import { CABELOS_DA_ARTE } from "./cabelos-da-arte";
 import { PECAS_DA_ARTE } from "./pecas-da-arte";
 // Só o TIPO, e o ciclo com `tipos.ts` (que importa `CabeloOuModelo` daqui) é
 // inofensivo por isso: `import type` some na compilação, não há módulo em runtime.
 import type { TomDaPeca } from "./tipos";
 
 /**
- * Os 7 do catálogo. O `criar-personagem` escolhe um destes.
+ * Os 6 do catálogo. O `criar-personagem` escolhe um destes.
  *
  * Eram 5 (D11 do doc 12), todos paramétricos. `espetado` e `chanel` entraram em
  * 2026-08-07, vindos da **rota de arte** (`docs/avatar/19-rota-de-arte-runbook.md`)
  * depois de aprovação visual do Doug — o espetado no Bloco 9, o chanel no 14.
+ *
+ * O **`burst-fade`** entrou em 2026-08-22 e é o primeiro que não substitui ninguém:
+ * os cinco anteriores nasceram paramétricos e vão sendo refeitos peça a peça, mas
+ * este chegou direto pela esteira tonal. Por isso ele **cresce** o catálogo em vez
+ * de migrar de lista — e por isso é o primeiro cabelo que precisou de migration:
+ * `avatar_hair_catalog` tem uma linha por slug, e `users.avatar_hair` referencia
+ * ela. Ver `verify:cabelo-catalogo`, que compara as duas listas byte a byte.
  *
  * **As TRÊS famílias convivem, e a diferença é medível:** as listas
  * `MODELOS_PARAMETRICOS`, `MODELOS_TRACADOS` e `MODELOS_TONAIS` dizem quem é quem, e
@@ -105,7 +113,8 @@ export type ModeloCabelo =
   | "moicano"
   | "espetado"
   | "chanel"
-  | "assimetrico";
+  | "assimetrico"
+  | "burst-fade";
 
 /** Um ponto da franja: altura absoluta, e fração da largura da cabeça NAQUELA altura. */
 export interface PontoFranja {
@@ -703,7 +712,7 @@ function lacoTY(pts: readonly PontoFranja[], dy: number): string {
 // ---------------------------------------------------------------------------
 
 /**
- * OS CINCO MODELOS — dois paramétricos e três vindos da arte.
+ * OS CINCO MODELOS — **um** paramétrico e quatro vindos da arte.
  *
  * **Eram sete, e o Doug podou para cinco em 2026-08-08**, mantendo só o que ele
  * aprovou olhando o render: saíram `curto`, `cacheado` e `tranca`. Com a careca — que
@@ -718,8 +727,9 @@ function lacoTY(pts: readonly PontoFranja[], dy: number): string {
  * apontando para uma peça apagada. Quando a coluna nascer, o default tem de ser um
  * `ModeloCabelo` vivo, e a lista acima é a fonte.
  *
- * Os três últimos entram por espalhamento de `PECAS_DA_ARTE`, com a identidade
- * sobrescrita. Ver `MODELOS_PARAMETRICOS` / `MODELOS_TRACADOS` logo abaixo do
+ * Os três últimos entram por espalhamento de um literal GERADO, com a identidade
+ * sobrescrita — `PECAS_DA_ARTE` para os traçados, `CABELOS_DA_ARTE` para os tonais.
+ * Ver `MODELOS_PARAMETRICOS` / `MODELOS_TRACADOS` / `MODELOS_TONAIS` logo abaixo do
  * catálogo para quem é de qual família, e por que a lista é escrita e não filtrada.
  */
 export const CABELOS: Record<ModeloCabelo, Cabelo> = {
@@ -751,38 +761,39 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
   },
 
   /**
-   * Moicano: a única `faixa` dos cinco, com o crânio à mostra dos dois lados.
+   * MOICANO — a segunda peça **TONAL** do slot, aprovada pelo Doug em 2026-08-22.
    *
-   * O laço é uma faixa que sobe do meio da testa até o alto, alargando — e a crista
-   * que passa do crânio é extensão à frente, porque ela cruza a silhueta pelo topo,
-   * onde não há cabeça atrás para ocultar emenda nenhuma.
+   * Ela era **paramétrica**, e é a primeira das cinco a deixar aquela família: a
+   * crista era um laço de 11 pontos em coordenada absoluta, desenhado em código. A
+   * arte substitui os 11 pontos inteiros — `MODELOS_PARAMETRICOS` cai de dois para
+   * **um** (só o `coque`), e com ele caem 2 dos selos de `parametrico-congelado.ts`,
+   * que é a asserção negativa desta promoção.
+   *
+   * **É a peça mais leve do elenco tonal, e por larga margem:** 2 482 bytes de `d`
+   * contra 5 378 do chanel e 12 040 da `rosto-barba-trancada`, com máscara de 155×106
+   * (10,8 KB) contra 254×227 (31,2 KB). O risco 2 do Bloco A — o `d` grande cruzar a
+   * janela de 32 768 B do DEFLATE e derrubar o gzip do ranking — mirava justamente
+   * `coque` e `moicano`, e esta chegou pequena: a folga da bancada sobra inteira.
+   *
+   * Os números da esteira, medidos no dia: Gate −1 aprovada com **0 px e 0 ladrilhos**
+   * em rosto e corpo, deslocamento 0/0 e escala 100,00%; traço do boneco **inteiro**
+   * (0 px apagados) e contorno da peça **preto** (0 px de cinza), com os controles das
+   * duas réguas reprovando como devem; figurinha do 2c em **562 px** e **nenhuma
+   * janela de feição aberta**; esticão do tom lum 13 → 209.
+   *
+   * ⚠️ **A espessura do traço dela é a mais fina do elenco** — p50 **7,9 u**, com
+   * 59,6% do perímetro abaixo de 8 u, contra 9,6 u do chanel. A régua **não veta**, e
+   * isso está medido: ela não separa aprovado de reprovado no padrão tonal (o
+   * `espetado` reprovado é o MAIS grosso dos três, 10,4 u). Fica registrado porque a
+   * peça é fina e é a 32 px que isso apareceria.
+   *
+   * Mesma regra de identidade do espetado e do chanel: o gerador grava o `id` a partir
+   * do nome do arquivo, e é esta linha que o corrige em runtime.
    */
   moicano: {
+    ...CABELOS_DA_ARTE.moicano,
     id: "moicano",
     nome: "Moicano",
-    extensoes: [
-      {
-        // UMA peça só, em coordenada absoluta, que nasce dentro do crânio (y 136, com
-        // folga de sobra sobre as sobrancelhas) e sobe a 44 acima dele em três bicos.
-        //
-        // Absoluta, e não em `{t, y}`, porque é justamente o `t` que produzia o funil
-        // descrito no topo do arquivo. Aqui a largura da crista é a que está escrita:
-        // ~100 unidades constantes contra os 364 da cabeça, do começo ao fim.
-        forma: [
-          { x: 198, y: 96 },
-          { x: 184, y: 30 },
-          { x: 176, y: -34 },
-          { x: 216, y: 8 },
-          { x: 230, y: -76 },
-          { x: 264, y: -4 },
-          { x: 290, y: -60 },
-          { x: 314, y: 12 },
-          { x: 310, y: 54 },
-          { x: 306, y: 96 },
-          { x: 252, y: 108 },
-        ],
-      },
-    ],
   },
 
   /**
@@ -809,17 +820,30 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
   },
 
   /**
-   * CHANEL — a primeira peça com o preto **transcrito**, aprovada no Bloco 14.
+   * CHANEL — a primeira peça **TONAL** do slot, aprovada pelo Doug em 2026-08-22.
    *
-   * `nucleo` + `pretas`: a banda preta é a diferença entre duas formas cheias, com a
-   * espessura que a artista desenhou, em vez de um stroke de largura fixa. IoU do
-   * preto **80,1%** contra 34,4% da família sintetizada, e o traço interno — 866 px
-   * em 4 formas — que na outra família não tem onde morar.
+   * Ela era traçada (`nucleo` + `pretas`, aprovada no Bloco 14) e foi **refeita**: a
+   * `rosto-barba-trancada` v10 mostrou o acabamento que o Doug quis para o elenco
+   * inteiro — *"ficou perfeito, a melhor arte, quero este padrão sempre"* —, e o
+   * chanel é a primeira das cinco a atravessar a esteira nova.
    *
-   * É o pipeline permanente para arte nova. Mesma regra de identidade do espetado.
+   * O que muda de família: a traçada posteriza, porque `potrace` traça CONTORNO e
+   * contorno é binário, então uma arte de ~250 tons chegava ao boneco com dois ou
+   * três. A tonal é a **mesma silhueta duas vezes** — o preto embaixo, a cor em
+   * cima vestida por uma máscara de luminosidade servida como PNG cinza. A máscara
+   * não tem cor, então a peça recolore inteira por `var(--av-cabelo)` e a Regra
+   * Inviolável nº 4 continua de pé.
+   *
+   * **A arte VELHA morreu com a promoção**, por decisão dele: `chanel.png` foi
+   * sobrescrito e o `chanel` saiu de `ARTES` em `scripts/avatar/arte/pecas.ts`. Um
+   * nome de arquivo, uma arte, uma esteira — sem isso `arte:pecas` traçaria a arte
+   * nova pela esteira velha e escreveria uma peça que ninguém aprovou.
+   *
+   * Mesma regra de identidade do espetado: o gerador grava o `id` a partir do nome
+   * do arquivo, e é esta linha que o corrige em runtime.
    */
   chanel: {
-    ...PECAS_DA_ARTE.chanel,
+    ...CABELOS_DA_ARTE.chanel,
     id: "chanel",
     nome: "Chanel",
   },
@@ -844,11 +868,99 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
    *
    * A sobrancelha esquerda **não é desenhada** quando esta peça está no boneco: a
    * massa cobre 97,6% dela, e o resto lia como rebarba. Ver `sobrancelhaEscondida`.
+   *
+   * ---------------------------------------------------------------------------
+   * REFEITA NO PADRÃO TONAL EM 2026-08-22 — e tudo acima virou histórico
+   * ---------------------------------------------------------------------------
+   *
+   * A arte traçada (`entrada-2.png`) foi substituída por uma arte nova, desenhada já
+   * sob a regra do contorno azul-marinho, e a peça saiu de `PECAS_DA_ARTE` para
+   * `CABELOS_DA_ARTE`. `entrada-2` saiu de `ARTES` em `scripts/avatar/arte/pecas.ts`
+   * no MESMO commit, pelo motivo de sempre: um nome de arquivo, uma arte, uma esteira.
+   *
+   * **Atravessou a esteira sem um conserto** — é a primeira arte de cabelo que nasce
+   * inteira sob a regra do azul, e a chegada mediu o que a regra prometia: 20,2% da
+   * peça em linha instrumental, 0,9% ainda preta, e **3 947 px de azul por cima do
+   * traço do boneco**, que é o conjunto inteiro que a versão de linha preta perdia.
+   *
+   * Os números do dia: Gate −1 aprovada com **0 ladrilho** de forma em rosto e corpo,
+   * deslocamento 0/0, escala 100,00%; traço do boneco inteiro (18 px em 18 ilhas, a
+   * maior de 1 px contra piso de 8) e contorno da peça preto (0 px de cinza);
+   * **173 283 px** em 1 componente, 0 px descartados nas feições, figurinha do 2c em
+   * **524 px** e **nenhuma janela de feição aberta**; esticão do tom lum 16 → 192;
+   * máscara 267×344 (41,5 KB) e **5 014 bytes de `d`**.
+   *
+   * **É a peça mais pesada do elenco em pixels e a segunda mais leve em `d`** — 173
+   * mil px contra 119 mil do chanel, com 5 014 B contra 5 378. Massa grande não é `d`
+   * grande: o que engorda o `d` é contorno recortado, não área. Folga de 8 044 B na
+   * janela de 32 768 B do DEFLATE, e 30 bonecos em 17,5 KB de gzip — mais leve que o
+   * traçado que ela substitui (17,6 KB).
+   *
+   * As duas provas de render que o Bloco A deixou pendentes rodaram sobre ela e é a
+   * primeira peça de cabelo a exercitá-las: **figurinha 0 px vazados** (opaca — nada
+   * atrás dela é visto ao trocar pele e traje) e **canal 25 px (0,049%), 0 deles
+   * sobre o traço da base**. O risco 1 do Bloco A não apareceu.
+   *
+   * `folgaDoRosto` mede **−397,7 / −421,1** — ela desce muito mais que o chanel
+   * (−238), e é a peça que mais cobre o tronco do elenco tonal.
+   *
+   * ⚠️ **Ela é a peça que derrubou `SOBRANCELHA_COBERTA` de 85% para 50%**: mede
+   * 74,1% na sobrancelha esquerda, caiu dentro do vão que o limiar antigo declarava
+   * vazio, e o resto visível leu como rebarba na folha. Ver o comentário do limiar.
    */
   assimetrico: {
-    ...PECAS_DA_ARTE["entrada-2"],
+    ...CABELOS_DA_ARTE.assimetrico,
     id: "assimetrico",
     nome: "Assimétrico",
+  },
+
+  /**
+   * BURST FADE — aprovada pelo Doug em 2026-08-22, e a primeira que ENTRA em vez de
+   * substituir.
+   *
+   * As cinco anteriores são um elenco fechado sendo refeito peça a peça; esta chegou
+   * de fora, já desenhada no padrão tonal, e por isso é a primeira promoção que
+   * **cresce** `MODELOS_CABELO` — e a primeira que exige migration, porque
+   * `avatar_hair_catalog` guarda uma linha por slug e `users.avatar_hair` referencia
+   * ela. Um cabelo desenhado e não semeado é opção que a tela oferece e o servidor
+   * nega; `verify:cabelo-catalogo` compara as duas listas byte a byte.
+   *
+   * **É a primeira arte a exercitar as quatro réguas de `restaurar-peca.ts`** que
+   * nasceram do `coque` reprovado — `clareouABase`, `apagouAteOFundo`, `HALO_LINHA` e
+   * `PISO_COBERTURA` —, e era pendência declarada que nenhuma peça do repositório as
+   * exercitasse. Nela: 237 px de clareamento da base descartados, **0 px** apagados
+   * até o fundo, 2 028 px de borda com menos de 50% de cobertura, e **1 componente
+   * só** — sem forasteiro.
+   *
+   * Os números da esteira, medidos no dia: Gate −1 aprovada com **0 px e 0 ladrilhos**
+   * em rosto e corpo, deslocamento 0/0 e escala 100,00%; traço do boneco **inteiro**
+   * (0 px apagados) e contorno da peça **preto** (0 px de cinza), com os controles das
+   * duas réguas reprovando como devem; figurinha do 2c em **357 px** e **nenhuma
+   * janela de feição aberta**; esticão do tom lum 16 → 135; máscara 237×169 (22,9 KB)
+   * e **4 374 bytes de `d`**, folgado contra a janela de 32 768 B do DEFLATE.
+   *
+   * O tom dela é o mais contínuo do elenco: 256 valores distintos, **43,9%** no balde
+   * mais cheio e 52,4% abaixo de luminância 16, contra 47,0% e 55,7% do chanel.
+   *
+   * ⚠️ **O topo é DECEPADO pelo `viewBox`, e isso foi aprovado sabendo.** A caixa da
+   * peça começa em u y **−13,3**, então 1 868 px — **2,1% dela** — ficam acima do teto
+   * e saem numa reta horizontal de 204 px, que é **48% da largura da cabeça**. Na arte
+   * o topo é arredondado e fechado; o corte é do enquadramento, não do desenho. O
+   * `coque` reprovou por esse mesmo mecanismo com 9,0%, e o chanel corta 0 px. Fica
+   * registrado porque a saída, se um dia incomodar, é arte nova ~15 u mais baixa —
+   * nunca conserto de programa.
+   *
+   * Ela **não desce pelos lados**: `folgaDoRosto` mede +18,7 / +16,2 (o chanel mede
+   * −238), então a `rosto-barba-trancada` fica muito mais exposta sob ela do que sob
+   * o chanel. `coberturaDaSobrancelha` 0/0 e `coberturaDaCoroa` 1.
+   *
+   * Mesma regra de identidade das outras: o gerador grava o `id` a partir do nome do
+   * arquivo, e é esta linha que o corrige em runtime.
+   */
+  "burst-fade": {
+    ...CABELOS_DA_ARTE["burst-fade"],
+    id: "burst-fade",
+    nome: "Burst Fade",
   },
 };
 
@@ -869,29 +981,44 @@ export const MODELOS_CABELO = Object.keys(CABELOS) as ModeloCabelo[];
  * `completudeDasFamilias` cobra que as TRÊS somem `MODELOS_CABELO` — sem isso um
  * modelo novo nasceria fora delas e escaparia de todos os blocos de selo.
  */
-export const MODELOS_PARAMETRICOS = ["coque", "moicano"] as const satisfies readonly ModeloCabelo[];
+export const MODELOS_PARAMETRICOS = ["coque"] as const satisfies readonly ModeloCabelo[];
 
 /** Os promovidos pela rota de arte. Ver `docs/avatar/19-rota-de-arte-runbook.md`. */
-export const MODELOS_TRACADOS = [
-  "espetado",
-  "chanel",
-  "assimetrico",
-] as const satisfies readonly ModeloCabelo[];
+export const MODELOS_TRACADOS = ["espetado"] as const satisfies readonly ModeloCabelo[];
 
 /**
  * OS TONAIS — silhueta em vetor, claro-escuro em máscara de luminosidade.
  *
- * **Está vazia, e a lista vazia é o estado honesto de hoje** (2026-08-22): a espinha
- * do padrão existe, e nenhum dos cinco modelos passou pela esteira ainda. Ela enche
- * uma peça por vez, na promoção, depois do parecer do Doug sobre a folha — que é a
- * única aprovação que existe (doc 23 §6).
+ * Ela enche **uma peça por vez**, na promoção, depois do parecer do Doug sobre a
+ * folha — que é a única aprovação que existe (doc 23 §6). O `chanel` entrou em
+ * 2026-08-22 e saiu de `MODELOS_TRACADOS` no MESMO commit: um id nas duas listas
+ * reprova, e `completudeDasFamilias` cobra que as TRÊS somem `MODELOS_CABELO`.
  *
- * Vazia ela **ainda mede**: `completudeDasFamilias` cobra que as TRÊS listas somem
- * `MODELOS_CABELO`, então um modelo novo continua sem ter onde nascer fora delas. O
- * dia em que a primeira peça entrar aqui, ela sai de `MODELOS_TRACADOS` no MESMO
- * commit — um id nas duas listas reprova.
+ * O `moicano` foi o segundo, no mesmo dia, e veio da outra ponta: ele era
+ * **paramétrico**, então esta lista cresce enquanto `MODELOS_PARAMETRICOS` encolhe —
+ * é a primeira migração que apaga selo de congelado em vez de só movê-lo.
+ *
+ * O `assimetrico` foi o quarto, no mesmo dia, e é a segunda migração vinda dos
+ * traçados: `MODELOS_TRACADOS` fica com **um só** nome. Ele levou junto o `entrada-2`
+ * de `ARTES` em `pecas.ts`, e com ele a última peça que aquele gerador escrevia além
+ * do `espetado`.
+ *
+ * As outras duas (`espetado`, `coque`) continuam nas famílias antigas até cada
+ * substituta ser aprovada — nenhuma peça some antes de ter substituta, que é a regra
+ * do plano.
+ *
+ * O **`burst-fade`** foi o terceiro, no mesmo dia, e quebra o padrão dos dois
+ * primeiros: ele não veio de lista nenhuma. Enquanto os cinco do elenco antigo migram
+ * — esta lista cresce e as outras duas encolhem —, ele **entra por cima**, então aqui
+ * a soma das três aumenta em vez de se conservar. É o que `completudeDasFamilias`
+ * cobra contra `MODELOS_CABELO`, e é por isso que ela compara conjuntos e não contas.
  */
-export const MODELOS_TONAIS = [] as const satisfies readonly ModeloCabelo[];
+export const MODELOS_TONAIS = [
+  "chanel",
+  "moicano",
+  "assimetrico",
+  "burst-fade",
+] as const satisfies readonly ModeloCabelo[];
 
 /**
  * TODO MODELO ESTÁ EM EXATAMENTE UMA DAS TRÊS LISTAS — e esta função é a régua.
@@ -1191,12 +1318,75 @@ export function ateAPoligonal(poli: readonly Ponto[], p: Ponto): number {
 }
 
 /**
+ * O `d` DA PEÇA TONAL, VIRADO POLÍGONO — para as réguas não aprovarem por vacuidade.
+ *
+ * A família tonal não tem tabela de pontos: a borda dela é a string `d` que o
+ * `potrace` devolveu, e sem esta função `poligonoDaTouca` devolveria `null` para ela.
+ * O custo disso não é uma régua a menos — é uma régua que **passa sem medir**:
+ * `folgaDoRosto` responderia `Infinity` (não há o que medir, logo nada invade o
+ * rosto) e `coberturaDaCoroa` responderia `null` (não há touca, logo não há couro
+ * cabeludo à mostra). As duas aprovariam a peça pelo motivo errado.
+ *
+ * A amostragem é o que o `potrace` emite e nada mais: `M`, `L` e `C` absolutos, com
+ * repetição implícita de argumentos (`L a b c d` são dois segmentos). Cada cúbica sai
+ * em 8 cordas — a peça mede ~500 u de largura e a maior cúbica dela tem ~40 u, então
+ * a corda erra bem menos que a espessura do traço que se está medindo.
+ *
+ * Ela vive aqui, e não na rota de arte, porque quem faz a pergunta é a régua do
+ * catálogo: a rota não conhece `CAIXA_CABECA` nem `CABECA.contorno`.
+ */
+function poligonoDoTracado(d: string, porCubica = 8): Ponto[] {
+  const tokens = d.match(/[MLCZ]|-?\d*\.?\d+/gi) ?? [];
+  const pts: Ponto[] = [];
+  let i = 0;
+  let cmd = "";
+  let cur: Ponto = { x: 0, y: 0 };
+  const num = () => Number(tokens[i++]);
+
+  while (i < tokens.length) {
+    if (/^[MLCZ]$/i.test(tokens[i])) {
+      cmd = tokens[i].toUpperCase();
+      i++;
+      if (cmd === "Z") continue;
+    }
+    if (cmd === "M" || cmd === "L") {
+      cur = { x: num(), y: num() };
+      pts.push(cur);
+      // `M` seguido de mais pares é `L` implícito — a regra do SVG, e o `potrace` usa.
+      if (cmd === "M") cmd = "L";
+    } else if (cmd === "C") {
+      const x1 = num();
+      const y1 = num();
+      const x2 = num();
+      const y2 = num();
+      const x = num();
+      const y = num();
+      for (let k = 1; k <= porCubica; k++) {
+        const t = k / porCubica;
+        const u = 1 - t;
+        pts.push({
+          x: u * u * u * cur.x + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x,
+          y: u * u * u * cur.y + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y,
+        });
+      }
+      cur = { x, y };
+    } else {
+      // Comando que o `potrace` não emite: pular o número solto em vez de travar.
+      i++;
+    }
+  }
+  return pts;
+}
+
+/**
  * O LAÇO DA CAMADA ESCURA, como polígono — o que as réguas medem.
  *
- * Peça traçada: é a massa. Peça paramétrica: é a franja mais os dois cantos do
- * retângulo de fechamento, que é literalmente o que `touca()` emite — repetir a
- * geometria aqui em vez de derivá-la dela seria a segunda descrição de sempre, e
- * por isso os três números saem das mesmas constantes.
+ * Peça traçada: é a massa. Peça tonal: é a silhueta, amostrada do `d` por
+ * `poligonoDoTracado` — a MESMA forma que o compositor desenha, nunca uma cópia.
+ * Peça paramétrica: é a franja mais os dois cantos do retângulo de fechamento, que é
+ * literalmente o que `touca()` emite — repetir a geometria aqui em vez de derivá-la
+ * dela seria a segunda descrição de sempre, e por isso os três números saem das
+ * mesmas constantes.
  *
  * `null` para o modelo que não tem camada de touca nenhuma (o moicano, que é só
  * extensão). Quem chama trata o `null` pelo nome, em vez de receber um número que
@@ -1204,6 +1394,7 @@ export function ateAPoligonal(poli: readonly Ponto[], p: Ponto): number {
  */
 function poligonoDaTouca(c: Cabelo): Ponto[] | null {
   if (c.massa) return c.massa.map((p) => ponto(p, 0));
+  if (c.tonal) return poligonoDoTracado(c.tonal.formas[0].d);
   if (!c.pontos) return null;
   return [
     ...c.pontos.map((p) => ponto(p, 0)),
@@ -1281,6 +1472,13 @@ export function folgaDoRosto(modelo: CabeloOuModelo): { esq: number; dir: number
     const pts = m.massa.map((p) => ponto(p, 0));
     trechos.push([...pts, pts[0]]);
   }
+  // A TONAL entra pelo mesmo motivo, e o `d` dela já é um laço fechado: sem esta
+  // linha ela devolveria `Infinity` nos dois lados — "nenhuma tinta do cabelo passa
+  // por cima da sobrancelha" — sobre uma peça que desce ao lado do rosto inteiro.
+  if (m.tonal) {
+    const pts = poligonoDoTracado(m.tonal.formas[0].d);
+    trechos.push([...pts, pts[0]]);
+  }
   for (const e of m.extensoes ?? []) {
     if (!e.atras) trechos.push([...e.forma, e.forma[0]]);
   }
@@ -1337,8 +1535,12 @@ export function folgaDoRosto(modelo: CabeloOuModelo): { esq: number; dir: number
  * | `coque` | esq +53,4 · dir +43,6 | 0/21 · 0/21 |
  * | `moicano` | esq +55,2 · dir — | 0/21 · 0/21 |
  * | `espetado` | esq **+7,0** · dir **+3,7** | **0/21** · **0/21** |
- * | `chanel` | esq **−233,9** · dir **−238,2** | **0/21** · **0/21** |
+ * | `chanel` (tonal) | esq **−237,9** · dir **−240,7** | **0/21** · **0/21** |
  * | `assimetrico` | esq **−373,6** · dir +14,0 | **21/21** · 0/21 |
+ *
+ * *(O `chanel` foi remedido em 2026-08-22, quando a arte dele foi refeita no padrão
+ * tonal: era −233,9 · −238,2 na versão traçada. A cortina desceu ~4 u, e o veredito
+ * das duas colunas não mudou — cortina ao lado da bochecha, sobrancelha livre.)*
  *
  * ⚠️ **A última linha é o que a régua velha não sabia dizer, e ela vale a função
  * inteira.** `chanel` e `assimetrico` saem os dois com um negativo enorme, e são
@@ -1614,19 +1816,53 @@ const COROA = 0.25;
 /**
  * ACIMA DESTA FRAÇÃO COBERTA, A SOBRANCELHA NÃO É DESENHADA.
  *
- * **O limiar mora num vão vazio**, e isso é o que o torna honesto em vez de
- * arbitrário: medido no catálogo de hoje, toda peça dá **0%** de cobertura, e a
- * `entrada-2` dá **~96%**. Qualquer valor entre os dois se comporta igual — não há
- * peça na faixa do meio para o número decidir.
+ * ⚠️ **CAIU DE 0,85 PARA 0,50 EM 2026-08-22, POR DECISÃO DO DOUG.** As palavras dele:
+ * *"tudo bem cobrir sobrancelha. afrouxe essa regra (só não pode cobrir olhos e
+ * boca)"*. É a mesma forma da decisão da barba de dois dias antes — os tetos de
+ * tamanho caem, e o que fica de pé é só a feição que precisa continuar legível.
  *
- * A regra que moveria este valor, se um dia aparecer peça no vão: **o pedaço
- * visível tem de continuar lendo como sobrancelha.** Medido em close a 4× na
- * `entrada-2` antes do conserto, o resto de 4,4% lia como *rebarba no contorno do
- * cabelo* — quina reta de 3 px encostada no preto, sem afilar e sem pele em volta.
- * Sobrancelha meio coberta só funciona enquanto o resto guarda a assinatura da
- * forma: comprimento e afilamento **sobre pele**.
+ * **A sobrancelha deixou de ser feição protegida; olho e boca continuam.** E os dois
+ * que continuam não dependem deste número: eles são protegidos por *topologia*, no
+ * passo 2 de `construirPecaTonal` — a espinha da boca e as cápsulas dos olhos são
+ * recortadas da máscara e a figurinha (2c) mantém a janela delas aberta, com o gate
+ * contando quantas são. Este limiar só decide **desenhar ou não desenhar** uma
+ * sobrancelha que o cabelo já cobriu; ele nunca reprovou peça nenhuma.
+ *
+ * ---------------------------------------------------------------------------
+ * O VÃO CONTINUA VAZIO — e é por isso que 0,50 é medida, não gosto
+ * ---------------------------------------------------------------------------
+ *
+ * | peça | esq | dir |
+ * |---|---|---|
+ * | `coque` · `moicano` · `espetado` · `chanel` · `burst-fade` | 0,0% | 0,0% |
+ * | **`assimetrico`** (tonal, 2026-08-22) | **74,1%** | 0,0% |
+ * | `entrada-2` (o traçado que ela substituiu) | 97,6% | 0,0% |
+ *
+ * Qualquer valor em (0 %, 74,1 %) se comporta igual no catálogo de hoje — o vão que o
+ * comentário antigo alegava continua existindo, só ficou de 0 a 74 em vez de 0 a 96.
+ * **Trocar 0,85 por 0,50 não move o render de nenhuma peça além do `assimetrico`**, e
+ * os selos byte a byte cobram essa imobilidade.
+ *
+ * Dentro do vão, 0,50 é a metade: **coberta metade ou mais, some.** A regra escrita
+ * aqui antes continua sendo a régua de por que o resto não serve — *o pedaço visível
+ * tem de guardar a assinatura da forma: comprimento e afilamento **sobre pele*** —, e
+ * meia sobrancelha é onde essa assinatura ainda sobrevive, com uma ponta afilada
+ * inteira e metade do comprimento sobre pele.
+ *
+ * As duas medições que existem estão as duas **acima** do novo limiar e as duas
+ * reprovaram a olho, o que é o contrário de vacuidade:
+ *
+ * - `entrada-2`, 97,6% — em close a 4×, o resto de 4,4% lia como *rebarba no contorno
+ *   do cabelo*: quina reta de 3 px encostada no preto, sem afilar e sem pele em volta;
+ * - `assimetrico`, 74,1% — na folha de contato, o resto era *um caroço de ≈22×10 px,
+ *   um terço do comprimento da sobrancelha direita, grudado na borda escura do cabelo
+ *   e sem pele acima dele*, fundindo com o contorno preto e virando um calombo na
+ *   linha da mecha. É este segundo ponto que provou que 0,85 estava alto demais.
+ *
+ * **Nenhuma medição existe abaixo de 74,1%.** Se um dia aparecer peça entre 50% e
+ * 74%, ela é quem decide se 0,50 fica — pelo olho do Doug, como estas duas.
  */
-const SOBRANCELHA_COBERTA = 0.85;
+export const SOBRANCELHA_COBERTA = 0.5;
 
 /**
  * QUANTO DA SOBRANCELHA ESTÁ SOB A MASSA DO CABELO, de cada lado, em fração.
@@ -1636,10 +1872,18 @@ const SOBRANCELHA_COBERTA = 0.85;
  * nenhuma. A oclusão de SVG resolve a parte de baixo (a peça sobreposta é emitida
  * depois das feições desde 2026-08-08); esta régua resolve o resto.
  *
- * **Só a `massa` conta.** O paramétrico vive dentro do clip do crânio e não alcança
- * a testa — devolver 0 para ele não é vacuidade, é o fato, e o teste de controle
- * cobra exatamente isso. As extensões também ficam de fora: a de trás é ocultada
- * pela cabeça, e nenhuma peça do catálogo tem extensão frontal sobre a testa.
+ * **Só a peça SOBREPOSTA conta — `massa` ou `tonal`.** O paramétrico vive dentro do
+ * clip do crânio e não alcança a testa: devolver 0 para ele não é vacuidade, é o
+ * fato, e o teste de controle cobra exatamente isso. As extensões também ficam de
+ * fora: a de trás é ocultada pela cabeça, e nenhuma peça do catálogo tem extensão
+ * frontal sobre a testa.
+ *
+ * ⚠️ **A tonal entrou aqui em 2026-08-22 com a promoção do `chanel`, e ela era um
+ * buraco de verdade:** peça tonal é sobreposta pelos mesmos motivos da traçada — cai
+ * sobre a testa e é emitida depois das feições. Com o `!m.massa` de antes, uma tonal
+ * que tapasse 97% de uma sobrancelha responderia **0%**, `sobrancelhaEscondida`
+ * mandaria desenhá-la, e o resto de 3% leria como rebarba: o achado G5 de volta, na
+ * família nova. O `chanel` mede 0/205 dos dois lados, e é fato, não vacuidade.
  *
  * Amostra a faixa inteira da sobrancelha — 41 passos ao longo do comprimento × 5
  * através da espessura —, e não só a linha de centro: uma franja que corta a
@@ -1648,8 +1892,12 @@ const SOBRANCELHA_COBERTA = 0.85;
  */
 export function coberturaDaSobrancelha(modelo: CabeloOuModelo): { esq: number; dir: number } {
   const m = resolverCabelo(modelo);
-  if (!m.massa) return { esq: 0, dir: 0 };
-  const pts = m.massa.map((p) => ponto(p, 0));
+  const pts = m.massa
+    ? m.massa.map((p) => ponto(p, 0))
+    : m.tonal
+      ? poligonoDoTracado(m.tonal.formas[0].d)
+      : null;
+  if (!pts) return { esq: 0, dir: 0 };
 
   const AO_LONGO = 41;
   const ATRAVES = 5;

@@ -33,9 +33,9 @@
  *
  * O controle 6 de `arte:revisao` já pega a defasagem, mas ele **renderiza**: abre
  * navegador, compõe SVG, desenha folha. Caro demais para o CI, e ele só roda para
- * a arte que se passa por argumento — nunca para as quatro.
+ * a arte que se passa por argumento — nunca para todas as desta lista.
  *
- * `--check` gera as quatro em memória e compara a string com o arquivo em disco.
+ * `--check` gera todas em memória e compara a string com o arquivo em disco.
  * Sem render, sem imagem, sem escrita. É o que entra em `verify:arte`: o CI fica
  * vermelho quando `pecas-da-arte.ts` defasa do `converter()` que o produziu.
  */
@@ -47,11 +47,25 @@ import { converter } from "./converter";
 import { PASTA } from "./base";
 import { primeiraDivergencia, semCR } from "./gerado";
 
-/** As artes e o rótulo que cada uma leva na página. */
+/**
+ * As artes e o rótulo que cada uma leva na página.
+ *
+ * ⚠️ **O `chanel` SAIU daqui em 2026-08-22, e a saída é o modelo das próximas.** A
+ * arte dele foi substituída pela versão TONAL — o Doug aprovou a folha e decidiu
+ * que a nova fica com o mesmo nome de arquivo (`chanel.png` sobrescrito). Um nome
+ * de arquivo, uma arte: manter a linha aqui faria este gerador traçar a arte NOVA
+ * pela esteira VELHA e escrever uma peça que ninguém desenhou nem aprovou.
+ *
+ * `CABELOS.chanel` passou a espalhar `CABELOS_DA_ARTE.chanel` (família tonal), e é
+ * por isso que apagar a linha não deixa modelo sem peça. As outras duas seguem
+ * traçadas até cada substituta ser aprovada — Blocos C e D do plano.
+ */
 const ARTES: { arquivo: string; nome: string; nota: string }[] = [
   { arquivo: "entrada", nome: "Espetado", nota: "espetado, com pontas altas" },
-  { arquivo: "entrada-2", nome: "Assimétrico", nota: "largo, assimétrico, desce ao lado do rosto" },
-  { arquivo: "chanel", nome: "Chanel novo", nota: "chanel simétrico, gerado sobre a base oficial" },
+  // `entrada-2` saiu em 2026-08-22, na promoção do `assimetrico` tonal, pelo mesmo
+  // motivo que tirou o `chanel` daqui: um nome de arquivo, uma arte, uma esteira. A
+  // arte velha continua no disco como histórico; o que não continua é esta esteira
+  // traçando-a e escrevendo uma peça que ninguém mais usa.
 ];
 
 const SAIDA = "src/lib/avatar/estilo/pecas-da-arte.ts";
@@ -115,14 +129,22 @@ const CABECALHO = `/**
  * AS PEÇAS TRAÇADAS DA ARTE — a saída da rota, e a **fonte** das promovidas.
  *
  * ---------------------------------------------------------------------------
- * AS TRÊS ESTÃO NO CATÁLOGO — e desde 2026-08-08 não sobra nenhuma de fora
+ * TODA PEÇA DAQUI ESTÁ NO CATÁLOGO — e nenhuma sobra de fora
  * ---------------------------------------------------------------------------
  *
  * Em 2026-08-07 o Doug aprovou \`entrada\` (espetado) e \`chanel\`; em 2026-08-08,
- * \`entrada-2\` (assimétrico). As três foram promovidas: \`CABELOS.espetado\`,
- * \`CABELOS.chanel\` e \`CABELOS.assimetrico\` **espalham os objetos daqui** e
- * sobrescrevem só a identidade (\`id\` e \`nome\`). A geometria não é recopiada — duas
- * descrições da mesma borda é o defeito que a rota inteira evita.
+ * \`entrada-2\` (assimétrico). \`CABELOS.espetado\` e \`CABELOS.assimetrico\`
+ * **espalham os objetos daqui** e sobrescrevem só a identidade (\`id\` e \`nome\`). A
+ * geometria não é recopiada — duas descrições da mesma borda é o defeito que a rota
+ * inteira evita.
+ *
+ * ⚠️ **O \`chanel\` SAIU deste arquivo em 2026-08-22**, e não por poda: a arte dele
+ * foi REFEITA no padrão tonal da \`rosto-barba-trancada\`, o Doug aprovou a folha, e
+ * a nova ficou com o mesmo nome de arquivo. \`CABELOS.chanel\` passou a espalhar
+ * \`CABELOS_DA_ARTE.chanel\`, que é gerado por \`npm run arte:cabelos\` pela esteira
+ * de quem RECOLORE. Traçar a arte nova por aqui escreveria uma peça que ninguém
+ * desenhou — a família traçada posteriza, e o que ela devolveria da arte nova são
+ * dois ou três tons chapados de uma peça de ~250. Ver \`ARTES\` em \`pecas.ts\`.
  *
  * ⚠️ **Por isso, mexer neste arquivo mexe no catálogo.** Regerá-lo com uma arte
  * redesenhada move o render de um modelo do produto, e os selos de

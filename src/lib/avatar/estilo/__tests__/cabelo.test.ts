@@ -118,16 +118,46 @@ const camadasDaTouca = (c: Cabelo): number => {
 };
 
 /**
- * OS BYTES DAS DUAS PEÇAS PROMOVIDAS, medidos na promoção (2026-08-07).
+ * OS BYTES DAS PEÇAS DE ARTE PROMOVIDAS, medidos na promoção de cada uma.
  *
- * Eles estouram `ORCAMENTO_COMPOSTO.bytes` (10 240) e **isso não veta** — decisão A
- * do Doug, e o doc 15:463 já dizia que teto de bytes não veta arte aprovada. O
- * número fica aqui como registro exato em vez de sumir num teto folgado.
+ * Três dos quatro estouram `ORCAMENTO_COMPOSTO.bytes` (10 240) e **isso não veta** —
+ * decisão A do Doug, e o doc 15:463 já dizia que teto de bytes não veta arte
+ * aprovada. O número fica aqui como registro exato em vez de sumir num teto folgado.
+ *
+ * ⚠️ **O `moicano` CABE (9 731), e é o primeiro que cabe.** Até 2026-08-22 este
+ * bloco afirmava o estouro com um `toBeGreaterThan`, como se peça de arte fosse
+ * sempre mais pesada que paramétrica — e a tonal desmentiu: ela é o mesmo `d` duas
+ * vezes, e quando o `d` é curto o composto sai menor que a crista de 11 pontos que
+ * ela substituiu. A afirmação virou este parágrafo, que é onde ela sempre foi;
+ * quem reprova é o valor exato abaixo, que não mudou de papel.
  *
  * Quando um destes se mover, a pergunta é a mesma dos selos: *por que uma peça
  * aprovada mudou?* — e a resposta não é editar este número.
  */
-const BYTES_TRACADOS = { espetado: 13319, chanel: 11867, assimetrico: 14074 } as const;
+const BYTES_DA_ARTE = {
+  espetado: 13319,
+  // TONAL, promovida em 2026-08-22 — e o número CAIU de 14 074 para 12 176 nessa
+  // migração, o que é o padrão da família e não uma peça que encolheu: a tonal
+  // troca massa + núcleo + claras + pretas por silhueta + máscara, e o DEFLATE
+  // deduz a repetição do `d`. Ver as duas linhas abaixo, que caíram do mesmo jeito.
+  assimetrico: 12176,
+  // TONAL, promovida em 2026-08-22. Ela paga o `d` DUAS VEZES — a silhueta preta e a
+  // mesma forma vestida pela máscara — e ainda assim o boneco composto sai mais leve
+  // em gzip que a versão traçada (16,9 contra 17,8 KB em 30 bonecos, bancada do Bloco
+  // A): o DEFLATE deduz a repetição, e não deduzia massa + núcleo + claras + pretas.
+  chanel: 12620,
+  // TONAL, promovida em 2026-08-22, e a PRIMEIRA peça de arte que CABE no teto:
+  // 9 731 contra os 10 240 de `ORCAMENTO_COMPOSTO.bytes`. Ver o `it` abaixo — a
+  // asserção que dizia "o registro é do estouro" caiu com ela.
+  moicano: 9731,
+  // TONAL desde a origem, e a PRIMEIRA peça que ENTRA no elenco em vez de
+  // substituir — as outras eram um elenco fechado sendo refeito peça a peça. Por
+  // isso ela é a primeira que exigiu migration: `avatar_hair_catalog` guardava uma
+  // linha por slug, e um cabelo desenhado e não semeado é opção que a tela oferece
+  // e o servidor nega. Ela entrou no catálogo em 20260823110000, já na gramática
+  // nova, como `rare`.
+  "burst-fade": 11616,
+} as const;
 
 describe("a base careca não paga nada pelo slot de cabelo", () => {
   const careca = svgDe();
@@ -188,8 +218,20 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     // Vale para as duas famílias, e é a única forma da pergunta que sobrevive a um
     // laço fechado, onde "a última ponta" é vizinha da primeira.
     const cobertura = coberturaDaCoroa(modelo);
-    if (cobertura === null) {
-      expect(modelo).toBe("moicano");
+    // ⚠️ `null` ERA A SAÍDA DO MOICANO, e ela aprovava por VACUIDADE.
+    //
+    // Enquanto ele era paramétrico não havia tabela de pontos nem `d` para amostrar,
+    // então a régua não tinha o que medir e devolvia nada — e este teste dava por
+    // atendida a exceção sem ter olhado um pixel. Desde a promoção tonal dele
+    // (2026-08-22) `poligonoDoTracado` alimenta a régua, e nenhum dos cinco modelos
+    // devolve `null`. Esta linha existe para que voltar àquele estado REPROVE.
+    expect(cobertura, "a régua não teve o que medir — aprovar aqui é vacuidade").not.toBeNull();
+    if (modelo === "moicano") {
+      // O couro cabeludo à mostra dos dois lados **é** o moicano, e a exceção
+      // continua sendo dele. O que mudou é que ela passou a ser um NÚMERO: a peça
+      // cobre 48,5% da coroa, medido na arte aprovada pelo Doug em 2026-08-22.
+      // Antes a exceção era "a régua não mediu", que valia para qualquer coisa.
+      expect(cobertura).toBeCloseTo(0.4847, 4);
       return;
     }
     expect(cobertura).toBe(1);
@@ -218,7 +260,7 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
 
   it(`deixa testa sobre cada sobrancelha — ${FOLGA_ROSTO} u na desenhada, a arte na traçada`, () => {
     const f = folgaDoRosto(modelo);
-    if (cabelo.massa) {
+    if (cabelo.massa || cabelo.tonal) {
       // O piso da peça TRAÇADA não é `FOLGA_ROSTO` e não é verificável aqui: a folga
       // dela é um fato da arte, e o que o traço controla é não piorá-la — `folga da
       // arte − meio traço`, que exige o PNG do lado e é o gate 3 de
@@ -252,12 +294,12 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
   });
 
   it(
-    cabelo.massa
+    cabelo.massa || cabelo.tonal
       ? "REGISTRA os bytes — o teto não veta arte aprovada (decisão A)"
       : "cabe no teto de bytes do orçamento composto",
     () => {
       const bytes = Buffer.byteLength(svgDe(modelo), "utf-8");
-      if (cabelo.massa) {
+      if (cabelo.massa || cabelo.tonal) {
         // DECISÃO A, 2026-08-06: `ORCAMENTO_COMPOSTO.bytes` é autoimposto e o doc
         // 15:463 declara que ele **não veta arte aprovada**. Uma peça traçada de arte
         // real tem mais pontos que uma paramétrica, e as duas promovidas estouram.
@@ -267,8 +309,7 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
         // quando alguém o remede de propósito. É a mesma doutrina dos selos.
         //
         // Medido em 2026-08-07, na promoção:
-        expect(bytes).toBe(BYTES_TRACADOS[modelo as keyof typeof BYTES_TRACADOS]);
-        expect(bytes).toBeGreaterThan(ORCAMENTO_COMPOSTO.bytes); // o registro é do ESTOURO
+        expect(bytes).toBe(BYTES_DA_ARTE[modelo as keyof typeof BYTES_DA_ARTE]);
         return;
       }
       expect(bytes).toBeLessThanOrEqual(ORCAMENTO_COMPOSTO.bytes);
@@ -293,7 +334,12 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     // concordando com o emissor, que é o que este teste existe para não fazer.
     const escondida = sobrancelhaEscondida(cabelo);
     const sobrancelhas = (escondida.esq ? 1 : 0) + (escondida.dir ? 1 : 0);
-    expect(formas(svg)).toBe(19 - sobrancelhas + camadasDaTouca(cabelo) + grupos);
+    // A TONAL PAGA PELO QUE DECLARA, e não por uma constante: ela não tem touca (não é
+    // clipada pelo crânio — ver `camadasDaTouca`), e o que ela emite são as passadas de
+    // `tonal.formas`. Escrever "2" aqui seria a régua repetindo o emissor; `formas.length`
+    // é o DADO, e o dia em que uma peça tonal tiver três passadas a conta acompanha.
+    const passadas = cabelo.tonal?.formas.length ?? 0;
+    expect(formas(svg)).toBe(19 - sobrancelhas + camadasDaTouca(cabelo) + passadas + grupos);
   });
 });
 

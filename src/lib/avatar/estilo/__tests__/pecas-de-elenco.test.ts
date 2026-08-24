@@ -18,6 +18,7 @@
 
 import { describe, expect, it } from "vitest";
 import { compor } from "../compositor";
+import { MODELOS_CABELO, MODELOS_PARAMETRICOS } from "../cabelo";
 import { conferirSvg } from "../../svgContrato";
 import type { EstadoAvatar, PecaDeChapeu, PecaDeRosto, PecaSobreposta } from "../tipos";
 
@@ -274,8 +275,27 @@ describe("semTraco — a forma que vive dentro de outra", () => {
  * que alguém pusesse tudo sob o cabelo e a bandeira virasse enfeite.
  */
 describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
-  /** `chanel` é traçado, e traçado é o único que vira peça sobreposta. */
-  const COM_CHANEL = { ...BASE, modeloCabelo: "chanel" as const };
+  /**
+   * O ELENCO É UMA PEÇA **TRAÇADA**, e a escolha deixou de ser livre em 2026-08-22.
+   *
+   * Este bloco mede a partição em DUAS camadas — silhueta preta (`kk-tinta`) e núcleo
+   * colorido (`kk-cabelo-m`) —, e ela é do braço TRANSCRITO da família traçada. O
+   * `chanel` era esse elenco e virou TONAL na promoção daquele dia: a tonal sai por
+   * `sobrepor()` em duas passadas sem classe nenhuma, então os dois marcadores
+   * passariam a valer −1 e o bloco inteiro mediria o nada.
+   *
+   * `assimetrico` é o que sobrou com as duas camadas (o `espetado` é o braço
+   * SINTETIZADO e não tem `kk-tinta`). Quando ele também for refeito, este bloco
+   * troca de elenco outra vez — ou morre junto com a família, no Bloco G do plano.
+   *
+   * ⚠️ **A ordem da peça tonal não fica sem gate:** quem a mede é
+   * `pilha-de-camadas.test.ts`, que tem um elenco tonal sintético e cobra o mesmo
+   * contrato (`sob` × `sobre`) nas três famílias.
+   */
+  // A peça de referência dos testes que ainda precisam de UMA: a `assimetrico`, que
+  // é TONAL — a técnica definitiva. O nome antigo desta constante era `COM_CABELO`,
+  // e ele mentia desde a promoção dela.
+  const COM_CABELO = { ...BASE, modeloCabelo: "assimetrico" as const };
   /**
    * A peça traçada sai em DUAS partes, e a barba entra no meio das duas — então o
    * marcador tem de saber qual das duas está medindo.
@@ -290,9 +310,73 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
    * uma régua grossa demais, que dizia "a barba saiu depois do cabelo" quando ela
    * tinha saído no meio dele. O `search` de união é confortável e é onde o erro mora.
    */
-  const iSilhueta = (svg: string) => svg.indexOf(`<path class="kk-tinta"`);
-  const iNucleo = (svg: string) => svg.indexOf(`<path class="kk-cabelo-m"`);
   const iPeca = (svg: string) => svg.indexOf(`fill="#FF00FF"`);
+
+  /**
+   * ONDE O CABELO É DESENHADO — e o marcador atravessa as TÉCNICAS, de propósito.
+   *
+   * ⚠️ ESTE BLOCO MEDIA `kk-tinta` + `kk-cabelo-m` E QUEBROU EM 2026-08-23. Ele
+   * estava ancorado em `assimetrico`, chamando-a de "peça traçada", e ela migrou
+   * para o TONAL. Peça tonal não declara `nucleo`, então o ramo `if (nucleo)` de
+   * `compositor.ts:633` não roda e aquelas duas camadas nunca saem: o teste
+   * procurava −1 e achava −1, sobre um render que estava CERTO.
+   *
+   * **O TONAL É A TÉCNICA DEFINITIVA** (decisão do Doug): as peças que ainda são
+   * paramétricas ou traçadas vão ser convertidas. Então reancorar este bloco na
+   * "peça traçada da vez" só adiaria a mesma quebra para a próxima promoção. O que
+   * ele mede é o CONTRATO — *a barba veste, o cabelo cobre* —, e o marcador tem de
+   * sobreviver à conversão inteira.
+   *
+   * As duas técnicas marcam assim, medido:
+   *
+   *   tonal   `<defs><mask id="…-tom-cabelo"><image href="/items/cabelo/…"/></mask>`
+   *           e depois a silhueta vestida por `mask="url(#…)"`. A máscara é o
+   *           PRIMEIRO byte do cabelo no corpo do SVG;
+   *   antiga  `<path class="kk-tinta">` (silhueta preta), `kk-cabelo-m` (núcleo),
+   *           `kk-cabelo` (clara) — as camadas de laços simples.
+   *
+   * O corte em `</style>` não é detalhe: o CSS cita `var(--av-cabelo)` nas regras, e
+   * sem ele o marcador acharia o cabelo dentro da folha de estilo, antes de tudo.
+   */
+  const depoisDoCss = (svg: string) => svg.indexOf("</style>");
+
+  const MARCAS_DE_CABELO = [
+    `<mask id=`,
+    `<path class="kk-tinta" d="M`,
+    `<path class="kk-cabelo-m"`,
+    `<path class="kk-cabelo"`,
+    `mask="url(#`,
+  ];
+
+  const posicoes = (svg: string) => {
+    const corte = depoisDoCss(svg);
+    const r: number[] = [];
+    for (const marca of MARCAS_DE_CABELO) {
+      let i = svg.indexOf(marca, corte);
+      while (i > -1) {
+        r.push(i);
+        i = svg.indexOf(marca, i + 1);
+      }
+    }
+    return r.sort((a, b) => a - b);
+  };
+
+  /** O primeiro byte do cabelo no corpo do SVG. −1 se a peça não desenha nada. */
+  const iCabeloInicio = (svg: string) => posicoes(svg)[0] ?? -1;
+  /** O último. Com a bandeira, a barba fica antes dele; sem, depois. */
+  const iCabeloFim = (svg: string) => posicoes(svg).at(-1) ?? -1;
+
+  /**
+   * As peças que este bloco mede: **todas menos as paramétricas.**
+   *
+   * O paramétrico mora dentro do clip do crânio e sai muito antes das feições, então
+   * a bandeira é inerte nele — não é defeito, é limitação declarada em `PecaDeRosto`,
+   * e tem teste próprio logo abaixo. Derivar a lista de `MODELOS_PARAMETRICOS` em vez
+   * de escrevê-la é o que faz este bloco crescer sozinho a cada conversão para tonal.
+   */
+  const MEDIDAS = MODELOS_CABELO.filter(
+    (m) => !(MODELOS_PARAMETRICOS as readonly string[]).includes(m),
+  );
 
   it("com a bandeira, a peça entra ANTES do cabelo INTEIRO — silhueta preta inclusive", () => {
     // O contrato inteiro numa linha: barba → silhueta preta → núcleo colorido.
@@ -316,49 +400,52 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
     // A bandeira `cabeloPorCima` continua valendo e continua sendo o pedido dele de
     // 2026-08-19: a barba veste, o cabelo cobre. O que voltou é o cabelo cobrir
     // INTEIRO, com o contorno junto, em vez de só com as camadas coloridas.
-    const svg = compor({ ...COM_CHANEL, rosto: { ...FALSA, cabeloPorCima: true } });
-    const boca = svg.lastIndexOf("kk-risco");
+    //
+    // Roda em TODA peça do elenco, não numa só: era um teste sobre `assimetrico` e
+    // virou um sobre o contrato. Cada conversão para tonal entra aqui sozinha.
+    expect(MEDIDAS.length, "nenhuma peça a medir — o gate ficou vácuo").toBeGreaterThan(0);
 
-    expect(iPeca(svg), "a peça não foi emitida — o gate mediria o nada").toBeGreaterThan(-1);
-    expect(iSilhueta(svg), "não há silhueta preta — o gate mediria o nada").toBeGreaterThan(-1);
-    expect(iNucleo(svg), "não há núcleo colorido — o gate mediria o nada").toBeGreaterThan(-1);
-    expect(boca).toBeGreaterThan(-1);
+    for (const modeloCabelo of MEDIDAS) {
+      const svg = compor({ ...BASE, modeloCabelo, rosto: { ...FALSA, cabeloPorCima: true } });
+      const boca = svg.lastIndexOf("kk-risco");
 
-    expect(iPeca(svg)).toBeGreaterThan(boca);
-    expect(iPeca(svg), "a silhueta preta do cabelo saiu ANTES da barba").toBeLessThan(
-      iSilhueta(svg),
-    );
-    expect(iPeca(svg), "o núcleo do cabelo saiu ANTES da barba").toBeLessThan(iNucleo(svg));
+      expect(iPeca(svg), `${modeloCabelo}: a peça não foi emitida`).toBeGreaterThan(-1);
+      expect(iCabeloInicio(svg), `${modeloCabelo}: o cabelo não desenhou nada`).toBeGreaterThan(-1);
+      expect(boca, `${modeloCabelo}: não há boca`).toBeGreaterThan(-1);
+
+      // A barba entra depois das feições…
+      expect(iPeca(svg), `${modeloCabelo}: a barba saiu antes da boca`).toBeGreaterThan(boca);
+      // …e ANTES do cabelo INTEIRO, contorno junto. É a linha do contrato.
+      expect(
+        iPeca(svg),
+        `${modeloCabelo}: o cabelo começou a ser desenhado ANTES da barba`,
+      ).toBeLessThan(iCabeloInicio(svg));
+    }
   });
 
   it("SEM a bandeira, a MESMA peça sai depois das DUAS — as desigualdades invertem", () => {
     // O controle negativo do bloco, e é ele que prova que a bandeira é a causa. Sem
     // ele, o teste de cima passaria com um compositor que ignorasse o campo e pusesse
     // todo rosto sob o cabelo.
-    const svg = compor({ ...COM_CHANEL, rosto: FALSA });
+    for (const modeloCabelo of MEDIDAS) {
+      const svg = compor({ ...BASE, modeloCabelo, rosto: FALSA });
 
-    expect(iPeca(svg)).toBeGreaterThan(-1);
-    expect(iSilhueta(svg)).toBeGreaterThan(-1);
-    expect(iNucleo(svg)).toBeGreaterThan(-1);
-    expect(iPeca(svg)).toBeGreaterThan(iSilhueta(svg));
-    expect(iPeca(svg)).toBeGreaterThan(iNucleo(svg));
+      expect(iPeca(svg), `${modeloCabelo}: a peça não foi emitida`).toBeGreaterThan(-1);
+      expect(iCabeloFim(svg), `${modeloCabelo}: o cabelo não desenhou nada`).toBeGreaterThan(-1);
+      // Sem a bandeira a barba sai depois do cabelo INTEIRO — a desigualdade inverte
+      // contra o ÚLTIMO byte dele, e não contra o primeiro.
+      expect(
+        iPeca(svg),
+        `${modeloCabelo}: sem a bandeira a barba deveria sair depois de todo o cabelo`,
+      ).toBeGreaterThan(iCabeloFim(svg));
+    }
   });
 
-  it("a silhueta preta e o núcleo do cabelo saem COLADOS — byte a byte", () => {
-    // A condição que mantém os 11 selos de `parametrico-congelado.ts` de pé: nada
-    // entra entre a silhueta preta do cabelo e o núcleo colorido, nem com peça de
-    // rosto nem sem. Foi escrita em 2026-08-19, quando a peça saía partida em
-    // `{ fundo, frente }` e a barba entrava no meio; a partição caiu em 2026-08-20
-    // (ver o teste da ordem, acima), e a linha fica porque é ela que reprova se
-    // alguém tentar de novo — um caractere a mais ali mata os 11 selos de uma vez,
-    // com a causa longe daqui.
-    const svg = compor(COM_CHANEL);
-    expect(svg.indexOf(`<path class="kk-cabelo-m"`)).toBe(
-      svg.indexOf(`<path class="kk-tinta"`) +
-        svg.slice(svg.indexOf(`<path class="kk-tinta"`)).indexOf("/>") +
-        2,
-    );
-  });
+  // ⚠️ A ASSERÇÃO "silhueta preta e núcleo saem COLADOS" SAIU DAQUI em 2026-08-23,
+  // e foi para `nucleo-cabelo.test.ts`. Ela mede a partição em duas camadas da
+  // técnica ANTIGA, e **nenhuma peça do elenco vivo a exercita**: só uma fixture com
+  // `nucleo` declarado, que é justamente onde aquele arquivo trabalha. Mantê-la aqui
+  // sobre uma peça real a fazia medir o nada — foi assim que ela quebrou.
 
   it("a peça é emitida UMA vez só, com bandeira ou sem", () => {
     // A partição é sobre UMA peça, não sobre uma lista: escrever a emissão nas duas
@@ -367,7 +454,11 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
     // no ranking — só apareceria no orçamento de formas.
     const dosDoisJeitos: PecaDeRosto[] = [FALSA, { ...FALSA, cabeloPorCima: true }];
     for (const rosto of dosDoisJeitos)
-      for (const modeloCabelo of ["chanel", "coque"] as const)
+      // O elenco inteiro, e não uma amostra por família: o TONAL é a técnica
+      // definitiva e as outras vão ser convertidas, então uma lista por família
+      // envelheceria a cada promoção. A emissão dupla que este teste pega não é de
+      // uma técnica só.
+      for (const modeloCabelo of MODELOS_CABELO)
         expect(
           (compor({ ...BASE, modeloCabelo, rosto }).match(/fill="#FF00FF"/g) ?? []).length,
           `${rosto.cabeloPorCima ? "com" : "sem"} bandeira × ${modeloCabelo}`,
@@ -388,32 +479,39 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
     // nenhum paramétrico desce ao queixo —, mas está escrito em `PecaDeRosto` como
     // limitação, e este teste é o que impede que alguém "conserte" por engano.
     const comFlag = compor({ ...BASE, modeloCabelo: "coque", rosto: { ...FALSA, cabeloPorCima: true } });
-    expect(iNucleo(comFlag), "o `coque` passou a emitir massa fora do clip").toBe(-1);
+    expect(
+      iPeca(comFlag) < iCabeloInicio(comFlag),
+      "o `coque` passou a respeitar a bandeira — a limitação declarada mudou",
+    ).toBe(false);
     expect(comFlag).toBe(compor({ ...BASE, modeloCabelo: "coque", rosto: FALSA }));
   });
 
   it("o CHAPÉU não participa da partição — ele continua sendo o último", () => {
     const svg = compor({
-      ...COM_CHANEL,
+      ...COM_CABELO,
       rosto: { ...FALSA, cabeloPorCima: true },
       chapeu: { ...FALSA, id: "zz-chapeu", formas: [{ d: "M50 60 L70 60 L70 80 Z", cor: "#00FF00" }] },
     });
     const doChapeu = svg.indexOf(`fill="#00FF00"`);
 
     expect(doChapeu).toBeGreaterThan(-1);
-    expect(iPeca(svg)).toBeLessThan(iNucleo(svg));
-    expect(doChapeu).toBeGreaterThan(iNucleo(svg));
+    // A barba entra antes do cabelo; o chapéu sai depois de TODO ele. É o que
+    // "o chapéu é sempre o último" quer dizer em posição de byte.
+    expect(iPeca(svg)).toBeLessThan(iCabeloInicio(svg));
+    expect(doChapeu, "o chapéu entrou no meio do cabelo").toBeGreaterThan(iCabeloFim(svg));
   });
 
   it("o traço VIAJA junto com o preenchimento, e não fica para trás", () => {
     // `sobrepor()` emite fill e traço na MESMA chamada, então partir por peça leva os
     // dois juntos. Se alguém um dia juntar as passadas de traço das duas pontas "para
     // economizar", o contorno da barba volta para cima do cabelo e só isto acusa.
-    const svg = compor({ ...COM_CHANEL, rosto: { ...FALSA, cabeloPorCima: true } });
+    const svg = compor({ ...COM_CABELO, rosto: { ...FALSA, cabeloPorCima: true } });
     const traco = svg.indexOf(`<path class="kk-traco" fill-rule="evenodd" d="M10 20 L30 20 L30 40 Z"/>`);
 
-    expect(traco).toBeGreaterThan(-1);
-    expect(traco).toBeLessThan(iNucleo(svg));
+    expect(traco, "o traço da barba não foi emitido").toBeGreaterThan(-1);
+    expect(traco, "o traço da barba ficou para trás do cabelo").toBeLessThan(
+      iCabeloInicio(svg),
+    );
   });
 
   it("um chapéu que tente escolher lado NÃO COMPILA — a trava é do tipo", () => {

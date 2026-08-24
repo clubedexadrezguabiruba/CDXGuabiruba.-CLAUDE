@@ -4972,3 +4972,405 @@ da D27, não catálogo). `tracar-cabelo.ts` continua de pé — é biblioteca.
    regravar o selo DAQUELA peça, nunca em lote;
 3. **`PEDIDO-CABELOS.md` é do Bloco B** — ele nasce do prompt aprovado da trancada,
    com o parágrafo do "onde cabe" trocado pelo do cabelo (doc 24 §5.6).
+
+---
+
+# 2026-08-22 · `coque-simples` — REPROVADA pelo Doug, e apagada
+
+Arte de coque vinda de outro gerador (`coque_simples(rare).jpg`, JPEG, 249.085 B).
+Atravessou a esteira do rosto inteira com os três gates verdes — Gate −1 **APROVADA**
+(rosto 0, corpo 0, sobrancelha 0), `arte:traco` **0 px** apagados, `arte:borda` **0 px**
+de cinza — e o laudo saiu limpo: 61.382 px, figurinha 65 px de furo, **0 janela de
+feição**, esticão lum 0→138, tom 216×165 (17,3 KB), `d` 10.158 B. A conferência de 7
+perguntas fechadas sobre a folha também passou.
+
+**O Doug reprovou olhando, e mandou apagar.** É o padrão registrado: régua verde e o
+olho dele reprovando — nenhum número desta rota diz que a peça é bonita (§"o que os
+gates NÃO pegam"). Apagados: `coque-simples-crua.jpg`, `coque-simples.png` e
+`folha-cabelo-coque-simples.png`. Nada chegou a `NOMES`, a `CABELOS_DA_ARTE` nem à
+prateleira `public/items/cabelo/`.
+
+**As duas medições que sobrevivem, porque valem para a próxima arte do slot:**
+
+1. **a arte é anterior à regra do contorno em azul-marinho** — `restaurar-peca`
+   imprimiu `linha instr.: 0 px`, isto é, as linhas da peça vieram em PRETO. O
+   mecanismo *preto sobre preto difere ~0* estava ativo: a máscara mediu **360 u** de
+   largura contra os **364** do crânio, os ~2 u de cada lado comidos pelo traço do
+   boneco. Toda arte de cabelo pedida a partir de agora tem de vir no `#000080`;
+2. **um coque tem 2 componentes por construção** — a calota (37.813 px, x 77,5→436,7,
+   y 45,0→218,3) e o coque (23.504 px, y **−55,8**→46,7, que passa do topo do viewBox).
+   As caixas se sobrepõem em y e não há fresta entre elas. A massa total, 61.382 px, é
+   **metade** da faixa de 113–196 mil do doc 24 §4 — porque aquela faixa foi medida em
+   cabelos que descem pelos lados do rosto, e um corte preso não desce. Não é peça
+   rala; é a faixa que não cobria corte preso.
+
+---
+
+# 2026-08-22 · O CONTORNO AZUL — a causa que o Doug nomeou, e a esteira que aprendeu a ver
+
+> *"a linha do contorno do cabelo é igual ao contorno do boneco e, quando a linha do
+> contorno do cabelo se conflita com o do avatar, a esteira erra."* — o Doug, depois
+> de reprovar a olho duas peças que passaram em todos os gates.
+
+Ele estava certo, e a causa dele é **melhor que a que eu tinha**. O passo 1 da esteira
+é *peça = o que difere da base*, e **preto sobre preto difere ~0**. Um mecanismo, dois
+sintomas, os dois já pagos antes: o furo do maxilar da `trancada` v10 (o fio some da
+máscara e vira buraco) e a mancha no ombro do `chanel` (a esteira não decide de quem é
+a linha, e a figurinha fecha torto).
+
+## A régua que provou, e o número que fecha
+
+O gerador passa a desenhar **as linhas da peça em azul escuro**. Elas então diferem da
+base **inclusive por cima do traço preto**.
+
+| medida | v1 (linha preta) | v3 (linha azul) |
+|---|---|---|
+| linha da peça **sobre o traço do boneco**, dentro da máscara | **0%** — sumia inteira | **8 169 px, 100%** |
+| **figurinha (2c)** — furos que a esteira teve de tapar | 5 536 px | **32 px** |
+| `d` das duas formas | 6 256 B | 5 378 B |
+| máscara de tom | 282×243, 34,5 KB | 254×227, 26,8 KB |
+
+**A figurinha caiu de 5 536 px para 32.** Ela existia para tapar buracos que nasciam do
+preto-sobre-preto; com a linha marcada, os buracos não se formam. O 2c fica como rede,
+não como remendo principal.
+
+## O que NÃO funciona: recolorir arte pronta
+
+Tentado e medido antes da arte nova. Pedir ao Gemini que trocasse a cor do contorno de
+uma arte já entregue converteu **4,5%** dos cruzamentos. **No cruzamento o gerador é
+tão cego quanto a esteira** — ele vê uma linha preta só e não sabe que são duas. A arte
+precisa nascer com o azul.
+
+## Duas correções em `restaurar-peca.ts`, e as duas nasceram de reprovação
+
+### 1. A linha instrumental sobrevive ao passo de matiz — `(L, L, L+48)`
+
+Sem isso o passo 3 **acende** a linha: matiz → 180° transforma azul em ciano, e um
+`#0000FF` sairia com luminância **200** — o contorno da peça sairia BRILHANTE no avatar
+da criança.
+
+⚠️ **A primeira versão mapeava para um `#000030` CHAPADO, e o Doug reprovou a olho.**
+Medido depois: **52,0%** da peça num balde de tom só e **68,1%** dela abaixo de
+luminância 16 (contra 48,3% e 56,3% na arte de linha preta). Marcar a linha é dizer
+*"esta linha é da peça"* — não é dizer *"esta linha é toda igual"*. Com `(L, L, L+48)`
+a variação sobrevive: 47,0% e 55,7%, melhor que a arte de linha preta.
+
+**A pista que ficou aberta:** o contorno que o Gemini entrega tem luminância ~32, e
+preservá-la deixa o contorno cinza-escuro em vez de preto. O meio-termo não testado é
+**ancorar o piso** — mapear a luminância da linha para uma faixa que comece em 0 e
+guarde a variação por cima.
+
+### 2. O forasteiro volta a ser base — o piso de tamanho não bastava
+
+A v3 do `chanel` veio com o **rodapé do boneco redesenhado**: 11 832 px em u y 599→653,
+solto, longe de qualquer cabelo (a peça acaba em u y 385). Ele tem **9,9% da maior**,
+passou pelo piso de 5%, foi tratado como peça e sobreviveu à restauração — e o Gate −1
+reprovou por forma no corpo, corretamente. Mas a limpeza é trabalho do `restaurar-peca`.
+
+A régua nova é a REGIÃO: o componente do cabelo mede **97,7%** dos pixels em
+`permitida`; o do rodapé, **0,8%**. Piso em metade, no meio de um vão enorme. **O maior
+componente nunca é julgado por isso** — peça pode cobrir o tronco.
+
+## O que foi promovido, e o que reprovou
+
+- **`chanel` — APROVADO e promovido.** `chanel.png` é a arte nova (v3), `CABELOS.chanel`
+  espalha `CABELOS_DA_ARTE.chanel`, o id migrou de `MODELOS_TRACADOS` para
+  `MODELOS_TONAIS`, `chanel` saiu de `ARTES` em `pecas.ts` (um nome de arquivo, uma
+  arte, uma esteira), máscara em `public/items/cabelo/cabelo-chanel-tom.png`, selo de
+  bytes regravado só o dele (13 484 → **12 620**);
+- **`espetado` — REPROVADO pelo Doug**, e o defeito é **da arte**: *"cor vazando pelo
+  contorno do cabelo em todo o rosto, especialmente acima da sobrancelha direita"*. A
+  arte está no disco (`espetado-crua.jpg`, `espetado.png`) e passou todos os gates.
+
+### O que já está descartado no espetado, medido — para ninguém remedir
+
+| régua | chanel (aprovado) | espetado (reprovado) | separa? |
+|---|---|---|---|
+| espessura do traço, p50 | 9,6 u | **10,4 u** | **não** — o reprovado é MAIS grosso |
+| perímetro abaixo de 8 u | 38,3% | **6,6%** | **não** |
+| tom na aresta (anel 0) | lum 70, 35% claros | lum 38, 11% claros | **não** — mais escuro |
+| render, anel 0 | lum 67, 43% já é cor | lum 65, 42% já é cor | **não** |
+| cor encostando em claro sem linha | 3 810 px / 148 trechos | 4 338 px / 145 trechos | **não** |
+
+**Não é espessura e não é propriedade global da borda.** O próximo pedido tem de atacar
+a **opacidade** do contorno — a cor atravessa a linha em vez de parar nela —, nunca
+pedir linha mais grossa.
+
+## Três buracos de régua que a promoção do chanel fechou
+
+A família tonal não tem tabela de pontos, então `poligonoDaTouca` devolvia `null` e as
+réguas **passavam sem medir**. `poligonoDoTracado` (em `cabelo.ts`) amostra o `d` do
+potrace em cordas e alimenta as três:
+
+| régua | antes (vazio) | agora, no chanel |
+|---|---|---|
+| `coberturaDaCoroa` | `null` | **1** |
+| `folgaDoRosto` | `Infinity` | esq **−237,9** · dir **−240,7** |
+| `coberturaDaSobrancelha` | `0` por `!m.massa` | **0/205 dos dois lados**, medido |
+
+## As réguas de bancada desta rodada (`.scratch/cabelos/`, fora do git)
+
+`chegada.ts <arte-crua>` — a conferência de chegada: fração de linha azul (alvo ~20%),
+linha ainda preta, azul sobre o traço do boneco, e quanto mexeu no corpo. **Rodar SEMPRE
+antes de gastar esteira.** Mais `tons.ts` (achatamento do tom), `borda-vaza.ts` (a faixa
+da borda no tom), `render-borda.ts` e `onde-vaza.ts` (o mesmo no render), `close2.ts`
+(close arte × render em coordenada medida), `componentes.ts`, `ladrilhos.ts`.
+
+
+---
+
+# 2026-08-22 · `coque` — REPROVADA pelo Doug e apagada, e a esteira aprendeu quatro coisas
+
+Arte de coque vinda do Gemini, em **duas idas**: a primeira com sombra projetada, a
+segunda depois de o Doug pedir a remoção. Ela atravessou a esteira inteira com os três
+gates verdes nas duas versões e **o Doug reprovou a olho**, como no `coque-simples`.
+Apagados `coque-crua.png`, `coque.png`, `folha-cabelo-coque.png` e a pasta `coque/`.
+Nada chegou a `NOMES`, a `CABELOS_DA_ARTE` nem à prateleira.
+
+**A causa medida da reprovação está no pedido agora** (`PEDIDO-CABELOS.md`, "o teto real
+é o `viewBox`"): a caixa da máscara começava em **u y −47,5**, e **8 921 px — 9,0% da
+peça — ficavam acima do `viewBox`**, cortados numa linha reta de 214 px. A coroa do
+coque era guilhotinada. O `chanel` aprovado começa em u y 8,3 e corta 0 px.
+
+## O que a rodada deixa de pé: quatro réguas novas em `restaurar-peca.ts`
+
+O Doug reprovou três defeitos a olho — *"vazou azul da mecha lateral esquerda"*,
+*"vazou azul do topo direito da cabeça, exterior"* e *"a sombra natural da lateral
+direita do rosto ficou pintada de azul"*. A leitura da folha por subagente provou que
+**não eram três defeitos: era um mecanismo em três lugares**, mais um segundo mecanismo
+por baixo. As quatro réguas que nasceram disso valem para toda arte futura.
+
+### 1. `clareouABase` — o gerador APAGA o sombreado do boneco
+
+A causa que o Doug nomeou, e ele estava literalmente certo. A base tem sombreado próprio
+na lateral do rosto (luminância 102 a 186 em x 560→730 · y 300→470). O gerador pintou
+pele LISA por cima:
+
+```
+x=710 y=340    base 200,152,112  →  crua 229,167,118   dif 29  →  saída 118,229,229
+```
+
+Diferença 29 > `NIVEL`, então virou peça, e o matiz 180° devolveu ciano brilhante no
+rosto — **4 063 px num bloco só**. A régua é a direção da luminância: **tinta escurece,
+apagamento clareia**. Só onde a base é clara (lum ≥ 100), só clareamento, só salto ≤ 40.
+
+⚠️ **Régua de COR foi tentada e não separa**: a crista de cabelo castanho tem a mesma
+cromaticidade da pele. Medido — não remeça.
+
+### 2. `apagouAteOFundo` — o gerador apaga o boneco ATÉ O FUNDO
+
+A mesma doença no traço preto, que a régua 1 exclui de propósito. O gerador apagou **320
+px do contorno** no alto da cabeça e pintou o FUNDO por cima; na arte o aro é quase
+invisível (Δ 24), no traçado vira **10 px de teal cheio**. A régua não tem zona
+cinzenta: **a arte pintou a cor do fundo onde a base não era fundo**, e peça da cor do
+fundo seria invisível.
+
+Ela também absorve o **rodapé apagado**, que antes saía pela regra do forasteiro:
+11 461 px no `coque`, 11 667 px no `chanel`. Os dois geradores fazem isso sempre.
+
+### 3. `HALO_LINHA` — o antialias da linha instrumental TAMBÉM é linha
+
+`ehLinhaInstrumental` exige lum < 60, e o teto existe para que cabelo pintado de azul
+não vire marcação. Mas a linha some num antialias que mistura o `#000080` com o que
+estiver do outro lado: onde esse lado é claro, o pixel do meio é azul **e claro**, passa
+do teto e cai no matiz. Eram **1 393 px** saindo com luminância 186. O conserto não mexe
+no teto — a linha **cresce 2 px a partir do núcleo já reconhecido**, só por pixel
+azul-dominante, então a semente é sempre escura.
+
+### 4. `PISO_COBERTURA` + `ANEIS_DE_BORDA` — a silhueta é binária, o antialias não
+
+A família tonal desenha duas formas com o mesmo `d`, e não existe alpha: um pixel de
+borda que é 30% cabelo entra **como 100% cabelo**. Medido na folha:
+
+```
+arte (714,180)  248,255,255  →  traçado  35,138,139     (quase branco vira teal cheio)
+arte (730,360)  169,219,219  →  traçado  30,122,123
+```
+
+A régua é a mistura `A = α·C + (1−α)·B`, com `C` estimado pelo vizinho mais coberto num
+raio de 3, e `α` por projeção. Fica quem tem **α ≥ ½** — sem limiar arbitrário.
+
+⚠️ **Ela SÓ vale na borda, e o miolo ensinou isso caro.** A primeira versão julgava a
+peça inteira e a figurinha saltou de 186 para **6 229 px de furo**: dentro da peça a luz
+varia muito, então a crista clara de um fio, projetada contra o vizinho escuro, saía com
+α < ½ sendo 100% peça. Com os 3 anéis externos só, a figurinha voltou a **464 px**. O
+modelo da mistura descreve a borda; no miolo não há base embaixo e a conta perde sentido.
+
+### 5. `voltaABase` — e esta nasceu de reprovação de gate
+
+As três réguas acima tiravam pixel da peça, e só. A franja de 4 px do passo 4 então o
+preservava **com a cor do gerador** — nem peça, nem boneco. `arte:traco` reprovou com
+**87 px em 22 ilhas**, a maior em u x 413→420 · y 68→76, exatamente onde o contorno
+tinha sido apagado: o que contava como "coberto pela peça" virou "traço apagado", e o
+gate estava certo. As três réguas terminam na mesma frase: **a base volta**. Depois:
+28 px em 28 ilhas, maior de **1 px** contra um piso de 8 — exit 0.
+
+## O que foi tentado e DESCARTADO, medido
+
+**"A peça é o que o contorno azul fecha"** — inundar a partir de fora, atravessando só
+peça que não é linha, e chamar de véu o que a inundação alcança. É a ideia mais elegante
+da rodada e **o contorno não fecha**: vazou por **46,0% do `coque`** e **25,4% do
+`chanel`**. Não reproponha sem antes provar que o contorno fecha.
+
+## O efeito medido, antes e depois
+
+Nas três caixas que o Doug apontou, contando **pixels claros** — os que viram cor cheia
+no traçado:
+
+| caixa | antes | depois |
+|---|---|---|
+| mecha lateral esquerda · x 322→352 · y 386→476 | 376 | **25** |
+| topo direito exterior · x 698→743 · y 165→224 | 408 | **78** |
+| lateral direita do rosto · x 646→730 · y 256→374 | 1 554 | **50** |
+
+Ciano claro sobre pele, na peça inteira: **5 503 → 962 px** já na primeira régua.
+
+## O CONTROLE no `chanel` promovido — e por que ele não corre risco
+
+`cabelos.ts` roda `construirPecaTonal` sobre o **`.png` já restaurado**; `restaurar-peca`
+não está no caminho do `--check`. Mexer nele não pode quebrar peça promovida, e
+`verify:arte` exit 0 comprova.
+
+Ainda assim, o número: refazendo o `chanel` pela esteira nova, a máscara vai de
+422,5×377,5 para **422,5×375** e o `d` de 2 689 para **1 927 B**. A silhueta fica mais
+enxuta. **O elenco fica com uma peça da regra velha** — é o custo declarado, e ele se
+paga sozinho quando o `chanel` for refeito ou quando as outras quatro entrarem.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**640 testes** · `verify:arte` **exit 0** · e na arte reprovada, antes de apagar:
+`arte:gate` APROVADA (rosto 0, corpo 0, sobrancelha 0), `arte:traco` 0, `arte:borda` 0.
+
+## O que fica pendente, declarado
+
+1. **Nenhuma peça no repositório exercita as quatro réguas novas.** Elas nasceram sobre
+   uma arte que foi apagada, com controle no `chanel` e nada mais. A primeira arte que
+   passar por aqui é quem as prova de verdade;
+2. **O blush não é coberto por régua nenhuma.** O gerador pintou rubor na bochecha — em
+   uma ida só na esquerda, na outra nas duas. É *escurecimento com desvio de matiz*,
+   mecanismo diferente dos quatro acima. Nas duas vezes o piso de ruído deu conta (o
+   componente solto), mas quando ele encosta na mecha vira peça: medido em 1 114 px na
+   bochecha direita. Se aparecer de novo, é régua nova ou é cláusula no pedido;
+3. **O teto do `viewBox` entrou no `PEDIDO-CABELOS.md`** e ainda não foi exercitado por
+   nenhum pedido.
+
+---
+
+# 2026-08-22 · `assimetrico` tonal — a esteira passou limpa, e a SOBRANCELHA caiu no vão
+
+A 3ª peça do elenco tonal (depois de `chanel` e `moicano`). Arte do Gemini já com o
+contorno em azul-marinho, 1024², sobre a base oficial. **Atravessou a esteira inteira
+sem um conserto** — nenhuma régua reprovou, nenhuma reentrada.
+
+## A chegada, antes de gastar esteira
+
+| medida | `assimetrico` | alvo |
+|---|---|---|
+| peça (difere da base) | 176 882 px | faixa 113–196 mil (doc 24 §4) |
+| linha **azul** | 35 661 px = **20,2%** | ~20% |
+| linha ainda **preta** | 1 508 px = **0,9%** | perto de 0 |
+| azul **sobre o traço do boneco** | **3 947 px** | > 0 — o conjunto que a v1 perdia inteiro |
+
+**É a primeira arte que nasce inteira sob a regra do contorno azul**, e a chegada
+mediu o que a regra prometia: a linha da peça existe por cima do traço do boneco em
+vez de sumir nele.
+
+## Os três gates, e as quatro réguas do `coque` finalmente exercitadas
+
+`restaurar-peca` — **1 componente**, 325 px de ruído, `clareouABase` 139 px,
+`apagouAteOFundo` 120 px, cobertura 3 539 px nos 3 anéis de borda. As quatro réguas
+nasceram sobre uma arte que foi apagada (o `coque`), com controle só no `chanel`; a
+pendência nº 1 daquele bloco **fecha aqui** — elas rodaram sobre a arte que ficou, e
+os números são pequenos, que é o que se espera de arte limpa.
+
+| gate | resultado |
+|---|---|
+| **Gate −1** | **APROVADA** — forma **0 ladrilho** em rosto e corpo, deslocamento 0/0, escala 100,00%. Dos 27 150 px nas protegidas, **98,7% é peça cobrindo o boneco**, 321 px (1,2%) não explicado |
+| `arte:traco` | **18 px em 18 ilhas, maior 1 px** contra piso de 8 — traço do boneco inteiro. Controle reprovou nas duas alturas |
+| `arte:borda` | **0 px de cinza** — contorno preto. Contra-controle (preto 20) passou, como deve |
+
+## A peça
+
+`cabelo-assimetrico` · **173 283 px** · 1 componente · **0 px** descartados nas
+feições · figurinha do 2c **524 px** com **0 janela de feição** · esticão lum
+**16 → 192** · tom **267×344** (42 510 B) · `d` **5 014 B** nas 2 formas.
+
+**A caixa da máscara começa em u y 12,5** — o teto do `viewBox` que matou o `coque`
+(y −47,5, 9,0% da peça guilhotinada) não é tocado. Foi a primeira coisa conferida.
+
+### As duas pendências de bancada do Bloco A, reaplicadas
+
+| régua | `assimetrico` | o que diz |
+|---|---|---|
+| **prova da figurinha no render** | **0 px vazados de 51 041 (0,000%)** | opaca — nada atrás dela é visto |
+| **canal** (fecha R=9 − máscara) | 163 px, 21 sobre o traço da base | vazou **25 px** (0,049%), **0 sobre o traço** |
+| vazamento em concavidade do desenho | 42 px de 44 | régua larga, não peça furada — igual ao medido no Bloco A |
+
+O risco 1 do Bloco A (*"fio claro sobre o traço do crânio abre canal onde aparece
+PELE"*) **não apareceu**, e desta vez sobre arte desenhada como figurinha, que era a
+ressalva declarada lá.
+
+### O risco 2 — peso, e sobra folga
+
+| caso | 1 boneco | folga na janela (32 768 B) | 30 bonecos, gzip |
+|---|---|---|---|
+| careca + trancada | 19 314 B | +13 454 | 14,6 KB |
+| **`assimetrico` tonal** + trancada | **24 724 B** | **+8 044** | **17,5 KB** |
+| `chanel` traçado (o de hoje) + trancada | 25 081 B | +7 687 | 17,6 KB |
+
+A peça mais pesada do elenco tonal em pixels (173 mil, contra 119 mil do `chanel` e
+40 mil do `moicano`) tem o **2º menor `d`** — 5 014 B. Massa grande não é `d` grande:
+o que engorda o `d` é contorno recortado, não área.
+
+## A leitura da folha — 6 perguntas fechadas, subagente, 4 min
+
+Cinco passaram: as mesmas partes da arte (só três sujeirinhas não migraram, e a peça
+ficou mais limpa sem elas), o claro-escuro modelado fio a fio em vez de mancha
+chapada, contorno contínuo e miolo opaco, boneco intacto, boca e os dois olhos
+visíveis.
+
+**A sexta reprovou, e era a que a régua tinha previsto.**
+
+### `SOBRANCELHA_COBERTA` — a primeira peça a cair DENTRO do vão
+
+`coberturaDaSobrancelha` mede **esq 74,1% · dir 0%**. O limiar é **85,0%**, e o
+comentário dele diz, com todas as letras, que o número é honesto *porque mora num vão
+vazio*:
+
+| modelo | esq | dir |
+|---|---|---|
+| `coque` · `moicano` · `espetado` · `chanel` | 0,0% | 0,0% |
+| **`assimetrico` tonal (novo)** | **74,1%** | 0,0% |
+| `assimetrico` traçado (`entrada-2`, em produção) | 97,6% | 0,0% |
+
+Abaixo de 85% a sobrancelha **é desenhada**. A leitura da folha mediu o que sobra:
+*"um caroço arredondado de ≈22×10 px, cerca de um terço do comprimento da direita,
+grudado na borda escura do cabelo, sem nenhuma pele acima dele — funde com o contorno
+preto e vira um calombo na linha da mecha."* É o achado **G5** de volta, na família
+nova, e é exatamente o que o doc do limiar escreveu como regra de movimento:
+*"o pedaço visível tem de continuar lendo como sobrancelha."*
+
+O subagente mediu o mesmo caroço nas colunas 1 e 2 da folha: **o recorte vem da ARTE**,
+não do traçado.
+
+**O vão continua enorme depois do achado** — 0,0% de um lado, 74,1% do outro. Qualquer
+valor em (0 %, 74,1 %) se comporta igual no catálogo de hoje.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**650 testes** · `verify:arte` **exit 0**.
+
+`arteDaPecaNoDeploy` **reprovou uma vez e estava certo**: `cabelo-assimetrico-tom.png`
+não estava rastreado pelo git, e arquivo ignorado não chega à Vercel por mais que
+exista nesta máquina. `git add` e verde. É a terceira vez que esse gate paga o próprio
+custo.
+
+## Onde parou
+
+A peça está em `CABELOS_DA_ARTE` e aparece no seletor *"da arte · tonal"* do
+`/dev/avatar-kokeshi`. **Não foi promovida** — `CABELOS.assimetrico` continua
+espalhando `PECAS_DA_ARTE["entrada-2"]`, e `assimetrico` continua em
+`MODELOS_TRACADOS`. Falta o parecer do Doug, e com ele a decisão da sobrancelha.
+

@@ -110,6 +110,26 @@ describe("a peça transcrita emite quatro camadas de laços simples", () => {
     expect(iPretas).toBeGreaterThan(iClara);
   });
 
+  it("a silhueta preta e o núcleo saem COLADOS — byte a byte", () => {
+    // ⚠️ VEIO DE `pecas-de-elenco.test.ts` EM 2026-08-23. Lá ela media uma peça
+    // REAL, e quebrou quando a `assimetrico` migrou para o tonal: a técnica antiga
+    // deixou de ter peça viva que a exercitasse. Aqui a fixture declara `nucleo`, e
+    // é o único lugar onde a partição existe para ser medida.
+    //
+    // O que ela protege: os selos byte a byte de `parametrico-congelado.ts`. Nada
+    // entra entre a silhueta preta e o núcleo colorido — um caractere a mais ali
+    // mata os selos de uma vez, com a causa longe do sintoma. Foi escrita em
+    // 2026-08-19, quando a peça saía partida em `{ fundo, frente }` e a barba
+    // entrava no meio; a partição caiu em 2026-08-20, e a linha fica porque é ela
+    // que reprova se alguém tentar de novo.
+    const svg = svgDe(comNucleo());
+    const iTinta = svg.indexOf(`<path class="kk-tinta"`);
+    expect(iTinta).toBeGreaterThan(-1);
+    expect(svg.indexOf(`<path class="kk-cabelo-m"`)).toBe(
+      iTinta + svg.slice(iTinta).indexOf("/>") + 2,
+    );
+  });
+
   it("o núcleo multi-componente sai num `<path>` só, como subpaths", () => {
     const c = comNucleo({ nucleo: [encolher(MASSA, 0.86), encolher(MASSA, 0.4)] });
     const d = pathCabeloNucleo(c);
