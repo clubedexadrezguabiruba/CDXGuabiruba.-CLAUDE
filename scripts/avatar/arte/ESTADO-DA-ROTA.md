@@ -5495,10 +5495,64 @@ linhas em vez de uma. É a lição de `SOBRANCELHA_COBERTA`, de 2026-08-23.
 **651 testes** · `verify:all` **37 passed | 1 failed**, e a única reprovação é a que a
 migration fecha: *"slot cabelo: 2 slug(s) no banco que o código não desenha"*.
 
+## A migration foi aplicada, e a cadeia seguiu — o que estava ATRÁS do gate vermelho
+
+⚠️ **O `verify:all` PARA no primeiro gate que reprova.** Enquanto o do banco estava
+vermelho esperando a migration, tudo depois dele **não rodava** — e eu li "1 reprovação,
+o resto verde" e escrevi isso numa mensagem de commit. Não estava medido. Aplicada a
+migration, a cadeia foi de ~580 para ~1391 linhas e encontrou duas coisas.
+
+### 1. Um crash no PRODUTO — `laco([])`
+
+`laco` lia `pts[0].x` de um array vazio e lançava
+`TypeError: Cannot read properties of undefined (reading 'x')`, com a pilha inteira
+passando por `compor()`: a tela quebra em vez de o cabelo sair chapado.
+
+O caminho não é hipotético: `clara: []` é array **truthy**, e `converter()` devolve
+exatamente isso ao traçar `chanel.png` — massa 43, **`clara` 0**, 27 `claras`, 18
+`nucleo`, 26 `pretas`. A guarda mora em `laco()` e não nos quatro chamadores, porque
+quatro guardas iguais divergem. Teste com as 4 asserções + contra-controle: falha antes
+na linha 673, passa depois.
+
+### 2. Três réguas de bancada perderam a COBAIA
+
+Régua sem exemplo-ruim é detector de fumaça sem fumaça: ninguém sabe se a pilha está
+viva. As três usavam `entrada.png` / `entrada-2.png`, e nenhuma das 4 artes vivas
+serve — medido:
+
+| régua | o que ela precisava | as 4 vivas |
+|---|---|---|
+| **escala** | peça CRUA que encosta no teto (o espetado subia a −38,9 u) | o `chanel` começa em y **8,5** e cabe. As 4 cabem **de propósito** — o teto entrou no pedido |
+| **porque-reprovou** | arte com repintura > 90% nas protegidas | chanel **7,4%**, assimetrico 0,1%, moicano e burst-fade **0 px**. A repintura ERA o defeito do espetado |
+| **salpico** | a faixa do queixo esvaziar | chanel **12 297 → 10 787 px (−12,3%)**, e está certo: é um bob que desce abaixo do queixo, ali é cabelo legítimo |
+
+**As três foram APOSENTADAS**, com o número que as mata escrito onde cada uma morava.
+Fabricar cobaia por programa foi oferecido e o Doug recusou: *"você não desenha nenhum
+item direto"*. E ele fixou o escopo: **a esteira que importa é a que aprovou a barba
+trançada, os dois trajes e os cabelos**.
+
+⚠️ **`medirEscala`, `porqueReprovou` e a limpeza de salpico NÃO foram apagadas** — as
+três continuam de pé e continuam rodando na rota. Saiu a bancada, não a ferramenta.
+
+### A conta das esteiras, que ele pediu: são DUAS
+
+`construirRosto(caminho)` é literalmente `construirPecaTonal(caminho, "rosto")`
+(`barba-para-formas.ts:789-792`). **Barba e cabelo são a mesma esteira, dois slots.** O
+traje é a outra (`traje.ts` → `construir`). A traçada é uma terceira, e é a que não
+aprovou nenhuma peça viva — as três réguas aposentadas eram dela.
+
 ## Onde parou
 
-A migration **não foi aplicada** — o comando foi barrado pela permissão da sessão. Até
-ela rodar, `verify:avatar-db` reprova de propósito, e o gate está certo.
+**Fechado e verde.** `verify:all` **exit 0** com a migration aplicada, **652** testes,
+`arte:reguas` **12 de 12**, build 0. Três commits: `ad77054` (o código que o commit de
+ontem deixou na mesa), `404fca2` (o elenco fecha em 4) e `293e926` (o crash e as três
+réguas).
+
+O banco, medido depois: **ninguém vestindo cabelo** (as 4 contas ficaram carecas, decisão
+dele), `cabelo-assimetrico` nas 19 do guarda-roupa, e **uma só peça inicial**.
+
+**O próximo passo é arte nova do Doug**, e ela não precisa se chamar `espetado` nem
+`coque` — o slot está livre. O molde do pedido está em [PEDIDO-CABELOS.md](PEDIDO-CABELOS.md).
 
 ```
 npx tsx scripts/apply-migration.ts supabase/migrations/20260824080000_espetado_e_coque_saem_do_catalogo.sql
