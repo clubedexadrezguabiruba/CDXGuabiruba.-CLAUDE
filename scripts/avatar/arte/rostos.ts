@@ -35,6 +35,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { PASTA } from "./base";
 import { construirRosto } from "./barba-para-formas";
 import { primeiraDivergencia, semCR } from "./gerado";
+import { NOMES_ROSTO } from "./promovidas";
 
 const SAIDA = "src/lib/avatar/estilo/rostos-da-arte.ts";
 
@@ -55,15 +56,11 @@ const PRATELEIRA_TOM = "public/items/rosto";
 const urlDoTom = (slug: string) => `/items/rosto/${slug}-tom.png`;
 
 /**
- * O nome que a criança lê, por arte promovida. Uma linha por peça, sem default.
- *
- * Ele não se deriva do slug pelo motivo que `trajes.ts` já escreve: `barba-cheia`
- * viraria "Cheia", que não é nome de coisa nenhuma. E a raridade **não** mora aqui —
- * ela é do servidor, e vive em `avatar_catalogo` (Regra Inviolável nº 1).
+ * O nome que a criança lê, por arte promovida — a lista mora em `promovidas.ts`,
+ * junto com a de cabelo, e pelo motivo escrito lá: as réguas de traço percorriam uma
+ * cópia escrita à mão que envelhecia em silêncio a cada promoção.
  */
-const NOMES: Record<string, string> = {
-  "barba-trancada": "Barba Trancada",
-};
+const NOMES = NOMES_ROSTO;
 
 const CABECALHO = `/**
  * ARQUIVO GERADO — não edite à mão.

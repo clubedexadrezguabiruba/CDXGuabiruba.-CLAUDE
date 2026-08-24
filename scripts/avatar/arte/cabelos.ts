@@ -49,6 +49,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { PASTA } from "./base";
 import { construirPecaTonal } from "./barba-para-formas";
 import { primeiraDivergencia, semCR } from "./gerado";
+import { NOMES_CABELO } from "./promovidas";
 
 const SAIDA = "src/lib/avatar/estilo/cabelos-da-arte.ts";
 
@@ -69,48 +70,15 @@ const PRATELEIRA_TOM = "public/items/cabelo";
 const urlDoTom = (slug: string) => `/items/cabelo/${slug}-tom.png`;
 
 /**
- * O nome que a criança lê, por arte promovida. Uma linha por peça, sem default.
+ * O nome que a criança lê, por arte promovida — a lista mora em `promovidas.ts`.
  *
- * A chave é o nome do ARQUIVO sem extensão, como em `PECAS_DA_ARTE` — e não o slug
- * com prefixo. É por essa chave que `CABELOS.<modelo>` espalha o objeto daqui, e é
- * ela que o `id` gravado carrega, motivo pelo qual o catálogo **sobrescreve a
- * identidade** na promoção (ver `CABELOS` em `cabelo.ts`).
- *
- * ⚠️ **Uma linha por arte que ATRAVESSOU A ESTEIRA — não por peça aprovada.**
- * A regra mudou em 2026-08-22, quando o Doug pediu para julgar a peça no runtime e
- * não só na folha: o passo 9 da esteira é o parecer dele em `/dev/avatar-kokeshi`, e
- * uma peça que não existe em lugar nenhum do código não chega àquela página. É o
- * mesmo contrato de `PECAS_DA_ARTE` na família traçada, que sempre listou arte não
- * promovida.
- *
- * **A aprovação continua morando em `CABELOS`** (`cabelo.ts`), que é o que a criança
- * vê — estar aqui não promove nada, e o seletor "da arte · tonal" da página de dev é
- * separado do seletor do catálogo justamente para não parecer que promove. A trava do
- * outro lado não mudou: um nome **sem** arte no disco reprova.
+ * ⚠️ **Ela saiu daqui em 2026-08-24, e a mudança é de ENDEREÇO, não de conteúdo.** As
+ * réguas de traço (`arte:traco`, `arte:borda`) percorriam uma cópia escrita à mão da
+ * mesma lista, e a cópia estava defasada em três artes. Com o mapa num módulo que não
+ * executa nada ao ser importado, a régua e o gerador leem a mesma fonte, e peça
+ * promovida entra nas duas no mesmo gesto.
  */
-const NOMES: Record<string, string> = {
-  // A primeira peça tonal do slot, aprovada pelo Doug em 2026-08-22 sobre a folha.
-  // O arquivo `chanel.png` foi SOBRESCRITO pela arte nova, por decisão dele ("ele
-  // substitui o velho, pode manter o mesmo nome") — e é por isso que `chanel` saiu
-  // de `ARTES` em `pecas.ts` no mesmo commit: um nome de arquivo, uma arte, uma
-  // esteira.
-  chanel: "Chanel",
-  // Atravessou a esteira em 2026-08-22, sem parecer ainda: Gate −1 aprovada com 0 px
-  // nas protegidas, traço do boneco inteiro, contorno preto, figurinha de 562 px e
-  // nenhuma janela de feição aberta. Está aqui para ser JULGADA em `/dev/avatar-kokeshi`
-  // — o `moicano` continua paramétrico em `CABELOS` até o Doug dizer.
-  moicano: "Moicano",
-  // Atravessou a esteira em 2026-08-22, sem parecer ainda. Substitui `entrada-2.png`,
-  // que é a arte traçada do mesmo modelo e continua em produção até o Doug dizer — na
-  // promoção ela sai de `ARTES` em `pecas.ts`, como o `chanel` saiu.
-  assimetrico: "Assimétrico",
-  // O primeiro cabelo tonal que NÃO substitui ninguém — modelo novo, fora dos cinco
-  // do elenco antigo, e por isso ele não sai de família nenhuma na promoção: entra
-  // direto em `CABELOS` e em `MODELOS_TONAIS`. Atravessou a esteira em 2026-08-22,
-  // com a folha aprovada pelo Doug a olho. Está aqui para ser JULGADA em
-  // `/dev/avatar-kokeshi` antes da promoção.
-  "burst-fade": "Burst Fade",
-};
+const NOMES = NOMES_CABELO;
 
 const CABECALHO = `/**
  * OS CABELOS TONAIS DA ARTE — silhueta em vetor, claro-escuro em máscara.

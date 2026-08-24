@@ -15,10 +15,26 @@ import { compor } from "@/lib/avatar/estilo/compositor";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
-import { IDS_DA_ARTE, PECAS_DA_ARTE, type IdDaArte } from "@/lib/avatar/estilo/pecas-da-arte";
+import { IDS_DA_ARTE, PECAS_DA_ARTE } from "@/lib/avatar/estilo/pecas-da-arte";
 import { CABELOS_DA_ARTE } from "@/lib/avatar/estilo/cabelos-da-arte";
 import { ROSTOS } from "@/lib/avatar/catalogo";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
+
+/**
+ * AS PEÇAS TRAÇADAS, ALARGADAS PARA `string` — e o alargamento é por catálogo VAZIO.
+ *
+ * `IdDaArte` é `keyof typeof PECAS_DA_ARTE`, e desde 2026-08-24 esse literal não tem
+ * nenhuma chave: o `entrada` (espetado) saiu quando o Doug apagou o modelo, e o
+ * `entrada-2` já tinha saído na promoção do `assimetrico`. `keyof {}` é `never`, e
+ * `never` faz o seletor abaixo não compilar — por vazio, não por defeito.
+ *
+ * A alternativa era apagar o seletor. Ele fica: a esteira traçada continua de pé
+ * (`arte:pecas`, com `--check` em `verify:arte`), e no dia em que uma arte voltar a
+ * precisar dela a oficina já sabe mostrar. Com o catálogo cheio de novo, as duas
+ * linhas abaixo continuam corretas — só param de ser necessárias.
+ */
+const PECAS_TRACADAS = PECAS_DA_ARTE as Record<string, Cabelo>;
+const IDS_TRACADOS = IDS_DA_ARTE as readonly string[];
 
 /** Os slugs do slot `rosto` que existem hoje. Vazio até a primeira peça entrar. */
 const SLUGS_DE_ROSTO = Object.keys(ROSTOS);
@@ -85,10 +101,11 @@ function Boneco({
 export default function AvatarKokeshiClient() {
   const [pele, setPele] = useState<string>(PELE[2]);
   const [cabelo, setCabelo] = useState<string>(CABELO[0]);
-  // `curto` é o padrão porque é o padrão do `criar-personagem` (D5): ninguém
-  // aparece careca. A opção "careca" fica no seletor como controle — é a base do
-  // Bloco 1d, e é contra ela que se vê o que o cabelo acrescenta.
-  const [modelo, setModelo] = useState<ModeloCabelo | undefined>("coque");
+  // Abre numa peça VIVA, e a escolha migrou duas vezes com o elenco: era `curto`
+  // (apagado em 2026-08-08), depois `coque` (apagado em 2026-08-24). Hoje é o
+  // `chanel`, a primeira peça tonal aprovada. A opção "careca" fica no seletor como
+  // controle — é a base do Bloco 1d, e é contra ela que se vê o que o cabelo põe.
+  const [modelo, setModelo] = useState<ModeloCabelo | undefined>("chanel");
   /**
    * A peça TRAÇADA da arte, quando há uma escolhida. Ela vence o `modelo`.
    *
@@ -99,7 +116,7 @@ export default function AvatarKokeshiClient() {
    * e `id` falso em catálogo é exatamente o defeito que a rota já pegou quando três
    * artes diferentes se diziam `"curto"`.
    */
-  const [daArte, setDaArte] = useState<IdDaArte | undefined>(undefined);
+  const [daArte, setDaArte] = useState<string | undefined>(undefined);
   /**
    * A peça TONAL da arte, por chave. Terceiro estado pelo mesmo motivo do segundo:
    * ela é um `Cabelo` inteiro sem `id` de catálogo enquanto não for promovida.
@@ -112,7 +129,7 @@ export default function AvatarKokeshiClient() {
   const peca = tonal
     ? CABELOS_DA_ARTE[tonal]
     : daArte
-      ? (PECAS_DA_ARTE[daArte] as Cabelo)
+      ? PECAS_TRACADAS[daArte]
       : modelo;
   /**
    * A peça do slot `rosto`, por slug. Ela é escolhida à parte do cabelo porque é
@@ -202,7 +219,7 @@ export default function AvatarKokeshiClient() {
         */}
         <div className="flex items-center gap-1">
           <span className="text-zinc-500">da arte:</span>
-          {IDS_DA_ARTE.map((id) => (
+          {IDS_TRACADOS.map((id) => (
             <button
               key={id}
               type="button"
@@ -216,7 +233,7 @@ export default function AvatarKokeshiClient() {
                   : "border-amber-400 text-amber-700"
               }`}
             >
-              {PECAS_DA_ARTE[id].nome}
+              {PECAS_TRACADAS[id].nome}
             </button>
           ))}
         </div>
@@ -329,18 +346,18 @@ export default function AvatarKokeshiClient() {
         massa com cabelo dos dois lados.
       </p>
       <div className="mt-2 flex flex-wrap items-end gap-6 rounded-lg p-4" style={{ background: fundo }}>
-        {IDS_DA_ARTE.map((id) => (
+        {IDS_TRACADOS.map((id) => (
           <figure key={id} className="m-0 text-center">
             <Boneco
               pele={pele}
               cabelo={cabelo}
-              modelo={PECAS_DA_ARTE[id] as Cabelo}
+              modelo={PECAS_TRACADAS[id] as Cabelo}
               h={280}
               animado={animado}
               ns={`kka-${id}`}
             />
             <figcaption className="mt-1 text-[10px] text-zinc-500">
-              {PECAS_DA_ARTE[id].nome}
+              {PECAS_TRACADAS[id].nome}
               <span className="block text-[9px] text-zinc-400">{id}.png</span>
             </figcaption>
           </figure>
@@ -349,13 +366,13 @@ export default function AvatarKokeshiClient() {
           <Boneco
             pele={pele}
             cabelo={cabelo}
-            modelo="coque"
+            modelo="chanel"
             h={280}
             animado={animado}
             ns="kka-controle"
           />
           <figcaption className="mt-1 text-[10px] text-zinc-500">
-            {CABELOS.coque.nome}
+            {CABELOS.chanel.nome}
             <span className="block text-[9px] text-zinc-400">controle aprovado</span>
           </figcaption>
         </figure>
@@ -363,12 +380,12 @@ export default function AvatarKokeshiClient() {
 
       {/* As mesmas quatro a 56 px, que é o tamanho que manda. */}
       <div className="mt-2 flex flex-wrap items-end gap-4 rounded-lg p-3" style={{ background: fundo }}>
-        {IDS_DA_ARTE.map((id) => (
+        {IDS_TRACADOS.map((id) => (
           <Boneco
             key={id}
             pele={pele}
             cabelo={cabelo}
-            modelo={PECAS_DA_ARTE[id] as Cabelo}
+            modelo={PECAS_TRACADAS[id] as Cabelo}
             rosto={rosto}
             h={56}
             animado={false}
@@ -378,7 +395,7 @@ export default function AvatarKokeshiClient() {
         <Boneco
           pele={pele}
           cabelo={cabelo}
-          modelo="coque"
+          modelo="chanel"
           rosto={rosto}
           h={56}
           animado={false}

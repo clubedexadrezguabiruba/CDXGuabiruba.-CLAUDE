@@ -478,12 +478,31 @@ describe("cabeloPorCima — a barba veste, o cabelo cobre", () => {
     // a peça de rosto continua por cima dele com bandeira ou sem. Não é defeito hoje —
     // nenhum paramétrico desce ao queixo —, mas está escrito em `PecaDeRosto` como
     // limitação, e este teste é o que impede que alguém "conserte" por engano.
-    const comFlag = compor({ ...BASE, modeloCabelo: "coque", rosto: { ...FALSA, cabeloPorCima: true } });
+    //
+    // ⚠️ A peça é SINTÉTICA desde 2026-08-24, e a troca é obrigatória: era o `coque`
+    // do catálogo, e o catálogo ficou sem nenhum paramétrico quando o Doug o apagou.
+    // Trocar por uma peça viva poria uma TONAL onde o nome do teste diz paramétrica —
+    // e a bandeira não é inerte na tonal, então o teste passaria a afirmar o contrário
+    // do que mede. Fixture é o único caminho enquanto a família estiver vazia.
+    const parametrico = {
+      id: "chanel" as const,
+      nome: "paramétrico (fixture)",
+      pontos: [
+        { t: -0.1, y: 200 },
+        { t: 0.5, y: 170 },
+        { t: 1.1, y: 200 },
+      ],
+    };
+    const comFlag = compor({
+      ...BASE,
+      modeloCabelo: parametrico,
+      rosto: { ...FALSA, cabeloPorCima: true },
+    });
     expect(
       iPeca(comFlag) < iCabeloInicio(comFlag),
-      "o `coque` passou a respeitar a bandeira — a limitação declarada mudou",
+      "o paramétrico passou a respeitar a bandeira — a limitação declarada mudou",
     ).toBe(false);
-    expect(comFlag).toBe(compor({ ...BASE, modeloCabelo: "coque", rosto: FALSA }));
+    expect(comFlag).toBe(compor({ ...BASE, modeloCabelo: parametrico, rosto: FALSA }));
   });
 
   it("o CHAPÉU não participa da partição — ele continua sendo o último", () => {

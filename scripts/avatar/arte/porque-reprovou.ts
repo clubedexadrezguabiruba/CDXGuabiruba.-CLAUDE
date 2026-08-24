@@ -167,7 +167,7 @@ export async function porqueReprovou(arte: string): Promise<Laudo> {
 }
 
 async function principal() {
-  const arte = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const arte = process.argv[2] ?? `${PASTA}/chanel.png`;
   const { conta, caixa, soma, total, painel } = await porqueReprovou(arte);
 
   console.log(`POR QUE A REGIÃO PROTEGIDA MUDOU — ${arte}\n`);

@@ -79,7 +79,7 @@ function encolher(pts: readonly PontoFranja[], k: number): PontoFranja[] {
 }
 
 const comNucleo = (extra: Partial<Cabelo> = {}): Cabelo => ({
-  id: "coque" as Cabelo["id"],
+  id: "chanel" as Cabelo["id"],
   nome: "fixture transcrita",
   massa: MASSA,
   nucleo: [encolher(MASSA, 0.86)],
@@ -161,7 +161,7 @@ describe("a INÉRCIA: sem os campos novos, o caminho é o de hoje", () => {
    * byte, "congelado" seria promessa e não mecanismo.
    */
   const semNucleo: Cabelo = {
-    id: "coque" as Cabelo["id"],
+    id: "chanel" as Cabelo["id"],
     nome: "fixture sintetizada",
     massa: MASSA,
     clara: encolher(MASSA, 0.6),
@@ -216,7 +216,7 @@ describe("contencaoDoNucleo — e o controle negativo", () => {
       { t: 0.2, y: 140 },
     ];
     const c: Cabelo = {
-      id: "coque" as Cabelo["id"],
+      id: "chanel" as Cabelo["id"],
       nome: "entalhe",
       massa: entalhe,
       nucleo: [nucleoNosVertices],
@@ -226,11 +226,26 @@ describe("contencaoDoNucleo — e o controle negativo", () => {
 
   it("Infinity pelo caso NOMEADO, nunca por vacuidade", () => {
     // Peça traçada sem núcleo: o contorno dela é sintetizado, e não há o que vazar.
-    expect(contencaoDoNucleo({ id: "coque" as Cabelo["id"], nome: "x", massa: MASSA })).toBe(
+    expect(contencaoDoNucleo({ id: "chanel" as Cabelo["id"], nome: "x", massa: MASSA })).toBe(
       Infinity,
     );
     // Peça paramétrica: quem mede é `sombraSobreAFranja`.
-    expect(contencaoDoNucleo("coque")).toBe(Infinity);
+    //
+    // A fixture é sintética desde 2026-08-24, e a troca é obrigatória, não estilo: era
+    // `contencaoDoNucleo("coque")`, e o catálogo ficou SEM paramétrico quando o Doug
+    // apagou aquele modelo. Apontar para uma peça viva do catálogo mediria a família
+    // tonal com o nome de paramétrica — verde, e medindo outra coisa.
+    expect(
+      contencaoDoNucleo({
+        id: "chanel" as Cabelo["id"],
+        nome: "paramétrico (fixture)",
+        pontos: [
+          { t: -0.1, y: 200 },
+          { t: 0.5, y: 170 },
+          { t: 1.1, y: 200 },
+        ],
+      }),
+    ).toBe(Infinity);
   });
 });
 

@@ -50,7 +50,9 @@ import { SANGRIA, bordasEm } from "../geometria";
 import { conferirSvg } from "../../svgContrato";
 import { CABELO, PELE } from "../../palette";
 
-const svgDe = (modelo?: (typeof MODELOS_CABELO)[number]) =>
+// Aceita `Cabelo` além do nome de modelo desde 2026-08-24: com `MODELOS_PARAMETRICOS`
+// vazia, os blocos que medem aquela família só têm fixture para compor.
+const svgDe = (modelo?: Parameters<typeof compor>[0]["modeloCabelo"]) =>
   compor({ pele: PELE[1], cabelo: CABELO[1], modeloCabelo: modelo, ns: "t" });
 
 const formas = (svg: string) => (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
@@ -81,8 +83,21 @@ const PONTOS_PARAMETRICO: readonly PontoFranja[] = [
   { t: 1.14, y: 228 },
 ];
 
+/**
+ * O `id` que as FIXTURAS sintéticas deste arquivo carregam — e ele é rótulo, não alvo.
+ *
+ * O que se mede abaixo é a geometria **declarada na fixture**: pontos, massa, sombra.
+ * A peça do catálogo com esse nome nunca é lida. O campo existe porque `Cabelo["id"]`
+ * é a união fechada `ModeloCabelo`, então a fixture precisa de UM nome vivo.
+ *
+ * Era `"coque"` até 2026-08-24, quando o Doug apagou aquele modelo. Ficar num só
+ * lugar é o conserto: com o nome escrito em cinco fixtures, a próxima poda de elenco
+ * volta a quebrar cinco linhas em vez de uma.
+ */
+const ID_FIXTURA = "chanel" as const;
+
 const CURTO_PARAMETRICO: Cabelo = {
-  id: "coque",
+  id: ID_FIXTURA,
   nome: "curto (paramétrico congelado)",
   pontos: PONTOS_PARAMETRICO,
 };
@@ -178,7 +193,12 @@ describe("a base careca não paga nada pelo slot de cabelo", () => {
 });
 
 describe("com modelo, o cabelo é o único leitor de --av-cabelo", () => {
-  const svg = svgDe("coque");
+  // A peça é a FIXTURE paramétrica, e não uma do catálogo. O bloco mede as duas
+  // classes da touca — `.kk-cabelo` (clara) e `.kk-cabelo-s` (escura) —, que só a
+  // família paramétrica emite. Ele compunha `svgDe("coque")` até 2026-08-24; com o
+  // `coque` apagado, apontar para uma peça viva põe uma TONAL aqui, e a tonal não
+  // emite nenhuma das duas: o teste reprovaria por trocar de família, não por defeito.
+  const svg = svgDe(CURTO_PARAMETRICO);
 
   it("declara as duas custom properties", () => {
     expect(svg).toContain("--av-cabelo:");
@@ -369,21 +389,31 @@ describe("a touca é uma curva aberta fechada FORA da silhueta", () => {
  * graça: sem `sombra` declarada, nada muda.
  */
 describe("a faixa de sombra", () => {
-  it("em todo modelo PARAMÉTRICO é paralela — min e max iguais a 22, a assinatura do defeito", () => {
-    const parametricos = MODELOS_CABELO.filter((m) => CABELOS[m].pontos);
-    // Se um dia não sobrar nenhum, é porque todos foram traçados — e aí quem mede
-    // a mesma coisa é `contencaoDaClara`. Zero modelos aqui não pode passar calado.
-    expect(parametricos.length).toBeGreaterThan(0);
-    for (const modelo of parametricos) {
-      const { min, max } = sombraSobreAFranja(modelo);
-      expect(min).toBe(22);
-      expect(max).toBe(22);
-    }
+  it("na franja PARAMÉTRICA é paralela — min e max iguais a 22, a assinatura do defeito", () => {
+    // ⚠️ **O CATÁLOGO FICOU SEM PARAMÉTRICO em 2026-08-24**, quando o Doug apagou o
+    // `coque`. Este teste percorria `MODELOS_CABELO.filter(m => CABELOS[m].pontos)` e
+    // tinha uma guarda contra vacuidade — `expect(parametricos.length).toBeGreaterThan(0)`
+    // —, que fez o que devia: reprovou em vez de passar medindo lista vazia.
+    //
+    // A saída NÃO é apagar a guarda: o comportamento medido aqui é do EMISSOR, e ele
+    // continua vivo em `sombraSobreAFranja`. O que mudou é de onde vem a franja —
+    // fixture congelada, como o resto deste arquivo já faz desde `PONTOS_PARAMETRICO`.
+    // A guarda vira a linha abaixo, que declara o estado e reprova se ele mudar sem
+    // ninguém olhar: no dia em que um paramétrico voltar ao catálogo, este teste cobra
+    // que ele seja medido junto.
+    expect(
+      MODELOS_CABELO.filter((m) => CABELOS[m].pontos),
+      "voltou a existir paramétrico no catálogo — meça-o aqui, não só a fixture",
+    ).toEqual([]);
+
+    const { min, max } = sombraSobreAFranja(CURTO_PARAMETRICO);
+    expect(min).toBe(22);
+    expect(max).toBe(22);
   });
 
   /** A franja paramétrica, com a sombra afinando e engrossando ao longo dela. */
   const comSombra: Cabelo = {
-    id: "coque",
+    id: ID_FIXTURA,
     nome: "curto (sombra própria)",
     pontos: PONTOS_PARAMETRICO,
     sombra: PONTOS_PARAMETRICO.map((p, i) => ({ t: p.t, y: p.y - (12 + 22 * (i % 2)) })),
@@ -459,7 +489,7 @@ describe("o laço fechado", () => {
   ];
 
   const tracado: Cabelo = {
-    id: "coque",
+    id: ID_FIXTURA,
     nome: "curto (traçado)",
     massa: MASSA,
     clara: CLARA,
@@ -541,7 +571,7 @@ describe("o laço fechado", () => {
   });
 
   it("sem região clara, a peça é chapada e o compositor não emite forma vazia", () => {
-    const chapado: Cabelo = { id: "coque", nome: "chapado", massa: MASSA };
+    const chapado: Cabelo = { id: ID_FIXTURA, nome: "chapado", massa: MASSA };
     expect(pathCabeloClaro(chapado)).toBe("");
     expect(pathCabelo(chapado)).not.toBe("");
   });

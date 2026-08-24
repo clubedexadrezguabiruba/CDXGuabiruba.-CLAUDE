@@ -32,7 +32,7 @@
  * OS CINCO `CABELOS` SÃO O CONTROLE IDEAL, E SEM UMA LINHA DE ADAPTAÇÃO
  * ---------------------------------------------------------------------------
  *
- * `sondar`, `medirCoroa` e `medirEscala` recebem `Cabelo`, e `CABELOS.coque` **é**
+ * `sondar`, `medirCoroa` e `medirEscala` recebem `Cabelo`, e `CONTROLE_PARAMETRICO` **é**
  * um `Cabelo` que nunca passou por arte nenhuma. Se uma régua diz algo absurdo
  * sobre ele, o defeito é da régua e não da arte.
  */
@@ -53,6 +53,7 @@ import { medirEscala } from "./escala";
 import { PASTA_FIXTURES } from "./fixtures";
 import { porqueReprovou } from "./porque-reprovou";
 import { sondar } from "./silhueta";
+import { CONTROLE_PARAMETRICO } from "../estilo/controle-parametrico";
 
 const DESTINO = `${PASTA}/reguas`;
 
@@ -89,7 +90,7 @@ const errosReproduzidos: string[] = [];
 // ---------------------------------------------------------------------------
 
 /**
- * `CABELOS.coque` com uma faixa preta atravessando a coroa.
+ * `CONTROLE_PARAMETRICO` com uma faixa preta atravessando a coroa.
  *
  * A faixa não é pintada por fora: é uma `Extensao`, e quem a torna preta é o
  * `stroke` de `.kk-cabelo-e` (`compositor.ts:170`), que a peça leva no laço
@@ -130,9 +131,9 @@ const faixaNaCoroa: readonly Ponto[] = (() => {
 })();
 
 const curtoComFaixa: Cabelo = {
-  ...CABELOS.coque,
-  id: "coque",
-  extensoes: [...(CABELOS.coque.extensoes ?? []), { forma: faixaNaCoroa }],
+  ...CONTROLE_PARAMETRICO,
+  id: "chanel",
+  extensoes: [...(CONTROLE_PARAMETRICO.extensoes ?? []), { forma: faixaNaCoroa }],
 };
 
 /**
@@ -146,7 +147,7 @@ const curtoComFaixa: Cabelo = {
  * Com a peça sobreposta esse arranjo deixou de existir, e uma régua sem controle
  * negativo é uma régua que devolve 0% sem ninguém saber se é conserto ou
  * vacuidade — foi exatamente assim que o `cobertos` zerado passou despercebido no
- * Bloco 1. Então ele é reconstruído com o que sobrou: `CABELOS.coque` (touca
+ * Bloco 1. Então ele é reconstruído com o que sobrou: `CONTROLE_PARAMETRICO` (touca
  * clipada, cabelo por dentro) mais um **anel** que segue o contorno do crânio por
  * FORA, de meio traço a 40 u de distância.
  *
@@ -169,9 +170,9 @@ function curtoComAnelDe(deU: number, ateU: number): Cabelo {
   const interna = ordenado.map((p) => afastar(p, deU));
   const externa = [...ordenado].reverse().map((p) => afastar(p, ateU));
   return {
-    ...CABELOS.coque,
-    id: "coque",
-    extensoes: [...(CABELOS.coque.extensoes ?? []), { forma: [...interna, ...externa] }],
+    ...CONTROLE_PARAMETRICO,
+    id: "chanel",
+    extensoes: [...(CONTROLE_PARAMETRICO.extensoes ?? []), { forma: [...interna, ...externa] }],
   };
 }
 
@@ -200,7 +201,7 @@ async function reguaDaCoroa(): Promise<void> {
   console.log(`\n  RÉGUA 1 — coroa.ts  (preto na calota, defeitos 2 e 4)\n`);
 
   const careca = await medirCoroa(undefined, "r-careca", DESTINO);
-  const curto = await medirCoroa(CABELOS.coque, "r-curto", DESTINO);
+  const curto = await medirCoroa(CONTROLE_PARAMETRICO, "r-curto", DESTINO);
   const comFaixa = await medirCoroa(curtoComFaixa, "r-faixa", DESTINO);
 
   // CONTROLE QUE PASSA — e ele descobriu uma coisa sobre a régua.
@@ -244,7 +245,7 @@ async function reguaDaCoroa(): Promise<void> {
   );
 
   // E o número ERRADO, reproduzido: o método antigo dá o MESMO valor para as duas.
-  const curtoLum = await medirCoroa(CABELOS.coque, "r-curto-lum", DESTINO, {
+  const curtoLum = await medirCoroa(CONTROLE_PARAMETRICO, "r-curto-lum", DESTINO, {
     metodo: "luminancia",
   });
   const faixaLum = await medirCoroa(curtoComFaixa, "r-faixa-lum", DESTINO, {
@@ -266,12 +267,12 @@ async function reguaDaCoroa(): Promise<void> {
 async function reguaDaSilhueta(pecaEntrada: Cabelo): Promise<void> {
   console.log(`\n  RÉGUA 2 — silhueta.ts  (aro da sangria, defeito 3)\n`);
 
-  const curto = await sondar(CABELOS.coque, "r-curto", DESTINO);
+  const curto = await sondar(CONTROLE_PARAMETRICO, "r-curto", DESTINO);
   const hoje = await sondar(curtoComEmenda, "r-emenda", DESTINO);
 
   // O ARO É UM ARCO CONCÊNTRICO, e é isso que o número tem de dizer.
   //
-  // O piso não é zero e não deveria ser: `CABELOS.coque` tem a borda de baixo da
+  // O piso não é zero e não deveria ser: `CONTROLE_PARAMETRICO` tem a borda de baixo da
   // franja correndo POR DENTRO do crânio, com traço legítimo, e a normal cruza
   // esse traço em alguns pontos. O que distingue os dois casos não é a presença de
   // preto, é a EXTENSÃO dele: a emenda da sangria segue a fronteira em todo o
@@ -281,7 +282,7 @@ async function reguaDaSilhueta(pecaEntrada: Cabelo): Promise<void> {
   afirmar(
     "silhueta",
     "PASSA",
-    "CABELOS.coque não tem extensão, então o preto que sobra CRUZA a normal e não corre junto",
+    "CONTROLE_PARAMETRICO não tem extensão, então o preto que sobra CRUZA a normal e não corre junto",
     `aro ${(100 * curto.aro.fracao).toFixed(1)}% em ${curto.aro.em.toFixed(0)} u` +
       `   (perímetro ${curto.perimetro}, coberto ${curto.cobertos};` +
       ` o resíduo é o traço da própria franja)`,
@@ -395,7 +396,7 @@ async function reguaDaSilhueta(pecaEntrada: Cabelo): Promise<void> {
 async function reguaDaEscala(): Promise<void> {
   console.log(`\n  RÉGUA 3 — escala.ts  (os 92%, medidos no render)\n`);
 
-  const m = await medirEscala(`${PASTA}/entrada.png`);
+  const m = await medirEscala(`${PASTA}/chanel.png`);
   const hCem = m.alturaNoQuadro(m.carecaCem);
   const h92 = m.alturaNoQuadro(m.careca92);
 
@@ -507,7 +508,7 @@ function reguaDaCompressao(): void {
 async function reguaDoSalpico(): Promise<void> {
   console.log(`\n  RÉGUA 7 — o salpico de teal  (a barba no queixo)\n`);
 
-  const arte = await carregar(`${PASTA}/entrada.png`, FUNDO);
+  const arte = await carregar(`${PASTA}/chanel.png`, FUNDO);
   const base = await carregar(PNG_BASE, FUNDO);
   const comSalpico = mascaraDaPeca(arte, base, true, true);
   const limpo = mascaraDaPeca(arte, base, true, false);
@@ -569,7 +570,7 @@ async function reguaDoSalpico(): Promise<void> {
 async function reguaDoPorque(): Promise<void> {
   console.log(`\n  RÉGUA 4 — porque-reprovou.ts  (de que COR é a reprovação)\n`);
 
-  const um = await porqueReprovou(`${PASTA}/entrada.png`);
+  const um = await porqueReprovou(`${PASTA}/chanel.png`);
   const dois = await porqueReprovou(`${PASTA}/entrada-2.png`);
   const efe = await porqueReprovou(`${PASTA_FIXTURES}/f-corpo.png`);
 
@@ -614,7 +615,7 @@ async function principal(): Promise<void> {
   console.log(`  Cada régua afirma TRÊS coisas: um controle que passa, um que reprova,`);
   console.log(`  e — a que teria pego o bug real — que os dois dão números DIFERENTES.`);
 
-  const c = await converter(`${PASTA}/entrada.png`);
+  const c = await converter(`${PASTA}/chanel.png`);
 
   await reguaDaCoroa();
   await reguaDaSilhueta(c.peca);

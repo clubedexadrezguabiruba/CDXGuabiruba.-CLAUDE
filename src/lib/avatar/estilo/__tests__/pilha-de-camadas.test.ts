@@ -82,7 +82,7 @@ const EXTENSAO_FRENTE = [
 
 /** Paramétrico: `pontos`. A franja fica alta de propósito — ver `SOBRANCELHA` abaixo. */
 const CABELO_PARAMETRICO: Cabelo = {
-  id: "coque",
+  id: "chanel",
   nome: "sintético paramétrico",
   pontos: [
     { t: -0.1, y: 200 },

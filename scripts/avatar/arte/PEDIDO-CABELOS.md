@@ -17,16 +17,34 @@ execução, rodada a rodada, vai em [ESTADO-DA-ROTA.md](ESTADO-DA-ROTA.md).
 
 | ordem | modelo | arte de partida | estado |
 |---|---|---|---|
-| **B** | `chanel` | `chanel.png` — a forma já aprovada | **a fazer, é a primeira** |
-| C | `espetado` | `entrada.png` | a fazer |
-| D | `assimetrico` | `entrada-2.png` | a fazer |
-| E | `coque` | **nenhuma** — arte do zero | a fazer |
-| F | `moicano` | **nenhuma** — arte do zero | a fazer |
+| **B** | `chanel` | `chanel.png` — a forma já aprovada | ✅ **promovido** em 2026-08-22 |
+| C | `espetado` | `entrada.png` | ❌ **reprovado e APAGADO** em 2026-08-24 |
+| D | `assimetrico` | `entrada-2.png` | ✅ **promovido** em 2026-08-22 |
+| E | `coque` | **nenhuma** — arte do zero | ❌ **reprovado 2× e APAGADO** em 2026-08-24 |
+| F | `moicano` | **nenhuma** — arte do zero | ✅ **promovido** em 2026-08-22 |
+| — | `burst-fade` | **nenhuma** — modelo NOVO, fora dos cinco | ✅ **promovido** em 2026-08-22 |
 
-A ordem é sugestão. O `chanel` vem primeiro por dois motivos medidos: ele é o
-**contraexemplo** do doc 24 §5.1 (a peça de 2 valores, o teste perfeito do padrão
-novo), e é o **par crítico** com a trancada — come 22,4% da silhueta dela. A primeira
-folha já responde a pergunta mais cara do elenco.
+## O elenco fechou em QUATRO, e as duas que faltavam foram apagadas
+
+**Decisão do Doug, 2026-08-24.** O plano dizia *"nenhuma peça some antes de ter
+substituta"*. Ele revogou a regra com a razão à vista: as duas que restavam já tinham
+sido **reprovadas por ele**, e peça reprovada em produção esperando substituta é o
+contrário do que a régua serve para fazer.
+
+| peça | a reprovação, medida |
+|---|---|
+| `espetado` | passou todos os gates e ele reprovou a olho: *"cor vazando pelo contorno do cabelo em todo o rosto, especialmente acima da sobrancelha direita"*. Cinco réguas não separaram a reprovada da aprovada — **espessura está descartada**, e o próximo pedido ataca a **opacidade** do contorno |
+| `coque` | duas vezes. Na segunda, medido: **8 921 px (9,0% da peça) fora do `viewBox`**, cortados numa linha reta de 214 px |
+
+**Ele vai desenhar arte nova**, e ela não precisa se chamar `espetado` nem `coque`: o
+slot está livre. O que sai do disco com elas — `entrada.png`, `entrada-2.png`,
+`espetado.png`, `espetado-crua.jpg` e 9,7 MB de pastas de bancada — não volta, e o
+**defeito registrado do `arte:borda` morreu junto** (a `entrada.png` era a única
+entrada dele).
+
+O que continua valendo deste arquivo é **tudo daqui para baixo**: as amarras do slot,
+o teto do `viewBox`, a regra do contorno azul-marinho e o molde do pedido. Para a arte
+nova, troque a chave e o parágrafo da forma.
 
 ---
 

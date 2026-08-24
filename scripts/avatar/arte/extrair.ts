@@ -866,7 +866,7 @@ export function imprimirExtracao(e: Extracao, caminho: string): void {
 }
 
 if (process.argv[1]?.endsWith("extrair.ts")) {
-  const caminho = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const caminho = process.argv[2] ?? `${PASTA}/chanel.png`;
   const pasta = process.argv[3] ?? `${saidaDaArte(caminho)}/peca`;
   extrair(caminho)
     .then(async (e) => {

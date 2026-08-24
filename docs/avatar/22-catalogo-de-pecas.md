@@ -16,10 +16,15 @@
 
 > **O título diz 4 slots, e desde 2026-08-23 os slots vestíveis são 5.** O quinto
 > é o `cabelo`, e ele não está no título nem nas tabelas de pirâmide **de
-> propósito**: as 6 peças dele **já existem e já estão desenhadas** — não são menu,
+> propósito**: as peças dele **já existem e já estão desenhadas** — não são menu,
 > são inventário. Elas ficam na **§5-E**, que é uma seção de natureza diferente das
 > outras quatro. Quando o Doug fechar o elenco, a recontagem acontece de uma vez só
 > e o título muda junto (§2).
+>
+> ⚠️ **Eram 6 e são 4 desde 2026-08-24**, quando ele apagou `cabelo-espetado` e
+> `cabelo-coque` em vez de refazê-las no padrão tonal — as duas já tinham sido
+> reprovadas por ele. **O elenco não fechou: ele vai desenhar arte nova**, e a
+> recontagem continua esperando isso.
 
 Criado em 2026-08-13 como *catálogo de trajes*, junto com a emenda §0 do doc 21.
 **Estendido aos quatro slots em 2026-08-21**, quando o Bloco H precisou de um
@@ -39,7 +44,7 @@ escrita à mão em lugar nenhum.
 
 | | |
 |---|---|
-| **iniciais** | as linhas com `inicial = true` em `avatar_catalogo` — hoje `traje-farda`, `cabelo-espetado` e `cabelo-assimetrico`, todas `common`. `handle_new_user` as semeia com `INSERT … SELECT … WHERE inicial`: **quem decide é a coluna, não uma lista no corpo da função** |
+| **iniciais** | as linhas com `inicial = true` em `avatar_catalogo` — hoje `traje-farda` e `cabelo-assimetrico`, as duas `common` (o `cabelo-espetado` era a terceira e saiu em 2026-08-24). `handle_new_user` as semeia com `INSERT … SELECT … WHERE inicial`: **quem decide é a coluna, não uma lista no corpo da função** |
 | **as demais** | `origem = 'bau'`, com raridade. O baú é a **única** porta |
 | **"sem traje" e "careca"** | continuam válidos — `NULL` nos dois. O inicial é **opção**, não obrigação |
 
@@ -365,26 +370,36 @@ não caía no baú. Agora é peça como qualquer outra: raridade, posse em
 **A raridade espelha o gate de nível que existia** — é tradução, não redesenho.
 Cabelo livre virou `common`; nível 10 virou `rare`; nível 20, `epic`; nível 30,
 `legendary`. O `burst-fade` nunca teve linha de nível (chegou depois da última
-migration) e entra como `rare`, ao lado do `coque`.
+migration) e entra como `rare` (o `coque`, que dividia a faixa com ele, saiu do catálogo em 2026-08-24).
 
 | # | slug | raridade | inicial | era | família | textura repetida |
 |---|---|---|---|---|---|---|
-| — | `cabelo-espetado` | `common` | ✅ | nível 1 | traçada | as pontas repetidas, todas do mesmo comprimento, saindo em leque do topo |
 | — | `cabelo-assimetrico` | `common` | ✅ | nível 1 | tonal | a mecha longa de um lado só **+** a queda contínua de luz dentro dela |
-| — | `cabelo-coque` | `rare` | | nível 10 | paramétrica | o volume enrolado do coque **+** o contorno próprio que o separa da massa |
 | — | `cabelo-burst-fade` | `rare` | | *(sem linha)* | tonal | o degradê em leque atrás da orelha — o tom mais contínuo do elenco, 256 valores distintos |
 | — | `cabelo-moicano` | `epic` | | nível 20 | tonal | a crista central **+** as laterais rentes, com a luz correndo pela crista |
 | — | `cabelo-chanel` | `legendary` | | nível 30 | tonal | as pontas contadas da barra reta **+** a luz descendo por dentro de cada mecha |
+
+⚠️ **Eram SEIS até 2026-08-24, e o Doug apagou duas.** `cabelo-espetado` (`common`,
+inicial, família traçada) e `cabelo-coque` (`rare`, paramétrica) saíram do catálogo e
+do banco pela migration `20260824080000`. As duas já tinham sido reprovadas por ele
+olhando o render — o espetado por *"cor vazando pelo contorno do cabelo em todo o
+rosto"*, o coque por **9,0% da peça fora do `viewBox`** —, e ele decidiu desenhar arte
+nova em vez de refazê-las. Com elas foram embora as duas últimas famílias que não são
+a **tonal**: o slot inteiro é tonal agora, que é o que ele quis dizer em 2026-08-23
+com *"não há três famílias"*.
 
 **A coluna `#` fica vazia de propósito:** a numeração 1–56 é do menu, e estas peças
 não são menu. Elas ganham número quando o elenco fechar e a recontagem acontecer de
 uma vez só.
 
-**Por que estas duas são as iniciais:** mesmo raciocínio da farda (§1). São as duas
-que já eram livres — o aluno nunca teve de subir de nível para usá-las —, e são as
-de menos sub-estrutura do elenco: uma forma em leque e uma mecha só. É delas que a
-raridade sobe. O aluno começa podendo escolher entre as duas, **mais a careca**,
-que continua sendo `NULL` e não é peça.
+⚠️ **Sobrou UMA inicial**, e é declarado, não descuido. Eram duas — `cabelo-espetado`
+e `cabelo-assimetrico`, as que já eram livres por nível —, e a primeira saiu. A
+migration traz uma asserção que reprova se **nenhuma** sobrar, porque zerar as
+iniciais de um slot não quebra nada de imediato: a conta nova nasceria, o gate
+passaria, e o defeito apareceria semanas depois como *"o cabelo não abre para
+ninguém"*. Com uma só, o aluno começa escolhendo entre ela **e a careca** — que
+continua sendo `NULL` e não é peça. Duas iniciais de novo é decisão do Doug, e a
+candidata natural é a arte nova que ele vai desenhar.
 
 **A careca não é linha do catálogo.** Ela é a ausência de peça, como o "sem traje" —
 e o gate `verify:cabelo-catalogo` guarda essa asserção desde que existe.

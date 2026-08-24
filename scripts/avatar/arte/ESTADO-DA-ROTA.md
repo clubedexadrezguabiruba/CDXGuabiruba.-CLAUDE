@@ -5374,3 +5374,137 @@ A peça está em `CABELOS_DA_ARTE` e aparece no seletor *"da arte · tonal"* do
 espalhando `PECAS_DA_ARTE["entrada-2"]`, e `assimetrico` continua em
 `MODELOS_TRACADOS`. Falta o parecer do Doug, e com ele a decisão da sobrancelha.
 
+
+---
+
+# 2026-08-24 · O ELENCO FECHA EM QUATRO — `espetado` e `coque` são APAGADOS
+
+O Doug encerrou a fila de conversão do elenco de cabelo pela outra ponta: em vez de
+refazer as duas peças que faltavam no padrão tonal, **apagou as duas**. *"exclui eles
+e vou criar novas artes."* E, no mesmo gesto: *"exclui as todas as barbas tb (deixe
+apenas a trançada, que aprovei)."*
+
+A regra do plano de 2026-08-22 era *"nenhuma peça some antes de ter substituta"*. Ela
+cai, e a razão está à vista: **as duas já tinham sido reprovadas por ele**, então o
+que a regra protegia era peça reprovada em produção.
+
+| peça | a reprovação | medida |
+|---|---|---|
+| `espetado` | a olho, com todos os gates verdes | *"cor vazando pelo contorno do cabelo em todo o rosto, especialmente acima da sobrancelha direita"*. Cinco réguas não a separaram do `chanel` aprovado |
+| `coque` | duas vezes | a 2ª: caixa da máscara em u y −47,5, **8 921 px (9,0%) fora do `viewBox`**, guilhotinados em linha reta de 214 px |
+
+## O que o banco disse antes de eu escrever uma linha
+
+```
+TOTAL DE CONTAS: 19
+VESTINDO CABELO:     cabelo-espetado  4        <- e só ele
+NO GUARDA-ROUPA:     cabelo-assimetrico 19 · cabelo-espetado 19
+CATÁLOGO DE ROSTO:   rosto-barba-trancada (só ela)
+VESTINDO ROSTO:      ninguém
+```
+
+Duas coisas mudaram o tamanho do trabalho:
+
+1. **o `coque` sai de graça** — ninguém tem, ninguém veste, e a arte dele nem existe
+   no disco desde a 2ª reprovação;
+2. **as barbas JÁ ESTAVAM excluídas** — no catálogo e no banco só existe a trançada, e
+   a `barba-cheia` saiu numa migration de 2026-08-21. O que sobrava eram **9,7 MB de
+   pastas de bancada**, nunca rastreadas pelo git (o `.gitignore` de
+   `scripts/avatar/arte/` ignora subpasta).
+
+**As 4 contas ficam CARECAS**, escolha dele. A alternativa oferecida era trocar pelo
+`cabelo-assimetrico`, que as 19 já possuem.
+
+## As três famílias viraram uma, e as duas listas ficam
+
+`MODELOS_PARAMETRICOS` e `MODELOS_TRACADOS` estão **vazias**. Elas não foram apagadas,
+e o motivo é o de sempre: elas são a régua, não o conteúdo — `completudeDasFamilias`
+soma as três contra `MODELOS_CABELO`, e uma peça que nascesse fora do tonal precisa
+continuar tendo onde reprovar. `ARTES` em `pecas.ts` esvaziou junto, e
+`pecas-da-arte.ts` foi regerado com catálogo vazio.
+
+É o terceiro caso que o bloco de contagem de `linhas-cabelo.test.ts` vê, depois de
+"migrou de família" e "entrou de fora": **traçado 1 → 0 e paramétrico 1 → 0 sem o
+tonal subir**.
+
+## O CONTROLE PARAMÉTRICO, e por que ele não é a peça ressuscitada
+
+Nove arquivos de bancada mediam contra `CABELOS.coque` — *"sem controle, 'melhorou'
+não tem escala"*. A geometria dele nunca foi o problema (o que o Doug reprovou foi a
+ARTE tonal que tentou substituí-la), então ela sobrevive como
+`scripts/avatar/estilo/controle-parametrico.ts`: fora do bundle, não vestível, com o
+`id` emprestado de uma peça viva só para satisfazer a união fechada.
+
+`pontosElipse` veio junto — o único chamador dela no produto era a calota do `coque`.
+
+## O ACHADO: duas réguas julgavam 1 dos 4 cabelos e diziam "aprovado"
+
+Encontrado ao ter de editar a lista para tirar a `entrada.png`. `arte:traco` e
+`arte:borda` percorriam uma constante `APROVADAS` **escrita à mão em cada um dos dois
+arquivos**, e as duas cópias estavam defasadas do mesmo jeito:
+
+```
+listavam:  barba-trancada · chanel · entrada · entrada-2
+faltavam:  moicano · assimetrico · burst-fade      (promovidos em 2026-08-22)
+```
+
+**Medido antes de consertar**, porque omissão de régua e defeito de arte são coisas
+diferentes: `arte:borda` dá **0 px de cinza** nas três; `arte:traco` dá 0 px apagados
+em duas e **18 px em 18 ilhas de 1 px** no `assimetrico`, contra piso de 8 por
+componente. A omissão não escondia defeito — escondia a possibilidade de haver um, que
+é a única coisa que uma régua faz.
+
+**O conserto é derivação, não uma terceira cópia.** `promovidas.ts` passa a guardar os
+mapas `NOMES` de cabelo e rosto, e as duas réguas leem `ARTES_PROMOVIDAS` de lá. Os
+mapas saíram de `cabelos.ts` / `rostos.ts` por um motivo mecânico: aqueles dois
+arquivos chamam `principal()` no topo do módulo, e importá-los de dentro de uma régua
+rodaria o gerador junto com a medição.
+
+## O que foi apagado, e é irreversível fora do histórico
+
+| | |
+|---|---|
+| do git | `entrada.png` · `entrada-2.png` · `espetado.png` · `espetado-crua.jpg` (2,6 MB) |
+| do disco (nunca rastreadas) | 11 pastas `barba-*` (menos `barba-trancada`) + `entrada/` · `entrada-2/` · `espetado/` — **9,7 MB** |
+| do código | `CABELOS.espetado` · `CABELOS.coque` · os dois da união `ModeloCabelo` · `pontosElipse` de `cabelo.ts` · o `DEFEITO_REGISTRADO` do `arte:borda` |
+| do banco | migration `20260824080000_espetado_e_coque_saem_do_catalogo.sql` |
+
+## Os testes que mudaram, e nenhum mudou de número por conveniência
+
+Três reprovaram por eu ter trocado o `coque` por uma peça **tonal**, onde o teste
+precisava de uma **não tonal** — e as três estavam certas em reprovar:
+
+1. *"a camada clara lê --av-cabelo"* — a tonal não emite `.kk-cabelo` nem
+   `.kk-cabelo-s`. Passou a compor a fixture paramétrica;
+2. *"em todo modelo PARAMÉTRICO a faixa de sombra é paralela"* — a guarda contra
+   vacuidade (`expect(parametricos.length).toBeGreaterThan(0)`) fez o que devia. Ela
+   virou `toEqual([])` com mensagem: *"voltou a existir paramétrico no catálogo — meça-o
+   aqui, não só a fixture"*;
+3. *"os 30 do ranking com TOM emitem 30 máscaras"* — viraram **60**, porque o cabelo
+   tonal traz a própria máscara. O teste passou a exigir `N * 2` e a conferir os dois
+   slots, o que **amplia** o que ele prova: a colisão temida é de `${ns}-tom-${slot}`,
+   e agora o mesmo `ns` carrega dois slots.
+
+O `id` das fixtures sintéticas virou `ID_FIXTURA`, num lugar só por arquivo — com o
+nome escrito em cinco fixtures, a próxima poda de elenco voltaria a quebrar cinco
+linhas em vez de uma. É a lição de `SOBRANCELHA_COBERTA`, de 2026-08-23.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**651 testes** · `verify:all` **37 passed | 1 failed**, e a única reprovação é a que a
+migration fecha: *"slot cabelo: 2 slug(s) no banco que o código não desenha"*.
+
+## Onde parou
+
+A migration **não foi aplicada** — o comando foi barrado pela permissão da sessão. Até
+ela rodar, `verify:avatar-db` reprova de propósito, e o gate está certo.
+
+```
+npx tsx scripts/apply-migration.ts supabase/migrations/20260824080000_espetado_e_coque_saem_do_catalogo.sql
+```
+
+Depois dela: o slot de cabelo tem **4 peças**, todas tonais, e **uma só peça inicial**
+(`cabelo-assimetrico`) — o `cabelo-espetado` era a outra. A migration tem uma asserção
+que reprova se nenhuma sobrar; uma só passa, mas fica declarado que conta nova nasce
+com um cabelo em vez de dois.

@@ -86,7 +86,7 @@ describe("a folha de estilo única", () => {
   });
 
   it("o SVG do modo folha externa não traz <style>, e o embutido traz", () => {
-    const base = { pele: PELE[2], cabelo: CABELO[0], modeloCabelo: "coque" as const, ns: "t" };
+    const base = { pele: PELE[2], cabelo: CABELO[0], modeloCabelo: "chanel" as const, ns: "t" };
 
     expect(compor({ ...base })).toContain("<style>");
     expect(compor({ ...base, folhaExterna: true })).not.toContain("<style>");
@@ -171,7 +171,7 @@ describe("o ns continua sendo o que separa os id", () => {
       compor({
         pele: PELE[skin],
         cabelo: CABELO[0],
-        modeloCabelo: "coque",
+        modeloCabelo: "chanel",
         ns,
         folhaExterna: true,
       });
@@ -206,7 +206,7 @@ describe("o ns continua sendo o que separa os id", () => {
       compor({
         pele: PELE[0],
         cabelo: CABELO[0],
-        modeloCabelo: "coque",
+        modeloCabelo: "chanel",
         ns,
         folhaExterna: true,
         rosto: {
@@ -226,11 +226,22 @@ describe("o ns continua sendo o que separa os id", () => {
     const svgs = Array.from({ length: N }, (_, i) => comTom(`r${i}`));
     const idsDeTom = svgs.flatMap((s) => [...s.matchAll(/<mask id="([^"]+)"/g)].map((m) => m[1]));
 
-    expect(idsDeTom).toHaveLength(N);
-    expect(new Set(idsDeTom).size).toBe(N);
+    // ⚠️ **DOIS por boneco desde 2026-08-24, e o segundo é ganho.** O cabelo era o
+    // `coque`, paramétrico e sem tom; com ele apagado, o modelo aqui é um TONAL, que
+    // traz a própria máscara. Então cada boneco emite `-tom-rosto` e `-tom-cabelo`.
+    //
+    // Isso amplia o que o teste prova em vez de reduzir: a colisão temida é de
+    // `${ns}-tom-${slot}`, e agora o mesmo `ns` carrega DOIS slots — se o slot não
+    // entrasse no id, os dois colidiriam dentro do mesmo boneco e a conta abaixo
+    // acusaria na hora. Antes, com um slot só, esse eixo não era exercitado.
+    expect(idsDeTom).toHaveLength(N * 2);
+    expect(new Set(idsDeTom).size).toBe(N * 2);
 
     // E cada um fecha com o próprio `mask="url(#…)"` — id único que não fecha é o
     // mesmo defeito com outra cara.
-    for (const [i, svg] of svgs.entries()) expect(svg).toContain(`mask="url(#r${i}-tom-rosto)"`);
+    for (const [i, svg] of svgs.entries()) {
+      expect(svg).toContain(`mask="url(#r${i}-tom-rosto)"`);
+      expect(svg).toContain(`mask="url(#r${i}-tom-cabelo)"`);
+    }
   });
 });

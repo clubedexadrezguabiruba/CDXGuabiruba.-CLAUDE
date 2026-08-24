@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 18 |
-| **Árvore** | **29 arquivos sujos** |
-| **Último commit** | 8080b53 · 2026-08-23 · feat(tema): a Academia sai do papel e entra no logado — o tier 2 vira Explorador, e o gate que faltava nasce |
+| **Commits à frente de `origin/main`** | 20 |
+| **Árvore** | **42 arquivos sujos** |
+| **Último commit** | ad77054 · 2026-08-24 · feat(avatar): o código da promoção tonal, que o commit anterior deixou na mesa |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -401,7 +401,7 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 |---|---|---|
 | Backlog do avatar | **30 de 67** (45%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
-| Catálogo de cabelo | **6 de 10** no mínimo (faltam **4**) | `docs/avatar/19-rota-de-arte-runbook.md` |
+| Catálogo de cabelo | **3 de 10** no mínimo (faltam **7**) | `docs/avatar/19-rota-de-arte-runbook.md` |
 
 Backlog do avatar, fase a fase:
 
@@ -424,7 +424,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 94 |
+| **Migrations** | 95 |
 | **Rotas (`page.tsx`)** | 33 |
 | **Arquivos de teste** | 23 |
 | **Primitivos de UI** | 4 |

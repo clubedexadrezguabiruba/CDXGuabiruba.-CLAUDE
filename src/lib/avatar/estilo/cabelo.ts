@@ -95,26 +95,21 @@ import type { TomDaPeca } from "./tipos";
  * `avatar_hair_catalog` tem uma linha por slug, e `users.avatar_hair` referencia
  * ela. Ver `verify:cabelo-catalogo`, que compara as duas listas byte a byte.
  *
- * **As TRÊS famílias convivem, e a diferença é medível:** as listas
- * `MODELOS_PARAMETRICOS`, `MODELOS_TRACADOS` e `MODELOS_TONAIS` dizem quem é quem, e
- * elas são **explícitas de propósito**. Um filtro automático por `massa` deixaria um
- * paramétrico que mudasse de família acidentalmente sumir do teste de selo que
- * existe justamente para pegar isso.
+ * ⚠️ **SOBROU UMA FAMÍLIA, e foi o Doug quem decidiu assim em 2026-08-23:** *"não há
+ * três famílias! o tonal é a arte aprovada com a nova técnica e definitiva."* Em
+ * 2026-08-24 ele fechou a conta: em vez de refazer `espetado` e `coque` no padrão
+ * novo, **apagou os dois** — vai desenhar arte nova, e peça reprovada não fica de
+ * pé esperando substituta. `MODELOS_PARAMETRICOS` e `MODELOS_TRACADOS` ficaram
+ * vazias no mesmo gesto.
  *
- * ⚠️ **A terceira nasceu vazia em 2026-08-22, e é a que vai comer as outras duas.**
- * O Doug decidiu refazer os cinco modelos no padrão tonal da `barba-trancada` — ver
- * `Cabelo.tonal`. Cada peça migra de lista na promoção dela, uma por vez; quando as
- * cinco tiverem migrado, as outras duas listas ficam vazias e o código sem usuário
- * sai (Bloco G do plano). Até lá, as três convivem, e é por isso que
- * `completudeDasFamilias` soma três.
+ * As três listas continuam existindo, e continuam **explícitas de propósito**: um
+ * filtro automático por `massa` deixaria uma peça que mudasse de família
+ * acidentalmente sumir do teste de selo que existe justamente para pegar isso.
+ * Duas delas vazias é estado honesto, não resto a limpar — a próxima peça de arte
+ * nasce tonal, e é `completudeDasFamilias` que cobra que as três somem
+ * `MODELOS_CABELO`.
  */
-export type ModeloCabelo =
-  | "coque"
-  | "moicano"
-  | "espetado"
-  | "chanel"
-  | "assimetrico"
-  | "burst-fade";
+export type ModeloCabelo = "moicano" | "chanel" | "assimetrico" | "burst-fade";
 
 /** Um ponto da franja: altura absoluta, e fração da largura da cabeça NAQUELA altura. */
 export interface PontoFranja {
@@ -667,24 +662,6 @@ export function ponto(p: PontoFranja, dy = 0): { x: number; y: number } {
 }
 
 /**
- * Uma elipse como OITO PONTOS, e não como dois comandos `A`.
- *
- * Os dois arcos custam ~90 bytes e os oito pontos ~290, e mesmo assim são os pontos:
- * `Extensao` guarda dado, não path emitido, para a régua de folga conseguir medir a
- * peça. Um caso especial em `A` seria a única extensão que o gate não enxerga —
- * exatamente a forma de defeito silencioso que este projeto já pagou.
- *
- * Oito pontos numa spline centrípeta fechada erram o círculo em menos de meio por
- * cento do raio, que a 56 px é um centésimo de pixel.
- */
-function pontosElipse(cx: number, cy: number, rx: number, ry: number): Ponto[] {
-  return Array.from({ length: 8 }, (_, i) => {
-    const a = (i / 8) * 2 * Math.PI;
-    return { x: cx + rx * Math.cos(a), y: cy + ry * Math.sin(a) };
-  });
-}
-
-/**
  * Uma forma livre em coordenada absoluta, fechada por spline.
  *
  * **Exportada pelo mesmo motivo de `ponto`**: `rosto.ts` fecha os laços dele com
@@ -734,33 +711,6 @@ function lacoTY(pts: readonly PontoFranja[], dy: number): string {
  */
 export const CABELOS: Record<ModeloCabelo, Cabelo> = {
   /**
-   * Cabelo preso: a franja sobe e mostra testa, e o coque fica ATRÁS da cabeça.
-   *
-   * `atras: true` não é detalhe de ordem — é o que separa "coque preso atrás" de
-   * "bola colada na testa". A cabeça é opaca e cobre a emenda, que é o mesmo
-   * mecanismo de oclusão que o estilo inteiro usa em vez de máscara.
-   */
-  coque: {
-    id: "coque",
-    nome: "Coque",
-    pontos: [
-      { t: -0.12, y: 206 },
-      { t: 0.05, y: 152 },
-      { t: 0.24, y: 108 },
-      { t: 0.52, y: 100 },
-      { t: 0.86, y: 110 },
-      { t: 1.0, y: 158 },
-      { t: 1.14, y: 204 },
-    ],
-    // O coque é uma BOLA, e a primeira versão era um ovo deitado de 124 × 104 —
-    // com o crânio comendo a metade de baixo, o que sobrava na tela era uma laje de
-    // topo reto, que lê como boina e não como coque. Uma circunferência de raio 50
-    // resolve: o que passa do crânio é uma calota, e calota de círculo é redonda em
-    // qualquer altura em que ela seja cortada.
-    extensoes: [{ atras: true, forma: pontosElipse(228, 14, 50, 48) }],
-  },
-
-  /**
    * MOICANO — a segunda peça **TONAL** do slot, aprovada pelo Doug em 2026-08-22.
    *
    * Ela era **paramétrica**, e é a primeira das cinco a deixar aquela família: a
@@ -794,29 +744,6 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
     ...CABELOS_DA_ARTE.moicano,
     id: "moicano",
     nome: "Moicano",
-  },
-
-  /**
-   * ESPETADO — a primeira peça de ARTE do catálogo, aprovada pelo Doug no Bloco 9.
-   *
-   * A geometria vem inteira de `PECAS_DA_ARTE.entrada`, e ela **não é recopiada
-   * aqui**: o literal é gerado por `npm run arte:pecas` a partir do PNG versionado,
-   * e ter duas descrições da mesma borda é o defeito que este arquivo inteiro
-   * evita. O que o catálogo declara é a **identidade** — `id` e `nome` —, porque o
-   * gerador grava o `id` a partir do nome do ARQUIVO (`entrada.png` → `"entrada"`),
-   * e sem esta linha `CABELOS.espetado.id` seria `"entrada"` em runtime, mascarado
-   * pelo cast do arquivo gerado.
-   *
-   * **Família sintetizada (legada), congelada por decisão C de 2026-08-06:** o preto
-   * dela é um `stroke` de 12 u sobre o laço (`linhas`), não a banda transcrita da
-   * arte. Transcrevê-la exige a variante `lei` — a banda preta do PNG tem p50 de
-   * 6,3 u e **79,8% do perímetro abaixo de 8 u**, fina demais para a `fiel` — e uma
-   * re-aprovação visual.
-   */
-  espetado: {
-    ...PECAS_DA_ARTE.entrada,
-    id: "espetado",
-    nome: "Espetado",
   },
 
   /**
@@ -980,11 +907,24 @@ export const MODELOS_CABELO = Object.keys(CABELOS) as ModeloCabelo[];
  *
  * `completudeDasFamilias` cobra que as TRÊS somem `MODELOS_CABELO` — sem isso um
  * modelo novo nasceria fora delas e escaparia de todos os blocos de selo.
+ *
+ * ⚠️ **VAZIA desde 2026-08-24, e o vazio é o estado final desejado.** O último
+ * paramétrico era o `coque`, e o Doug o apagou em vez de refazê-lo. A lista fica
+ * porque ela é a régua, não o conteúdo: `completudeDasFamilias` soma as três, e uma
+ * peça que nascesse paramétrica por acidente precisa continuar tendo onde reprovar.
  */
-export const MODELOS_PARAMETRICOS = ["coque"] as const satisfies readonly ModeloCabelo[];
+export const MODELOS_PARAMETRICOS = [] as const satisfies readonly ModeloCabelo[];
 
-/** Os promovidos pela rota de arte. Ver `docs/avatar/19-rota-de-arte-runbook.md`. */
-export const MODELOS_TRACADOS = ["espetado"] as const satisfies readonly ModeloCabelo[];
+/**
+ * Os promovidos pela rota de arte na esteira TRAÇADA (`potrace`, contorno binário).
+ * Ver `docs/avatar/19-rota-de-arte-runbook.md`.
+ *
+ * ⚠️ **VAZIA desde 2026-08-24, pelo mesmo motivo da lista acima.** O último traçado
+ * era o `espetado`, apagado com o `coque`. A esteira traçada continua no disco
+ * (`pecas.ts`, `tracar-cabelo.ts`) e não escreve mais nenhuma peça do catálogo —
+ * `ARTES` também ficou vazio.
+ */
+export const MODELOS_TRACADOS = [] as const satisfies readonly ModeloCabelo[];
 
 /**
  * OS TONAIS — silhueta em vetor, claro-escuro em máscara de luminosidade.
@@ -1003,9 +943,13 @@ export const MODELOS_TRACADOS = ["espetado"] as const satisfies readonly ModeloC
  * de `ARTES` em `pecas.ts`, e com ele a última peça que aquele gerador escrevia além
  * do `espetado`.
  *
- * As outras duas (`espetado`, `coque`) continuam nas famílias antigas até cada
- * substituta ser aprovada — nenhuma peça some antes de ter substituta, que é a regra
- * do plano.
+ * ⚠️ **As outras duas nunca migraram: em 2026-08-24 o Doug APAGOU `espetado` e
+ * `coque`.** A regra do plano era *"nenhuma peça some antes de ter substituta"*, e
+ * ele a revogou com a razão à vista — as duas já tinham sido reprovadas por ele
+ * (o `espetado` por cor vazando pelo contorno, o `coque` duas vezes, a última com
+ * 9,0% da peça fora do `viewBox`), e manter peça reprovada em produção esperando
+ * substituta é o contrário do que a régua serve para fazer. Ele vai desenhar arte
+ * nova. O elenco de cabelo é **4**, e as duas listas acima estão vazias.
  *
  * O **`burst-fade`** foi o terceiro, no mesmo dia, e quebra o padrão dos dois
  * primeiros: ele não veio de lista nenhuma. Enquanto os cinco do elenco antigo migram

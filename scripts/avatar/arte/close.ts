@@ -18,7 +18,7 @@ const ZOOM = 3;
 const FOLGA_PX = 40;
 
 async function principal() {
-  const arte = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const arte = process.argv[2] ?? `${PASTA}/chanel.png`;
   const saida = saidaDaArte(arte);
   mkdirSync(saida, { recursive: true });
 

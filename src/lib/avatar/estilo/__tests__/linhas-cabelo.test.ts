@@ -41,7 +41,7 @@ import {
   pathCabelo,
   pathCabeloLinhas,
 } from "../cabelo";
-import type { Cabelo, PontoFranja } from "../cabelo";
+import type { Cabelo, ModeloCabelo, PontoFranja } from "../cabelo";
 import { PECAS_DA_ARTE } from "../pecas-da-arte";
 import { SOBRANCELHA } from "../geometria";
 import { compor } from "../compositor";
@@ -72,9 +72,45 @@ const MASSA: readonly PontoFranja[] = [
   { t: -0.2, y: 30 },
 ];
 
+/**
+ * O `id` das FIXTURAS sintéticas — rótulo, não alvo. Ver o gêmeo em `cabelo.test.ts`.
+ *
+ * Era `"coque"` até 2026-08-24, quando o Doug apagou o último paramétrico do elenco.
+ * A união `ModeloCabelo` exige um nome vivo; nenhuma destas fixtures lê a peça do
+ * catálogo com esse nome.
+ */
+const ID_FIXTURA = "chanel" as const;
+
+/**
+ * UM PARAMÉTRICO SINTÉTICO — e ele nasceu porque o catálogo ficou sem nenhum.
+ *
+ * Três testes abaixo compunham a peça `coque` do catálogo para exercitar a família:
+ * `.kk-cabelo-s` com fill e stroke, `pathCabeloLinhas` devolvendo vazio, `arcosDeTraco`
+ * devolvendo `null`. Nenhum deles queria AQUELA peça — queriam *uma* peça com
+ * `pontos`. Com `MODELOS_PARAMETRICOS` vazia, apontar para o catálogo é impossível, e
+ * apontar para uma peça tonal mediria outra família em silêncio.
+ *
+ * Os pontos são os de `cabelo.test.ts` (`PONTOS_PARAMETRICO`), pelo mesmo motivo que
+ * lá: congelar a forma aqui separa *como a família se emite* de *o que o catálogo tem*.
+ */
+const PARAMETRICO: Cabelo = {
+  id: ID_FIXTURA,
+  nome: "paramétrico (fixture)",
+  pontos: [
+    { t: -0.12, y: 232 },
+    { t: 0.05, y: 178 },
+    { t: 0.2, y: 134 },
+    { t: 0.42, y: 124 },
+    { t: 0.68, y: 123 },
+    { t: 0.88, y: 130 },
+    { t: 0.99, y: 176 },
+    { t: 1.14, y: 228 },
+  ],
+};
+
 /** Traço na borda de baixo (0→7) e num pedaço da volta. A coroa fica sem linha. */
 const tracado: Cabelo = {
-  id: "coque",
+  id: ID_FIXTURA,
   nome: "curto (traçado, com arcos de traço)",
   massa: MASSA,
   linhas: [
@@ -142,13 +178,26 @@ describe("as TRÊS famílias do catálogo são declaradas, não inferidas", () =
     // escreveu 13 selos, contra 11: o `assimetrico` normal e o animado entraram, e
     // NENHUM selo existente mudou de bytes). O registro de bytes dela em
     // `cabelo.test.ts` caiu de 14 074 para 12 176, que é o que a família tonal faz.
+    //
+    // ⚠️ **2026-08-24: as duas últimas não migraram — foram APAGADAS.** O Doug
+    // reprovou `espetado` (cor vazando pelo contorno) e `coque` (duas vezes, a última
+    // com 9,0% da peça fora do `viewBox`), e decidiu desenhar arte nova em vez de
+    // refazer aquelas. Traçado 1 -> 0 e paramétrico 1 -> 0 **sem** o tonal subir: é o
+    // terceiro caso que este bloco vê, depois de "migrou" e "entrou de fora".
     expect(
       MODELOS_TONAIS.length,
       "uma peça migrou para a família tonal: regrave o selo DELA (`npm run avatar:congelar`) " +
         "e atualize este número — nunca em lote",
     ).toBe(4);
-    expect(MODELOS_TRACADOS.length).toBe(1);
-    expect(MODELOS_PARAMETRICOS.length).toBe(1);
+    expect(
+      MODELOS_TRACADOS.length,
+      "a família traçada está VAZIA desde 2026-08-24: se alguém entrou, os selos dos " +
+        "traçados voltaram a medir e este número precisa subir junto",
+    ).toBe(0);
+    expect(
+      MODELOS_PARAMETRICOS.length,
+      "a família paramétrica está VAZIA desde 2026-08-24 — mesma regra da linha acima",
+    ).toBe(0);
   });
 
   it("nenhum modelo declara duas famílias ao mesmo tempo — `pontos` × `massa` × `tonal`", () => {
@@ -175,7 +224,7 @@ describe("a regressão: o B4 não vazou para a família paramétrica", () => {
     // filtrado por `massa`. Com o filtro, um paramétrico que ganhasse `massa` por
     // acidente sairia da lista e deixaria de ser conferido: o teste concordaria com
     // o defeito que ele existe para pegar.
-    for (const modelo of MODELOS_PARAMETRICOS) {
+    for (const modelo of MODELOS_PARAMETRICOS as readonly ModeloCabelo[]) {
       expect(CABELOS[modelo].massa, `${modelo} deixou de ser paramétrico`).toBeUndefined();
     }
   });
@@ -213,7 +262,7 @@ describe("os traçados promovidos continuam byte a byte", () => {
   it("eles são traçados mesmo — `massa` presente, `pontos` ausente", () => {
     // O par da amarra de família do bloco de cima, na direção contrária. Sem ela,
     // um traçado que voltasse a ser paramétrico passaria pelos selos calado.
-    for (const modelo of MODELOS_TRACADOS) {
+    for (const modelo of MODELOS_TRACADOS as readonly ModeloCabelo[]) {
       expect(CABELOS[modelo].massa, `${modelo} perdeu a massa`).toBeDefined();
       expect(CABELOS[modelo].pontos, `${modelo} virou paramétrico`).toBeUndefined();
     }
@@ -223,7 +272,7 @@ describe("os traçados promovidos continuam byte a byte", () => {
     // `PECAS_DA_ARTE.entrada.id` é `"entrada"`, gravado por `arte/pecas.ts` a partir
     // de `entrada.png`. Importar o objeto inteiro poria `CABELOS.espetado.id ===
     // "entrada"` em runtime — o cast do arquivo gerado mascara isso no tipo.
-    for (const modelo of MODELOS_TRACADOS) {
+    for (const modelo of MODELOS_TRACADOS as readonly ModeloCabelo[]) {
       expect(CABELOS[modelo].id, `${modelo} carrega o id do arquivo de origem`).toBe(modelo);
     }
   });
@@ -336,7 +385,7 @@ describe("a peça sobreposta é emitida DEPOIS das feições, e o cabelo tapa o 
   it("o paramétrico não tem peça sobreposta — e é por isso que a ordem nunca o afetou", () => {
     // O controle negativo do bloco. Se um dia um paramétrico passar a emitir massa
     // fora do clip, esta linha cai e o teste de cima passa a valer para ele também.
-    for (const modelo of MODELOS_PARAMETRICOS) {
+    for (const modelo of MODELOS_PARAMETRICOS as readonly ModeloCabelo[]) {
       expect(iPeca(svgDe(modelo)), `${modelo} passou a emitir massa fora do clip`).toBe(-1);
     }
   });
@@ -423,7 +472,7 @@ describe("a sobrancelha coberta pelo cabelo não é desenhada", () => {
 
 describe("as classes do cabelo saem por família, e nenhuma regra sai à toa", () => {
   it("o paramétrico emite `.kk-cabelo-s` com fill E stroke, e nenhuma das duas novas", () => {
-    const css = cssDe(svgDe("coque"));
+    const css = cssDe(svgDe(PARAMETRICO));
     expect(css).toContain(".t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha)");
     expect(css).not.toContain(".kk-cabelo-m");
     expect(css).not.toContain(".kk-cabelo-l");
@@ -439,7 +488,7 @@ describe("as classes do cabelo saem por família, e nenhuma regra sai à toa", (
   });
 
   it("traçado SEM arcos não emite `.kk-cabelo-l` — regra emitida à toa custa bytes", () => {
-    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: ID_FIXTURA, nome: "chapado de traço", massa: MASSA };
     const css = cssDe(svgDe(semTraco));
     expect(css).toContain(".kk-cabelo-m");
     expect(css).not.toContain(".kk-cabelo-l");
@@ -476,9 +525,9 @@ describe("o traço é a própria massa, no trecho apontado", () => {
   });
 
   it("sem `linhas`, não há path de traço — e o compositor não emite forma vazia", () => {
-    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: ID_FIXTURA, nome: "chapado de traço", massa: MASSA };
     expect(pathCabeloLinhas(semTraco)).toBe("");
-    expect(pathCabeloLinhas("coque")).toBe("");
+    expect(pathCabeloLinhas(PARAMETRICO)).toBe("");
   });
 });
 
@@ -491,8 +540,8 @@ describe("a régua dos arcos", () => {
   });
 
   it("devolve `null` quando não há o que medir, e os dois casos são nomeados", () => {
-    expect(arcosDeTraco("coque")).toBeNull(); // paramétrico
-    expect(arcosDeTraco({ id: "coque", nome: "chapado", massa: MASSA })).toBeNull();
+    expect(arcosDeTraco(PARAMETRICO)).toBeNull(); // paramétrico
+    expect(arcosDeTraco({ id: ID_FIXTURA, nome: "chapado", massa: MASSA })).toBeNull();
   });
 
   it("R10: reprova índice fora da massa — o `d` sairia com NaN e nada acusaria", () => {
@@ -530,7 +579,7 @@ describe("a peça traçada composta", () => {
   });
 
   it("paga UMA forma pelo traço, e só quando há arcos", () => {
-    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: ID_FIXTURA, nome: "chapado de traço", massa: MASSA };
     // Sem clara: massa (1) + traço (1). A base careca são 19.
     expect(formas(svgDe(tracado))).toBe(19 + 2);
     expect(formas(svgDe(semTraco))).toBe(19 + 1);

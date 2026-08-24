@@ -109,6 +109,7 @@ import { converter, type Convertido, type VarianteNucleo } from "./converter";
 import { ehTeal, mascaraDaPeca } from "./extrair";
 import { gateMenosUm } from "./gate-menos-um";
 import { type Img, carregar } from "./pixels";
+import { CONTROLE_PARAMETRICO } from "../estilo/controle-parametrico";
 
 // ---------------------------------------------------------------------------
 // Constantes de folha
@@ -578,7 +579,7 @@ async function principal(): Promise<void> {
   const rTrocada = await renderNoCanvasDaArte(
     nav,
     "rt",
-    { ...forma, peca: CABELOS.coque },
+    { ...forma, peca: CONTROLE_PARAMETRICO },
     png("trocada"),
   );
 
@@ -1005,7 +1006,7 @@ async function principal(): Promise<void> {
   };
   const tira: [string, string][] = [
     [nome, await em56("peca", c.peca)],
-    ["[curto] — aprovado", await em56("curto", CABELOS.coque)],
+    ["[curto] — aprovado", await em56("curto", CONTROLE_PARAMETRICO)],
     ["careca — o piso", await em56("careca", undefined)],
   ];
   const cand56: Record<number, string> = {};

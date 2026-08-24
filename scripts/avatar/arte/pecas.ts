@@ -57,16 +57,20 @@ import { primeiraDivergencia, semCR } from "./gerado";
  * pela esteira VELHA e escrever uma peça que ninguém desenhou nem aprovou.
  *
  * `CABELOS.chanel` passou a espalhar `CABELOS_DA_ARTE.chanel` (família tonal), e é
- * por isso que apagar a linha não deixa modelo sem peça. As outras duas seguem
- * traçadas até cada substituta ser aprovada — Blocos C e D do plano.
+ * por isso que apagar a linha não deixa modelo sem peça.
+ *
+ * ⚠️ **A LISTA FICOU VAZIA em 2026-08-24, e isso NÃO é esteira quebrada.** O
+ * `entrada-2` saiu em 2026-08-22 na promoção do `assimetrico` tonal; o `entrada`
+ * (espetado) saiu agora, quando o Doug apagou o modelo em vez de refazê-lo — a peça
+ * tinha sido reprovada por ele *"com cor vazando pelo contorno em todo o rosto"*, e
+ * peça reprovada não fica em produção esperando substituta.
+ *
+ * O gerador continua de pé e continua conferido (`--check` em `verify:arte`),
+ * porque a esteira traçada é o caminho de qualquer arte que volte a precisar dela.
+ * O que ele escreve hoje é um catálogo vazio, e é o estado honesto: `MODELOS_TRACADOS`
+ * também está vazia, e as duas concordam.
  */
-const ARTES: { arquivo: string; nome: string; nota: string }[] = [
-  { arquivo: "entrada", nome: "Espetado", nota: "espetado, com pontas altas" },
-  // `entrada-2` saiu em 2026-08-22, na promoção do `assimetrico` tonal, pelo mesmo
-  // motivo que tirou o `chanel` daqui: um nome de arquivo, uma arte, uma esteira. A
-  // arte velha continua no disco como histórico; o que não continua é esta esteira
-  // traçando-a e escrevendo uma peça que ninguém mais usa.
-];
+const ARTES: { arquivo: string; nome: string; nota: string }[] = [];
 
 const SAIDA = "src/lib/avatar/estilo/pecas-da-arte.ts";
 

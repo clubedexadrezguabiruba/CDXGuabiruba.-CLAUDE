@@ -88,6 +88,7 @@ import { readFileSync } from "fs";
 import sharp from "sharp";
 
 import { ESCALA, FUNDO, LADO, ORIGEM, PNG_BASE, paraUnidade } from "./base";
+import { ARTES_PROMOVIDAS } from "./promovidas";
 import { TRACO } from "../../../src/lib/avatar/estilo/geometria";
 
 /** O mesmo limiar de "isto difere da base" que `barba-para-formas.ts` usa. */
@@ -295,12 +296,12 @@ export async function comQueixoApagado(arteBase: string, alturaU = 2): Promise<B
  * outra base, e o Gate −1 dele protege a CABEÇA em vez do corpo. A régua vale igual
  * lá — o que muda é a base de comparação, e ela não é esta.
  */
-const APROVADAS = [
-  "scripts/avatar/arte/barba-trancada.png",
-  "scripts/avatar/arte/chanel.png",
-  "scripts/avatar/arte/entrada.png",
-  "scripts/avatar/arte/entrada-2.png",
-];
+/**
+ * ⚠️ **DERIVADA desde 2026-08-24** — ver o argumento inteiro em `promovidas.ts`. Era
+ * escrita à mão aqui e escrita à mão outra vez em `cor-da-borda.ts`, e as duas cópias
+ * envelheceram juntas: três artes promovidas em 2026-08-22 nunca entraram em nenhuma.
+ */
+const APROVADAS = ARTES_PROMOVIDAS;
 
 /** A arte sobre a qual o controle é construído. Cabelo, porque o queixo fica à vista. */
 const ARTE_DO_CONTROLE = "scripts/avatar/arte/chanel.png";
