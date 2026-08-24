@@ -668,8 +668,27 @@ export function ponto(p: PontoFranja, dy = 0): { x: number; y: number } {
  * esta spline centrípeta, e não com uma segunda. Duas parametrizações da mesma
  * curva emitem `C` diferentes, e a emenda entre duas peças do mesmo boneco
  * apareceria.
+ *
+ * ⚠️ **LAÇO SEM PONTO É AUSÊNCIA DE LAÇO, e até 2026-08-24 ele DERRUBAVA o
+ * compositor.** `pts[0].x` num array vazio lança
+ * `TypeError: Cannot read properties of undefined (reading 'x')`, com a pilha
+ * inteira passando por `compor()` — o boneco não sai, e o que o usuário vê é a
+ * página quebrada em vez de um cabelo chapado.
+ *
+ * O caminho até aqui é curto e não é hipotético: `clara: []` é um array **truthy**,
+ * então `pathCabeloClaro` o tratava como "tem clara" e chamava `lacoTY([])`. E
+ * `converter()` — a esteira traçada — devolve exatamente isso ao traçar
+ * `chanel.png`: massa de 43 pontos, **`clara` com 0**, 27 `claras`, 18 `nucleo`,
+ * 26 `pretas`. Foi assim que o `arte:reguas` estourou.
+ *
+ * A guarda mora AQUI, e não nos quatro chamadores, porque quatro guardas iguais
+ * divergem: `massa` (`pathCabelo`), `clara`/`claras` (`pathCabeloClaro`), `nucleo`
+ * e `pretas` chegam todos a esta função, e cada um deles poderia receber a lista
+ * vazia. Uma peça sem forma emite `""`, que é o que o compositor já sabe tratar —
+ * ele não emite elemento para `d` vazio, e `cabelo.test.ts` cobra isso.
  */
 export function laco(pts: readonly Ponto[]): string {
+  if (!pts.length) return "";
   return `M ${n(pts[0].x)} ${n(pts[0].y)} ` + spline(pts, true) + `Z`;
 }
 

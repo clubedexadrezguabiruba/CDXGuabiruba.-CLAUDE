@@ -390,41 +390,21 @@ async function reguaDaSilhueta(pecaEntrada: Cabelo): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Régua 3 — `escala.ts`
+// Régua 3 — `escala.ts` — APOSENTADA em 2026-08-24
 // ---------------------------------------------------------------------------
-
-async function reguaDaEscala(): Promise<void> {
-  console.log(`\n  RÉGUA 3 — escala.ts  (os 92%, medidos no render)\n`);
-
-  const m = await medirEscala(`${PASTA}/chanel.png`);
-  const hCem = m.alturaNoQuadro(m.carecaCem);
-  const h92 = m.alturaNoQuadro(m.careca92);
-
-  afirmar(
-    "escala",
-    "PASSA",
-    "careca a 100% e a 92% dão as alturas conhecidas no quadro 56 × 70",
-    `${hCem.toFixed(1)} px → ${h92.toFixed(1)} px  (razão ${(h92 / hCem).toFixed(4)}, esperado 0,92)`,
-    Math.abs(h92 / hCem - 0.92) < 0.01,
-  );
-
-  afirmar(
-    "escala",
-    "REPROVA",
-    "a peça CRUA a 100% encosta no teto do quadro — o viewport corta sem avisar",
-    `tinta começa em y ${m.pecaCem.y0.toFixed(1)}   ${m.pecaCem.tocaOTeto ? "✗ ENCOSTA" : "cabe"}` +
-      `   (pico da peça ${m.picoAntes.toFixed(1)} u)`,
-    m.pecaCem.tocaOTeto,
-  );
-
-  afirmar(
-    "escala",
-    "SEPARA",
-    "a MESMA peça a 92% deixa de tocar — a régua separa as duas escalas",
-    `a 92% a tinta começa em y ${m.peca92.y0.toFixed(1)}   ${m.peca92.tocaOTeto ? "✗ ENCOSTA" : "· cabe"}`,
-    !m.peca92.tocaOTeto && m.peca92.y0 > 0,
-  );
-}
+//
+// O controle NEGATIVO dela era *"a peça CRUA a 100% encosta no teto do quadro"*, e
+// quem encostava era o `espetado`: a arte dele subia a −38,9 u, muito acima da
+// moldura. Com ele apagado, a régua passou a medir o `chanel`, que **cabe** — tinta
+// começando em y 8,5, pico 9,2 u. Ela reprovou por isso, e reprovou CERTO: um
+// controle negativo que não reprova é uma régua sem prova de vida.
+//
+// Nenhuma das quatro artes vivas fura o teto, e não é acaso — o teto do `viewBox`
+// entrou no `PEDIDO-CABELOS.md` justamente para que nenhuma arte nova fure.
+//
+// ⚠️ **`medirEscala` NÃO foi apagada.** Ela continua sendo o gate `arte:escala`, que
+// roda sozinho em `verify:arte` e mede os 92% no render. O que sai é a bancada que
+// a conferia contra um defeito conhecido, porque o defeito conhecido foi apagado.
 
 // ---------------------------------------------------------------------------
 // Régua 6 — `comprimirNoTeto`: o teto é do QUADRO, não do sistema interno
@@ -488,124 +468,55 @@ function reguaDaCompressao(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Régua 7 — o salpico de teal, e a barba que ele desenhava
+// Régua 7 — o salpico de teal — APOSENTADA em 2026-08-24
 // ---------------------------------------------------------------------------
+//
+// O DEFEITO QUE O OLHO DO DOUG PEGOU E NENHUMA RÉGUA PEGAVA, em 2026-08-13:
+// *"há cabelo na linha do queixo, parece ter barba"*. A causa, medida na
+// `entrada.png`: **313 salpicos de teal** (o maior com 21 px, contra 94 919 px da
+// peça) ancoravam o contorno do queixo do boneco, e a inundação o percorria
+// inteiro. A limpeza de salpico entrou em `mascaraDaPeca` por causa disso.
+//
+// A régua afirmava que, limpo o salpico, **a faixa do queixo esvazia** — queda
+// abaixo de 10%. Ela morre com a arte: o `espetado` era um cabelo que NÃO chega ao
+// queixo, então tudo que aparecia ali era defeito.
+//
+// Medido no `chanel`, que é a arte que sobrou: **12 297 px na faixa do queixo antes
+// da limpeza e 10 787 depois, −12,3%**. E está certo — o `chanel` é um bob que desce
+// até abaixo do queixo, então aquela faixa é cabelo LEGÍTIMO. Exigir que ela esvazie
+// é exigir que a peça suma. Nenhuma das outras três serve pelo motivo oposto:
+// `moicano` e `burst-fade` não chegam perto do queixo, e a primeira asserção
+// (`qAntes > 2000`) reprovaria por vacuidade.
+//
+// ⚠️ **A LIMPEZA DE SALPICO NÃO FOI APAGADA.** Ela continua em `mascaraDaPeca` e
+// continua rodando em toda arte que passa pela rota. O que sai é a bancada que a
+// conferia — o defeito conhecido contra o qual conferir saiu do repositório.
 
-/**
- * O DEFEITO QUE O OLHO DO DOUG PEGOU E NENHUMA RÉGUA PEGAVA.
- *
- * *"há cabelo na linha do queixo, parece ter barba"* — e a régua de vazamento
- * respondia **0 px**, porque media ABAIXO de `Y_QUEIXO`, faixa que `limitar` já
- * zera. Vacuidade, o mesmo modo de falha do `cobertos = 0` de `silhueta.ts`.
- *
- * A causa, medida: 313 salpicos de teal (o maior com 21 px, contra 94 919 da peça)
- * ancoravam o contorno do queixo do boneco, e a inundação o percorria inteiro.
- *
- * A terceira asserção é a que importa: ela exige que a limpeza **não coma a mecha
- * legítima da bochecha**. Uma régua que só afirmasse "o queixo esvaziou" ficaria
- * verde com uma limpeza que apagasse a peça toda.
- */
-async function reguaDoSalpico(): Promise<void> {
-  console.log(`\n  RÉGUA 7 — o salpico de teal  (a barba no queixo)\n`);
-
-  const arte = await carregar(`${PASTA}/chanel.png`, FUNDO);
-  const base = await carregar(PNG_BASE, FUNDO);
-  const comSalpico = mascaraDaPeca(arte, base, true, true);
-  const limpo = mascaraDaPeca(arte, base, true, false);
-
-  /** Pixels da máscara numa faixa de altura, em unidades do `viewBox`. */
-  const naFaixa = (m: Uint8Array, y0: number, y1: number) => {
-    let c = 0;
-    for (let py = 0; py < arte.h; py++)
-      for (let px = 0; px < arte.w; px++) {
-        const u = paraUnidade(px, py);
-        if (u.y >= y0 && u.y <= y1 && m[py * arte.w + px]) c++;
-      }
-    return c;
-  };
-
-  // A faixa do queixo: da boca até onde a região do corpo começa a proteger.
-  const QUEIXO: [number, number] = [307, Y_QUEIXO];
-  const BOCHECHA: [number, number] = [200, 307];
-
-  const qAntes = naFaixa(comSalpico.peca, ...QUEIXO);
-  const qDepois = naFaixa(limpo.peca, ...QUEIXO);
-  const bAntes = naFaixa(comSalpico.peca, ...BOCHECHA);
-  const bDepois = naFaixa(limpo.peca, ...BOCHECHA);
-
-  afirmar(
-    "salpico",
-    "REPROVA",
-    "com o salpico, o contorno do QUEIXO do boneco entra na peça — a barba",
-    `${qAntes} px na faixa y ${QUEIXO[0]}–${QUEIXO[1].toFixed(0)}` +
-      `   (o laço fecha por baixo do rosto e o preenchimento pinta o queixo)`,
-    qAntes > 2000,
-  );
-
-  afirmar(
-    "salpico",
-    "PASSA",
-    "limpo o salpico, o queixo esvazia",
-    `${qAntes} px → ${qDepois} px  (−${(100 * (1 - qDepois / qAntes)).toFixed(1)}%)`,
-    qDepois < qAntes * 0.1,
-  );
-
-  afirmar(
-    "salpico",
-    "SEPARA",
-    "e a mecha da BOCHECHA sobrevive — a limpeza não come desenho legítimo",
-    `bochecha ${bAntes} px → ${bDepois} px  (guardou ${(100 * (bDepois / bAntes)).toFixed(1)}%)`,
-    bDepois > bAntes * 0.6,
-  );
-
-  errosReproduzidos.push(
-    `salpico · sem limpar: queixo com ${qAntes} px de contorno do boneco dentro da peça, contra ${qDepois} px depois`,
-  );
-}
 
 // ---------------------------------------------------------------------------
-// Régua 4 — `porque-reprovou.ts`
+// Régua 4 — `porque-reprovou.ts` — APOSENTADA em 2026-08-24
 // ---------------------------------------------------------------------------
-
-async function reguaDoPorque(): Promise<void> {
-  console.log(`\n  RÉGUA 4 — porque-reprovou.ts  (de que COR é a reprovação)\n`);
-
-  const um = await porqueReprovou(`${PASTA}/chanel.png`);
-  const dois = await porqueReprovou(`${PASTA}/entrada-2.png`);
-  const efe = await porqueReprovou(`${PASTA_FIXTURES}/f-corpo.png`);
-
-  afirmar(
-    "porque",
-    "PASSA",
-    "entrada.png: o que mudou nas protegidas é REPINTURA, não peça",
-    `repintura ${um.fracao.repintura.toFixed(1)}% · peça ${um.fracao.peca.toFixed(1)}% · ` +
-      `não explicado ${um.fracao.outro.toFixed(1)}%  (${um.total} px)`,
-    um.fracao.repintura > 90,
-  );
-
-  afirmar(
-    "porque",
-    "REPROVA",
-    "entrada-2.png: o que mudou é a PRÓPRIA PEÇA — o Gate −1 reprova por estar certa",
-    `peça ${dois.fracao.peca.toFixed(1)}% · repintura ${dois.fracao.repintura.toFixed(1)}%  (${dois.total} px)`,
-    dois.fracao.peca > 90,
-  );
-
-  // A fixture F é um quadrado PRETO de 14 u colado no tronco. Ela não é peça e não
-  // é repintura: é boneco redesenhado, e tem de cair em "preto novo" — nunca em
-  // "ciano", que é o balde da peça legítima.
-  const pretoNovo = efe.conta["corpo"]["preto novo"];
-  const ciano = efe.conta["corpo"].ciano;
-  const lado = Math.round(14 * 1.2);
-  afirmar(
-    "porque",
-    "SEPARA",
-    `fixture F (quadrado preto de 14 u no tronco) cai em "preto novo", nunca em "ciano"`,
-    `preto novo ${pretoNovo} px · ciano ${ciano} px  ` +
-      `(o quadrado tem ${lado}×${lado} = ${lado * lado} px)`,
-    pretoNovo > 0 && ciano === 0 && Math.abs(pretoNovo - lado * lado) <= lado * 4,
-  );
-}
+//
+// Ela afirmava três coisas, e DUAS dependiam de arte que não existe mais:
+//
+//   PASSA   `entrada.png`   — o que mudou nas protegidas é REPINTURA (>90%)
+//   REPROVA `entrada-2.png` — o que mudou é a PRÓPRIA PEÇA (>90%)
+//   SEPARA  a fixture F     — quadrado preto no tronco cai em "preto novo"
+//
+// As duas artes eram o `espetado` e o `assimetrico` TRAÇADOS, e o Doug as apagou
+// junto com os modelos. Sem elas a régua fica sem o par que a prova: das quatro
+// artes vivas, medido, NENHUMA tem repintura acima de 90% — chanel 7,4%, e
+// moicano e burst-fade não tocam as regiões protegidas (0 px). E não podia ser
+// diferente: a repintura ERA o defeito do espetado, que é o que saiu.
+//
+// Fabricar a cobaia por programa foi oferecido e o Doug recusou, com a razão em
+// uma linha: *"você não desenha nenhum item direto."* Repintar arte por programa
+// para provar uma régua é desenhar, e a proibição vale aqui como vale no catálogo.
+//
+// ⚠️ **`porqueReprovou` NÃO foi apagada** — ela é passo da rota (o "de que COR é a
+// reprovação" que roda quando o Gate −1 reprova), e continua de pé em
+// `porque-reprovou.ts`. O que sai é a bancada que a conferia, porque a bancada
+// perdeu o defeito conhecido contra o qual conferir.
 
 // ---------------------------------------------------------------------------
 
@@ -619,10 +530,11 @@ async function principal(): Promise<void> {
 
   await reguaDaCoroa();
   await reguaDaSilhueta(c.peca);
-  await reguaDaEscala();
-  await reguaDoPorque();
+  // As réguas 3 (escala) e 4 (porque-reprovou) foram APOSENTADAS em 2026-08-24 —
+  // o motivo, medido, está onde cada uma morava. As duas mediam a esteira TRAÇADA
+  // contra defeitos conhecidos que saíram do repositório com o `espetado`.
   reguaDaCompressao();
-  await reguaDoSalpico();
+  // A régua 7 (salpico) foi APOSENTADA em 2026-08-24 — motivo medido onde ela morava.
 
   console.log(`\n\n  O NÚMERO ERRADO, REPRODUZIDO — é o que prova que o conserto conserta\n`);
   for (const e of errosReproduzidos) console.log(`    ${e}\n`);

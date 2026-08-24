@@ -41,6 +41,8 @@ import {
   sobrancelhaCoberta,
   pathCabelo,
   pathCabeloClaro,
+  pathCabeloNucleo,
+  pathCabeloPretas,
   sobrancelhaEscondida,
   sombraSobreAFranja,
 } from "../cabelo";
@@ -574,6 +576,41 @@ describe("o laço fechado", () => {
     const chapado: Cabelo = { id: ID_FIXTURA, nome: "chapado", massa: MASSA };
     expect(pathCabeloClaro(chapado)).toBe("");
     expect(pathCabelo(chapado)).not.toBe("");
+  });
+
+  /**
+   * LAÇO VAZIO É AUSÊNCIA DE LAÇO — e até 2026-08-24 ele derrubava o compositor.
+   *
+   * `clara: []` é um array **truthy**, então `pathCabeloClaro` o tratava como "tem
+   * clara", chamava `lacoTY([])` e `laco` lia `pts[0].x` de um array vazio:
+   * `TypeError: Cannot read properties of undefined (reading 'x')`, com a pilha
+   * inteira passando por `compor()`.
+   *
+   * Não é caso hipotético. `converter()` — a esteira traçada — devolve
+   * exatamente isso ao traçar a arte `chanel.png`: massa de 43 pontos, **`clara`
+   * com 0**, 27 `claras`, 18 `nucleo`, 26 `pretas`. Foi assim que o `arte:reguas`
+   * estourou, e a reprovação estava certa.
+   *
+   * As quatro asserções cobrem os quatro caminhos que chegam a `laco`, porque a
+   * guarda que as fecha é uma só e a régua tem de provar que ela vale para todos:
+   * `massa` (:1042), `clara`/`claras` (:1061), `nucleo` (:1078) e `pretas` (:1085).
+   */
+  it("laço VAZIO não derruba o compositor — ele não emite forma, que é o mesmo que não ter", () => {
+    const base = { id: ID_FIXTURA, nome: "laço vazio", massa: MASSA } as const;
+
+    expect(pathCabeloClaro({ ...base, clara: [] })).toBe("");
+    expect(pathCabeloClaro({ ...base, claras: [[]] })).toBe("");
+    expect(pathCabeloNucleo({ ...base, nucleo: [[]] })).toBe("");
+    expect(pathCabeloPretas({ ...base, pretas: [[]] })).toBe("");
+
+    // E a massa vazia, que é o caminho mais fatal dos quatro: sem esta linha a peça
+    // inteira derrubava `compor()` em vez de sair chapada.
+    expect(pathCabelo({ id: ID_FIXTURA, nome: "massa vazia", massa: [] })).toBe("");
+
+    // O CONTRA-CONTROLE, e sem ele as cinco linhas acima passariam por vacuidade:
+    // uma guarda que devolvesse "" para TUDO satisfaria todas elas.
+    expect(pathCabeloClaro({ ...base, clara: MASSA })).not.toBe("");
+    expect(pathCabelo(base)).not.toBe("");
   });
 });
 
