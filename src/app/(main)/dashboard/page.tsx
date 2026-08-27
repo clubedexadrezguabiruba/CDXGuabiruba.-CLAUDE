@@ -207,6 +207,7 @@ export default async function DashboardPage() {
                       hairColor={entry.avatar_hair_color}
                       chapeu={entry.avatar_chapeu}
                       rosto={entry.avatar_rosto}
+                      oculos={entry.avatar_oculos}
                       lado={32}
                       ns={`qh-${entry.user_id}`}
                     />

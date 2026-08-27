@@ -135,6 +135,7 @@ export default function RankingClient({ initialData, userId }: Props) {
                             hairColor={entry.avatar_hair_color}
                             chapeu={entry.avatar_chapeu}
                             rosto={entry.avatar_rosto}
+                            oculos={entry.avatar_oculos}
                             lado={40}
                             ns={`rk-${entry.user_id}`}
                           />

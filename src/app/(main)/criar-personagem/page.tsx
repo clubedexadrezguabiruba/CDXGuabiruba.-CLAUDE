@@ -24,7 +24,7 @@ export default async function CriarPersonagemPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("avatar_chosen, level, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto")
+    .select("avatar_chosen, level, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto, avatar_oculos")
     .eq("id", data.user.id)
     .single();
 
@@ -75,8 +75,10 @@ export default async function CriarPersonagemPage() {
       catalogoCabelo={doSlot("cabelo")}
       catalogoTraje={doSlot("traje")}
       catalogoRosto={doSlot("rosto")}
+      catalogoOculos={doSlot("oculos")}
       trajeInicial={profile?.avatar_traje ?? null}
       rostoInicial={profile?.avatar_rosto ?? null}
+      oculosInicial={profile?.avatar_oculos ?? null}
     />
   );
 }

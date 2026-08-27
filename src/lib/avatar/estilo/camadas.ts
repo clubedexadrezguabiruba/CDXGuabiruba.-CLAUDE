@@ -54,7 +54,7 @@
  */
 
 /** Quem responde pela camada — e é quem decide se ela pode mudar de lugar. */
-export type DonoDeCamada = "sistema" | "traje" | "cabelo" | "rosto" | "chapeu";
+export type DonoDeCamada = "sistema" | "traje" | "cabelo" | "rosto" | "oculos" | "chapeu";
 
 /**
  * EM QUE FAMÍLIA DE CABELO A LINHA EXISTE.
@@ -409,9 +409,18 @@ export const PILHA = [
     dono: "rosto",
     onde: "compor() → rosto(false)",
     porQue:
-      "O ÓCULOS. Sem haste não há o que apoiar (doc 21 §2c), e a peça que a criança desbloqueou não pode depender de qual franja está embaixo",
+      "Peça de ROSTO que veste por cima do cabelo. ⚠️ SEM PEÇA HOJE, e isso é declarado: ela era do ÓCULOS, e o óculos virou slot próprio em 2026-08-27 (o Doug: *\"óculos e barba não podem ser a mesma coisa\"*). O que sobrou aqui é a possibilidade — `PecaDeRosto.cabeloPorCima` continua sendo `boolean` e a partição continua no compositor. Apagar a linha e o campo junto é decisão SEPARADA e não foi tomada: ela mexe na trava `cabeloPorCima?: never` do chapéu e do óculos, que existe para os dois não escolherem lado. Enquanto não for tomada, esta linha é caminho vivo sem cobaia — a mesma forma de vacuidade que o `franja-da-borda` teve, e é por isso que está escrito aqui em vez de ficar implícito",
     familiaCabelo: "qualquer",
     ladoDoRosto: "sobre",
+  },
+  {
+    id: "oculos",
+    dono: "oculos",
+    onde: "compor() → sobrepor(estado.oculos)",
+    porQue:
+      "O ÓCULOS, em slot próprio desde 2026-08-27. Ele vem DEPOIS do cabelo e ANTES do chapéu: sem haste não há o que apoiar (doc 21 §2c), a lente é livre para exceder o rosto, e a peça que a criança desbloqueou não pode depender de qual franja está embaixo — mas um chapéu de aba baixa PODE cobri-lo, que é o que aba faz. Ele não participa da partição de `rosto()`: `PecaDeOculos` declara `cabeloPorCima?: never`, então não tem lado a escolher",
+    familiaCabelo: "qualquer",
+    ladoDoRosto: "qualquer",
   },
   {
     id: "chapeu",

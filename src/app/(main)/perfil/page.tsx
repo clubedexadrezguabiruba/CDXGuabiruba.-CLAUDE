@@ -37,7 +37,7 @@ export default async function PerfilPage() {
   // Buscar dados do perfil
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto")
+    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto, avatar_oculos")
     .eq("id", user.id)
     .single();
 
@@ -139,8 +139,10 @@ export default async function PerfilPage() {
       catalogoCabelo={doSlot("cabelo")}
       catalogoTraje={doSlot("traje")}
       catalogoRosto={doSlot("rosto")}
+      catalogoOculos={doSlot("oculos")}
       trajeInicial={profile?.avatar_traje ?? null}
       rostoInicial={profile?.avatar_rosto ?? null}
+      oculosInicial={profile?.avatar_oculos ?? null}
       botsDefeated={botsDefeated ?? 0}
       lessonsCompleted={lessonsCompleted ?? 0}
       puzzlesSolved={puzzlesSolved ?? 0}

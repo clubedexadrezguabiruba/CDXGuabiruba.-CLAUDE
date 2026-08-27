@@ -121,6 +121,7 @@ const PROP_PARA_COLUNA: Record<string, string> = {
   traje: "avatar_traje",
   chapeu: "avatar_chapeu",
   rosto: "avatar_rosto",
+  oculos: "avatar_oculos",
 };
 
 const TELA_PROPRIA = "src/app/(main)/perfil/PerfilClient.tsx";

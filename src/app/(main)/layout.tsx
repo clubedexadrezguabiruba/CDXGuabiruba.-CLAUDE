@@ -27,6 +27,7 @@ export default async function MainLayout({
     // chave não se perde num cast — ela nem sai do banco se faltar no SELECT.
     avatar_chapeu: string | null;
     avatar_rosto: string | null;
+    avatar_oculos: string | null;
     avatar_chosen: boolean;
   } | null = null;
   let title: string = "Calouro";
@@ -46,7 +47,7 @@ export default async function MainLayout({
     const { data } = await supabase
       .from("users")
       .select(
-        "display_name, level, role, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_chapeu, avatar_rosto, avatar_chosen",
+        "display_name, level, role, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_chapeu, avatar_rosto, avatar_oculos, avatar_chosen",
       )
       .eq("id", user.id)
       .single();
@@ -88,6 +89,7 @@ export default async function MainLayout({
       hairColor={profile.avatar_hair_color}
       chapeu={profile.avatar_chapeu}
       rosto={profile.avatar_rosto}
+      oculos={profile.avatar_oculos}
       lado={32}
       ns="nav"
     />

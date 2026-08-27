@@ -71,10 +71,19 @@ interface PerfilClientProps {
   catalogoTraje: PecaDoCatalogo[];
   /** `avatar_catalogo` do slot rosto, inteiro, com `possui` já resolvido. */
   catalogoRosto: PecaDoCatalogo[];
+  /**
+   * `avatar_catalogo` do slot `oculos` — SLOT PRÓPRIO desde 2026-08-27.
+   *
+   * Lista separada da do rosto, e não um filtro dela: o aluno veste os dois ao mesmo
+   * tempo, e cada slot tem a própria coluna em `users`.
+   */
+  catalogoOculos: PecaDoCatalogo[];
   /** `users.avatar_traje`. `null` é o macacão de treino — ausência de peça. */
   trajeInicial: string | null;
   /** `users.avatar_rosto`. `null` é rosto limpo. */
   rostoInicial: string | null;
+  /** `users.avatar_oculos`. `null` é sem óculos. */
+  oculosInicial: string | null;
   botsDefeated: number;
   lessonsCompleted: number;
   puzzlesSolved: number;
@@ -302,8 +311,10 @@ export default function PerfilClient({
   catalogoCabelo,
   catalogoTraje,
   catalogoRosto,
+  catalogoOculos,
   trajeInicial,
   rostoInicial,
+  oculosInicial,
   botsDefeated,
   lessonsCompleted,
   puzzlesSolved,
@@ -334,6 +345,9 @@ export default function PerfilClient({
   // medindo só o que ainda espera o botão — as duas cores da emenda à D27.
   const [traje, setTraje] = useState<string | null>(trajeInicial);
   const [rosto, setRosto] = useState<string | null>(rostoInicial);
+  // Estado SEPARADO do rosto, e é o que faz a combinação existir: enquanto os dois
+  // dividiam o slot, este era o mesmo `useState` e um clique tirava o outro.
+  const [oculos, setOculos] = useState<string | null>(oculosInicial);
 
   /**
    * A PRIMEIRA CHAMADORA DE `equipar_peca` — ela existia desde o Bloco 1 e nunca
@@ -359,6 +373,7 @@ export default function PerfilClient({
     if (error) return `Não foi possível vestir essa peça. ${error.message}`;
     if (slot === "traje") setTraje(slug);
     else if (slot === "rosto") setRosto(slug);
+    else if (slot === "oculos") setOculos(slug);
     else {
       // O cabelo mora nos DOIS estados de aparência porque é o palco que o
       // desenha: `emProva` para repintar agora, `salvo` para o aviso de "não
@@ -646,6 +661,8 @@ export default function PerfilClient({
                 traje={traje}
                 rostos={catalogoRosto}
                 rosto={rosto}
+                oculos={catalogoOculos}
+                oculosAtual={oculos}
                 aoTrocarPeca={trocarPeca}
                 nivel={profile.level}
                 tier={profile.achievedTier}

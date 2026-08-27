@@ -98,6 +98,7 @@ const PROP_PARA_COLUNA: Record<string, string> = {
   traje: "avatar_traje",
   chapeu: "avatar_chapeu",
   rosto: "avatar_rosto",
+  oculos: "avatar_oculos",
 };
 
 const COMPONENTE_CABECA = "src/components/avatar/AvatarCabeca.tsx";

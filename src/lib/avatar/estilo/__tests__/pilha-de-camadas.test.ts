@@ -50,7 +50,13 @@ import { ROSTOS } from "../../catalogo";
 import { PILHA, type Camada, type FamiliaDeCabelo, type IdDeCamada } from "../camadas";
 import type { Cabelo } from "../cabelo";
 import { compor } from "../compositor";
-import type { EstadoAvatar, PecaDeChapeu, PecaDeRosto, Traje } from "../tipos";
+import type {
+  EstadoAvatar,
+  PecaDeChapeu,
+  PecaDeOculos,
+  PecaDeRosto,
+  Traje,
+} from "../tipos";
 
 // ---------------------------------------------------------------------------
 // O ELENCO
@@ -215,6 +221,35 @@ const CHAPEU: PecaDeChapeu = {
 };
 
 /**
+ * O ÓCULOS — slot próprio desde 2026-08-27, e o marcador é PRÓPRIO também.
+ *
+ * ⚠️ **Ele não compartilha marcador com o rosto, e isso é o ponto do slot.** Enquanto
+ * óculos e barba dividiam o slot `rosto`, as linhas `rosto-sob-cabelo` e
+ * `rosto-sobre-cabelo` eram a mesma emissão em dois lugares da pilha e por isso
+ * estavam em `MESMO_MARCADOR`. O óculos saiu de lá: agora ele é peça independente,
+ * emitida no MESMO boneco que a barba, e é justamente isso que o Doug pediu —
+ * *"preciso que dê para vestir a barba e o óculos, ao mesmo tempo."*
+ *
+ * Como ele aparece ao lado do rosto em todo elenco, a contagem dele é cobrada de
+ * verdade: se a emissão sumisse, o marcador `M 707 707` daria zero e nenhuma outra
+ * linha o cobriria.
+ *
+ * `formas` e não `arte`: o gate mede POSIÇÃO NA PILHA, e um `<image>` seria um
+ * elemento desenhável a menos para contar. O óculos do produto é raster; o da
+ * fixture é a mesma peça no lugar da pilha, que é o que este arquivo julga.
+ */
+const OCULOS: PecaDeOculos = {
+  id: "zz-oculos-da-pilha",
+  nome: "Óculos da pilha",
+  // ⚠️ NEM O `d` NEM A COR SÃO LIVRES, e as duas primeiras versões desta fixture
+  // provaram isso: `#FE0003` já é o marcador do `tronco-tinta` (o gate acusou
+  // "emitiu 3 onde declara 2") e `M 303 303` já é a `decoracao` do TRAJE, lá em
+  // cima na pilha (o gate acusou "oculos saiu antes de tudo", com índice 369).
+  // Marcador é identidade: repetido, ele mede a linha errada. O gate pegou as duas.
+  formas: [{ d: "M 707 707 L 747 707 L 747 747 Z", cor: "#FE0009" }],
+};
+
+/**
  * AS TRÊS FAMÍLIAS DE `cabelo.ts` — e a tabela fala em CONJUNTOS delas.
  *
  * `FamiliaDeCabelo` (`camadas.ts`) não enumera famílias, enumera conjuntos:
@@ -278,6 +313,9 @@ const ELENCOS: readonly Elenco[] = (["parametrico", "tracado", "tonal"] as const
         modeloCabelo: CABELO_DA_VARIANTE[variante],
         traje: TRAJE,
         rosto: ROSTO(lado === "sob"),
+        // OS DOIS JUNTOS, em todo elenco. É a asserção que o slot novo existe para
+        // sustentar: barba e óculos no mesmo boneco.
+        oculos: OCULOS,
         chapeu: CHAPEU,
       }),
     })),
@@ -329,6 +367,7 @@ const MARCA = {
   // como `class="kk-tinta kk-olho"`.
   "cabelo-sobreposto": /class="kk-(tinta|cabelo-m)"|M 606 606 L 646 606 L 646 646 Z/g,
   "rosto-sobre-cabelo": /M 101 101 L 141 101 L 141 141 Z/g,
+  oculos: /M 707 707 L 747 707 L 747 747 Z/g,
   chapeu: /M 202 202 L 242 202 L 242 242 Z/g,
   "traje-extensoes-frente": /M 505 505 L 545 505 L 545 545 Z/g,
 } satisfies Record<IdDeCamada, RegExp>;
@@ -363,6 +402,7 @@ const VEZES = {
   "rosto-sob-cabelo": 2, // preenchimento + traço
   "cabelo-sobreposto": 3, // traçada: silhueta preta + núcleo + pretas (sem clara — ver o elenco)
   "rosto-sobre-cabelo": 2,
+  oculos: 2, // preenchimento + traço
   chapeu: 2,
   "traje-extensoes-frente": 2,
 } satisfies Record<IdDeCamada, number>;

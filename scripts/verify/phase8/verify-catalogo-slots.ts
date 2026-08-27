@@ -77,6 +77,10 @@ const COLUNAS_EQUIPAR = [
   "avatar_traje",
   "avatar_chapeu",
   "avatar_rosto",
+  // Entrou em 2026-08-27, quando o óculos saiu do slot `rosto` para poder ser
+  // vestido JUNTO com a barba. O nome segue o padrão `avatar_<slot>` pelo mesmo
+  // motivo que o cabelo: é ele que faz a tradução coluna -> slot ser derivada.
+  "avatar_oculos",
   "avatar_pet",
   // Entrou em 2026-08-23, quando o cabelo virou peça de baú. **Ela é o motivo
   // de a coluna ter sido renomeada de `avatar_hair`**: o nome tem de ser

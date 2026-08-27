@@ -31,8 +31,10 @@ export default function CriarPersonagemClient({
   catalogoCabelo,
   catalogoTraje,
   catalogoRosto,
+  catalogoOculos,
   trajeInicial,
   rostoInicial,
+  oculosInicial,
 }: {
   nivel: number;
   inicial: Aparencia;
@@ -42,15 +44,20 @@ export default function CriarPersonagemClient({
   catalogoTraje: PecaDoCatalogo[];
   /** `avatar_catalogo` do slot rosto, com `possui` já resolvido no servidor. */
   catalogoRosto: PecaDoCatalogo[];
+  /** `avatar_catalogo` do slot oculos — SLOT PRÓPRIO, veste junto com o rosto. */
+  catalogoOculos: PecaDoCatalogo[];
   /** `users.avatar_traje` — NULL na criação, que é o macacão de treino. */
   trajeInicial: string | null;
   /** `users.avatar_rosto` — NULL na criação. */
   rostoInicial: string | null;
+  /** `users.avatar_oculos` — NULL na criação. */
+  oculosInicial: string | null;
 }) {
   const router = useRouter();
   const [aparencia, setAparencia] = useState<Aparencia>(inicial);
   const [traje, setTraje] = useState<string | null>(trajeInicial);
   const [rosto, setRosto] = useState<string | null>(rostoInicial);
+  const [oculos, setOculos] = useState<string | null>(oculosInicial);
 
   /**
    * A criança veste o boneco NA CRIAÇÃO, e não só depois da primeira promoção.
@@ -77,6 +84,7 @@ export default function CriarPersonagemClient({
     if (error) return `Não foi possível vestir essa peça. ${error.message}`;
     if (slot === "traje") setTraje(slug);
     else if (slot === "rosto") setRosto(slug);
+    else if (slot === "oculos") setOculos(slug);
     else setAparencia((a) => ({ ...a, hair: slug }));
     return null;
   }
@@ -106,6 +114,7 @@ export default function CriarPersonagemClient({
             hairColor={aparencia.hairColor}
             traje={traje}
             rosto={rosto}
+            oculos={oculos}
             altura={210}
             animado
             ns="palco"
@@ -122,6 +131,8 @@ export default function CriarPersonagemClient({
             traje={traje}
             rostos={catalogoRosto}
             rosto={rosto}
+            oculos={catalogoOculos}
+            oculosAtual={oculos}
             aoTrocarPeca={trocarPeca}
             nivel={nivel}
             rotuloAcao="Confirmar"

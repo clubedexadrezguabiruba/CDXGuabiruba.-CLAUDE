@@ -83,8 +83,15 @@ export interface PecaDoCatalogo {
   possui: boolean;
 }
 
-/** Os slots que a vitrine desenha. `chapeu` e `pet` entram nos blocos deles. */
-export type SlotDaVitrine = "cabelo" | "traje" | "rosto";
+/**
+ * Os slots que a vitrine desenha. `chapeu` e `pet` entram nos blocos deles.
+ *
+ * ⚠️ **`oculos` entrou em 2026-08-27**, quando ele saiu do slot `rosto`. Não é um
+ * grupo a mais na mesma escolha: são dois grupos independentes, e é isso que faz o
+ * aluno poder vestir barba E óculos — o Doug: *"óculos e barba não podem ser a mesma
+ * coisa. Eu preciso que dê para vestir a barba e o óculos, ao mesmo tempo."*
+ */
+export type SlotDaVitrine = "cabelo" | "traje" | "rosto" | "oculos";
 
 /**
  * Rótulos das 8 cores de cabelo, na ordem de `CABELO` em `palette.ts`.
@@ -461,6 +468,8 @@ export default function EditorDeAparencia({
   traje,
   rostos,
   rosto,
+  oculos,
+  oculosAtual,
   aoTrocarPeca,
   nivel,
   tier = 0,
@@ -496,6 +505,16 @@ export default function EditorDeAparencia({
   rostos?: PecaDoCatalogo[];
   /** `users.avatar_rosto`. `null` é rosto limpo. */
   rosto?: string | null;
+  /**
+   * `avatar_catalogo` do slot `oculos`. Ausente, o grupo "Óculos" não aparece.
+   *
+   * SLOT PRÓPRIO desde 2026-08-27 — a lista é outra e o estado é outro, de propósito.
+   * Enquanto óculos e barba dividiam `rosto`, clicar num tirava o outro, porque slot
+   * é exclusivo por construção (uma coluna em `users`, um slug).
+   */
+  oculos?: PecaDoCatalogo[];
+  /** `users.avatar_oculos`. `null` é sem óculos. */
+  oculosAtual?: string | null;
   /**
    * Chama `equipar_peca` e devolve a MENSAGEM DE ERRO, ou `null` se deu certo.
    *
@@ -673,6 +692,35 @@ export default function EditorDeAparencia({
               rosto={slug}
               lado={96}
               ns={`ros-${chave}`}
+            />
+          )}
+        />
+      )}
+
+      {oculos && aoTrocarPeca && (
+        <Vitrine
+          slot="oculos"
+          titulo="Óculos"
+          rotuloSemPeca="Sem óculos"
+          pecas={oculos}
+          atual={oculosAtual ?? null}
+          nivel={nivel}
+          tier={tier}
+          aoTrocar={(slug) => aoTrocarPeca("oculos", slug)}
+          // A ficha do óculos NÃO precisa da identidade como a da barba: ele tem cor
+          // assada (Regra Inviolável nº 4) e sai igual em todo aluno. Mas ela recebe a
+          // pele e o cabelo do mesmo jeito, por um motivo próprio: **os aros são
+          // vazados**, e o que aparece por eles é a pele do aluno. Uma ficha de pele
+          // fixa mostraria a lente sobre a pele errada — o defeito que a esteira
+          // fechou com `SlotDeArte.janela` reapareceria na vitrine.
+          preview={(slug, chave) => (
+            <AvatarCabeca
+              skin={valor.skin}
+              hair={valor.hair}
+              hairColor={valor.hairColor}
+              oculos={slug}
+              lado={96}
+              ns={`ocu-${chave}`}
             />
           )}
         />

@@ -365,6 +365,47 @@ export type PecaDeRosto = PecaSobreposta & {
   cabeloPorCima?: boolean;
 };
 
+/**
+ * O ÓCULOS — slot próprio desde 2026-08-27, e a separação é do Doug.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ELE SAIU DO SLOT `rosto`
+ * ---------------------------------------------------------------------------
+ *
+ * As duas famílias moravam juntas no slot `rosto`, e o doc 22 §5-B chamava isso de
+ * "duas famílias no mesmo slot". Elas cabiam ali por serem as duas peças de cara —
+ * mas **slot é exclusivo por construção**: `users` guarda UMA coluna por slot e
+ * `equipar_peca` escreve UM slug nela. Enquanto barba e óculos dividissem o slot,
+ * vestir um tirava o outro.
+ *
+ * O Doug, em 2026-08-27: *"óculos e barba não podem ser a mesma coisa. Eu preciso que
+ * dê para vestir a barba e o óculos, ao mesmo tempo."* Ele está descrevendo o mundo:
+ * óculos e barba convivem numa cara, e nada no desenho os opõe.
+ *
+ * **A alternativa foi considerada e é pior:** deixar o slot `rosto` guardar DUAS
+ * peças. Isso fura o modelo em todo lugar de uma vez — a coluna vira array, o
+ * `equipar_peca` vira dois caminhos, o guarda-roupa perde a chave, e as views de
+ * perfil passam a devolver lista onde devolviam valor. Um quinto slot custa uma
+ * coluna e uma linha em cada enumeração; duas peças num slot custam o modelo.
+ *
+ * ---------------------------------------------------------------------------
+ * `cabeloPorCima?: never` — A MESMA TRAVA DO CHAPÉU, PELO MESMO MOTIVO
+ * ---------------------------------------------------------------------------
+ *
+ * O óculos é SEMPRE por cima do cabelo, e isso já era decisão do Doug antes do slot
+ * existir (doc 21 §2c): sem haste não há o que apoiar, a lente é livre para exceder o
+ * rosto, e a peça que a criança desbloqueou não pode depender de qual franja está por
+ * baixo. Ele não tem lado a escolher — então não pode declarar a bandeira.
+ *
+ * O `never` fecha os dois sentidos sem depender de teste: um literal de óculos com o
+ * campo não compila, e um valor já tipado `PecaDeRosto` entregue ao slot óculos
+ * também não, porque `?: boolean` não é atribuível a `?: never`. É mecanismo em vez
+ * de disciplina, como a união `formas | arte` acima.
+ */
+export type PecaDeOculos = PecaSobreposta & {
+  cabeloPorCima?: never;
+};
+
 /** O chapéu é sempre o último, e o `never` é o que impede que ele escolha. */
 export type PecaDeChapeu = PecaSobreposta & {
   cabeloPorCima?: never;
@@ -447,7 +488,7 @@ export interface EstadoAvatar {
   modeloCabelo?: CabeloOuModelo;
   traje?: Traje;
   /**
-   * As duas peças que ficam POR CIMA da cabeça — rosto (óculos, bigode, barba) e
+   * As TRÊS peças que ficam POR CIMA da cabeça — rosto (barba, bigode), óculos e
    * chapéu.
    *
    * **Opcionais como `modeloCabelo`, e pelo mesmo motivo exato.** Ausentes,
@@ -455,11 +496,18 @@ export interface EstadoAvatar {
    * hoje — é isso que mantém o teto de regressão da `folha-base` sendo teto de
    * regressão e não de folga, e os 11 selos de `parametrico-congelado.ts` de pé.
    *
-   * As duas ficam FORA de todo clip, que é o mecanismo já provado do cabelo
+   * As três ficam FORA de todo clip, que é o mecanismo já provado do cabelo
    * traçado. Fundo e pet **não estão aqui de propósito**: eles não tocam a
    * geometria do boneco e são componentes irmãos, fora do SVG (doc 21 §3.4).
+   *
+   * ⚠️ **`oculos` era `rosto` até 2026-08-27, e o Doug separou os dois:** *"óculos e
+   * barba não podem ser a mesma coisa. Eu preciso que dê para vestir a barba e o
+   * óculos, ao mesmo tempo."* Slot é exclusivo por construção — uma coluna em
+   * `users`, um valor —, então enquanto as duas famílias dividiam o slot `rosto` uma
+   * excluía a outra. Ver `PecaDeOculos`.
    */
   rosto?: PecaDeRosto;
+  oculos?: PecaDeOculos;
   chapeu?: PecaDeChapeu;
   /**
    * QUANTO O CHAPÉU ACHATA O CABELO — escala em x, em volta do eixo da cabeça.

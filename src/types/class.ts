@@ -127,6 +127,8 @@ export interface FeedEvent {
    */
   avatar_chapeu: string | null;
   avatar_rosto: string | null;
+  /** `users.avatar_oculos` — slot próprio desde 2026-08-27. Convive com a barba. */
+  avatar_oculos: string | null;
   /**
    * O número da patente, para a `<MolduraPatente>`. Desde o B2 da moldura.
    *

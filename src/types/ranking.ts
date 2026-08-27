@@ -34,6 +34,8 @@ export interface RankingEntry {
    */
   avatar_chapeu: string | null;
   avatar_rosto: string | null;
+  /** `users.avatar_oculos` — slot próprio desde 2026-08-27. Convive com a barba. */
+  avatar_oculos: string | null;
   level: number;
   metric_value: number;
   title: string;
@@ -97,8 +99,10 @@ export interface PublicProfileData {
    * foi apagado em 2026-08-13, e a RPC não o devolve.
    */
   avatar_traje: string | null;
-  /** `users.avatar_rosto` — barba ou óculos. `null` é rosto limpo. */
+  /** `users.avatar_rosto` — barba, bigode. `null` é rosto limpo. */
   avatar_rosto: string | null;
+  /** `users.avatar_oculos` — slot próprio desde 2026-08-27. Convive com a barba. */
+  avatar_oculos: string | null;
   level: number;
   xp: number;
   puzzle_rating: number;

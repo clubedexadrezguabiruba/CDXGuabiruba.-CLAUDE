@@ -1389,6 +1389,27 @@ export function compor(estado: EstadoAvatar): string {
     // slot inteiro. Deixou de valer em 2026-08-19: metade dele sobe, e a metade que
     // sobe é a barba — ver o `rosto(true)` acima.
     rosto(false) +
+    // O ÓCULOS — slot próprio desde 2026-08-27, e não é o `rosto` com outro nome.
+    //
+    // O Doug: *"óculos e barba não podem ser a mesma coisa. Eu preciso que dê para
+    // vestir a barba e o óculos, ao mesmo tempo."* Slot é exclusivo por construção —
+    // uma coluna em `users`, um slug —, então enquanto as duas famílias dividiam o
+    // slot `rosto` vestir uma tirava a outra. Ver `PecaDeOculos` em `tipos.ts`.
+    //
+    // ELE FICA ENTRE O CABELO E O CHAPÉU, e as duas fronteiras são decisão:
+    //
+    //  - **depois do cabelo**, pelo mesmo argumento que já valia quando ele morava no
+    //    `rosto(false)`: sem haste não há o que apoiar (doc 21 §2c), e a peça que a
+    //    criança desbloqueou não pode depender de qual franja está por baixo;
+    //  - **antes do chapéu**, porque aba de chapéu por cima de óculos é o que aba faz.
+    //    A ordem inversa poria a armação por cima da copa, que não existe na vida.
+    //
+    // **Ele NÃO passa por `rosto()`**, e é o mesmo argumento do chapéu logo abaixo: se
+    // a partição fosse parâmetro de `sobrepor()`, um óculos que declarasse
+    // `cabeloPorCima` sumiria do boneco em silêncio. `PecaDeOculos` fecha isso pelo
+    // tipo (`cabeloPorCima?: never`), e esta chamada o mantém fora da partição de
+    // qualquer jeito — mecanismo em vez de disciplina, nos dois níveis.
+    sobrepor(estado.oculos, ns, "oculos") +
     // O CHAPÉU, e ele NÃO participa da partição acima.
     //
     // ⚠️ **ELE NÃO É O ÚLTIMO, e este comentário já afirmou que era.** Logo abaixo

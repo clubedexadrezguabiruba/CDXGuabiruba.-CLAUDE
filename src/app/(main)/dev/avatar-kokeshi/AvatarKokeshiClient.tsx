@@ -17,7 +17,7 @@ import { CABELO, PELE } from "@/lib/avatar/palette";
 import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { IDS_DA_ARTE, PECAS_DA_ARTE } from "@/lib/avatar/estilo/pecas-da-arte";
 import { CABELOS_DA_ARTE } from "@/lib/avatar/estilo/cabelos-da-arte";
-import { CHAPEUS, ROSTOS } from "@/lib/avatar/catalogo";
+import { CHAPEUS, OCULOS, ROSTOS } from "@/lib/avatar/catalogo";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
 
 /**
@@ -38,6 +38,16 @@ const IDS_TRACADOS = IDS_DA_ARTE as readonly string[];
 
 /** Os slugs do slot `rosto` que existem hoje. Vazio até a primeira peça entrar. */
 const SLUGS_DE_ROSTO = Object.keys(ROSTOS);
+
+/**
+ * Os slugs do slot `oculos` — SLOT PRÓPRIO desde 2026-08-27.
+ *
+ * Ele nasceu dentro de `ROSTOS`, e por um dia barba e óculos foram a mesma escolha:
+ * clicar num tirava o outro, porque slot é exclusivo. O Doug: *"óculos e barba não
+ * podem ser a mesma coisa. Eu preciso que dê para vestir a barba e o óculos, ao mesmo
+ * tempo."* São dois seletores porque são dois slots.
+ */
+const SLUGS_DE_OCULOS = Object.keys(OCULOS);
 
 /**
  * Os slugs do slot `chapeu`. Vazio até a primeira arte de chapéu entrar na esteira.
@@ -87,6 +97,7 @@ function Boneco({
   cabelo,
   modelo,
   rosto,
+  oculos,
   chapeu,
   h,
   animado,
@@ -96,15 +107,17 @@ function Boneco({
   cabelo: string;
   /** Modelo do catálogo, peça traçada da arte, ou `undefined` para careca. */
   modelo: ModeloCabelo | Cabelo | undefined;
-  /** A peça do slot `rosto` — barba ou óculos —, ou `undefined` para nenhuma. */
+  /** A peça do slot `rosto` — barba, bigode —, ou `undefined` para nenhuma. */
   rosto?: Parameters<typeof compor>[0]["rosto"];
+  /** A peça do slot `oculos`. SLOT PRÓPRIO: convive com o `rosto`, não o substitui. */
+  oculos?: Parameters<typeof compor>[0]["oculos"];
   /** A peça do slot `chapeu`, ou `undefined` para cabeça descoberta. */
   chapeu?: Parameters<typeof compor>[0]["chapeu"];
   h: number;
   animado: boolean;
   ns: string;
 }) {
-  const svg = compor({ pele, cabelo, modeloCabelo: modelo, rosto, chapeu, animado, ns })
+  const svg = compor({ pele, cabelo, modeloCabelo: modelo, rosto, oculos, chapeu, animado, ns })
     .replace("<svg ", `<svg width="${Math.round((h * VIEWBOX.w) / VIEWBOX.h)}" height="${h}" `);
   return <span dangerouslySetInnerHTML={{ __html: svg }} />;
 }
@@ -150,6 +163,15 @@ export default function AvatarKokeshiClient() {
    */
   const [barba, setBarba] = useState<string | undefined>(undefined);
   const rosto = barba ? ROSTOS[barba] : undefined;
+  /**
+   * A peça do slot `oculos`, por slug — e ela é ESTADO SEPARADO do rosto de propósito.
+   *
+   * Enquanto óculos e barba dividiam o slot `rosto`, este era o mesmo `useState`: um
+   * clique tirava o outro, e não havia como ver os dois. Dois estados é o que faz a
+   * combinação existir na tela, que é o que o Doug pediu em 2026-08-27.
+   */
+  const [oculos, setOculos] = useState<string | undefined>(undefined);
+  const pecaOculos = oculos ? OCULOS[oculos] : undefined;
   /**
    * A peça do slot `chapeu`, por slug — e ela é o par que mais precisa ser visto
    * junto com o cabelo, não com o rosto: os dois disputam o crânio. Desde
@@ -313,6 +335,30 @@ export default function AvatarKokeshiClient() {
           </div>
         )}
         {/*
+          O SLOT `oculos` — ao lado do de rosto de propósito, porque o par é o que
+          precisa ser conferido: os dois vestem a cara ao mesmo tempo, e é vendo os
+          dois ligados que se julga se a armação briga com a barba.
+        */}
+        {SLUGS_DE_OCULOS.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">óculos:</span>
+            {SLUGS_DE_OCULOS.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                onClick={() => setOculos(oculos === slug ? undefined : slug)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  oculos === slug
+                    ? "border-sky-700 bg-sky-700 text-white"
+                    : "border-sky-500 text-sky-700"
+                }`}
+              >
+                {OCULOS[slug].nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/*
           O SLOT `chapeu` — o segundo slot de cor assada, e o que estreou o teto novo.
           Até 2026-08-24 uma peça de arte só alcançava 39,5 unidades acima da coroa
           e não havia chapéu que coubesse; hoje são 114,5 (`CAIXA_DA_ARTE`).
@@ -370,6 +416,7 @@ export default function AvatarKokeshiClient() {
               cabelo={cabelo}
               modelo={peca}
               rosto={rosto}
+              oculos={pecaOculos}
             chapeu={chapeu}
               h={t.h}
               animado={animado}
@@ -436,6 +483,7 @@ export default function AvatarKokeshiClient() {
             cabelo={cabelo}
             modelo={PECAS_TRACADAS[id] as Cabelo}
             rosto={rosto}
+            oculos={pecaOculos}
             chapeu={chapeu}
             h={56}
             animado={false}
@@ -447,6 +495,7 @@ export default function AvatarKokeshiClient() {
           cabelo={cabelo}
           modelo="chanel"
           rosto={rosto}
+          oculos={pecaOculos}
             chapeu={chapeu}
           h={56}
           animado={false}

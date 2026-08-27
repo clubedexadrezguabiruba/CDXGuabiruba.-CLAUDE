@@ -52,19 +52,23 @@
 
 import { CABELOS, MODELOS_CABELO, type ModeloCabelo } from "./estilo/cabelo";
 import { CHAPEUS_DA_ARTE } from "./estilo/chapeus-da-arte";
+import { OCULOS_DA_ARTE } from "./estilo/oculos-da-arte";
 import { ROSTOS_DA_ARTE } from "./estilo/rostos-da-arte";
 import { TRAJES_DA_ARTE } from "./estilo/trajes-da-arte";
-import type { PecaDeChapeu, PecaDeRosto, PecaSobreposta } from "./estilo/tipos";
+import type { PecaDeChapeu, PecaDeOculos, PecaDeRosto, PecaSobreposta } from "./estilo/tipos";
 
 /**
  * Os slots do guarda-roupa. Iguais ao CHECK de `avatar_catalogo.slot`.
  *
  * Eram quatro; **o `cabelo` entrou em 2026-08-23**, quando ele deixou de ter
- * tabela própria e virou peça de baú como as outras. A ordem não é alfabética de
- * propósito: é a ordem em que os slots nasceram, e é a ordem em que
- * `verify:catalogo-slots` imprime.
+ * tabela própria e virou peça de baú como as outras, e **o `oculos` em 2026-08-27**,
+ * quando o Doug separou o que dividia o slot `rosto` com a barba — *"óculos e barba
+ * não podem ser a mesma coisa. Eu preciso que dê para vestir a barba e o óculos, ao
+ * mesmo tempo."* Slot é exclusivo por construção, então dividir o slot era proibir a
+ * combinação. A ordem não é alfabética de propósito: é a ordem em que os slots
+ * nasceram, e é a ordem em que `verify:catalogo-slots` imprime.
  */
-export const SLOTS = ["traje", "chapeu", "rosto", "pet", "cabelo"] as const;
+export const SLOTS = ["traje", "chapeu", "rosto", "pet", "cabelo", "oculos"] as const;
 
 export type Slot = (typeof SLOTS)[number];
 
@@ -109,6 +113,20 @@ export const CHAPEUS: Record<string, PecaDeChapeu> = CHAPEUS_DA_ARTE;
 export const ROSTOS: Record<string, PecaDeRosto> = { ...ROSTOS_DA_ARTE };
 
 /**
+ * OS ÓCULOS — slot próprio desde 2026-08-27.
+ *
+ * DERIVADO como os outros três: `OCULOS_DA_ARTE` é GERADO por `npm run arte:oculos`
+ * a partir dos PNGs que o Doug desenhou sobre a base oficial, então o slug é
+ * consequência de existir arte renderizável, nunca uma segunda declaração que pode
+ * discordar dela.
+ *
+ * `PecaDeOculos` e não `PecaSobreposta`: o tipo carrega `cabeloPorCima?: never`, e é
+ * ele que faz um óculos que tente escolher de que lado do cabelo veste **não
+ * compilar**. Ele é sempre depois do cabelo e antes do chapéu.
+ */
+export const OCULOS: Record<string, PecaDeOculos> = OCULOS_DA_ARTE;
+
+/**
  * O que o código sabe desenhar, slot a slot.
  *
  * O CABELO ENTROU EM 2026-08-23, e este docstring dizia o contrário até então:
@@ -135,6 +153,9 @@ export const CATALOGO: Record<Slot, readonly string[]> = {
   chapeu: Object.keys(CHAPEUS),
   rosto: Object.keys(ROSTOS),
   pet: [],
+  // DERIVADO de `OCULOS_DA_ARTE`, gerado por `npm run arte:oculos`. Mesma regra dos
+  // outros: arte desenhada é peça no catálogo, sem segunda declaração para discordar.
+  oculos: Object.keys(OCULOS),
   // DERIVADO de `MODELOS_CABELO`, que é `Object.keys(CABELOS)`: mesma regra dos
   // outros dois derivados, com o prefixo aplicado na saída. Cabelo desenhado é
   // cabelo no catálogo, sem segunda declaração para discordar.
@@ -198,14 +219,40 @@ export function nomeDaPeca(slot: string, slug: string): string {
     const modelo = modeloDoSlug(slug);
     return modelo ? CABELOS[modelo].nome : slug;
   }
-  const registro = slot === "traje" ? TRAJES_DA_ARTE[slug] : ROSTOS[slug];
+  // O SLOT DECIDE O REGISTRO, e a lista é escrita — `?? slug` no fim é o degradar de
+  // sempre, não um default que esconde slot esquecido. Um slot novo que não entre
+  // aqui devolve o slug cru na vitrine e no modal do baú, que é visível.
+  const registro =
+    slot === "traje"
+      ? TRAJES_DA_ARTE[slug]
+      : slot === "chapeu"
+        ? CHAPEUS[slug]
+        : slot === "oculos"
+          ? OCULOS[slug]
+          : ROSTOS[slug];
   return registro?.nome ?? slug;
 }
 
+/**
+ * Slug → a peça que o compositor desenha, nos TRÊS slots que entram pela cabeça.
+ *
+ * ⚠️ **Eram dois até 2026-08-27.** O óculos saiu do slot `rosto` e ganhou o próprio
+ * (o Doug: *"óculos e barba não podem ser a mesma coisa"*), e com ele a assinatura
+ * deixou de ser um par. O ternário virou tabela pelo mesmo motivo que sempre: dois
+ * casos cabem num `?:`, três já pedem que o slot desconhecido tenha resposta.
+ *
+ * Slug que o código não desenha degrada para ausência — é o que faz uma peça
+ * removida do catálogo sumir do boneco em vez de derrubar a página.
+ */
 export function pecaDeCabeca(
-  slot: "chapeu" | "rosto",
+  slot: "chapeu" | "rosto" | "oculos",
   slug: string | null | undefined,
 ): PecaSobreposta | undefined {
   if (!slug) return undefined;
-  return (slot === "chapeu" ? CHAPEUS : ROSTOS)[slug];
+  const registro: Record<string, PecaSobreposta> | undefined = {
+    chapeu: CHAPEUS as Record<string, PecaSobreposta>,
+    rosto: ROSTOS as Record<string, PecaSobreposta>,
+    oculos: OCULOS as Record<string, PecaSobreposta>,
+  }[slot];
+  return registro?.[slug];
 }
