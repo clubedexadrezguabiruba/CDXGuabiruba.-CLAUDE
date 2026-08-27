@@ -372,10 +372,10 @@ de alunos menores de idade.
 <!-- VOLATIL:inicio -->
 | | |
 |---|---|
-| **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 27 |
-| **Árvore** | **51 arquivos sujos** |
-| **Último commit** | 21d9599 · 2026-08-27 · docs(avatar): o pedido de arte dos ÓCULOS — a armação é do Doug, a lente é do código |
+| **Branch** | `main` |
+| **Commits à frente de `origin/main`** | 33 |
+| **Árvore** | limpa |
+| **Último commit** | 491f984 · 2026-08-27 · merge: seis dias de avatar chegam ao aluno — a esteira de arte, 36 peças e a Academia no logado |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
