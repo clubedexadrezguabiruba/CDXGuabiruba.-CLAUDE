@@ -74,6 +74,38 @@
  * Quem garante que a folga continua bastando é o teste `recorte-cabeca.test.ts`,
  * que rasteriza as 6 opções no Chromium e reprova se um pixel escapar. **Se um
  * modelo não couber, a folga cresce — nunca a peça encolhe.**
+ *
+ * ---------------------------------------------------------------------------
+ * ⚠️ A REGRA ACIMA É SOBRE CABELO, E O CHAPÉU TEM DECISÃO PRÓPRIA
+ * ---------------------------------------------------------------------------
+ *
+ * **4 dos 9 chapéus sangram desta janela, e ficam assim.** Medido em 2026-08-27
+ * (bbox do alfa da arte, mapeada por `naTela`, contra esta janela de 482,1 u):
+ *
+ * | peça | sangra à esquerda | à direita |
+ * |---|---|---|
+ * | `mago` | 62,1 u | 49,2 u |
+ * | `chapeu-de-palha` | 47,5 u | 50,0 u |
+ * | `pirata` | 43,7 u | 19,3 u |
+ * | `cowboy` | 27,6 u | 14,7 u |
+ *
+ * A saída mecânica seria aplicar a regra de cima: `FOLGA_LATERAL_DO_CABELO` de 80
+ * para **148**, janela de 607,2 u, e os nove caberiam. O Doug olhou a folha de
+ * contato com as duas janelas lado a lado, em 32 px e ampliadas, e **decidiu não
+ * alargar**: a cápsula é um retrato, e retrato corta ombro. O preço da outra saída
+ * era a cabeça cair de **19,2 px para 15,3 px** em toda cápsula de 32 da
+ * plataforma — navbar, ranking, mural, dashboard —, para conter a aba de quatro
+ * peças. *"Está ótimo do jeito que está, não precisa alargar."*
+ *
+ * A regra do cabelo continua valendo para o cabelo, e a diferença não é gosto: o
+ * cabelo é uma das duas coisas que o aluno ESCOLHE (emenda à D27) e o retrato
+ * existe para mostrá-lo; o chapéu é peça de cor assada que transborda de lado, e
+ * onde ele é o ASSUNTO — a ficha da vitrine e o card do baú — quem desenha é o
+ * quadro inteiro, não este recorte. Ver `EditorDeAparencia.tsx`, grupo "Chapéu".
+ *
+ * Não há gate cobrando isto, de propósito: um teto que reprovasse o chapéu largo
+ * transformaria a decisão do Doug em dívida, e o `recorte-cabeca.test.ts` mede as
+ * opções de CABELO — que é o que a regra de cima governa.
  */
 
 import { ESCALA_PADRAO, naTela } from "./compositor";

@@ -780,8 +780,11 @@ export default function EditorDeAparencia({
           // `<AvatarKokeshi altura={150}>` em grade de duas colunas.
           //
           // O recorte de cabeça continua cortando esses quatro na navbar e no
-          // ranking — é achado próprio, com número medido, e alargar a janela encolhe
-          // a cabeça em toda cápsula de 32 px. Decisão do Doug, não deste bloco.
+          // ranking, e **fica assim**: o Doug olhou a folha de contato com as duas
+          // janelas lado a lado e decidiu não alargar — a cápsula é um retrato, e
+          // retrato corta ombro. Alargar custaria a cabeça cair de 19,2 px para
+          // 15,3 px em toda cápsula de 32 da plataforma. O argumento inteiro está
+          // em `recorte.ts`, junto da regra do cabelo que esta decisão NÃO revoga.
           //
           // A ficha recebe a identidade porque o chapéu **contém** o cabelo: cada par
           // (chapéu, cabelo) tem seu `escondeCabelo` e seu `aperto`. Uma ficha de
