@@ -65,6 +65,7 @@ export default function PublicProfileClient({ profile }: Props) {
               traje={profile.avatar_traje}
               rosto={profile.avatar_rosto}
               oculos={profile.avatar_oculos}
+              chapeu={profile.avatar_chapeu}
               altura={104}
               ns="perfil-publico"
               rotulo={`Avatar de ${profile.public_name}`}

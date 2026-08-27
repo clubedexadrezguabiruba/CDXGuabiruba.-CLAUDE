@@ -78,12 +78,21 @@ interface PerfilClientProps {
    * tempo, e cada slot tem a própria coluna em `users`.
    */
   catalogoOculos: PecaDoCatalogo[];
+  /**
+   * `avatar_catalogo` do slot `chapeu` — as 9 peças, com `possui` já resolvido.
+   *
+   * O slot nasceu completo (arte, coluna, RPC, prop no componente) e **sem vitrine**:
+   * até 2026-08-27 não havia grupo no editor, e as 9 peças eram inalcançáveis.
+   */
+  catalogoChapeu: PecaDoCatalogo[];
   /** `users.avatar_traje`. `null` é o macacão de treino — ausência de peça. */
   trajeInicial: string | null;
   /** `users.avatar_rosto`. `null` é rosto limpo. */
   rostoInicial: string | null;
   /** `users.avatar_oculos`. `null` é sem óculos. */
   oculosInicial: string | null;
+  /** `users.avatar_chapeu`. `null` é cabeça descoberta. */
+  chapeuInicial: string | null;
   botsDefeated: number;
   lessonsCompleted: number;
   puzzlesSolved: number;
@@ -312,9 +321,11 @@ export default function PerfilClient({
   catalogoTraje,
   catalogoRosto,
   catalogoOculos,
+  catalogoChapeu,
   trajeInicial,
   rostoInicial,
   oculosInicial,
+  chapeuInicial,
   botsDefeated,
   lessonsCompleted,
   puzzlesSolved,
@@ -348,6 +359,9 @@ export default function PerfilClient({
   // Estado SEPARADO do rosto, e é o que faz a combinação existir: enquanto os dois
   // dividiam o slot, este era o mesmo `useState` e um clique tirava o outro.
   const [oculos, setOculos] = useState<string | null>(oculosInicial);
+  // O chapéu tem estado próprio pelo mesmo motivo dos outros: `equipar_peca` grava
+  // um slot por chamada, e o palco repinta sem esperar o `router.refresh()`.
+  const [chapeu, setChapeu] = useState<string | null>(chapeuInicial);
 
   /**
    * A PRIMEIRA CHAMADORA DE `equipar_peca` — ela existia desde o Bloco 1 e nunca
@@ -374,6 +388,7 @@ export default function PerfilClient({
     if (slot === "traje") setTraje(slug);
     else if (slot === "rosto") setRosto(slug);
     else if (slot === "oculos") setOculos(slug);
+    else if (slot === "chapeu") setChapeu(slug);
     else {
       // O cabelo mora nos DOIS estados de aparência porque é o palco que o
       // desenha: `emProva` para repintar agora, `salvo` para o aviso de "não
@@ -488,6 +503,10 @@ export default function PerfilClient({
                   // aluno equipava o óculos, o banco gravava, a navbar desenhava — e
                   // este palco, o boneco grande do próprio perfil, saía sem ele.
                   oculos={oculos}
+                  // E o `chapeu` faltava pelo mesmo motivo, desde sempre: a coluna
+                  // existe no banco desde o Bloco 1 e nenhuma tela a passava para o
+                  // palco. Prop opcional ausente continua invisível ao `typecheck`.
+                  chapeu={chapeu}
                   altura={168}
                   animado
                   ns="palco"
@@ -668,6 +687,8 @@ export default function PerfilClient({
                 rosto={rosto}
                 oculos={catalogoOculos}
                 oculosAtual={oculos}
+                chapeus={catalogoChapeu}
+                chapeu={chapeu}
                 aoTrocarPeca={trocarPeca}
                 nivel={profile.level}
                 tier={profile.achievedTier}

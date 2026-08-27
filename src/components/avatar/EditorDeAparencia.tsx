@@ -84,14 +84,20 @@ export interface PecaDoCatalogo {
 }
 
 /**
- * Os slots que a vitrine desenha. `chapeu` e `pet` entram nos blocos deles.
+ * Os slots que a vitrine desenha. `pet` entra no bloco dele.
  *
  * ⚠️ **`oculos` entrou em 2026-08-27**, quando ele saiu do slot `rosto`. Não é um
  * grupo a mais na mesma escolha: são dois grupos independentes, e é isso que faz o
  * aluno poder vestir barba E óculos — o Doug: *"óculos e barba não podem ser a mesma
  * coisa. Eu preciso que dê para vestir a barba e o óculos, ao mesmo tempo."*
+ *
+ * ⚠️ **`chapeu` entrou em 2026-08-27**, e este slot nunca teve vitrine: as 9 peças
+ * estavam no catálogo, a arte em `public/items/chapeu/`, a RPC aceitando o slot e o
+ * componente aceitando a prop — e o aluno sem lugar nenhum onde vestir. Não foi o
+ * caso do óculos (lá tudo existia e a consulta esquecia o slot); aqui o grupo nunca
+ * foi escrito.
  */
-export type SlotDaVitrine = "cabelo" | "traje" | "rosto" | "oculos";
+export type SlotDaVitrine = "cabelo" | "traje" | "rosto" | "oculos" | "chapeu";
 
 /**
  * Rótulos das 8 cores de cabelo, na ordem de `CABELO` em `palette.ts`.
@@ -470,6 +476,8 @@ export default function EditorDeAparencia({
   rosto,
   oculos,
   oculosAtual,
+  chapeus,
+  chapeu,
   aoTrocarPeca,
   nivel,
   tier = 0,
@@ -515,6 +523,17 @@ export default function EditorDeAparencia({
   oculos?: PecaDoCatalogo[];
   /** `users.avatar_oculos`. `null` é sem óculos. */
   oculosAtual?: string | null;
+  /**
+   * `avatar_catalogo` do slot `chapeu`. Ausente, o grupo "Chapéu" não aparece.
+   *
+   * As 9 peças entraram no catálogo em 2026-08-27 e ficaram **sem vitrine** — não
+   * por consulta esquecida, como o óculos, mas porque o grupo nunca foi escrito:
+   * `SlotDaVitrine` excluía `chapeu` e o comentário deste arquivo declarava o slot
+   * como escopo de outro bloco. Arte pronta, RPC pronta, e nenhum lugar onde vestir.
+   */
+  chapeus?: PecaDoCatalogo[];
+  /** `users.avatar_chapeu`. `null` é cabeça descoberta. */
+  chapeu?: string | null;
   /**
    * Chama `equipar_peca` e devolve a MENSAGEM DE ERRO, ou `null` se deu certo.
    *
@@ -635,11 +654,18 @@ export default function EditorDeAparencia({
 
         O doc 21 §5.1 decidiu ABAS por slot (`Cabelo | Roupa | Rosto | Fundo | Pet`),
         e a decisão continua de pé. Este comentário dizia, até 2026-08-23, que "a
-        casca nasce no bloco do terceiro slot" — e este bloco criou o terceiro E o
-        quarto grupo, então o gatilho disparou. **Não se juntou de propósito:** três
+        casca nasce no bloco do terceiro slot" — e aquele bloco criou o terceiro E o
+        quarto grupo, então o gatilho disparou. **Não se juntou de propósito:** cinco
         vitrines empilhadas deixam `/perfil` LONGO, não quebrado, e abas é decisão
         visual (`design-recruta64`) que merece bloco próprio com o parecer do Doug.
         Encurtar a tela por conta própria seria decidir por ele.
+
+        ⚠️ 2026-08-27, com o chapéu: são CINCO grupos, e o comprimento não é do
+        chapéu. O cabelo sozinho tem 19 peças + a careca = 20 fichas em duas colunas,
+        **10 fileiras**; o chapéu acrescenta 5. Quem alonga a tela é a vitrine que já
+        estava aqui. O que este bloco garante é que as abas, quando vierem, não
+        jogam nada fora: a casca ENVOLVE as chamadas `<Vitrine>` e cada uma delas
+        continua idêntica por dentro.
 
         A separação que JÁ existe é a que importa, e é do banco: a identidade sobe
         por `update_avatar_identity` no botão, a peça por `equipar_peca` na hora.
@@ -721,6 +747,53 @@ export default function EditorDeAparencia({
               oculos={slug}
               lado={96}
               ns={`ocu-${chave}`}
+            />
+          )}
+        />
+      )}
+
+      {chapeus && aoTrocarPeca && (
+        <Vitrine
+          slot="chapeu"
+          titulo="Chapéu"
+          rotuloSemPeca="Sem chapéu"
+          pecas={chapeus}
+          atual={chapeu ?? null}
+          nivel={nivel}
+          tier={tier}
+          aoTrocar={(slug) => aoTrocarPeca("chapeu", slug)}
+          // ⚠️ A FICHA DO CHAPÉU É DE CORPO INTEIRO, e é a ÚNICA peça de cabeça que
+          // não usa `<AvatarCabeca>`. Não é gosto: **o recorte de cabeça corta 4 dos
+          // 9 chapéus**, e o número é medido (bbox do alfa da arte, mapeada por
+          // `naTela`, contra a janela de `RECORTE_CABECA` — 65,4..547,5 no quadro):
+          //
+          // | peça | sangra à esquerda | sangra à direita |
+          // |---|---|---|
+          // | `mago` | 62,1 u | 49,2 u |
+          // | `chapeu-de-palha` | 47,5 u | 50,0 u |
+          // | `pirata` | 43,7 u | 19,3 u |
+          // | `cowboy` | 27,6 u | 14,7 u |
+          //
+          // A janela tem 482 u de largura: o `mago` perderia 12,9% dela de um lado.
+          // O quadro inteiro (600 u) mostra os nove — o pior caso, o `mago`, vai de
+          // 3,3 a 596,7. Então a ficha usa a MESMA medição do cabelo:
+          // `<AvatarKokeshi altura={150}>` em grade de duas colunas.
+          //
+          // O recorte de cabeça continua cortando esses quatro na navbar e no
+          // ranking — é achado próprio, com número medido, e alargar a janela encolhe
+          // a cabeça em toda cápsula de 32 px. Decisão do Doug, não deste bloco.
+          //
+          // A ficha recebe a identidade porque o chapéu **contém** o cabelo: cada par
+          // (chapéu, cabelo) tem seu `escondeCabelo` e seu `aperto`. Uma ficha de
+          // cabelo fixo mostraria um par que o aluno não vai ver.
+          preview={(slug, chave) => (
+            <AvatarKokeshi
+              skin={valor.skin}
+              hair={valor.hair}
+              hairColor={valor.hairColor}
+              chapeu={slug}
+              altura={150}
+              ns={`cha-${chave}`}
             />
           )}
         />

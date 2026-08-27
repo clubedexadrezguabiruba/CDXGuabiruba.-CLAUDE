@@ -24,7 +24,7 @@ export default async function CriarPersonagemPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("avatar_chosen, level, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto, avatar_oculos")
+    .select("avatar_chosen, level, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto, avatar_oculos, avatar_chapeu")
     .eq("id", data.user.id)
     .single();
 
@@ -33,7 +33,7 @@ export default async function CriarPersonagemPage() {
     redirect("/dashboard");
   }
 
-  // O catálogo dos três slots vestíveis e o guarda-roupa, para as vitrines.
+  // O catálogo dos cinco slots vestíveis e o guarda-roupa, para as vitrines.
   //
   // Eram DUAS consultas até 2026-08-23, uma delas em `avatar_hair_catalog`: o
   // cabelo tinha tabela própria e era travado por NÍVEL. Agora é peça de baú como
@@ -53,7 +53,7 @@ export default async function CriarPersonagemPage() {
   const { data: catalogo } = await supabase
     .from("avatar_catalogo")
     .select("slug, slot, origem, min_level, min_tier, raridade")
-    .in("slot", ["cabelo", "traje", "rosto", "oculos"]);
+    .in("slot", ["cabelo", "traje", "rosto", "oculos", "chapeu"]);
 
   const { data: guardaRoupa } = await supabase
     .from("avatar_guarda_roupa")
@@ -82,9 +82,11 @@ export default async function CriarPersonagemPage() {
       catalogoTraje={doSlot("traje")}
       catalogoRosto={doSlot("rosto")}
       catalogoOculos={doSlot("oculos")}
+      catalogoChapeu={doSlot("chapeu")}
       trajeInicial={profile?.avatar_traje ?? null}
       rostoInicial={profile?.avatar_rosto ?? null}
       oculosInicial={profile?.avatar_oculos ?? null}
+      chapeuInicial={profile?.avatar_chapeu ?? null}
     />
   );
 }

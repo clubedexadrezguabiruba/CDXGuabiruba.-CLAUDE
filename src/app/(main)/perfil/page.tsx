@@ -37,11 +37,11 @@ export default async function PerfilPage() {
   // Buscar dados do perfil
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto, avatar_oculos")
+    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto, avatar_oculos, avatar_chapeu")
     .eq("id", user.id)
     .single();
 
-  // O catálogo INTEIRO dos quatro slots que a tela veste, numa leitura só.
+  // O catálogo INTEIRO dos cinco slots que a tela veste, numa leitura só.
   //
   // Eram DUAS consultas até 2026-08-23 — uma em `avatar_hair_catalog` e outra em
   // `avatar_catalogo` filtrando o traje —, porque o cabelo tinha tabela própria.
@@ -56,13 +56,18 @@ export default async function PerfilPage() {
   // aluno é que não tinha óculos para vestir. Medido por HTTP com sessão logada em
   // `e2e/avatar-barba-e-oculos.spec.ts`, que é o gate desta linha.
   //
+  // `chapeu` entrou em 2026-08-27 por um buraco PARECIDO e não igual: lá a consulta
+  // esquecia um slot que a tela já oferecia; aqui a tela nunca ofereceu o slot. As 9
+  // peças estavam no catálogo desde a esteira de arte, e o editor não tinha o grupo.
+  // O gate é `e2e/avatar-chapeu.spec.ts`.
+  //
   // O aluno lê o catálogo INTEIRO, inclusive as peças que não tem: é o que permite
   // a VITRINE mostrar o que ele ainda deseja. Quem recusa é `equipar_peca`, no
   // servidor (Regra Inviolável nº 1) — a lista aqui é informação, nunca trava.
   const { data: catalogo } = await supabase
     .from("avatar_catalogo")
     .select("slug, slot, origem, min_level, min_tier, raridade")
-    .in("slot", ["cabelo", "traje", "rosto", "oculos"]);
+    .in("slot", ["cabelo", "traje", "rosto", "oculos", "chapeu"]);
 
   // O guarda-roupa dele — a outra metade da vitrine. Peça de baú sem linha aqui
   // aparece em silhueta; a RLS já limita a leitura ao próprio aluno.
@@ -148,9 +153,11 @@ export default async function PerfilPage() {
       catalogoTraje={doSlot("traje")}
       catalogoRosto={doSlot("rosto")}
       catalogoOculos={doSlot("oculos")}
+      catalogoChapeu={doSlot("chapeu")}
       trajeInicial={profile?.avatar_traje ?? null}
       rostoInicial={profile?.avatar_rosto ?? null}
       oculosInicial={profile?.avatar_oculos ?? null}
+      chapeuInicial={profile?.avatar_chapeu ?? null}
       botsDefeated={botsDefeated ?? 0}
       lessonsCompleted={lessonsCompleted ?? 0}
       puzzlesSolved={puzzlesSolved ?? 0}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { soundManager } from "@/lib/sounds/soundManager";
 import { AvatarTronco } from "@/components/avatar/AvatarTronco";
 import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
+import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { nomeDaPeca } from "@/lib/avatar/catalogo";
 import { corDaRaridade, nomeDaRaridade } from "@/lib/avatar/raridade";
 
@@ -149,15 +150,31 @@ export default function ChestOpeningModal({
                 vitrine do editor já segue: mostra-se o pedaço do boneco em que a
                 peça mora, não o boneco inteiro — a peça é o assunto do card.
 
-                Traje é tronco; cabelo e rosto são cabeça. A cabeça leva o cabelo
-                junto quando a peça é de rosto porque a barba recolore COM ele
-                (D17): uma cabeça careca mostraria a barba numa cor que o aluno não
-                escolheu. */}
+                Traje é tronco; cabelo, rosto, óculos e chapéu são cabeça. A cabeça
+                leva o cabelo junto quando a peça é de rosto porque a barba recolore
+                COM ele (D17): uma cabeça careca mostraria a barba numa cor que o
+                aluno não escolheu.
+
+                ⚠️ **O `else` era um buraco, e ele engolia dois slots.** Até
+                2026-08-27 qualquer peça que não fosse cabelo nem rosto caía no
+                `<AvatarTronco traje={itemSlug}>` — e `trajeDe()` de um slug que não
+                é traje não emite camada nenhuma. O aluno abria o baú, ganhava um
+                óculos (5 peças desde 2026-08-27) ou um chapéu (9 peças) e via um
+                TRONCO VAZIO com o nome da peça embaixo. Nenhuma régua estática
+                enxerga: `itemSlot` é `string`, então não há união a exaurir.
+
+                O chapéu é o único de cabeça que NÃO usa `<AvatarCabeca>`: a janela
+                do recorte corta 4 dos 9 (o `mago` perde 62,1 u de 482 à esquerda —
+                medido). Ele sai de corpo inteiro, como na vitrine. */}
             <div className="mb-3 grid place-items-center rounded-xl bg-warm-stone px-2 py-2">
               {itemSlot === "cabelo" ? (
                 <AvatarCabeca skin={2} hair={itemSlug} hairColor={0} lado={120} ns="bau" />
               ) : itemSlot === "rosto" ? (
                 <AvatarCabeca skin={2} hair={null} hairColor={0} rosto={itemSlug} lado={120} ns="bau" />
+              ) : itemSlot === "oculos" ? (
+                <AvatarCabeca skin={2} hair={null} hairColor={0} oculos={itemSlug} lado={120} ns="bau" />
+              ) : itemSlot === "chapeu" ? (
+                <AvatarKokeshi skin={2} hair={null} hairColor={0} chapeu={itemSlug} altura={150} ns="bau" />
               ) : (
                 <AvatarTronco skin={2} hair={null} hairColor={0} traje={itemSlug} altura={120} ns="bau" />
               )}

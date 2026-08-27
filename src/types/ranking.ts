@@ -95,14 +95,24 @@ export interface PublicProfileData {
    * vê com a peça e aparece sem ela para os colegas", que é o único lugar onde a
    * peça tem plateia.
    *
-   * Sobram de fora `chapeu` e `pet`, que ainda não têm arte. Eram mais um: `fundo`
-   * foi apagado em 2026-08-13, e a RPC não o devolve.
+   * Sobra de fora `pet`, que ainda não tem arte. Eram mais dois: `fundo` foi apagado
+   * em 2026-08-13, e a RPC não o devolve; `chapeu` entrou em 2026-08-27, quando o
+   * slot ganhou vitrine e o `/perfil` passou a desenhá-lo no palco.
    */
   avatar_traje: string | null;
   /** `users.avatar_rosto` — barba, bigode. `null` é rosto limpo. */
   avatar_rosto: string | null;
   /** `users.avatar_oculos` — slot próprio desde 2026-08-27. Convive com a barba. */
   avatar_oculos: string | null;
+  /**
+   * `users.avatar_chapeu` — 9 peças, e elas só puderam ser vestidas em 2026-08-27.
+   *
+   * `get_public_profile` devolve esta coluna desde `20260827170000`; quem a perdia
+   * era o `as PublicProfileData` do `page.tsx`, exatamente como o G21 perdia o traje.
+   * A conferência 7 de `verify:perfil-publico` cobra este campo a partir do que o
+   * `/perfil` passa ao boneco — foi ela que reprovou quando o palco ganhou o chapéu.
+   */
+  avatar_chapeu: string | null;
   level: number;
   xp: number;
   puzzle_rating: number;

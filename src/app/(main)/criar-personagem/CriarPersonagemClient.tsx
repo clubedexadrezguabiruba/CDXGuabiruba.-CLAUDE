@@ -32,9 +32,11 @@ export default function CriarPersonagemClient({
   catalogoTraje,
   catalogoRosto,
   catalogoOculos,
+  catalogoChapeu,
   trajeInicial,
   rostoInicial,
   oculosInicial,
+  chapeuInicial,
 }: {
   nivel: number;
   inicial: Aparencia;
@@ -46,18 +48,23 @@ export default function CriarPersonagemClient({
   catalogoRosto: PecaDoCatalogo[];
   /** `avatar_catalogo` do slot oculos — SLOT PRÓPRIO, veste junto com o rosto. */
   catalogoOculos: PecaDoCatalogo[];
+  /** `avatar_catalogo` do slot chapeu — 9 peças que só ganharam vitrine em 2026-08-27. */
+  catalogoChapeu: PecaDoCatalogo[];
   /** `users.avatar_traje` — NULL na criação, que é o macacão de treino. */
   trajeInicial: string | null;
   /** `users.avatar_rosto` — NULL na criação. */
   rostoInicial: string | null;
   /** `users.avatar_oculos` — NULL na criação. */
   oculosInicial: string | null;
+  /** `users.avatar_chapeu` — NULL na criação. */
+  chapeuInicial: string | null;
 }) {
   const router = useRouter();
   const [aparencia, setAparencia] = useState<Aparencia>(inicial);
   const [traje, setTraje] = useState<string | null>(trajeInicial);
   const [rosto, setRosto] = useState<string | null>(rostoInicial);
   const [oculos, setOculos] = useState<string | null>(oculosInicial);
+  const [chapeu, setChapeu] = useState<string | null>(chapeuInicial);
 
   /**
    * A criança veste o boneco NA CRIAÇÃO, e não só depois da primeira promoção.
@@ -85,6 +92,7 @@ export default function CriarPersonagemClient({
     if (slot === "traje") setTraje(slug);
     else if (slot === "rosto") setRosto(slug);
     else if (slot === "oculos") setOculos(slug);
+    else if (slot === "chapeu") setChapeu(slug);
     else setAparencia((a) => ({ ...a, hair: slug }));
     return null;
   }
@@ -115,6 +123,7 @@ export default function CriarPersonagemClient({
             traje={traje}
             rosto={rosto}
             oculos={oculos}
+            chapeu={chapeu}
             altura={210}
             animado
             ns="palco"
@@ -133,6 +142,8 @@ export default function CriarPersonagemClient({
             rosto={rosto}
             oculos={catalogoOculos}
             oculosAtual={oculos}
+            chapeus={catalogoChapeu}
+            chapeu={chapeu}
             aoTrocarPeca={trocarPeca}
             nivel={nivel}
             rotuloAcao="Confirmar"
