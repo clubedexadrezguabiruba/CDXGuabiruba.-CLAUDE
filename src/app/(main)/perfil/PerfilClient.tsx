@@ -483,6 +483,11 @@ export default function PerfilClient({
                   hairColor={emProva.hairColor}
                   traje={traje}
                   rosto={rosto}
+                  // O `oculos` faltava aqui desde que o slot nasceu, e a falta era
+                  // MUDA: prop opcional ausente não é erro de `typecheck`, então o
+                  // aluno equipava o óculos, o banco gravava, a navbar desenhava — e
+                  // este palco, o boneco grande do próprio perfil, saía sem ele.
+                  oculos={oculos}
                   altura={168}
                   animado
                   ns="palco"

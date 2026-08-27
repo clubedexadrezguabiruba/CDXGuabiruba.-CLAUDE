@@ -41,12 +41,20 @@ export default async function PerfilPage() {
     .eq("id", user.id)
     .single();
 
-  // O catálogo INTEIRO dos três slots que a tela veste, numa leitura só.
+  // O catálogo INTEIRO dos quatro slots que a tela veste, numa leitura só.
   //
   // Eram DUAS consultas até 2026-08-23 — uma em `avatar_hair_catalog` e outra em
   // `avatar_catalogo` filtrando o traje —, porque o cabelo tinha tabela própria.
   // Ele passou a ser peça de baú como as outras, e o `.in(...)` no lugar do
   // `.eq(...)` é literalmente o que sobrou da migração do lado da leitura.
+  //
+  // ⚠️ ESTA LISTA TEM DE ANDAR JUNTO COM OS `doSlot(...)` LÁ EMBAIXO, e o dia em
+  // que ela não andou custou o slot inteiro: `oculos` nasceu em 2026-08-27, ganhou
+  // coluna, RPC, componente e vitrine — e ficou de fora daqui. `doSlot("oculos")`
+  // devolvia `[]`, `[]` é *truthy* em JS, então a seção renderizava com a ficha da
+  // ausência e nada mais. Build, `typecheck` e `verify:all` passaram os quatro; o
+  // aluno é que não tinha óculos para vestir. Medido por HTTP com sessão logada em
+  // `e2e/avatar-barba-e-oculos.spec.ts`, que é o gate desta linha.
   //
   // O aluno lê o catálogo INTEIRO, inclusive as peças que não tem: é o que permite
   // a VITRINE mostrar o que ele ainda deseja. Quem recusa é `equipar_peca`, no
@@ -54,7 +62,7 @@ export default async function PerfilPage() {
   const { data: catalogo } = await supabase
     .from("avatar_catalogo")
     .select("slug, slot, origem, min_level, min_tier, raridade")
-    .in("slot", ["cabelo", "traje", "rosto"]);
+    .in("slot", ["cabelo", "traje", "rosto", "oculos"]);
 
   // O guarda-roupa dele — a outra metade da vitrine. Peça de baú sem linha aqui
   // aparece em silhueta; a RLS já limita a leitura ao próprio aluno.

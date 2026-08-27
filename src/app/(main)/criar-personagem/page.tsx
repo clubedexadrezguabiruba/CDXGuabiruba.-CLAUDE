@@ -44,10 +44,16 @@ export default async function CriarPersonagemPage() {
   // Ler o guarda-roupa em vez de presumir "conta nova não tem nada" é o que faz
   // esta tela continuar certa para quem foi mandado de volta para cá com peça no
   // baú — o caso que a migration do F.2 criou.
+  //
+  // ⚠️ A LISTA DE SLOTS ANDA JUNTO COM OS `doSlot(...)` LÁ EMBAIXO. `oculos` ficou
+  // de fora quando o slot nasceu, em 2026-08-27, e a tela ofereceu "Sem óculos" e
+  // mais nada — `[]` é *truthy*, então a seção renderiza vazia em vez de sumir, e
+  // nenhuma régua estática enxerga. Ver o comentário longo no `/perfil`, que tem o
+  // mesmo par de linhas e caiu pelo mesmo motivo.
   const { data: catalogo } = await supabase
     .from("avatar_catalogo")
     .select("slug, slot, origem, min_level, min_tier, raridade")
-    .in("slot", ["cabelo", "traje", "rosto"]);
+    .in("slot", ["cabelo", "traje", "rosto", "oculos"]);
 
   const { data: guardaRoupa } = await supabase
     .from("avatar_guarda_roupa")
