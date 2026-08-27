@@ -49,6 +49,7 @@
  */
 import sharp from "sharp";
 import { PNG_BASE, FUNDO, ESCALA } from "./base";
+import { marcar, mascaraDaLinha } from "./linha-instrumental";
 
 /** O bege do fundo da base, em canais — `FUNDO` é o hex que o `sharp` recebe. */
 const FUNDO_RGB = [
@@ -161,7 +162,8 @@ const PISO_PERMITIDA = 0.5;
  * de azul continua protegido pelo teto, porque a semente do crescimento e sempre um
  * pixel escuro - e 2 px e a largura do antialias, nao um raio livre.
  */
-const HALO_LINHA = 2;
+// `HALO_LINHA` mora em `linha-instrumental.ts` desde 2026-08-24, junto com o
+// predicado e o crescimento que a usam. O docstring acima explica o porquê dela.
 
 /**
  * O GERADOR APAGOU O SOMBREADO DO BONECO - e apagamento nao e peca.
@@ -289,13 +291,6 @@ const RAIO_LOCAL = 3;
 const PISO_COBERTURA = 0.5;
 
 const AZUL_DA_MARCA = 0x30;
-/** `(L, L, L+48)` — o cinza da própria luminância, marcado no canal azul. */
-const marcar = (r: number, g: number, b: number): [number, number, number] => {
-  const L = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
-  return [L, L, Math.min(255, L + AZUL_DA_MARCA)];
-};
-const ehLinhaInstrumental = (r: number, g: number, b: number): boolean =>
-  b - r >= NIVEL && b - g >= NIVEL && 0.2126 * r + 0.7152 * g + 0.0722 * b < 60;
 
 const cru = (p: string) => sharp(p).flatten({ background: FUNDO }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
 const { data: A, info } = await cru(ent);
@@ -439,21 +434,16 @@ const rejeitados = tam
   .map((t, r) => ({ r, t, frac: naPermitida[r] / t }))
   .filter(({ r, t }) => r !== oMaior && t >= maior * PISO_SOLTA && !ehPeca(r));
 
-// --- 2b. a LINHA: o núcleo escuro, mais o antialias azul colado nele (ver `HALO_LINHA`) ---
-const azulDominante = (i: number) => A[i*3+2] - A[i*3] >= NIVEL && A[i*3+2] - A[i*3+1] >= NIVEL;
-const linha = new Uint8Array(n);
-let nucleo = 0;
-for (let i = 0; i < n; i++)
-  if (peca[i] && ehLinhaInstrumental(A[i*3], A[i*3+1], A[i*3+2])) { linha[i] = 1; nucleo++; }
-let halo = 0;
-for (let p = 0; p < HALO_LINHA; p++) {
-  const ant = new Uint8Array(linha);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = y*W + x;
-    if (ant[i] || !peca[i] || !azulDominante(i)) continue;
-    if ((x>0 && ant[i-1]) || (x<W-1 && ant[i+1]) || (y>0 && ant[i-W]) || (y<H-1 && ant[i+W])) { linha[i] = 1; halo++; }
-  }
-}
+// --- 2b. a LINHA: o núcleo escuro, mais o antialias azul colado nele ---
+//
+// ⚠️ O predicado, o halo e a conversão SAÍRAM DAQUI em 2026-08-24 e viraram
+// `linha-instrumental.ts`. O chapéu precisa exatamente do mesmo teste — o defeito
+// que o azul conserta é o mesmo nos dois slots, e a fronteira do chapéu corre por
+// cima da fronteira da cabeça por construção. Copiar o teste seria a segunda cópia
+// que diverge da primeira. Ver o docstring de lá.
+//
+// Provado sem respingo: a `cachos-anjo` sai byte a byte igual antes e depois.
+const { linha, nucleo, halo } = mascaraDaLinha(A, W, H, (i) => peca[i] === 1);
 
 // --- 3. matiz 180°, só na peça (e a linha instrumental fica de fora) ---
 let recolorido = 0, instrumental = 0;

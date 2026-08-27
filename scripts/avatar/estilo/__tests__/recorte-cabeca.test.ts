@@ -99,9 +99,13 @@ beforeAll(async () => {
   });
 }, 60_000);
 
+// 30 s, e o `beforeAll` acima já pedia 60: fechar o Chromium sob a carga da corrida
+// cheia passou dos 10 s padrão em 2026-08-25, quando o `RECORTE` cresceu de 600 para
+// 648 px de largura e a esteira ficou ~8% mais pesada. O trabalho é o mesmo; o que
+// acabou foi a margem. Solo, este arquivo inteiro roda em ~2,5 s.
 afterAll(async () => {
   await navegador?.close();
-});
+}, 30_000);
 
 /** A caixa da tinta acima de `yLimite`, em unidades do QUADRO. `null` se não há tinta. */
 async function caixaDaTintaNaCabeca(modelo: string | undefined, yLimite: number) {

@@ -176,6 +176,32 @@ export const NOMES_CABELO: Record<string, string> = {
   // o mesmo mecanismo do `assimetrico` e da `longo-unilateral`, os dois já em
   // produção. `arte:traco` 11 px em 5 ilhas, maior de 7, contra piso de 8.
   dreadlocks: "Dreadlocks",
+  // ENTROU EM 2026-08-25, a pedido direto do Doug — *"cabelo elvis não passou pela
+  // esteira, faça isso"*. Ela estava em `Downloads/cabelos/elvis(epic).jpg` desde
+  // 2026-08-24 e nunca tinha sido importada; a divergência apareceu ao reescrever a
+  // §5-E do doc 22 pela pasta de entrega.
+  //
+  // Gate −1 **APROVADA**: deslocamento 0/0 px, escala 100,00%, **0 ladrilho de forma
+  // em rosto e em corpo**. `arte:traco` com o traço do boneco inteiro (0 px apagados,
+  // 0 ilhas) e `arte:borda` com **0 px de cinza** — as duas com o controle reprovando
+  // nas duas alturas, como manda.
+  //
+  // 124 410 px em **2 formas** · esticão de luminância 12→137 · tom 269×222 (31,4 KB
+  // de PNG) · **0 px descartados nas FEIÇÕES**. A massa fica na metade de cima da
+  // faixa do slot (81 mil a 149 mil), o que é esperado numa peça de volume alto no
+  // topo.
+  elvis: "Elvis",
+  // A ÚLTIMA da pasta a entrar, em 2026-08-25: *"todos da pasta cabelos e pasta
+  // chapéus entram no repositório"*. Com ela, `Downloads/cabelos/` e o repositório
+  // param de divergir — 19 artes de cada lado.
+  //
+  // Gate −1 **APROVADA**: 0/0 px, escala 100,00%, **0 ladrilho de forma** em rosto,
+  // corpo E sobrancelha. `arte:traco` com o traço do boneco inteiro (0 px apagados).
+  //
+  // ⚠️ `arte:borda` achou **2 px de cinza em 2 ilhas de 1 px** (lum 45), em
+  // u x 108 y 332. Passa — o piso é 8 px por componente —, e fica escrito porque
+  // é o primeiro cabelo do elenco que não dá zero cravado nessa régua.
+  "curto-penteado": "Curto Penteado",
 };
 
 /**

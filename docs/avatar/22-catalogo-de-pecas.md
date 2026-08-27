@@ -1,4 +1,4 @@
-# 22 — O catálogo de peças da Academia 64: 56 peças nos 4 slots, com raridade
+# 22 — O catálogo de peças da Academia 64: 59 peças nos 4 slots, com raridade
 
 > **ISTO É UM MENU, NÃO UMA FILA DE PRODUÇÃO.**
 >
@@ -93,13 +93,13 @@ lida como se fosse o todo.
 
 ### A conta que fecha, nos dois eixos
 
-| raridade | chance no baú | peças | real |
-|---|---|---|---|
-| `common` | 45% | **25** | 45,5% |
-| `rare` | 30% | **16** | 29,1% |
-| `epic` | 18% | **10** | 18,2% |
-| `legendary` | 7% | **4** | 7,3% |
-| | | **55 de baú** | + `traje-farda` (marco) = **56** |
+| raridade | chance no baú | peças | real | era |
+|---|---|---|---|---|
+| `common` | 45% | **24** | **41,4%** | 45,5% |
+| `rare` | 30% | **18** | **31,0%** | 29,1% |
+| `epic` | 18% | **12** | **20,7%** | 18,2% |
+| `legendary` | 7% | **4** | **6,9%** | 7,3% |
+| | | **58 de baú** | + `traje-farda` (marco) = **59** | |
 
 E a distribuição por slot, que é o outro eixo da mesma tabela:
 
@@ -107,11 +107,29 @@ E a distribuição por slot, que é o outro eixo da mesma tabela:
 |---|---|---|---|---|---|---|
 | traje | 14 | 8 | 6 | 1 | 29 | **30** (+ a farda) |
 | rosto | 5 | 4 | 2 | 1 | 12 | **12** |
-| chapéu | 5 | 3 | 1 | 1 | 10 | **10** |
+| chapéu | **4** | **5** | **3** | **1** | **13** | **13** |
 | pet | 1 | 1 | 1 | 1 | 4 | **4** |
-| **soma** | **25** | **16** | **10** | **4** | **55** | **56** |
+| **soma** | **24** | **18** | **12** | **4** | **58** | **59** |
 
-**A camada `legendary` inteira é o Bloco H** — quatro peças, uma por slot.
+⚠️ **A PIRÂMIDE SAIU DO LUGAR EM 2026-08-25, e não foi reequilibrada de propósito.**
+O menu de chapéu passou a seguir a pasta de entrega do Doug (§5-C): quatro peças
+novas e três raridades trocadas. O `common` caiu de 45,5% para **41,4%**; o `legendary`
+ficou em **6,9%**, praticamente no alvo, depois que a `coroa-de-vitral` saiu.
+
+Reequilibrar é mexer em raridade que **ele acabou de decidir**, e a raridade é
+desenho antes de ser economia (doc 23). Então fica medido e aberto: ou o alvo do baú
+muda, ou peças de outros slots entram para diluir. **Nada disso é urgente enquanto o
+baú não estiver ligado.**
+
+⚠️ **RECONTAGEM CONGELADA ATÉ AS ARTES ACABAREM.** Decisão do Doug em 2026-08-25:
+*"vamos mudar apenas quando eu acabar todas as artes do avatar"*. As contagens acima
+seguem a pasta de entrega; **o ALVO (a coluna "chance no baú") não se toca**, e a
+divergência entre os dois documentos — este pede 45/30/18/7, o backlog T4.10 pede
+**40/30/20/10**, e o real caiu em 41,4/31,0/20,7/6,9 — **fica registrada para ser
+arrumada de uma vez só**, quando o elenco fechar. Não é dívida esquecida: é dívida
+com data.
+
+**A camada `legendary` era o Bloco H** — uma peça por slot, quatro no total.
 
 ⚠️ **O pet é 4, uma por raridade, e está marcado EXPANSÍVEL** por decisão do Doug em
 2026-08-21. Quando ele crescer, a coluna dele cresce e as outras encolhem — a
@@ -130,9 +148,9 @@ Bíblia Tonal v2 §10). Desde 2026-08-21 elas moram num lugar só:
 
 E o doc 23 acrescenta o que não existia em nenhuma das três cópias: a **cor** do
 traço ao lado da espessura (§3), as regras do **tom** (§4), os três **tamanhos de
-julgamento** (§6) e a decisão aberta do `escondeCabelo` (§8).
+julgamento** (§6) e o `escondeCabelo` (§8), decidido em 2026-08-25.
 
-## 5. As 56 peças, slot a slot
+## 5. As 59 peças, slot a slot
 
 Organizadas por **corredor da Academia**, que é o que dá coerência ao conjunto sem
 precisar de época. Um aluno com o traje da forja e outro com o do observatório
@@ -297,32 +315,65 @@ não é `LINHA`.
 
 ---
 
-## 5-C. CHAPÉU — 10 peças
+## 5-C. CHAPÉU — 13 peças, **9 desenhadas**
 
-**O slot com ZERO infraestrutura hoje** — `CHAPEUS = {}`, e o corredor
-(`noCampoDoChapeu()`, `chapeus.ts`, `arte:chapeus`) é o H3. Este menu existe para
-que, quando o corredor abrir, haja de onde escolher.
+⚠️ **REESCRITA EM 2026-08-25, e a fonte foi a PASTA DE ENTREGA, não este documento.**
+O Doug batizou as nove artes em `Downloads/chapéus/` na forma `nome(raridade)`, e o
+menu passou a seguir os arquivos. Três raridades mudaram e quatro peças entraram —
+`cartola`, `pirata`, `cowboy` e `mago` não existiam aqui. O `chapeu-gorro` **virou**
+`chapeu-touca-de-la`: é a mesma peça (gorro de tricô de barra virada) com o nome que
+ele deu.
 
 Cor final, assada. Tamanho de julgamento: **32 px**.
 
-⚠️ **Cada linha declara `escondeCabelo`, e a decisão de política é a §8 do doc 23.**
+⚠️ **Nenhuma linha declara `escondeCabelo`, e é de propósito.** Desde 2026-08-25 o
+campo é uma LINHA extraída do alfa da própria arte pela esteira (doc 23 §8), não uma
+política escolhida por peça — a coluna abaixo virou histórico do que se planejava.
 Enquanto ela não for tomada, a coluna é proposta, não lei.
 
 ⚠️ **Transbordo para os LADOS e para CIMA, nunca para baixo** (doc 23 §2.2): chapéu
 que desce come a testa e as sobrancelhas.
 
-| # | slug | raridade | corredor | `escondeCabelo` | textura repetida | construção |
-|---|---|---|---|---|---|---|
-| 42 | `chapeu-boina` | `common` | a Casa | `franja` | uma forma, mais o cabinho no topo | boina inclinada; a aba não existe |
-| 43 | `chapeu-gorro` | `common` | os Jardins | `franja` | o canelado da barra virada | gorro de tricô, barra dobrada |
-| 44 | `chapeu-bone` | `common` | o Torneio | `franja` | a aba **+** as costuras dos gomos | boné de gomos, aba para a frente |
-| 45 | `chapeu-bandana` | `common` | as Oficinas | `franja` | o nó **+** as pontas | bandana amarrada — **o nó fica de LADO**, nunca atrás da cabeça |
-| 46 | `chapeu-toca-de-cozinha` | `common` | a Cozinha | `tudo` | o franzido regular da copa | toca alta e franzida; é a peça que testa o `tudo` |
-| 47 | `chapeu-chapeu-de-palha` | `rare` | os Jardins | `franja` | o trançado da palha **+** a fita da copa | aba larga e plana; o transbordo lateral é o assunto da peça |
-| 48 | `chapeu-capelo` | `rare` | o Arquivo | `tudo` | a placa quadrada **+** a borla pendente | o capelo de formatura — a peça mais reconhecível do slot |
-| 49 | `chapeu-turbante` | `rare` | os Visitantes | `tudo` | as voltas do pano, contadas **+** a dobra da frente | turbante de voltas visíveis |
-| 50 | `chapeu-oculos-de-forja` | `epic` | as Oficinas | `nada` | as duas lentes **+** a tira **+** os rebites da tira | óculos de forja **erguidos na testa** — não é óculos: mora no slot da cabeça e não cobre os olhos |
-| 51 | `chapeu-coroa-de-vitral` | `legendary` | o Observatório | `franja` | **painéis de vidro separados por chumbo**, cada ponta da coroa de um tom, com a luz atravessando | a peça tem **estrutura**, não só forma: o aro, as pontas e os painéis são três planos que o olho desmonta. É o `legendary` do slot |
+| # | slug | raridade | arte | corredor | `escondeCabelo` | textura repetida | construção |
+|---|---|---|---|---|---|---|---|
+| 42 | `chapeu-touca-de-la` | `common` | ✅ | os Jardins | `franja` | o canelado da barra virada | gorro de tricô, barra dobrada. **Era `chapeu-gorro`** |
+| 43 | `chapeu-chapeu-de-palha` | `common` | ✅ | os Jardins | `franja` | o trançado da palha **+** a fita da copa | aba larga e plana; o transbordo lateral é o assunto da peça |
+| 44 | `chapeu-toca-de-cozinha` | `common` | ✅ | a Cozinha | `tudo` | o franzido regular da copa | toca alta e franzida; é a peça que testa o `tudo` |
+| 45 | `chapeu-bandana` | `common` | — | as Oficinas | `franja` | o nó **+** as pontas | bandana amarrada — **o nó fica de LADO**, nunca atrás da cabeça |
+| 46 | `chapeu-boina` | `rare` | ✅ | a Casa | `franja` | uma forma, mais o cabinho no topo | boina inclinada; a aba não existe |
+| 47 | `chapeu-cartola` | `rare` | ✅ | *a definir* | *a definir* | *a medir na arte* | cartola alta de aba estreita |
+| 48 | `chapeu-cowboy` | `rare` | ✅ | *a definir* | *a definir* | *a medir na arte* | chapéu de cowboy, aba larga com as laterais curvadas |
+| 49 | `chapeu-capelo` | `rare` | — | o Arquivo | `tudo` | a placa quadrada **+** a borla pendente | o capelo de formatura — a peça mais reconhecível do slot |
+| 50 | `chapeu-turbante` | `rare` | — | os Visitantes | `tudo` | as voltas do pano, contadas **+** a dobra da frente | turbante de voltas visíveis |
+| 51 | `chapeu-bone` | `epic` | ✅ | o Torneio | `franja` | a aba **+** as costuras dos gomos | boné de gomos, aba para a frente |
+| 52 | `chapeu-pirata` | `epic` | ✅ | *a definir* | *a definir* | *a medir na arte* | chapéu de pirata |
+| 53 | `chapeu-oculos-de-forja` | `epic` | — | as Oficinas | `nada` | as duas lentes **+** a tira **+** os rebites da tira | óculos de forja **erguidos na testa** — não é óculos: mora no slot da cabeça e não cobre os olhos |
+| 54 | `chapeu-mago` | `legendary` | ✅ | *a definir* | *a definir* | *a medir na arte* | chapéu de mago |
+
+### O QUE FICA MARCADO PARA O FUTURO
+
+**1. As QUATRO peças sem arte** — `bandana`, `capelo`, `turbante` e
+`oculos-de-forja`. Elas são menu, como este documento sempre foi: existem para haver
+de onde escolher, e nenhuma tem PNG no repositório.
+
+**2. As três colunas *a definir* das quatro peças novas.** `cartola`, `pirata`,
+`cowboy` e `mago` **têm arte e passam todas as réguas** — o que falta é dado de
+catálogo, não desenho: o **corredor** sai da [Bíblia v2 §5](../Academia64_Biblia_Tonal_v2.md)
+e é decisão de produto; o `escondeCabelo` saiu da esteira e não se escolhe mais;
+e a **textura repetida** se escreve OLHANDO a arte, que é trabalho do olho do Doug.
+
+⚠️ A regra da §5 diz que *"se uma peça nova não tiver o que escrever na textura, ela
+ainda não está desenhada"*. Aqui ela está invertida de propósito e o motivo é
+declarado: **a arte existe e a coluna é que está atrasada.** Não confundir uma coisa
+com a outra.
+
+**3. ~~Duas `legendary` no mesmo slot~~ — RESOLVIDO em 2026-08-25.** O Doug escolheu:
+**a `chapeu-coroa-de-vitral` saiu do menu**, e o `chapeu-mago` é o lendário do slot.
+A camada `legendary` volta a ser uma por slot.
+
+**4. A pirâmide saiu do lugar.** Ver a nota nova no §2 — quatro peças a mais e três
+raridades trocadas mudam as porcentagens globais, e isso é conta de economia, não de
+arte.
 
 ---
 
@@ -346,67 +397,87 @@ A régua de raridade aqui é **atitude legível na silhueta**, não detalhe: um 
 
 | # | slug | raridade | corredor | textura repetida | construção |
 |---|---|---|---|---|---|
-| 52 | `pet-passarinho` | `common` | os Jardins | uma silhueta, uma cor, uma pose | pardal pousado, de perfil. A peça de referência do slot |
-| 53 | `pet-gato-de-arquivo` | `rare` | o Arquivo | a silhueta **+** as listras contadas | gato sentado, enrolado na própria cauda |
-| 54 | `pet-tartaruga-de-bronze` | `epic` | as Oficinas | a silhueta **+** as placas do casco **+** os rebites de cada placa | tartaruga mecânica; o casco é o `traje-automato` em miniatura |
-| 55 | `pet-coruja-do-observatorio` | `legendary` | o Observatório | as penas contadas **+** o disco facial **+** a constelação no peito | a coruja é um **personagem**: a atitude está na silhueta, e ela lê a 32 px sem detalhe nenhum. É o `legendary` do slot |
+| 55 | `pet-passarinho` | `common` | os Jardins | uma silhueta, uma cor, uma pose | pardal pousado, de perfil. A peça de referência do slot |
+| 56 | `pet-gato-de-arquivo` | `rare` | o Arquivo | a silhueta **+** as listras contadas | gato sentado, enrolado na própria cauda |
+| 57 | `pet-tartaruga-de-bronze` | `epic` | as Oficinas | a silhueta **+** as placas do casco **+** os rebites de cada placa | tartaruga mecânica; o casco é o `traje-automato` em miniatura |
+| 58 | `pet-coruja-do-observatorio` | `legendary` | o Observatório | as penas contadas **+** o disco facial **+** a constelação no peito | a coruja é um **personagem**: a atitude está na silhueta, e ela lê a 32 px sem detalhe nenhum. É o `legendary` do slot |
 
 ---
 
-## 5-E. CABELO — as 6 peças que EXISTEM
+## 5-E. CABELO — 19 peças de arte, **14 no produto**
 
 > **Esta seção é de natureza diferente das quatro acima.** As §5-A a §5-D são
-> **menu**: peças pensadas, nenhuma desenhada. Esta é **inventário**: as 6 peças
-> aqui já existem, já passaram pela folha de contato e já estão em
-> `MODELOS_CABELO`. Ela não propõe nada e não entra nas tabelas de pirâmide do §2 —
-> ver a nota daquela seção.
+> **menu**: peças pensadas, a maioria não desenhada. Esta é **inventário**: toda
+> linha aqui tem arte no disco do Doug. Ela não entra nas tabelas de pirâmide do §2
+> — ver a nota daquela seção.
 
-O slot `cabelo` entrou em `avatar_catalogo` em **2026-08-23**, quando o Doug
-revogou a razão de custo que o mantinha numa gramática à parte (doc 21 §3.3). Até
-ali ele tinha tabela própria (`avatar_hair_catalog`), era travado **por nível** e
-não caía no baú. Agora é peça como qualquer outra: raridade, posse em
-`avatar_guarda_roupa`, e o baú como porta.
+⚠️ **REESCRITA EM 2026-08-25, e a fonte foi a PASTA DE ENTREGA.** Ela estava parada
+em quatro linhas, de quando o elenco tinha quatro peças; o elenco fechou em **14** no
+commit `80bd4d9` e cinco artes esperam a esteira. Os nomes e as raridades saem de
+`Downloads/cabelos/`, na forma `nome(raridade)`, e o casamento com o código foi feito
+arquivo a arquivo.
 
-**A raridade espelha o gate de nível que existia** — é tradução, não redesenho.
-Cabelo livre virou `common`; nível 10 virou `rare`; nível 20, `epic`; nível 30,
-`legendary`. O `burst-fade` nunca teve linha de nível (chegou depois da última
-migration) e entra como `rare` (o `coque`, que dividia a faixa com ele, saiu do catálogo em 2026-08-24).
+O slot `cabelo` entrou em `avatar_catalogo` em **2026-08-23**, quando o Doug revogou
+a razão de custo que o mantinha numa gramática à parte (doc 21 §3.3). Até ali ele
+tinha tabela própria (`avatar_hair_catalog`), era travado **por nível** e não caía no
+baú. Agora é peça como qualquer outra.
 
-| # | slug | raridade | inicial | era | família | textura repetida |
-|---|---|---|---|---|---|---|
-| — | `cabelo-assimetrico` | `common` | ✅ | nível 1 | tonal | a mecha longa de um lado só **+** a queda contínua de luz dentro dela |
-| — | `cabelo-burst-fade` | `rare` | | *(sem linha)* | tonal | o degradê em leque atrás da orelha — o tom mais contínuo do elenco, 256 valores distintos |
-| — | `cabelo-moicano` | `epic` | | nível 20 | tonal | a crista central **+** as laterais rentes, com a luz correndo pela crista |
-| — | `cabelo-chanel` | `legendary` | | nível 30 | tonal | as pontas contadas da barra reta **+** a luz descendo por dentro de cada mecha |
+**Todo o slot é TONAL.** As famílias paramétrica e traçada ficaram vazias em
+2026-08-24, quando o Doug apagou `cabelo-coque` e `cabelo-espetado` em vez de
+refazê-los — é o que ele quis dizer com *"não há três famílias"*.
 
-⚠️ **Eram SEIS até 2026-08-24, e o Doug apagou duas.** `cabelo-espetado` (`common`,
-inicial, família traçada) e `cabelo-coque` (`rare`, paramétrica) saíram do catálogo e
-do banco pela migration `20260824080000`. As duas já tinham sido reprovadas por ele
-olhando o render — o espetado por *"cor vazando pelo contorno do cabelo em todo o
-rosto"*, o coque por **9,0% da peça fora do `viewBox`** —, e ele decidiu desenhar arte
-nova em vez de refazê-las. Com elas foram embora as duas últimas famílias que não são
-a **tonal**: o slot inteiro é tonal agora, que é o que ele quis dizer em 2026-08-23
-com *"não há três famílias"*.
+| slug | raridade | onde está | arquivo da pasta |
+|---|---|---|---|
+| `cabelo-chanel` | `common` | ✅ | `chanel(common).png` |
+| `cabelo-curto-repartido` | `common` | ✅ | `curto_repartido(common).jpg` |
+| `cabelo-espetado` | `common` | ✅ | `espetadonovo(common).jpg` |
+| `cabelo-maria-chiquinha` | `common` | ✅ | `maria_chiquinha_nova(common).jpg` |
+| `cabelo-pixie` | `common` | ✅ | `pixie(common).jpg` |
+| `cabelo-rabo-baixo` | `common` | ✅ | `rabo_baixo(common).jpg` |
+| `cabelo-tigela-franja` | `common` | ✅ | `tigela_franja(common).png` |
+| `cabelo-trancas-duplas` | `common` | ✅ | `trancas_duplas(common).jpg` |
+| `cabelo-curto-penteado` | `common` | **no seletor** | `curto_penteado(common).png` |
+| `cabelo-burst-fade` | `rare` | ✅ | `Burst_Fade(rare).png` |
+| `cabelo-coque-simples` | `rare` | ✅ | `coque_simples(rare).jpg` |
+| `cabelo-coque-individual` | `rare` | **no seletor** | `coque_individual(rare).jpg` |
+| `cabelo-coques-duplos` | `rare` | **no seletor** | `coques_duplos(rare).jpg` |
+| `cabelo-longo-unilateral` | `epic` | ✅ | `longo_unilateral(epic).png` |
+| `cabelo-moicano` | `epic` | ✅ | `moicano(epic).png` |
+| `cabelo-elvis` | `epic` | **no seletor** | `elvis(epic).jpg` |
+| `cabelo-assimetrico` | `legendary` | ✅ | `assimetrico(legendary).png` |
+| `cabelo-cachos-anjo` | `legendary` | ✅ | `cachos_anjo(legendary).jpg` |
+| `cabelo-dreadlocks` | `legendary` | **no seletor** | `dreadlocks(legendary).png` |
 
-**A coluna `#` fica vazia de propósito:** a numeração 1–56 é do menu, e estas peças
-não são menu. Elas ganham número quando o elenco fechar e a recontagem acontecer de
-uma vez só.
+### O QUE FICA MARCADO PARA O FUTURO
 
-⚠️ **Sobrou UMA inicial**, e é declarado, não descuido. Eram duas — `cabelo-espetado`
-e `cabelo-assimetrico`, as que já eram livres por nível —, e a primeira saiu. A
-migration traz uma asserção que reprova se **nenhuma** sobrar, porque zerar as
-iniciais de um slot não quebra nada de imediato: a conta nova nasceria, o gate
-passaria, e o defeito apareceria semanas depois como *"o cabelo não abre para
-ninguém"*. Com uma só, o aluno começa escolhendo entre ela **e a careca** — que
-continua sendo `NULL` e não é peça. Duas iniciais de novo é decisão do Doug, e a
-candidata natural é a arte nova que ele vai desenhar.
+**1. ~~As cinco artes fora da esteira~~ — RESOLVIDO em 2026-08-25.** O Doug: *"todos
+da pasta cabelos e pasta chapéus entram no repositório"*. As **19 artes atravessaram**
+e a pasta parou de divergir do repositório. O que falta nas cinco marcadas **no
+seletor** não é esteira: é o **parecer dele no render**, que é o que move uma peça de
+`NOMES_CABELO` para `CABELOS` — de "existe" para "a criança vê".
+
+**2. AS INICIAIS DO SLOT SÃO `rabo-baixo` E `curto-repartido`** — decisão do Doug em
+2026-08-25, e ela conserta um defeito de economia que a pasta abriu.
+
+O `cabelo-assimetrico` era `common` **e `inicial`**; a pasta o traz como `legendary`,
+e inicial lendária não é inicial — o aluno começaria com uma peça de 7% de baú, ou
+só com a careca. O comentário da coluna `inicial` no banco já dizia a regra: *"toda
+inicial é `common` e de origem `bau`"*.
+
+**São duas de novo**, como antes de 2026-08-24, e as duas são `common`. **Falta a
+migration** que marca `inicial = true` nas duas e `false` no `assimetrico` — ela é um
+`UPDATE`, não recolagem de função, porque a decisão mora na coluna.
+
+**3. As raridades de `chanel` e `assimetrico` TROCARAM** em relação ao que este
+documento dizia (`chanel` era `legendary`, `assimetrico` era `common`). A pasta
+vence, e está registrado aqui para ninguém achar que foi engano de transcrição.
 
 **A careca não é linha do catálogo.** Ela é a ausência de peça, como o "sem traje" —
 e o gate `verify:cabelo-catalogo` guarda essa asserção desde que existe.
 
-**O prefixo `cabelo-` é fronteira, não renome.** No banco a peça é
-`cabelo-espetado`; no código o modelo continua sendo `espetado`, e `CABELOS[m].id`
-continua igual a `m`. Quem traduz é `modeloDoSlug()`, num lugar só.
+**O prefixo `cabelo-` é fronteira, não renome.** No banco a peça é `cabelo-espetado`;
+no código o modelo continua sendo `espetado`, e `CABELOS[m].id` continua igual a `m`.
+Quem traduz é `modeloDoSlug()`, num lugar só.
 
 ---
 

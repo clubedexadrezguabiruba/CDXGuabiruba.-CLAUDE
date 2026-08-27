@@ -138,7 +138,22 @@ export type ModeloCabelo =
   | "espetado"
   // A REENTRADA da maria chiquinha: a primeira arte dela foi reprovada pelo Doug no
   // DESENHO e apagada; esta é outra, e ele a aprovou depois de ver o boneco montado.
-  | "maria-chiquinha";
+  | "maria-chiquinha"
+  // ─────────────────────────────────────────────────────────────────────────
+  // O LOTE DE 2026-08-25 — cinco de uma vez, e a promoção mais barata do slot: as
+  // cinco artes já estavam no disco e no seletor, e o que faltava era só o parecer.
+  // O Doug: *"já olhei e todos aprovados"*. O elenco vai de 14 para **19**.
+  //
+  // Três delas (`coque-individual`, `coques-duplos`, `dreadlocks`) estavam paradas
+  // desde 2026-08-24 esperando esse olhar; as outras duas (`elvis`, `curto-penteado`)
+  // entraram no mesmo dia, quando a §5-E do doc 22 foi reescrita pela pasta de
+  // entrega e revelou que elas nunca tinham atravessado a esteira.
+  // ─────────────────────────────────────────────────────────────────────────
+  | "coque-individual"
+  | "coques-duplos"
+  | "dreadlocks"
+  | "elvis"
+  | "curto-penteado";
 
 /** Um ponto da franja: altura absoluta, e fração da largura da cabeça NAQUELA altura. */
 export interface PontoFranja {
@@ -1165,6 +1180,80 @@ export const CABELOS: Record<ModeloCabelo, Cabelo> = {
     id: "maria-chiquinha",
     nome: "Maria Chiquinha",
   },
+
+  /**
+   * COQUE INDIVIDUAL — 81 666 px · esticão de luminância 16→162 · `d` de 4 210 B.
+   *
+   * A terceira arte do slot na família do coque, depois das duas reprovadas na manhã
+   * de 2026-08-24. Gate −1 **APROVADA** com 0 px em rosto e corpo (21 px na
+   * sobrancelha, que só relata) e traço do boneco inteiro.
+   */
+  "coque-individual": {
+    ...CABELOS_DA_ARTE["coque-individual"],
+    id: "coque-individual",
+    nome: "Coque Individual",
+  },
+
+  /**
+   * COQUES DUPLOS — 91 870 px · o `d` mais leve do lote (3 168 B).
+   *
+   * Gate −1 com **0 ladrilho até na região permitida** — a arte mais limpa que já
+   * passou por aqui nessa conta.
+   *
+   * ⚠️ É a família que morreu no teto do `viewBox` (o `coque`, com 9,0%
+   * guilhotinados acima do quadro), e esta nasce dentro dele.
+   */
+  "coques-duplos": {
+    ...CABELOS_DA_ARTE["coques-duplos"],
+    id: "coques-duplos",
+    nome: "Coques Duplos",
+  },
+
+  /**
+   * DREADLOCKS — 144 527 px, a **segunda maior massa do elenco**, atrás só da
+   * `longo-unilateral` (149 717). O `d` mais pesado do slot: 9 436 B.
+   *
+   * Gate −1 **APROVADA**: 0 px em rosto e sobrancelha, 1 963 px em "corpo" dos quais
+   * **98,7% é a própria peça caindo sobre o tronco** — o mesmo mecanismo do
+   * `assimetrico` e da `longo-unilateral`, os dois já em produção.
+   */
+  dreadlocks: {
+    ...CABELOS_DA_ARTE["dreadlocks"],
+    id: "dreadlocks",
+    nome: "Dreadlocks",
+  },
+
+  /**
+   * ELVIS — 124 410 px · esticão de luminância 12→137, o **mais escuro do elenco no
+   * piso** (12 contra 13 a 17 das outras).
+   *
+   * Entrou na esteira em 2026-08-25 a pedido direto do Doug. Gate −1 **APROVADA**
+   * com **0 ladrilho de forma** em rosto e em corpo; `arte:traco` e `arte:borda`
+   * zerados.
+   */
+  elvis: {
+    ...CABELOS_DA_ARTE["elvis"],
+    id: "elvis",
+    nome: "Elvis",
+  },
+
+  /**
+   * CURTO PENTEADO — 75 060 px, a **MENOR massa do elenco inteiro**, abaixo da
+   * `curto-repartido` (81 253), que detinha o posto. Esticão 13→204, o mais largo do
+   * slot: 191 níveis de luz dentro da peça.
+   *
+   * Gate −1 **APROVADA** com 0 ladrilho em rosto, corpo E sobrancelha.
+   *
+   * ⚠️ **Primeiro cabelo do elenco que não zera a `arte:borda`**: 2 px de cinza em 2
+   * ilhas de 1 px (lum 45), em u x 108 y 332. Passa com folga — o piso é 8 px por
+   * componente —, e fica escrito porque massa baixa somada a borda não-preta é o
+   * conjunto que faz uma peça ler "rala".
+   */
+  "curto-penteado": {
+    ...CABELOS_DA_ARTE["curto-penteado"],
+    id: "curto-penteado",
+    nome: "Curto Penteado",
+  },
 };
 
 /** A lista na ordem do catálogo, para as folhas e para o `criar-personagem`. */
@@ -1250,6 +1339,12 @@ export const MODELOS_TONAIS = [
   "tigela-franja",
   "espetado",
   "maria-chiquinha",
+  // O lote de 2026-08-25 — ver o comentário na união `ModeloCabelo`.
+  "coque-individual",
+  "coques-duplos",
+  "dreadlocks",
+  "elvis",
+  "curto-penteado",
 ] as const satisfies readonly ModeloCabelo[];
 
 /**

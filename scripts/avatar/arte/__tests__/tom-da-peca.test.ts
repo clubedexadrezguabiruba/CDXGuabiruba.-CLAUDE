@@ -204,7 +204,11 @@ describe("a esteira é uma só, parametrizada por slot", () => {
     expect(peca.slug).toBe("rosto-barba-trancada");
   });
 
-  it("a MESMA arte pelos dois slots dá a MESMA geometria — só o nome muda", async () => {
+  // 30 s em vez dos 5 s padrão. Medido solo: 699 ms este e 390 ms o seguinte — o que
+  // estoura é a contenção da corrida paralela, e ela apertou em 2026-08-25 com o
+  // `RECORTE` 8% mais largo. Teto folgado aqui não afrouxa asserção nenhuma: ele só
+  // impede que a máquina do dia decida se o teste passa.
+  it("a MESMA arte pelos dois slots dá a MESMA geometria — só o nome muda", { timeout: 30_000 }, async () => {
     const comoRosto = await construirPecaTonal(ARTE_CABELO, "rosto");
     const comoCabelo = await construirPecaTonal(ARTE_CABELO, "cabelo");
 
@@ -237,7 +241,7 @@ describe("a esteira é uma só, parametrizada por slot", () => {
     );
   });
 
-  it("o slug do cabelo carrega o prefixo do slot — e o PNG de tom mora na pasta dele", async () => {
+  it("o slug do cabelo carrega o prefixo do slot — e o PNG de tom mora na pasta dele", { timeout: 30_000 }, async () => {
     // `avatar_catalogo` não tem linha de cabelo (ele é escolha livre da D27), então o
     // prefixo aqui não é chave primária: é o que faz laudo, folha, literal e arquivo
     // de máscara falarem o mesmo nome. `public/items/cabelo/cabelo-chanel-tom.png`.

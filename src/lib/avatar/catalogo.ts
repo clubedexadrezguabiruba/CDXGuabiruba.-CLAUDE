@@ -51,6 +51,7 @@
  */
 
 import { CABELOS, MODELOS_CABELO, type ModeloCabelo } from "./estilo/cabelo";
+import { CHAPEUS_DA_ARTE } from "./estilo/chapeus-da-arte";
 import { ROSTOS_DA_ARTE } from "./estilo/rostos-da-arte";
 import { TRAJES_DA_ARTE } from "./estilo/trajes-da-arte";
 import type { PecaDeChapeu, PecaDeRosto, PecaSobreposta } from "./estilo/tipos";
@@ -68,14 +69,24 @@ export const SLOTS = ["traje", "chapeu", "rosto", "pet", "cabelo"] as const;
 export type Slot = (typeof SLOTS)[number];
 
 /**
- * Os chapéus desenhados. Vazio até o Bloco 7.
+ * Os chapéus desenhados.
+ *
+ * **DERIVADO desde 2026-08-24**, pelo mesmo motivo que o traje e o rosto:
+ * `CHAPEUS_DA_ARTE` é GERADO por `npm run arte:chapeus` a partir dos PNGs que o
+ * Doug desenhou sobre a base oficial. O slug é consequência de existir arte
+ * renderizável, nunca uma segunda declaração que pode discordar dela.
+ *
+ * Ele era um literal vazio esperando o Bloco 7 — e o que travava o Bloco 7 não era
+ * arte, era o **teto**: no retângulo de colagem antigo um chapéu tinha 39,5
+ * unidades acima da coroa, 12,6% de uma altura de cabeça. Ver `CAIXA_DA_ARTE`
+ * (`estilo/geometria.ts`).
  *
  * `PecaDeChapeu` e não `PecaSobreposta`: o tipo carrega `cabeloPorCima?: never`, e é
  * ele que faz um chapéu que tente escolher de que lado do cabelo veste **não
  * compilar**. O chapéu é sempre o último. A trava vale com o catálogo vazio, que é
  * exatamente quando um teste não valeria nada.
  */
-export const CHAPEUS: Record<string, PecaDeChapeu> = {};
+export const CHAPEUS: Record<string, PecaDeChapeu> = CHAPEUS_DA_ARTE;
 
 /**
  * As peças de rosto — óculos, bigode, barba.

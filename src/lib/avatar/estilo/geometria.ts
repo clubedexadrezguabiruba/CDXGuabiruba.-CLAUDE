@@ -147,11 +147,151 @@
 // ---------------------------------------------------------------------------
 
 /**
- * O `viewBox` de tudo. 500×700 é 5:7 — o mesmo `CANVAS_RATIO` que o
- * `SIZE_CONFIG`, os frames, o ranking e o Quadro de Honra já usam. O container
- * não muda; o que muda é o que se desenha dentro dele.
+ * A largura do DESENHO, que deixou de ser a largura do quadro.
+ *
+ * `geometria.ts` inteiro descreve o boneco num sistema de 500 unidades de largura.
+ * Até 2026-08-25 o `viewBox` também media 500, e as duas coisas eram o mesmo número
+ * — o que fez três contas do compositor escreverem `VIEWBOX.w` onde queriam dizer
+ * *"a largura do desenho"*. **Alargar o quadro separa as duas**, e quem não separar
+ * põe a figura fora do centro: foi o que aconteceu no experimento do dia, 28 px de
+ * desvio num quadro de 408.
+ *
+ * Ela NÃO acompanha o `viewBox`: mexer aqui é redesenhar o boneco.
  */
-export const VIEWBOX = { w: 500, h: 700 } as const;
+export const LARGURA_INTERNA = 500;
+
+/**
+ * O `viewBox` de tudo — o QUADRO, que desde 2026-08-25 é mais largo que o desenho.
+ *
+ * ---------------------------------------------------------------------------
+ * ELE ERA 500 × 700, E O CHAPÉU O ALARGOU
+ * ---------------------------------------------------------------------------
+ *
+ * Oito artes de chapéu chegaram em 2026-08-25 e três tinham aba comprida demais para
+ * o quadro. O Doug, olhando o render: *"os chapéus mais largos são cortados pelo
+ * limite da tela do avatar (aumentar ela)."*
+ *
+ * A conta: o quadro de 500 segurava **1,49 × a largura da cabeça** (543 u visíveis a
+ * `ESCALA_PADRAO`), e o chapéu mais largo pedia **1,77 ×** — 645 u. Com 600 o quadro
+ * segura 652 u, e o pior candidato passa de **7 447 px de desenho aparados para 237**.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ALARGAR O QUADRO, E NÃO ENCOLHER A FIGURA
+ * ---------------------------------------------------------------------------
+ *
+ * As duas saídas dão o mesmo espaço. A diferença é **quem paga**:
+ *
+ *  - **encolher** (`ESCALA_PADRAO` 0,92 → 0,775) cobraria de todo aluno, inclusive
+ *    dos que não usam chapéu nenhum. E cobraria no pior lugar: `RECORTE_CABECA` tem
+ *    a escala DENTRO da conta, então o rosto encolheria 16% nos 32 px da navbar —
+ *    exatamente o tamanho que a lei de arte (doc 23) existe para defender;
+ *  - **alargar** não toca a navbar (a janela da cabeça sai da LARGURA DA CABEÇA, não
+ *    do quadro) e não encolhe figura nenhuma. O preço é ar a mais em volta e um
+ *    componente 20% mais largo para a mesma altura, em duas telas de corpo inteiro.
+ *
+ * ⚠️ **A proporção deixou de ser 5:7 e passou a 6:7.** `<AvatarKokeshi>` deriva a
+ * largura da altura por este `viewBox`, então ele acompanha sozinho — quem reserva
+ * espaço por proporção escrita à mão é que precisa saber.
+ */
+export const VIEWBOX = { w: 600, h: 700 } as const;
+
+/**
+ * A CAIXA DA ARTE — onde uma peça de `<image>` é colada, e ela **não** é o `viewBox`.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ELA EXISTE, E O NÚMERO QUE A FEZ NASCER
+ * ---------------------------------------------------------------------------
+ *
+ * Até 2026-08-24 `colarArte()` derivava o retângulo do `VIEWBOX`, e o comentário
+ * que justificava isso estava certo sobre o traje e errado sobre o resto: *"o
+ * `viewBox` inteiro é exatamente o retângulo em que a esteira recortou a arte"*.
+ * O traje mora no tronco e nunca sentiu; **o chapéu sente na primeira peça.**
+ *
+ * Medido no render, com uma arte cuja tinta está na primeira linha do próprio
+ * arquivo (bancada da Frente B):
+ *
+ * | janela | teto acima da coroa | em alturas de cabeça |
+ * |---|---|---|
+ * | o QUADRO, para paths | 114,6 u | 36,5% |
+ * | a TELA DE ARTE (canvas 1024², origem y=92) | 116,2 u | 37,0% |
+ * | a COLAGEM no `viewBox` | **39,5 u** | **12,6%** |
+ *
+ * O quadro já mostrava o espaço; a colagem é que não alcançava. Um chapéu tinha
+ * 39,5 unidades acima da coroa — 12,6% de uma altura de cabeça — e não porque o
+ * `viewBox` fosse pequeno, mas porque o retângulo de colagem parava em `y = 0`.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE −75, E NÃO O TETO INTEIRO DO CANVAS
+ * ---------------------------------------------------------------------------
+ *
+ * A base de edição (`scripts/avatar/arte/base.ts`) tem 92 px acima do `y = 0`, a
+ * 1,2 px/u — 76,67 unidades. Três números disputam o topo, e o menor manda:
+ *
+ *  - **o canvas** dá até −76,67, e ele não é exato em binário (92 ÷ 1,2);
+ *  - **o quadro** mostra até −81,1 (`naTela({y:−81,1}).y = 0`), então não é ele
+ *    quem corta;
+ *  - **−75** é exato dos dois lados: 92 − 75 × 1,2 = **2 px** cravados, e
+ *    775 × 1,2 = **930** cravados. Fica com 2 px de margem da borda do arquivo.
+ *
+ * O 1,67 u que se abre mão compra a exatidão que `base.ts` inteiro persegue —
+ * *"uma conversão exata é uma fonte a menos de desvio no fim da cadeia"* — e uma
+ * margem que impede a arte de encostar na borda do PNG.
+ *
+ * ---------------------------------------------------------------------------
+ * A AMARRA: UM SISTEMA DE COORDENADAS, DOIS LADOS
+ * ---------------------------------------------------------------------------
+ *
+ * `RECORTE` (`scripts/avatar/arte/peca-de-arte.ts`) **deriva desta constante**, não
+ * a espelha. É o que mantém a promessa que já estava escrita lá — *"a colagem é
+ * conta, não ajuste"*, *"um recorte próprio por slot seria um segundo sistema de
+ * coordenadas atravessando a rota"*. O recorte cresceu; o sistema continua um só.
+ *
+ * ---------------------------------------------------------------------------
+ * O EIXO HORIZONTAL, 2026-08-25: DE `0 → 500` PARA `−75 → 575`
+ * ---------------------------------------------------------------------------
+ *
+ * O mesmo defeito do eixo vertical, um ano-luz mais barato de achar: **o quadro já
+ * mostrava mais do que a colagem alcançava.** A figura é desenhada a
+ * `ESCALA_PADRAO = 0,92` e reancorada, então `naTela(x) = 20 + 0,92x`, e a janela
+ * visível vai de **interno −21,7 a 521,7**. A caixa parava em 0 e 500 — **21,7
+ * unidades desperdiçadas de cada lado.**
+ *
+ * O Doug pegou olhando os candidatos de chapéu no render: *"os chapéus mais largos
+ * são cortados pelo limite da tela do avatar."* Medido nos oito: três perdiam
+ * desenho pelas laterais, até 4,2% num deles.
+ *
+ * **Por que −20 e não −21,7.** O mesmo critério que escolheu o −75 do teto: o valor
+ * tem de cair em pixel INTEIRO do canvas de arte. `212 + 1,2 × (−20) = 188` cravado,
+ * e `540 × 1,2 = 648` cravado — o recorte vai de px 188 a 836. Os −21,7 dariam
+ * 185,96. Abre-se mão de 1,7 u de cada lado pela exatidão, exatamente como no teto.
+ *
+ * Ganho: **40 unidades de largura**, +8%. O transbordo lateral livre da cabeça sai
+ * de 75,2 / 60,8 para **95,2 / 80,8**.
+ */
+export const CAIXA_DA_ARTE = { x: -75, y: -75, w: 650, h: 775 } as const;
+
+/**
+ * O QUADRO INTEIRO COMO `d`, para servir de contorno externo num clip de furo.
+ *
+ * `escondeCabelo` (`tipos.ts`) declara a região que o chapéu CONTÉM; o compositor
+ * precisa do complemento dela, e o jeito de escrever complemento em SVG é um
+ * retângulo grande na frente do furo, com `clip-rule="evenodd"`.
+ *
+ * **A margem de 200 u não é folga por gosto.** O clip vale para o cabelo inteiro,
+ * inclusive extensões que saem da `CAIXA_DA_ARTE` — o `dreadlocks` desce abaixo do
+ * queixo e o `longo-unilateral` passa da lateral. Um retângulo cravado na caixa
+ * cortaria essas peças **onde nenhum chapéu está**, que é o defeito exato que este
+ * campo existe para não cometer. 200 u cobrem o `viewBox` inteiro com sobra dos dois
+ * lados em qualquer escala que `compor()` emite.
+ */
+export const FORA_DO_CHAPEU = (() => {
+  const m = 200;
+  const x0 = CAIXA_DA_ARTE.x - m;
+  const y0 = CAIXA_DA_ARTE.y - m;
+  const x1 = CAIXA_DA_ARTE.x + CAIXA_DA_ARTE.w + m;
+  const y1 = CAIXA_DA_ARTE.y + CAIXA_DA_ARTE.h + m;
+  return `M${x0} ${y0}H${x1}V${y1}H${x0}Z`;
+})();
 
 /**
  * O eixo do TRONCO — e é só dele.
@@ -1318,6 +1458,17 @@ const MEIO_TRACO = TRACO / 2;
  * de `yQueixo` o path atravessa para o outro lado: é ali que ele deixa de ser faixa
  * lateral e vira a faixa do queixo, que ocupa a largura inteira.
  */
+// ⚠️ `LARGURA_INTERNA + FORA`, e NÃO `VIEWBOX.w + FORA`, nas duas facetas abaixo.
+//
+// Aqui o número quer dizer *"bem além da borda direita do DESENHO"* — é a aba do
+// recorte que fecha o polígono fora da silhueta, e ela nunca teve nada a ver com o
+// tamanho do quadro. As duas medidas valeram 500 até 2026-08-25, então escrever uma
+// pela outra não custava nada; no dia em que o quadro foi para 600 estes quatro
+// números andaram 100 unidades e **os 14 selos byte a byte reprovaram** — sem que
+// um pixel do render mudasse, porque a aba já estava fora da figura de qualquer jeito.
+//
+// É o mesmo engano de `naTela`, na mesma tarde, e é a razão de `LARGURA_INTERNA`
+// existir.
 export function pathFacetaEsq(): string {
   const passos = 9;
   const dentro: { x: number; y: number }[] = [];
@@ -1330,8 +1481,8 @@ export function pathFacetaEsq(): string {
     `M ${n(-FORA)} ${n(yTopoFaceta)} ` +
     `L ${n(dentro[0].x)} ${n(dentro[0].y)} ` +
     spline(dentro) +
-    `L ${n(VIEWBOX.w + FORA)} ${n(yQueixo)} ` +
-    `L ${n(VIEWBOX.w + FORA)} ${n(CAIXA_CABECA.y1 + FORA)} ` +
+    `L ${n(LARGURA_INTERNA + FORA)} ${n(yQueixo)} ` +
+    `L ${n(LARGURA_INTERNA + FORA)} ${n(CAIXA_CABECA.y1 + FORA)} ` +
     `L ${n(-FORA)} ${n(CAIXA_CABECA.y1 + FORA)} Z`
   );
 }
@@ -1354,10 +1505,10 @@ export function pathFacetaDir(): string {
     dentro.push({ x: bordasEm(y).dir - larg - MEIO_TRACO, y });
   }
   return (
-    `M ${n(VIEWBOX.w + FORA)} ${n(yTopoFaceta)} ` +
+    `M ${n(LARGURA_INTERNA + FORA)} ${n(yTopoFaceta)} ` +
     `L ${n(dentro[0].x)} ${n(dentro[0].y)} ` +
     spline(dentro) +
-    `L ${n(VIEWBOX.w + FORA)} ${n(yQueixo)} Z`
+    `L ${n(LARGURA_INTERNA + FORA)} ${n(yQueixo)} Z`
   );
 }
 

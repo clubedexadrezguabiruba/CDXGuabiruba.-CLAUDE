@@ -221,6 +221,41 @@ const BYTES_DA_ARTE = {
   // mesmo dia em que ela o tomou do `moicano` (9 731). É a terceira peça do slot que
   // CABE em `ORCAMENTO_COMPOSTO.bytes`, e as três são de arte.
   "tigela-franja": 9649,
+  // ─────────────────────────────────────────────────────────────────────────
+  // O LOTE DE 2026-08-25 — cinco promovidas de uma vez, medidas na promoção.
+  //
+  // ⚠️ **Nenhuma das cinco cabe em `ORCAMENTO_COMPOSTO.bytes` (10 240)**, e é a
+  // decisão A de novo: o teto não veta arte aprovada. A `coques-duplos` chega a
+  // 173 B de caber; a `dreadlocks` passa 63%.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // 4 210 B de `d` para um coque só. Mais pesada que a `coques-duplos`, que tem
+  // DOIS — o desenho do individual é mais detalhado, não maior.
+  "coque-individual": 11462,
+  // A MAIS LEVE das cinco, e a que chega mais perto do teto: **10 413**, 173 B
+  // acima dos 10 240. `d` de 3 168 B, o mais curto do lote.
+  "coques-duplos": 10413,
+  // **A PEÇA MAIS PESADA DO SLOT INTEIRO — 16 672 B**, tomando o posto do
+  // `espetado` (14 372). O `d` sozinho é 9 436 B: as tranças são muitas formas
+  // longas, e a tonal paga o `d` duas vezes.
+  dreadlocks: 16672,
+  // 11 851 B com `d` de 4 606. O topolete custa em altura, não em contorno.
+  elvis: 11851,
+  // 11 504 B para a MENOR massa do elenco (75 060 px) — a peça mais leve em tinta
+  // é a quarta mais pesada em bytes do lote. Massa e bytes não andam juntos: quem
+  // paga é o comprimento do contorno, não a área que ele cerca.
+  //
+  // ⚠️ **11 504 -> 10 916 em 2026-08-26, e o motivo é ARTE, não esteira.** O Doug
+  // apontou no render: a orla rente à borda DIREITA do rosto — ~24 u de largura, do
+  // olho ao queixo — não era cabelo, era a sombra do rosto, que ficou pintada no PNG
+  // e entrou como massa (a peça sai por DIFERENÇA contra a base). Provado trocando
+  // as cores: 9 223 px daquela faixa andavam com `--av-cabelo` em vez de com a pele.
+  //
+  // O conserto foi na ORIGEM — aqueles pixels da arte voltaram à cor da base, e a
+  // esteira regerou. Depois: **39 px** ainda andam com o cabelo ali, e são o contorno
+  // da própria cabeça, de 1 u. O lado esquerdo, que é sweep legítimo, ficou intacto
+  // (9 223 -> 9 192, diferença de retraçado). A arte de antes está guardada.
+  "curto-penteado": 10916,
 } as const;
 
 describe("a base careca não paga nada pelo slot de cabelo", () => {

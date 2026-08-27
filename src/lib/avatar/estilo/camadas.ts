@@ -213,18 +213,31 @@ export interface Camada {
  * Senão, a resposta é da tabela.
  *
  * ---------------------------------------------------------------------------
- * `escondeCabelo` — DECLARADA AQUI, IMPLEMENTADA NO BLOCO 7
+ * `escondeCabelo` — DECLARADA AQUI, IMPLEMENTADA EM 2026-08-25
  * ---------------------------------------------------------------------------
  *
- * O chapéu disputa o crânio e vence, e a regra fina — *mostra tudo / esconde tudo* —
+ * O chapéu disputa o crânio e vence, e a regra fina — *o que este chapéu contém* —
  * mora no ITEM. Ela é **supressão**, não ordenação: pluga nas quatro linhas de
  * `dono: "cabelo"` (`cabelo-extensoes-atras`, `cabelo-parametrico`,
- * `cabelo-extensoes-frente`, `cabelo-sobreposto`) apagando-as, sem mover ninguém.
+ * `cabelo-extensoes-frente`, `cabelo-sobreposto`) recortando-as, sem mover ninguém.
+ * `compor()` embrulha as quatro em `contidoPeloChapeu`, uma por uma, e é por isso
+ * que a tabela abaixo não ganhou nem perdeu linha.
  *
- * **O campo honesto é `"nada" | "tudo"`, e as duas alternativas caem por medição:**
- * `"franja"` não é implementável — nem a franja paramétrica nem a massa traçada
- * declaram sub-caminho separável, e recortá-lo pediria a máscara que o doc 15 §7c
- * item 17 veta —, e `"achatada"` é direção de arte, não bandeira.
+ * **O campo NÃO é enum, e a razão está medida.** Este bloco dizia *"o campo honesto
+ * é `"nada" | "tudo"`"*, com `"franja"` descartada por precisar de máscara que o
+ * doc 15 §7c item 17 veta. Duas coisas mudaram desde então:
+ *
+ *  - **a máscara chegou de qualquer forma.** `sobrepor()` emite um `<mask>` de
+ *    luminosidade por peça, em runtime, desde o tonal — e os 19 cabelos do elenco
+ *    são tonais. O argumento que matava `"franja"` deixou de valer no dia em que a
+ *    peça tonal entrou;
+ *  - **os dois extremos são a mesma coisa.** `"nada"` é a linha no infinito e
+ *    `"tudo"` é a linha no queixo. Um enum de três palavras não consegue dizer que
+ *    a touca corta baixo e a cartola corta alto; uma **linha medida** diz, e sai da
+ *    própria arte sem ninguém escolher número (`oclusao-do-chapeu.ts`).
+ *
+ * `"achatada"` continua fora, e pelo motivo de sempre: é direção de arte, não
+ * bandeira. O argumento longo está em `PecaDeChapeu.escondeCabelo` (`tipos.ts`).
  */
 export const PILHA = [
   {

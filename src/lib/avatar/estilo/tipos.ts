@@ -315,7 +315,7 @@ export type PecaSobreposta = {
  *
  * O chapéu é SEMPRE o último — ele disputa o crânio e vence, que é o que "esconde
  * o cabelo" quer dizer. Ele não tem lado a escolher, e a regra fina dele é outra,
- * com nome próprio (`escondeCabelo`, doc 15, ainda não implementada).
+ * com nome próprio (`escondeCabelo`, logo abaixo em `PecaDeChapeu`).
  *
  * Se o campo morasse em `PecaSobreposta`, um chapéu **poderia** declará-lo, e a
  * única defesa seria um teste — sobre um catálogo (`CHAPEUS`) que hoje está vazio,
@@ -366,7 +366,59 @@ export type PecaDeRosto = PecaSobreposta & {
 };
 
 /** O chapéu é sempre o último, e o `never` é o que impede que ele escolha. */
-export type PecaDeChapeu = PecaSobreposta & { cabeloPorCima?: never };
+export type PecaDeChapeu = PecaSobreposta & {
+  cabeloPorCima?: never;
+
+  /**
+   * `escondeCabelo` — O QUE ESTE CHAPÉU CONTÉM, e é uma LINHA MEDIDA, não um enum.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE NÃO É `"nada" | "franja" | "tudo"`
+   * ---------------------------------------------------------------------------
+   *
+   * O doc 23 §8 abriu a decisão com três palavras e `camadas.ts` já tinha derrubado
+   * uma delas: `"franja"` não se implementa por sub-caminho, porque nem a franja
+   * paramétrica nem a massa traçada declaram um separável. Sobravam os extremos, e
+   * os dois são ruins:
+   *
+   *  - **`"nada"`** é o comportamento de hoje, e ele QUEBRA. Medido nos 9 chapéus
+   *    contra os 19 cabelos: o `moicano` deixa 29,2% da própria massa visível acima
+   *    da linha da `touca-de-la`, e o `coque-individual` atravessa a `cartola` com
+   *    0,2% da massa subindo 238 u — pouco pixel, defeito enorme. Cabelo saindo por
+   *    cima da copa lê como cabelo NASCENDO ATRAVÉS do chapéu;
+   *  - **`"tudo"`** apaga o cabelo inteiro, e com ele **uma das duas cores que o
+   *    aluno escolhe**. Colide com a Regra Inviolável nº 4 na prática, e o próprio
+   *    doc 23 §8 marca a colisão.
+   *
+   * A saída não é escolher entre os dois: é notar que os dois são casos degenerados
+   * da MESMA coisa — uma linha. `"nada"` é a linha no infinito, `"tudo"` é a linha
+   * no queixo, e toca, cartola e boina são linhas diferentes entre as duas. Um enum
+   * de três palavras não consegue dizer que a touca corta baixo e a cartola corta
+   * alto; uma linha consegue, e sem inventar vocabulário.
+   *
+   * ---------------------------------------------------------------------------
+   * O VALOR É DERIVADO DA PRÓPRIA ARTE — NINGUÉM ESCOLHE ESTE NÚMERO
+   * ---------------------------------------------------------------------------
+   *
+   * É o `d` da região que o chapéu contém: **acima dela o cabelo não sai, abaixo
+   * dela ele sai inteiro** — que é a franja, o costeleta e o rabo, e é por isso que
+   * a cor do aluno continua na tela em todo chapéu do elenco.
+   *
+   * `oclusao-do-chapeu.ts` a extrai do alfa do mesmo `.svg` que a peça já publica,
+   * pela pergunta *"dá para chegar aqui vindo de baixo sem atravessar o chapéu?"*.
+   * Não há decisão de arte nova, não há campo para o Doug preencher e não há como a
+   * linha divergir do desenho: mudou a arte, mudou a linha, na mesma esteira.
+   *
+   * ⚠️ **Ausente ≡ o comportamento histórico, byte a byte.** Sem o campo o
+   * compositor não emite `clipPath` nenhum e o chapéu segue pintado por cima do
+   * cabelo inteiro — é a 4ª condição que `camadas.ts` cobra de toda válvula nova.
+   *
+   * ⚠️ **Isto é SUPRESSÃO, não ordenação.** Ele não move ninguém na pilha: pluga
+   * nas quatro linhas de `dono: "cabelo"` apagando o que cai dentro da região. A
+   * tabela de `camadas.ts` continua sendo a autoridade sobre *ordem*.
+   */
+  escondeCabelo?: string;
+};
 
 /**
  * O estado do boneco no momento de compor. Tudo que NÃO é forma.
@@ -409,6 +461,19 @@ export interface EstadoAvatar {
    */
   rosto?: PecaDeRosto;
   chapeu?: PecaDeChapeu;
+  /**
+   * QUANTO O CHAPÉU ACHATA O CABELO — escala em x, em volta do eixo da cabeça.
+   *
+   * `escondeCabelo` resolve o cabelo que atravessa a peça e o que estoura pela
+   * lateral acima dela. O que sobra é de largura: **os 19 penteados vão de 105% a
+   * 133% da cabeça, e os chapéus mais estreitos não têm folga para eles**. Abaixo
+   * da aba não há o que esconder — o chapéu acabou —, e esconder ali cortaria a
+   * silhueta contra o fundo. Estreitar não corta: a mecha continua inteira e passa
+   * a caber sob a peça, que é o que um boné faz com o cabelo de verdade.
+   *
+   * **Só vale com chapéu**, e `1` (ou ausente) é o SVG de sempre, byte a byte.
+   */
+  apertoDoCabelo?: number;
   /**
    * Liga o piscar e o respiro. Desligado no ranking, onde 30 bonecos numa lista
    * pagariam 30 animações por nada — a `flag` já existe no render por isso

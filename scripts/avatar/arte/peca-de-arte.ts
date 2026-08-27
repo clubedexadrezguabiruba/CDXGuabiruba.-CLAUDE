@@ -30,22 +30,27 @@
  * dominante — é o mesmo para todo slot, e é por isso que mora aqui e não lá.
  *
  * ---------------------------------------------------------------------------
- * O RECORTE É O `viewBox` INTEIRO, EM TODO SLOT — e isso é amarra
+ * O RECORTE É A `CAIXA_DA_ARTE` INTEIRA, EM TODO SLOT — e isso é amarra
  * ---------------------------------------------------------------------------
  *
- * `tintaTronco()` e o ramo novo de `sobrepor()` emitem `<image>` ocupando o
- * `viewBox` inteiro com `k = 1`. O recorte é `[ORIGEM, ORIGEM + VIEWBOX × ESCALA]`
- * = px 212→812 × 92→932, que mede 600 × 840 e é 5:7 cravado — a MESMA proporção.
- * `preserveAspectRatio` encaixa 1 : 1 sem sobra em nenhum eixo.
+ * `tintaTronco()` e o ramo novo de `sobrepor()` emitem `<image>` ocupando a
+ * `CAIXA_DA_ARTE` inteira com `k = 1`. O recorte é o mesmo retângulo em pixels —
+ * px 212→812 × 2→932, que mede 600 × 930 —, e `preserveAspectRatio` encaixa
+ * 1 : 1 sem sobra em nenhum eixo.
  *
  * **A colagem é conta, não ajuste**, e manter isso vale mais que economizar bytes
  * num slot: um recorte próprio por slot seria um segundo sistema de coordenadas
  * atravessando a rota, que é exatamente o que `base-tronco.ts` recusou em 2026-08-13.
+ * O recorte **cresceu**; o sistema continua sendo um só, e `RECORTE` deriva da caixa
+ * em vez de espelhá-la.
  *
- * ⚠️ **Consequência declarada, e ela decide o chapéu:** peça que suba acima de
- * `y = 0` sai **medida, não colada** — o `viewBox` não tem teto livre até a Frente B
- * (P5). O número que sobra é `caixaUnidades.y0`, negativo, e é justamente o teto que
- * o P5 espera medir em vez de chutar.
+ * ⚠️ **A caixa era o `viewBox`, e o parágrafo que ficava aqui dizia que peça acima
+ * de `y = 0` saía "medida, não colada", esperando a Frente B.** A medição de
+ * 2026-08-24 mostrou que o `viewBox` não era o gargalo: o quadro já mostrava 114,6
+ * unidades acima da coroa e a **colagem** só alcançava 39,5 — 12,6% de uma altura de
+ * cabeça, e é isso que não deixava chapéu existir. A caixa subiu para −75, o chapéu
+ * ganhou 3× de teto, e o `viewBox` não foi tocado. Ver `CAIXA_DA_ARTE`
+ * (`src/lib/avatar/estilo/geometria.ts`).
  */
 
 import { mkdirSync, writeFileSync } from "fs";
@@ -56,15 +61,23 @@ import sharp from "sharp";
 import { ColorMode, Hierarchical, PathSimplifyMode, vectorize } from "@neplex/vectorizer";
 
 import { prepararSvg } from "../estilo/vtracer";
-import { ESCALA, LADO, ORIGEM, PNG_BASE } from "./base";
+import { CAIXA_DA_ARTE } from "../../../src/lib/avatar/estilo/geometria";
+import { ESCALA, LADO, ORIGEM, PNG_BASE, paraUnidade } from "./base";
 import { type ExtracaoPorCampo, extrairPorCampo } from "./extrair";
 
-/** O recorte: o `viewBox` inteiro, em pixels da base de edição. Ver o topo. */
+/**
+ * O recorte: a `CAIXA_DA_ARTE` inteira, em pixels da base de edição. Ver o topo.
+ *
+ * **DERIVADO, nunca escrito.** A caixa mora em `geometria.ts` porque é o compositor
+ * quem cola; aqui ela só é convertida para pixel pela mesma `ESCALA`/`ORIGEM` que
+ * toda a rota usa. Os quatro números saem inteiros — x 212, y **2**, w 600, h **930**
+ * —, e é essa exatidão que decidiu o −75 lá (92 − 75 × 1,2 = 2).
+ */
 export const RECORTE = {
-  x: ORIGEM.x,
-  y: ORIGEM.y,
-  w: Math.round(500 * ESCALA),
-  h: Math.round(700 * ESCALA),
+  x: Math.round(ORIGEM.x + CAIXA_DA_ARTE.x * ESCALA),
+  y: Math.round(ORIGEM.y + CAIXA_DA_ARTE.y * ESCALA),
+  w: Math.round(CAIXA_DA_ARTE.w * ESCALA),
+  h: Math.round(CAIXA_DA_ARTE.h * ESCALA),
 } as const;
 
 /**
@@ -339,6 +352,14 @@ export interface Peca {
   pixels: number;
   /** Candidatos que diferiam da base mas caíram fora do campo do slot. */
   foraDoCampo: number;
+  /**
+   * Pixels de furo CERCADO que a esteira tapou com a tinta da própria arte.
+   *
+   * Não é erro nem é sempre zero: é o preço de a extração ser diferença contra a
+   * base. Ver `taparFurosCercados`. Alto (dezenas de milhares) quer dizer que a
+   * peça foi pintada numa cor perto da que estava atrás dela.
+   */
+  furosTapados: number;
   salpico: number;
   descartadas: number;
   foraDoRecorte: number;
@@ -384,6 +405,113 @@ export const slugDaArte = (caminhoArte: string): string =>
  */
 export type FormatoDaPeca = "vetor" | "raster";
 
+/**
+ * TAPAR FURO CERCADO — a peça é figurinha, e figurinha é opaca por dentro.
+ *
+ * ---------------------------------------------------------------------------
+ * O QUE É UM FURO CERCADO, E POR QUE ELE NUNCA É DESENHO
+ * ---------------------------------------------------------------------------
+ *
+ * A extração é *diferença contra a base*: entra na máscara o pixel que difere em
+ * mais de `NIVEL_TRAJE` = 24 níveis. Isso responde bem "onde a artista pintou?" e
+ * responde MAL uma pergunta específica — **e se ela pintou uma cor parecida com a
+ * que já estava lá?**
+ *
+ * O caso que abriu esta função, medido na `chapeu-toca-de-cozinha` em 2026-08-25:
+ *
+ * | | |
+ * |---|---|
+ * | a copa da toca, pintada | `rgb(240,245,249)` — branco |
+ * | o fundo da base, atrás dela | `rgb(251,248,245)` — bege |
+ * | diferença mediana | **11** — o corte é 24 |
+ *
+ * **40 238 px da copa — 34,2% da peça — não entraram na máscara.** Não porque a
+ * artista tenha deixado vão: porque branco sobre bege quase não difere. O `.svg`
+ * saiu vazado, e o vazamento era invisível só porque o fundo da PÁGINA é do mesmo
+ * bege. Renderizado sobre magenta, 22 905 px do casco continuavam magenta.
+ *
+ * A lei do projeto já resolvia isto e ninguém a tinha escrito em código: **peça é
+ * figurinha, opaca por dentro** — furo na silhueta é falha da esteira, não arte
+ * (`arte:figurinha` mede o mesmo defeito nas peças de cabelo e rosto).
+ *
+ * ---------------------------------------------------------------------------
+ * CERCADO É O ADJETIVO QUE FAZ ISTO SER MEDIDA E NÃO DESENHO
+ * ---------------------------------------------------------------------------
+ *
+ * Só é tapado o vazio que **não alcança a borda do canvas por caminho nenhum**. Um
+ * vão que se abre para fora — a fresta entre o braço e o tronco de uma túnica, o
+ * buraco do meio de uma rosquinha que encoste na borda — continua aberto, porque
+ * ele se comunica com o lado de fora e o algoritmo o vê como lado de fora.
+ *
+ * E a cor com que se tapa **não é inventada**: o laço de `construirPeca` pinta todo
+ * pixel de máscara com `tinta.aplicar(i)`, que lê a arte da artista naquele pixel.
+ * O que estava lá é o que sai. Tapar aqui é *reconhecer* tinta que a régua não viu,
+ * o mesmo gesto que o `restaurar-peca` faz do outro lado.
+ *
+ * ---------------------------------------------------------------------------
+ * O RESPINGO NAS PEÇAS APROVADAS, MEDIDO ANTES DE ACEITAR
+ * ---------------------------------------------------------------------------
+ *
+ * | peça | máscara | furo cercado | maior furo |
+ * |---|---|---|---|
+ * | `traje-farda` | 90 510 px | **196 px (0,2%)** | 101 px |
+ * | `traje-gambesao` | 113 538 px | **1 001 px (0,9%)** | 991 px |
+ * | `chapeu-toca-de-cozinha` | 77 249 px | **40 238 px (34,2%)** | 22 565 px |
+ *
+ * As duas aprovadas mudam, e mudam pouco: furo de menos de 1% em tamanho de
+ * alfinete é o mesmo ruído de reencode que a rota já persegue. **O respingo no
+ * render está medido em `ESTADO-DA-ROTA.md`** — a regra é medir antes de aceitar,
+ * nunca aceitar e medir depois.
+ *
+ * ⚠️ **Ele NÃO é silencioso.** O número volta em `Peca.furosTapados` e os P5
+ * imprimem. Descarte — e remendo — em silêncio é o modo de falha que esta rota
+ * inteira existe para fechar.
+ */
+export function taparFurosCercados(
+  mascara: Uint8Array,
+  w: number,
+  h: number,
+  noCampo: (i: number) => boolean,
+): number {
+  // O lado de FORA: o vazio conexo à borda do canvas, por varredura em pilha.
+  const fora = new Uint8Array(mascara.length);
+  const pilha: number[] = [];
+  const empilhar = (i: number) => {
+    if (!mascara[i] && !fora[i]) {
+      fora[i] = 1;
+      pilha.push(i);
+    }
+  };
+  for (let x = 0; x < w; x++) {
+    empilhar(x);
+    empilhar((h - 1) * w + x);
+  }
+  for (let y = 0; y < h; y++) {
+    empilhar(y * w);
+    empilhar(y * w + w - 1);
+  }
+  while (pilha.length) {
+    const i = pilha.pop() as number;
+    const x = i % w;
+    const y = (i / w) | 0;
+    if (x > 0) empilhar(i - 1);
+    if (x < w - 1) empilhar(i + 1);
+    if (y > 0) empilhar(i - w);
+    if (y < h - 1) empilhar(i + w);
+  }
+
+  // O que sobrou — vazio que não é fora — é furo. O campo do slot continua
+  // mandando: tapar não é licença para a peça crescer para onde ela não pode ir.
+  let tapados = 0;
+  for (let i = 0; i < mascara.length; i++) {
+    if (mascara[i] || fora[i]) continue;
+    if (!noCampo(i)) continue;
+    mascara[i] = 1;
+    tapados++;
+  }
+  return tapados;
+}
+
 export async function construirPeca(
   caminhoArte: string,
   slot: SlotDeArte,
@@ -399,6 +527,15 @@ export async function construirPeca(
   }
 
   const e = await extrairPorCampo(caminhoArte, slot.campo);
+
+  // A peça é figurinha: furo cercado pela própria peça é falha da régua, não vão
+  // desenhado. Ver o docstring de `taparFurosCercados` — e o número volta em
+  // `furosTapados`, porque remendo em silêncio é tão ruim quanto descarte em
+  // silêncio.
+  const furosTapados = taparFurosCercados(e.mascara, LADO, LADO, (i) => {
+    const u = paraUnidade(i % LADO, Math.floor(i / LADO));
+    return slot.campo(u.x, u.y);
+  });
 
   // Sem fábrica, a tinta é a IDENTIDADE: a cor que sai é a que a artista pintou.
   const tinta: Tinta = fabricaDeTinta
@@ -504,6 +641,7 @@ export async function construirPeca(
     cor: hex(dominante),
     recolorida: tinta.declarada,
     pixels,
+    furosTapados,
     foraDoCampo: e.foraDoCampo,
     salpico: e.salpico,
     descartadas: e.descartadas.length,

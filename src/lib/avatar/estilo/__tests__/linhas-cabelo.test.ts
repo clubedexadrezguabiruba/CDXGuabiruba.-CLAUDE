@@ -201,13 +201,26 @@ describe("as TRÊS famílias do catálogo são declaradas, não inferidas", () =
     //        de peça inexistente nunca é lido — ele não reprovava, e por isso ficou
     //     0  **nenhum dos 8 selos tonais anteriores mudou de bytes ou de SHA**
     //
+    // ⚠️ **2026-08-25: CINCO entraram de fora, e é o mesmo quarto caso.** Três
+    // (`coque-individual`, `coques-duplos`, `dreadlocks`) estavam no seletor desde
+    // 2026-08-24 esperando o parecer; duas (`elvis`, `curto-penteado`) atravessaram a
+    // esteira no próprio dia 25, quando a §5-E do doc 22 foi reescrita pela pasta de
+    // entrega e revelou que elas nunca tinham entrado. O Doug: *"já olhei e todos
+    // aprovados"*. O tonal vai de 14 para **19**.
+    //
+    // A prova de que o lote é de peças NOVAS foi feita ANTES de aceitar o número, e
+    // é a mesma de 2026-08-24 — o diff de `parametrico-congelado.ts`, 14 -> 19:
+    //
+    //   +5  `coque-individual`, `coques-duplos`, `curto-penteado`, `dreadlocks`, `elvis`
+    //    0  **nenhum selo anterior mudou, e nenhum sumiu** — os 14 vieram byte a byte
+    //
     // Selo que se move numa promoção que não é dele continua sendo defeito.
     expect(
       MODELOS_TONAIS.length,
       "uma peça migrou para a família tonal: regrave o selo DELA (`npm run avatar:congelar`) " +
         "e atualize este número — nunca em lote, a menos que o lote seja de peças NOVAS " +
         "e nenhum selo anterior tenha se mexido",
-    ).toBe(14);
+    ).toBe(19);
     expect(
       MODELOS_TRACADOS.length,
       "a família traçada está VAZIA desde 2026-08-24: se alguém entrou, os selos dos " +

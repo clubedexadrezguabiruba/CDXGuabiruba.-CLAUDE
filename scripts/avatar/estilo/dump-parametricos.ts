@@ -192,6 +192,23 @@ const CABECALHO = `/**
  * que aponta para peça apagada não reprova: ele deixa de existir**, e o gate passa
  * por vacuidade.
  *
+ * O caso 2 aconteceu uma SEGUNDA vez, em 2026-08-25: **o \`viewBox\` foi de 500 para
+ * 600 de largura**, para caber chapéu de aba comprida. Os **29 selos** se moveram, e
+ * **os \`bytes\` são idênticos em todos** — só o \`sha\` mudou.
+ *
+ * A prova de que foi o QUADRO e não o desenho está medida: desfazendo no SVG de hoje
+ * **apenas dois tokens** — \`viewBox="0 0 600 700"\` de volta a 500, e
+ * \`translate(70 \` de volta a 20 —, **os 28 selos de cabelo voltam a bater byte a
+ * byte**. Nenhum outro caractere se moveu.
+ *
+ * ⚠️ E o caminho até essa prova achou um defeito de verdade: \`pathFacetaEsq\` e
+ * \`pathFacetaDir\` escreviam \`VIEWBOX.w + FORA\` na aba que fecha o polígono fora da
+ * silhueta. Ali o número queria dizer *"além da borda direita do DESENHO"*, e as duas
+ * medidas valeram 500 até aquele dia. Com o quadro em 600 os quatro números andaram
+ * 100 unidades **sem mudar um pixel do render** — a aba já estava fora da figura. Os
+ * selos pegaram; o olho não pegaria. Corrigido para \`LARGURA_INTERNA + FORA\`, que é a
+ * constante que nasceu no mesmo dia para separar as duas larguras.
+ *
  * GERADO por \`npm run avatar:congelar\` (\`scripts/avatar/estilo/dump-parametricos.ts\`).
  * Não edite à mão: um arquivo meio regerado mistura duas gerações e ninguém
  * consegue mais dizer quais linhas descrevem o quê.

@@ -669,12 +669,12 @@ o contrário do que pedia.
 | **Chapéu** | **Um chapéu de prova em código primeiro**; os demais pela rota que a peça pedir | A rota de arte foi desenhada para servir chapéu (`ESTADO-DA-ROTA.md:546-548`), mas **nunca foi exercitada com um** — e o teto disponível é zero. O de prova mede o teto real antes da Frente B |
 | **Pet** | Código: SVG animado por CSS — o protótipo "Peãozinho de Madeira" já existe (`src/lib/avatar/prototipo/pet.ts`) | Não toca o boneco. Tema: peças de xadrez vivas. 4 pets iniciais, não os 20 do Bloco 8 |
 
-**Antes do primeiro chapéu, uma decisão obrigatória: a regra chapéu × cabelo.**
-Cada chapéu precisa de uma de quatro respostas — mostra o cabelo inteiro,
-esconde só a franja, esconde tudo, ou pede variante achatada. **A resposta vive
-no item, nunca no compositor**: campo `escondeCabelo?: "nada" | "franja" |
-"tudo"`, e o `compor()` obedecendo. Decidir isso **depois** dos chapéus
-desenhados custa redesenho (doc 15, Bloco 8).
+**A regra chapéu × cabelo — FECHADA em 2026-08-25, e não é enum.** Esta seção
+pedia uma de quatro respostas por peça (mostra tudo, só a franja, esconde tudo,
+variante achatada). Nenhuma delas foi escolhida: **a resposta é uma LINHA medida**,
+extraída do alfa da própria arte pela esteira, e continua vivendo no item e não no
+compositor (`escondeCabelo`). Nenhum chapéu precisou de redesenho. O argumento
+está no **doc 23 §8**; a régua dos 171 pares é `npm run arte:par`.
 
 ## 7. Os blocos de execução
 
@@ -746,8 +746,8 @@ congelados, byte a byte.
 >    rosto → chapéu. Óculos POR CIMA do cabelo porque, sem haste, a peça que a
 >    criança desbloqueou não pode depender de qual franja está por baixo; chapéu
 >    por último porque ele disputa o crânio e vence. A regra fina
->    (`escondeCabelo`) continua sendo decisão obrigatória do **Bloco 7** — este
->    bloco só garantiu o lugar.
+>    (`escondeCabelo`) era decisão obrigatória do **Bloco 7** — este bloco só
+>    garantiu o lugar, e a linha chegou em 2026-08-25 sem mover ninguém na pilha.
 >
 > **O `rpc-baseline.json` subiu de propósito:** +1 em `get_ranking`,
 > `get_ranking_with_position`, `get_public_profile`, `get_class_ranking` e
@@ -1057,8 +1057,8 @@ número) e o fim da proporção 5:7.
 
 ### Bloco 7 — Chapéus
 
-**Antes do primeiro:** decidir a regra chapéu × cabelo (§6) — campo
-`escondeCabelo` no item.
+**Antes do primeiro:** ~~decidir a regra chapéu × cabelo (§6)~~ — feito em
+2026-08-25: `escondeCabelo` é linha medida no item, derivada pela esteira.
 
 4-6 chapéus, rota de arte ou código conforme a peça pedir; origem mista.
 

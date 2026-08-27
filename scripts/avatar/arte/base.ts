@@ -74,6 +74,7 @@ import { createHash } from "crypto";
 import {
   BOCA,
   CAIXA_CABECA,
+  CAIXA_DA_ARTE,
   CENTRO_X,
   EIXO_ROSTO,
   OLHO,
@@ -473,6 +474,115 @@ export function noCampoDoTraje(x: number, y: number): boolean {
   if (y <= Y_QUEIXO) return false;
   if (y > TRONCO.yBase + TRACO / 2 + TRANSBORDO_BARRA) return false;
   return Math.abs(x - CENTRO_X) <= meioDoTroncoEm(y) + FOLGA + TRANSBORDO_LATERAL;
+}
+
+/**
+ * O PISO DO CHAPÉU: o topo do olho mais alto, com meio traço de folga.
+ *
+ * ---------------------------------------------------------------------------
+ * ELE ERA A SOBRANCELHA, E O DOUG O DESCEU EM 2026-08-25
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira versão parava na **sobrancelha** (y 157,7), apoiada no doc 23 §2.2:
+ * *"chapéu que transborda para baixo come a testa e as sobrancelhas."* A régua
+ * nasceu obedecendo essa frase e reprovou a primeira toca que a atravessou.
+ *
+ * O Doug, olhando a arte: *"se isso aprovar: avatar base 100% igual, contorno em
+ * azul, arte chapéu não cobre os olhos."* **A regra do produto é o OLHO**, e a
+ * distância entre as duas leituras é grande: são **32,8 unidades** de testa que o
+ * piso velho recusava sem que nada no produto pedisse.
+ *
+ * O preço de manter o piso na sobrancelha estava medido na `chapeu-toca-de-cozinha`:
+ * **5 817 px — 7,0% do desenho — cortados numa reta horizontal** que atravessava a
+ * cabeça inteira (u x 42→448). E a mesma arte, medida contra a regra do olho, tem
+ * **ZERO pixel** sobre a faixa dos olhos: sobre o rosto ela para em y 170, e o que
+ * desce mais é um elemento lateral em x 66→106, fora da cara.
+ *
+ * ---------------------------------------------------------------------------
+ * A CONSTRUÇÃO É A MESMA, SÓ O MARCO MUDOU
+ * ---------------------------------------------------------------------------
+ *
+ * Continua sendo *"o marco mais alto, menos meio traço"*, e o meio traço continua
+ * existindo pelo mesmo motivo: a linha do chapéu tem espessura, e um piso cravado
+ * no topo do olho deixaria o traço dela encostar na cápsula.
+ *
+ * Os dois olhos não estão na mesma altura (o giro: `GIRO.desnivelOlhos`), então o
+ * piso é o MAIS ALTO dos dois. Piso na média deixaria a peça comer um e não o
+ * outro, que é assimetria que ninguém desenhou.
+ *
+ * ⚠️ **Isto NÃO é a região que a extração zera.** `ROSTO` começa no olho
+ * (`ROSTO.y0 = OLHO.cy − OLHO.h/2 − FOLGA`), então uma aba apoiada na testa
+ * sobrevive à extração. O piso aqui é lei de DESENHO, não de máquina: ele existe
+ * para o descarte sair contado no relatório em vez de a peça chegar comendo a
+ * feição — e para o Doug ver a linha antes da caneta (`base-chapeu.ts`).
+ */
+export const Y_PISO_DO_CHAPEU = Math.min(OLHO_CY_ESQ, OLHO_CY_DIR) - OLHO.h / 2 - TRACO / 2;
+
+/**
+ * A CAIXA DAS FEIÇÕES — o que o chapéu não pode invadir, e é uma CAIXA, não uma reta.
+ *
+ * ---------------------------------------------------------------------------
+ * O PISO ERA UMA RETA ATRAVESSANDO A FIGURA INTEIRA, E ISSO CORTAVA O QUE NÃO
+ * PROTEGIA
+ * ---------------------------------------------------------------------------
+ *
+ * `Y_PISO_DO_CHAPEU` existe para uma coisa só: **o chapéu não come os olhos.** Até
+ * 2026-08-25 ele valia para todo `x` de 0 a 500 — e os olhos ocupam **x 181 → 386**,
+ * que é 41% da largura. Nos outros 59% o piso não protegia nada e cortava tudo.
+ *
+ * O Doug, olhando os candidatos no render: *"a proteção dos olhos está afetando a
+ * lateral do rosto, chapéus que descem pelas laterais são cortados por causa da
+ * proteção dos olhos."* Ele está literalmente certo, e o defeito é de forma: uma
+ * feição é uma REGIÃO, e o campo a tratava como uma altura.
+ *
+ * Medido nos oito candidatos de 2026-08-25: **os oito perderam desenho no piso** —
+ * de 1,1% a 17,8% —, e nenhum deles chegou perto do teto. O corte que reprovava não
+ * era altura, era aba de lado.
+ *
+ * ---------------------------------------------------------------------------
+ * A CAIXA, E POR QUE ELA BASTA
+ * ---------------------------------------------------------------------------
+ *
+ * `x 181 → 386` sai dos dois olhos com meio traço de folga de cada lado, e a BOCA
+ * mora dentro dela (largura 37 u, centrada) — as três feições que um chapéu poderia
+ * comer estão na mesma coluna central. Fora dela há bochecha e fundo, e aba de
+ * chapéu por cima de bochecha é o que aba de chapéu faz.
+ *
+ * Fora da caixa o piso é a **base da cabeça**: abaixo dela começa pescoço e ombro, e
+ * "não encosta no ombro" continua sendo regra do pedido.
+ */
+export const CAIXA_DAS_FEICOES = {
+  x0: OLHO_CX_ESQ - OLHO.w / 2 - TRACO / 2,
+  x1: OLHO_CX_DIR + OLHO.w / 2 + TRACO / 2,
+  y0: Y_PISO_DO_CHAPEU,
+} as const;
+
+/**
+ * ONDE UM CHAPÉU PODE LEGITIMAMENTE EXISTIR — o campo do segundo slot de `<image>`.
+ *
+ * Quatro fronteiras, e as quatro são teto publicado:
+ *
+ *  - **em cima, a `CAIXA_DA_ARTE`.** Não é o `viewBox`: a caixa sobe a −75 desde
+ *    2026-08-24, e é ela que dá ao chapéu 114 unidades acima da coroa em vez das
+ *    39,5 que o retângulo velho dava;
+ *  - **dos lados, a `CAIXA_DA_ARTE` de novo.** Ela foi de `x 0 → 500` para
+ *    **`−20 → 520`** em 2026-08-25: o quadro do produto mostra de interno −21,7 a
+ *    521,7 (é `naTela`, com `ESCALA_PADRAO`), e o campo desperdiçava 21,7 u de cada
+ *    lado. Os −20 são o maior valor que cai em **pixel inteiro** do canvas (188 e
+ *    836), que é o mesmo critério que escolheu o −75 do teto;
+ *  - **embaixo e no meio, a `CAIXA_DAS_FEICOES`** — o piso do olho, mas só na
+ *    coluna em que há olho;
+ *  - **embaixo e nas laterais, a base da CABEÇA** — abaixo dela é pescoço.
+ *
+ * O que fica de fora não é perda silenciosa: `construirPeca` conta os candidatos
+ * descartados e os imprime, como já faz no traje.
+ */
+export function noCampoDoChapeu(x: number, y: number): boolean {
+  if (y < CAIXA_DA_ARTE.y) return false;
+  if (x < CAIXA_DA_ARTE.x || x > CAIXA_DA_ARTE.x + CAIXA_DA_ARTE.w) return false;
+  // No meio, o olho manda. Nas laterais, a base da cabeça.
+  const naColunaDasFeicoes = x >= CAIXA_DAS_FEICOES.x0 && x <= CAIXA_DAS_FEICOES.x1;
+  return y <= (naColunaDasFeicoes ? CAIXA_DAS_FEICOES.y0 : CAIXA_CABECA.y1);
 }
 
 /** O canvas inteiro, em unidades. Serve de universo para as contas de área. */

@@ -17,7 +17,7 @@ import { CABELO, PELE } from "@/lib/avatar/palette";
 import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { IDS_DA_ARTE, PECAS_DA_ARTE } from "@/lib/avatar/estilo/pecas-da-arte";
 import { CABELOS_DA_ARTE } from "@/lib/avatar/estilo/cabelos-da-arte";
-import { ROSTOS } from "@/lib/avatar/catalogo";
+import { CHAPEUS, ROSTOS } from "@/lib/avatar/catalogo";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
 
 /**
@@ -38,6 +38,14 @@ const IDS_TRACADOS = IDS_DA_ARTE as readonly string[];
 
 /** Os slugs do slot `rosto` que existem hoje. Vazio até a primeira peça entrar. */
 const SLUGS_DE_ROSTO = Object.keys(ROSTOS);
+
+/**
+ * Os slugs do slot `chapeu`. Vazio até a primeira arte de chapéu entrar na esteira.
+ *
+ * O seletor inteiro some quando a lista é vazia, como o do rosto — um seletor com
+ * zero botões é ruído que ensina que o slot não funciona.
+ */
+const SLUGS_DE_CHAPEU = Object.keys(CHAPEUS);
 
 /**
  * AS PEÇAS TONAIS DA ARTE — as que atravessaram a esteira, promovidas ou não.
@@ -79,6 +87,7 @@ function Boneco({
   cabelo,
   modelo,
   rosto,
+  chapeu,
   h,
   animado,
   ns,
@@ -89,11 +98,13 @@ function Boneco({
   modelo: ModeloCabelo | Cabelo | undefined;
   /** A peça do slot `rosto` — barba ou óculos —, ou `undefined` para nenhuma. */
   rosto?: Parameters<typeof compor>[0]["rosto"];
+  /** A peça do slot `chapeu`, ou `undefined` para cabeça descoberta. */
+  chapeu?: Parameters<typeof compor>[0]["chapeu"];
   h: number;
   animado: boolean;
   ns: string;
 }) {
-  const svg = compor({ pele, cabelo, modeloCabelo: modelo, rosto, animado, ns })
+  const svg = compor({ pele, cabelo, modeloCabelo: modelo, rosto, chapeu, animado, ns })
     .replace("<svg ", `<svg width="${Math.round((h * VIEWBOX.w) / VIEWBOX.h)}" height="${h}" `);
   return <span dangerouslySetInnerHTML={{ __html: svg }} />;
 }
@@ -139,6 +150,19 @@ export default function AvatarKokeshiClient() {
    */
   const [barba, setBarba] = useState<string | undefined>(undefined);
   const rosto = barba ? ROSTOS[barba] : undefined;
+  /**
+   * A peça do slot `chapeu`, por slug — e ela é o par que mais precisa ser visto
+   * junto com o cabelo, não com o rosto: os dois disputam o crânio. Desde
+   * 2026-08-25 a regra fina existe e é uma LINHA medida (`escondeCabelo`), extraída
+   * do alfa da própria arte: abaixo dela o cabelo sai, acima dela o chapéu contém.
+   *
+   * Alternar cabelo com o chapéu posto continua sendo como se olha o resultado — e
+   * é aqui que se vê o custo que a régua conta e não reprova: um `moicano` debaixo
+   * de qualquer chapéu do elenco some inteiro, porque a peça toda mora acima da
+   * aba. `npm run arte:par` dá a tabela dos 171 pares.
+   */
+  const [chapeuSlug, setChapeuSlug] = useState<string | undefined>(undefined);
+  const chapeu = chapeuSlug ? CHAPEUS[chapeuSlug] : undefined;
   const [animado, setAnimado] = useState(true);
   const [fundo, setFundo] = useState<string>("#EFEAE2");
 
@@ -288,6 +312,30 @@ export default function AvatarKokeshiClient() {
             ))}
           </div>
         )}
+        {/*
+          O SLOT `chapeu` — o segundo slot de cor assada, e o que estreou o teto novo.
+          Até 2026-08-24 uma peça de arte só alcançava 39,5 unidades acima da coroa
+          e não havia chapéu que coubesse; hoje são 114,5 (`CAIXA_DA_ARTE`).
+        */}
+        {SLUGS_DE_CHAPEU.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">chapéu:</span>
+            {SLUGS_DE_CHAPEU.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                onClick={() => setChapeuSlug(chapeuSlug === slug ? undefined : slug)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  chapeuSlug === slug
+                    ? "border-sky-700 bg-sky-700 text-white"
+                    : "border-sky-500 text-sky-700"
+                }`}
+              >
+                {CHAPEUS[slug].nome}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-1">
           <span className="text-zinc-500">fundo:</span>
           {["#EFEAE2", "#FF00FF", "#1B1B1F", "#FFFFFF"].map((f) => (
@@ -322,6 +370,7 @@ export default function AvatarKokeshiClient() {
               cabelo={cabelo}
               modelo={peca}
               rosto={rosto}
+            chapeu={chapeu}
               h={t.h}
               animado={animado}
               ns={`kk-${t.h}`}
@@ -387,6 +436,7 @@ export default function AvatarKokeshiClient() {
             cabelo={cabelo}
             modelo={PECAS_TRACADAS[id] as Cabelo}
             rosto={rosto}
+            chapeu={chapeu}
             h={56}
             animado={false}
             ns={`kkp-${id}`}
@@ -397,6 +447,7 @@ export default function AvatarKokeshiClient() {
           cabelo={cabelo}
           modelo="chanel"
           rosto={rosto}
+            chapeu={chapeu}
           h={56}
           animado={false}
           ns="kkp-c"

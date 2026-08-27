@@ -31,8 +31,15 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { compor } from "../compositor";
-import { pathPlanoLateralTronco, pathSombraQueixoTronco, VIEWBOX } from "../geometria";
+import { compor, naTela } from "../compositor";
+import {
+  CAIXA_CABECA,
+  CAIXA_DA_ARTE,
+  pathPlanoLateralTronco,
+  pathSombraQueixoTronco,
+  TRACO,
+  VIEWBOX,
+} from "../geometria";
 import { conferirSvg } from "../../svgContrato";
 import type { EstadoAvatar, Traje } from "../tipos";
 
@@ -184,16 +191,41 @@ describe("traje presente", () => {
     expect(arte).toBeGreaterThan(contorno);
   });
 
-  it("sem `escalaMedida`, o <image> ocupa o viewBox inteiro — a colagem é conta", () => {
-    // `k = 1`. O PNG é recortado exatamente no retângulo do viewBox na base de
-    // edição, então x=0 y=0 w=500 h=700 põe a arte 1 : 1, sem registro e sem
-    // número escolhido a olho. Um `escalaMedida` que aparecesse sozinho aqui
-    // deslocaria toda peça já aprovada.
+  it("sem `escalaMedida`, o <image> ocupa a CAIXA_DA_ARTE inteira — a colagem é conta", () => {
+    // `k = 1`. O PNG é recortado exatamente no retângulo da `CAIXA_DA_ARTE` na base
+    // de edição (px 212→812 × 2→932), então x=0 y=−75 w=500 h=775 põe a arte 1 : 1,
+    // sem registro e sem número escolhido a olho. Um `escalaMedida` que aparecesse
+    // sozinho aqui deslocaria toda peça já aprovada.
+    //
+    // ⚠️ A caixa era o `VIEWBOX` até 2026-08-24, e trocá-la foi o conserto do teto
+    // do chapéu: no retângulo velho uma peça de arte só alcançava 39,5 unidades
+    // acima da coroa. Ver `CAIXA_DA_ARTE` em `geometria.ts`.
     const svg = compor({ ...BASE, traje: COM_ARTE });
 
     expect(svg).toContain(
-      `x="0.00" y="0.00" width="${VIEWBOX.w.toFixed(2)}" height="${VIEWBOX.h.toFixed(2)}"`,
+      `x="${CAIXA_DA_ARTE.x.toFixed(2)}" y="${CAIXA_DA_ARTE.y.toFixed(2)}" ` +
+        `width="${CAIXA_DA_ARTE.w.toFixed(2)}" height="${CAIXA_DA_ARTE.h.toFixed(2)}"`,
     );
+  });
+
+  it("a caixa da arte alcança ACIMA DA COROA — é o teto que o chapéu precisa", () => {
+    // A régua que faltava, e é ela que guarda o ganho de 2026-08-24. Sem esta
+    // asserção, alguém que devolvesse `colarArte` ao `VIEWBOX` veria os dois testes
+    // acima continuarem verdes (eles casam o retângulo, qualquer que seja ele) e o
+    // chapéu voltaria a não caber, em silêncio.
+    //
+    // A coroa está em `CAIXA_CABECA.y0 − TRACO/2` = 39,5 no sistema interno. A caixa
+    // tem de começar ACIMA disso, e com folga que valha uma peça: metade de uma
+    // altura de cabeça acima da coroa era 12,6% no retângulo velho.
+    const coroa = CAIXA_CABECA.y0 - TRACO / 2;
+    const acimaDaCoroa = coroa - CAIXA_DA_ARTE.y;
+
+    expect(CAIXA_DA_ARTE.y).toBeLessThan(0);
+    expect(acimaDaCoroa).toBeGreaterThan(100);
+    // E ela não pode passar do que o QUADRO mostra: `naTela({y})` a 92% leva o topo
+    // do quadro a interno −81,1. Arte desenhada acima disso sairia do arquivo para
+    // ser cortada pelo viewport, que é o defeito silencioso do T1.5.
+    expect(naTela({ y: CAIXA_DA_ARTE.y }).y).toBeGreaterThanOrEqual(0);
   });
 
   it("não quebra o contrato do SVG", () => {

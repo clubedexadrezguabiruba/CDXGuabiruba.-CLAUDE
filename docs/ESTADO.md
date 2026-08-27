@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 23 |
-| **Árvore** | **57 arquivos sujos** |
-| **Último commit** | a3d0953 · 2026-08-24 · docs(avatar): o registro da rota fecha o dia — o crash do laço vazio, as três réguas sem cobaia e a conta das esteiras |
+| **Commits à frente de `origin/main`** | 25 |
+| **Árvore** | **98 arquivos sujos** |
+| **Último commit** | 80bd4d9 · 2026-08-24 · feat(avatar): a régua que faltava — `arte:figurinha` pega o cabelo que tapa o rosto, e o duplo coque real é abolido |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -391,9 +391,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **36 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **40 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:rostos-check` · `arte:cabelos-check` · `arte:traco` · `arte:borda` · `arte:figurinha` · `arte:peso`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:chapeus-check` · `arte:apertos-check` · `arte:par` · `arte:rostos-check` · `arte:cabelos-check` · `arte:traco` · `arte:borda` · `arte:figurinha` · `arte:perimetro` · `arte:peso`
 
 ## Frentes
 
@@ -401,7 +401,7 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 |---|---|---|
 | Backlog do avatar | **30 de 67** (45%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
-| Catálogo de cabelo | **14 de 10** no mínimo ✅ | `docs/avatar/19-rota-de-arte-runbook.md` |
+| Catálogo de cabelo | **19 de 10** no mínimo ✅ | `docs/avatar/19-rota-de-arte-runbook.md` |
 
 Backlog do avatar, fase a fase:
 
@@ -424,9 +424,9 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 96 |
-| **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 24 |
+| **Migrations** | 98 |
+| **Rotas (`page.tsx`)** | 34 |
+| **Arquivos de teste** | 26 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes

@@ -126,7 +126,17 @@ O gerador devolve na cor que quiser, e é **`restaurar-peca.ts`** que leva o mat
 repintar depois é uma das quatro coisas que a Regra Inviolável nº 4 proíbe por nome, e
 o ciano do gerador morreu em 2026-08-13.
 
-## O contorno da peça se pede em AZUL-MARINHO — decisão do Doug, 2026-08-22
+## O contorno da peça se pede em AZUL — decisão do Doug, 2026-08-22
+
+> ⚠️ **A COR FOI CORRIGIDA EM 2026-08-24, e o molde estava mandando a que FALHA.**
+> Este arquivo pedia `#000080` em quatro lugares. O que o Doug realmente envia ao
+> gerador, e o que as 14 peças aprovadas usaram, é **`#0000C8`** — mais claro no
+> canal azul, e não por gosto: `restaurar-peca.ts:114-117` registra que o azul
+> escuro **não passa** na máscara. *"O Gemini entregou p50 de 47 no canal azul, e
+> com o antialias a diferença média caiu a 23,2 — meio pixel abaixo do limiar
+> (`NIVEL = 24`), e metade da linha se perdeu."*
+>
+> Quem tivesse copiado este molde teria mandado a cor que perde metade da linha.
 
 **A causa, nas palavras dele:** *"a linha do contorno do cabelo é igual ao contorno do
 boneco e, quando a linha do contorno do cabelo se conflita com o do avatar, a esteira
@@ -139,7 +149,7 @@ difere ~0*. É UM mecanismo com dois sintomas, os dois já pagos:
   `chanel` de 2026-08-22 (1.928 px na esquerda + 93 na direita), que o Doug pegou a
   olho com todos os gates verdes.
 
-**A regra: o contorno da peça vem em azul-marinho `#000080`, e FICA assim no PNG.**
+**A regra: o contorno da peça vem em azul-marinho `#0000C8`, e FICA assim no PNG.**
 Não é o ciano proibido — o ciano era cor instrumental para repintar cor FINAL, e isto
 é desambiguação de LINHA numa peça que recolore inteira. Os dois porquês medidos:
 
@@ -217,7 +227,7 @@ tiverem substituta aprovada.
 > quem escolhe a cor final é a criança que usa o avatar.
 >
 > **O acabamento.** A peça é feita de **fios (ou mechas) contados**, não de massa
-> lisa. Cerca de **um quinto** dela é linha azul-marinho `#000080` — o contorno
+> lisa. Cerca de **um quinto** dela é linha azul-marinho `#0000C8` — o contorno
 > externo mais as linhas finas que separam as mechas por dentro. **Todo o resto é meia-luz que varia**: a luz
 > corre por dentro da forma, no sentido dos fios, em muitos tons contínuos. **Não
 > pinte a peça com uma cor chapada e não use degradê liso de aerógrafo.** O brilho é
@@ -230,7 +240,7 @@ tiverem substituta aprovada.
 >
 > **O contorno.** A peça é contornada por uma linha **da mesma espessura da linha
 > que contorna o corpo do boneco** — compare com ela na imagem e iguale. **A cor
-> dessa linha é AZUL-MARINHO BEM ESCURO, `#000080`** — não preta, não cinza: um azul
+> dessa linha é AZUL-MARINHO BEM ESCURO, `#0000C8`** — não preta, não cinza: um azul
 > tão escuro que quase parece preto. TODA linha da peça usa esse azul: o contorno
 > externo e as linhas finas que separam as mechas por dentro. As linhas pretas do
 > BONECO continuam pretas como estão — o azul é só das linhas do CABELO. A linha
@@ -243,7 +253,7 @@ tiverem substituta aprovada.
 > **O que não fazer, de novo, porque cada um destes já apareceu:** não acrescente
 > braços, mãos, orelhas nem pescoço. Não desenhe sombra projetada. Não mude o fundo.
 > Não escreva texto. Não deixe o contorno da peça em preto nem em cinza — ele é o
-> azul-marinho `#000080` descrito acima. Não pinte o cabelo por cima da linha do
+> azul-marinho `#0000C8` descrito acima. Não pinte o cabelo por cima da linha do
 > ombro do boneco. Não cubra os olhos nem toque na boca.
 >
 > Devolva um único PNG de 1024 × 1024.

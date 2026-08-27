@@ -234,6 +234,66 @@ O modelo é o do Bloco II de 2026-08-07 (espetado e chanel, 5 → 7 modelos):
    impossível — o rebase é declarado, não silencioso.
 6. **Critério de fronteira:** rodar a esteira de outra arte **não move um byte** do
    render das peças já promovidas.
+7. **VESTIR A PEÇA — o aperto de cada chapéu.** Ver §7b. **Sem isto o
+   `verify:arte` reprova**, e é de propósito.
+
+## 7b. Vestir a peça — o cabelo se adapta ao chapéu, par a par
+
+⚠️ **Um cabelo novo NÃO está pronto quando entra em `CABELOS`.** Ele nasce com nove
+pares por decidir, um por chapéu do elenco, e até 2026-08-26 saía desenhado com
+aperto 1,00 nos nove sem nada reprovar — trabalho de vestir a peça sumindo em
+silêncio, com a cadeia toda verde.
+
+### Por que existe um aperto, e por que não é derivado
+
+`escondeCabelo` (§ do chapéu) fecha o cabelo que **atravessa** a peça e o que
+**estoura pela lateral acima** dela. O que sobra é de LARGURA: os penteados do elenco
+têm de **105% a 133%** da largura da cabeça, e **abaixo da aba não há chapéu para
+esconder nada**. Esconder ali cortaria a silhueta contra o fundo — o defeito que esta
+rota já mediu duas vezes. **Estreitar não corta**: a mecha continua inteira, com a
+forma desenhada, e passa a caber sob a peça. É o que um boné faz com o cabelo.
+
+**Não tente derivar o número** (largura do chapéu ÷ largura do cabelo). Medido e
+descartado: o `elvis` fecha em 0,95 sob a `touca-de-la` porque o que sobra é UMA mecha
+na têmpora; o `dreadlocks` precisaria de 0,85, e ali as cordas perdem **57%** do
+volume. Mesma largura, aperto diferente — decide **onde** está a massa e o que a peça
+deixa de ser ao encolher. E os números do Doug provam: a `toca-de-cozinha` pediu
+**0,83** para `cachos-anjo` e **0,99** para `coque-simples`.
+
+⚠️ **Nem tente derivar do "cabe dentro do chapéu".** O Doug aprovou pares em que o
+cabelo ainda passa da largura da peça — `dreadlocks` + `bone` passa **27 u** e está
+aprovado. Régua de contenção reprovaria a decisão dele.
+
+### A esteira, comando a comando
+
+| # | passo | onde | o que decide |
+|---|---|---|---|
+| 1 | pôr o par na mesa | `/dev/avatar-oclusao` — clique no chapéu e no cabelo, ou na célula da tabela | qual par |
+| 2 | achar o aperto | os botões `1,00 … 0,84` e o `−`/`+` de 0,01 | o número, **no olho**, com os 19 a 56 px ao lado |
+| 3 | gravar | `gravar par` | grava em `scripts/avatar/arte/aperto.json` |
+| 4 | repetir | os nove chapéus | **inclusive os que não precisam apertar** |
+| 5 | gerar o catálogo | `npm run arte:apertos` | escreve `src/lib/avatar/estilo/apertos-da-arte.ts` |
+
+**`1,00` também se grava.** "Este par não precisa apertar" é resposta, e ela tem de
+ficar registrada — senão não há como distingui-la de um par que ninguém abriu. Quem
+apaga o `1` é o gerador do catálogo, para o SVG do produto sair byte a byte igual.
+
+### O que reprova, e o que a reprovação quer dizer
+
+| gate | reprova quando |
+|---|---|
+| `arte:apertos --check` | o `aperto.json` mudou e o catálogo não foi regerado — o Doug decide um número e o produto desenha outro |
+| `arte:apertos` (cobertura) | **algum par do elenco não tem linha** — é o cabelo novo sendo pego |
+| `arte:apertos` (chave órfã) | há linha para peça que não existe mais |
+| `arte:par` | cabelo ESTOURANDO o chapéu acima de um px de ranking (225 px no quadro da arte) |
+
+**Chapéu novo custa o mesmo:** ele entra com 19 pares por decidir, e a mesma
+reprovação o pega.
+
+### Onde ler mais
+
+`aperto-do-cabelo.ts` (o livro de decisões), `apertos.ts` (o gerador), o campo
+`apertoDoCabelo` em `tipos.ts`, e a parte de 2026-08-26 do `ESTADO-DA-ROTA.md`.
 
 ## 8. Reentrada — uma arte que volta retocada
 

@@ -256,7 +256,10 @@ quando não há `.env.local` — é assim que funcionam em CI.
     execução do estado atual até pronto, em 10 blocos com gate. Onde divergir
     dos outros, ele vence. As §7, §7b e §7c são as regras de arte e de composição
   - `docs/avatar/19-rota-de-arte-runbook.md` — **antes de mexer em arte de peça
-    (cabelo, chapéu), leia este.** A rota vigente: o Doug edita sobre um render do
+    (cabelo, chapéu), leia este.** A **§7b** é o passo que fecha um cabelo novo:
+    ele nasce com nove pares por decidir (um por chapéu) e o `verify:arte` reprova
+    até que o Doug tenha olhado os nove no editor — porque cabelo é mais largo que
+    chapéu, e o conserto é estreitar, não cortar. A rota vigente: o Doug edita sobre um render do
     próprio compositor, o Gate −1 prova que o boneco não se mexeu, e a peça sai
     medida. A esteira comando a comando, o que cada reprovação significa, a régua
     que decide `fiel` × `lei`, a promoção e a reentrada. O registro de execução
