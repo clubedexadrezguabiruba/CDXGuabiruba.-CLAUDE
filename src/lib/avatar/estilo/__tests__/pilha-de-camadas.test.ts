@@ -47,10 +47,16 @@
 import { describe, expect, it } from "vitest";
 
 import { ROSTOS } from "../../catalogo";
-import { PILHA, type Camada, type IdDeCamada } from "../camadas";
+import { PILHA, type Camada, type FamiliaDeCabelo, type IdDeCamada } from "../camadas";
 import type { Cabelo } from "../cabelo";
 import { compor } from "../compositor";
-import type { EstadoAvatar, PecaDeChapeu, PecaDeRosto, Traje } from "../tipos";
+import type {
+  EstadoAvatar,
+  PecaDeChapeu,
+  PecaDeOculos,
+  PecaDeRosto,
+  Traje,
+} from "../tipos";
 
 // ---------------------------------------------------------------------------
 // O ELENCO
@@ -82,7 +88,7 @@ const EXTENSAO_FRENTE = [
 
 /** Paramétrico: `pontos`. A franja fica alta de propósito — ver `SOBRANCELHA` abaixo. */
 const CABELO_PARAMETRICO: Cabelo = {
-  id: "coque",
+  id: "chanel",
   nome: "sintético paramétrico",
   pontos: [
     { t: -0.1, y: 200 },
@@ -135,6 +141,45 @@ const CABELO_TRACADO: Cabelo = {
   extensoes: [{ forma: EXTENSAO_ATRAS, atras: true }, { forma: EXTENSAO_FRENTE }],
 };
 
+/**
+ * O CABELO TONAL — a terceira família de `cabelo.ts`, na MESMA linha da pilha.
+ *
+ * Ela sai por `sobrepor()`, a mesma função da barba e do chapéu, e no mesmo lugar do
+ * traçado (`cabelo-tracado`). Por isso o elenco é um TERCEIRO, e a tabela continua
+ * com dois valores de `familiaCabelo` — ver o docstring de `FamiliaDeCabelo`.
+ *
+ * **Ela não tem extensão, e isso não é omissão:** peça sobreposta não é clipada, e
+ * `Cabelo.tonal` não tem onde declarar `extensoes` — as formas irmãs entram no mesmo
+ * `d`. As duas linhas de extensão ficam INATIVAS neste elenco, e é a asserção 2 que
+ * prova que elas somem em vez de sair caladas.
+ *
+ * O `d` é um marcador único (`M 606 606 …`), como o do rosto e o do chapéu, porque a
+ * peça tonal não pinta classe nenhuma: `sobrepor()` escreve `fill` direto, com a cor
+ * que a peça declara. É essa ausência de classe que faz o marcador do traçado
+ * (`class="kk-(tinta|cabelo-m)"`) não a alcançar.
+ */
+const D_TONAL = "M 606 606 L 646 606 L 646 646 Z";
+const CABELO_TONAL: Cabelo = {
+  id: "chanel",
+  nome: "sintético tonal",
+  tonal: {
+    formas: [
+      { d: D_TONAL, cor: "var(--av-linha)", semTraco: true },
+      { d: D_TONAL, cor: "var(--av-cabelo, #262626)", semTraco: true },
+    ],
+    tom: {
+      // O caminho da máscara — o que importa aqui é a MOLDURA, não os bytes. O
+      // `<image>` dela mora num `<defs>` inline, e `corpoDe` o retira: máscara não
+      // desenha, ela modula quem desenha.
+      arte: "/items/cabelo/zz-cabelo-da-pilha-tom.png",
+      x: 606,
+      y: 606,
+      w: 40,
+      h: 40,
+    },
+  },
+};
+
 /** Traje COM arte, decoração e extensão dos dois lados — as cinco linhas dele de uma vez. */
 const TRAJE: Traje = {
   id: "zz-traje-da-pilha",
@@ -175,11 +220,55 @@ const CHAPEU: PecaDeChapeu = {
   formas: [{ d: "M 202 202 L 242 202 L 242 242 Z", cor: "#FE0002" }],
 };
 
-type Familia = "parametrico" | "tracado";
+/**
+ * O ÓCULOS — slot próprio desde 2026-08-27, e o marcador é PRÓPRIO também.
+ *
+ * ⚠️ **Ele não compartilha marcador com o rosto, e isso é o ponto do slot.** Enquanto
+ * óculos e barba dividiam o slot `rosto`, as linhas `rosto-sob-cabelo` e
+ * `rosto-sobre-cabelo` eram a mesma emissão em dois lugares da pilha e por isso
+ * estavam em `MESMO_MARCADOR`. O óculos saiu de lá: agora ele é peça independente,
+ * emitida no MESMO boneco que a barba, e é justamente isso que o Doug pediu —
+ * *"preciso que dê para vestir a barba e o óculos, ao mesmo tempo."*
+ *
+ * Como ele aparece ao lado do rosto em todo elenco, a contagem dele é cobrada de
+ * verdade: se a emissão sumisse, o marcador `M 707 707` daria zero e nenhuma outra
+ * linha o cobriria.
+ *
+ * `formas` e não `arte`: o gate mede POSIÇÃO NA PILHA, e um `<image>` seria um
+ * elemento desenhável a menos para contar. O óculos do produto é raster; o da
+ * fixture é a mesma peça no lugar da pilha, que é o que este arquivo julga.
+ */
+const OCULOS: PecaDeOculos = {
+  id: "zz-oculos-da-pilha",
+  nome: "Óculos da pilha",
+  // ⚠️ NEM O `d` NEM A COR SÃO LIVRES, e as duas primeiras versões desta fixture
+  // provaram isso: `#FE0003` já é o marcador do `tronco-tinta` (o gate acusou
+  // "emitiu 3 onde declara 2") e `M 303 303` já é a `decoracao` do TRAJE, lá em
+  // cima na pilha (o gate acusou "oculos saiu antes de tudo", com índice 369).
+  // Marcador é identidade: repetido, ele mede a linha errada. O gate pegou as duas.
+  formas: [{ d: "M 707 707 L 747 707 L 747 747 Z", cor: "#FE0009" }],
+};
+
+/**
+ * AS TRÊS FAMÍLIAS DE `cabelo.ts` — e a tabela fala em CONJUNTOS delas.
+ *
+ * `FamiliaDeCabelo` (`camadas.ts`) não enumera famílias, enumera conjuntos:
+ * `sobreposto` = {tracado, tonal}, `temExtensao` = {parametrico, tracado}. Nenhuma
+ * linha da pilha existe em exatamente uma família, e é por isso que os dois vocábulos
+ * não são o mesmo. Esta tabela é a tradução, e ela é ESCRITA: um conjunto novo em
+ * `camadas.ts` sem linha aqui não compila.
+ */
+type Variante = "parametrico" | "tracado" | "tonal";
+const NAS_FAMILIAS = {
+  qualquer: ["parametrico", "tracado", "tonal"],
+  parametrico: ["parametrico"],
+  sobreposto: ["tracado", "tonal"],
+  temExtensao: ["parametrico", "tracado"],
+} as const satisfies Record<FamiliaDeCabelo, readonly Variante[]>;
 type Lado = "sob" | "sobre";
 
 interface Elenco {
-  readonly familia: Familia;
+  readonly variante: Variante;
   readonly lado: Lado;
   readonly nome: string;
   /** O CORPO do SVG: tudo depois de `</defs>`. O que está em `<defs>` não é camada. */
@@ -205,21 +294,31 @@ const corpoDe = (estado: EstadoAvatar) => {
   return svg.slice(svg.indexOf("</defs>")).replace(/<defs>.*?<\/defs>/g, "");
 };
 
-const ELENCOS: readonly Elenco[] = (["parametrico", "tracado"] as const).flatMap((familia) =>
-  (["sob", "sobre"] as const).map((lado) => ({
-    familia,
-    lado,
-    nome: `${familia} × ${lado}`,
-    corpo: corpoDe({
-      ns: NS,
-      pele: "#E9B183",
-      cabelo: "#3A2F2A",
-      modeloCabelo: familia === "parametrico" ? CABELO_PARAMETRICO : CABELO_TRACADO,
-      traje: TRAJE,
-      rosto: ROSTO(lado === "sob"),
-      chapeu: CHAPEU,
-    }),
-  })),
+const CABELO_DA_VARIANTE: Record<Variante, Cabelo> = {
+  parametrico: CABELO_PARAMETRICO,
+  tracado: CABELO_TRACADO,
+  tonal: CABELO_TONAL,
+};
+
+const ELENCOS: readonly Elenco[] = (["parametrico", "tracado", "tonal"] as const).flatMap(
+  (variante) =>
+    (["sob", "sobre"] as const).map((lado) => ({
+      variante,
+      lado,
+      nome: `${variante} × ${lado}`,
+      corpo: corpoDe({
+        ns: NS,
+        pele: "#E9B183",
+        cabelo: "#3A2F2A",
+        modeloCabelo: CABELO_DA_VARIANTE[variante],
+        traje: TRAJE,
+        rosto: ROSTO(lado === "sob"),
+        // OS DOIS JUNTOS, em todo elenco. É a asserção que o slot novo existe para
+        // sustentar: barba e óculos no mesmo boneco.
+        oculos: OCULOS,
+        chapeu: CHAPEU,
+      }),
+    })),
 );
 
 // ---------------------------------------------------------------------------
@@ -257,8 +356,18 @@ const MARCA = {
   sobrancelhas: /stroke-width="8\.2"/g,
   boca: /stroke-width="5\.3"/g,
   "rosto-sob-cabelo": /M 101 101 L 141 101 L 141 141 Z/g,
-  "cabelo-tracado": /class="kk-(tinta|cabelo-m)"/g,
+  // AS DUAS EMISSÕES DA MESMA LINHA, numa alternância só.
+  //
+  // A traçada pinta por CLASSE (`kk-tinta` a silhueta preta, `kk-cabelo-m` o núcleo).
+  // A tonal não pinta classe nenhuma: `sobrepor()` escreve `fill` direto com a cor
+  // que a peça declara, porque a cor é dado da peça e não do CSS. Então o marcador
+  // dela é o `d` sintético do elenco, como já é o do rosto e o do chapéu.
+  //
+  // O `"` depois de `kk-tinta` é o que separa a silhueta traçada dos OLHOS, que saem
+  // como `class="kk-tinta kk-olho"`.
+  "cabelo-sobreposto": /class="kk-(tinta|cabelo-m)"|M 606 606 L 646 606 L 646 646 Z/g,
   "rosto-sobre-cabelo": /M 101 101 L 141 101 L 141 141 Z/g,
+  oculos: /M 707 707 L 747 707 L 747 747 Z/g,
   chapeu: /M 202 202 L 242 202 L 242 242 Z/g,
   "traje-extensoes-frente": /M 505 505 L 545 505 L 545 545 Z/g,
 } satisfies Record<IdDeCamada, RegExp>;
@@ -291,11 +400,30 @@ const VEZES = {
   sobrancelhas: 2,
   boca: 1,
   "rosto-sob-cabelo": 2, // preenchimento + traço
-  "cabelo-tracado": 3, // silhueta preta + núcleo + pretas (sem clara — ver o elenco)
+  "cabelo-sobreposto": 3, // traçada: silhueta preta + núcleo + pretas (sem clara — ver o elenco)
   "rosto-sobre-cabelo": 2,
+  oculos: 2, // preenchimento + traço
   chapeu: 2,
   "traje-extensoes-frente": 2,
 } satisfies Record<IdDeCamada, number>;
+
+/**
+ * ONDE A CONTAGEM MUDA POR VARIANTE — e é UMA linha, não uma tabela paralela.
+ *
+ * `cabelo-sobreposto` é a mesma linha da pilha nas duas famílias que a habitam, e
+ * emite número diferente em cada uma: a traçada empilha até quatro sub-camadas de
+ * laço simples, a tonal empilha DUAS — a mesma curva duas vezes, a de baixo preta e
+ * a de cima vestida pela máscara de luminosidade.
+ *
+ * Escrever isso como override de uma linha, em vez de dobrar `VEZES`, é o que
+ * mantém o `satisfies Record<IdDeCamada, number>` acima fazendo o trabalho dele:
+ * linha nova sem contagem continua não compilando.
+ */
+const VEZES_NA_VARIANTE: Partial<Record<Variante, Partial<Record<IdDeCamada, number>>>> = {
+  tonal: { "cabelo-sobreposto": 2 },
+};
+
+const quantas = (e: Elenco, id: IdDeCamada) => VEZES_NA_VARIANTE[e.variante]?.[id] ?? VEZES[id];
 
 /**
  * AS LINHAS QUE COMPARTILHAM MARCADOR — e é UM par, não uma família.
@@ -334,7 +462,7 @@ const camadaDe = (id: IdDeCamada) => LINHAS.find((c) => c.id === id) as Camada;
 
 /** A linha existe neste elenco? É a tabela quem responde — os dois eixos exclusivos. */
 const ativa = (c: Camada, e: Elenco) =>
-  (c.familiaCabelo === "qualquer" || c.familiaCabelo === e.familia) &&
+  (NAS_FAMILIAS[c.familiaCabelo] as readonly Variante[]).includes(e.variante) &&
   (c.ladoDoRosto === "qualquer" || c.ladoDoRosto === e.lado);
 
 const ativas = (e: Elenco) => LINHAS.filter((c) => ativa(c, e));
@@ -363,7 +491,9 @@ describe("a pilha de camadas — a emissão contra a tabela", () => {
     for (const c of LINHAS) {
       const id = c.id;
       if (ativa(c, elenco)) {
-        expect(conta(elenco, id), `${id} — emitiu o número errado de elementos`).toBe(VEZES[id]);
+        expect(conta(elenco, id), `${id} — emitiu o número errado de elementos`).toBe(
+          quantas(elenco, id),
+        );
         continue;
       }
       if (marcadorRoubado(elenco, id)) continue;
@@ -383,28 +513,59 @@ describe("a pilha de camadas — a emissão contra a tabela", () => {
   it("os dois eixos são exclusivos, e a diferença de conjuntos diz exatamente onde", () => {
     const presentes = (e: Elenco) =>
       new Set(LINHAS.map((c) => c.id).filter((id) => conta(e, id) > 0));
-    const acha = (familia: Familia, lado: Lado) =>
-      ELENCOS.find((e) => e.familia === familia && e.lado === lado) as Elenco;
+    const acha = (variante: Variante, lado: Lado) =>
+      ELENCOS.find((e) => e.variante === variante && e.lado === lado) as Elenco;
 
     const diferenca = (a: Set<string>, b: Set<string>) =>
       [...new Set([...a, ...b])].filter((x) => a.has(x) !== b.has(x)).sort();
 
-    // FAMÍLIA: os conjuntos diferem em exatamente duas linhas, e são as duas que a
-    // tabela declara exclusivas. Nem uma a mais — uma linha a mais aqui significa
-    // que alguma outra camada depende da família sem estar declarada.
+    /**
+     * O QUE MUDA ENTRE DUAS VARIANTES, PAR A PAR — e a lista é ESCRITA.
+     *
+     * Nem uma linha a mais: uma linha a mais aqui significa que alguma outra camada
+     * depende da família sem estar declarada na tabela. E nem uma a menos: com três
+     * variantes, um par que não diferisse em nada seria um elenco duplicado fingindo
+     * ser um terceiro.
+     *
+     * Os três pares dizem, em conjunto, o que os conjuntos de `FamiliaDeCabelo`
+     * afirmam — `sobreposto` = {tracado, tonal} e `temExtensao` = {parametrico,
+     * tracado} — medidos na emissão em vez de lidos da tabela.
+     */
+    const PARES: [Variante, Variante, string[]][] = [
+      // O paramétrico mora no clip do crânio; o traçado é peça sobreposta. Trocam de
+      // linha, e as extensões existem nos dois.
+      ["parametrico", "tracado", ["cabelo-parametrico", "cabelo-sobreposto"]],
+      // Traçado e tonal são a MESMA linha da pilha. O que os separa é só a extensão:
+      // a peça tonal é uma silhueta só, e `Cabelo.tonal` não tem onde declarar
+      // extensão — nem poderia (ver `temExtensao` em `camadas.ts`).
+      ["tracado", "tonal", ["cabelo-extensoes-atras", "cabelo-extensoes-frente"]],
+      // A soma dos dois de cima, e é isso que prova que os conjuntos fecham.
+      [
+        "parametrico",
+        "tonal",
+        [
+          "cabelo-extensoes-atras",
+          "cabelo-extensoes-frente",
+          "cabelo-parametrico",
+          "cabelo-sobreposto",
+        ],
+      ],
+    ];
+
     for (const lado of ["sob", "sobre"] as const)
-      expect(
-        diferenca(presentes(acha("parametrico", lado)), presentes(acha("tracado", lado))),
-        `lado ${lado}`,
-      ).toEqual(["cabelo-parametrico", "cabelo-tracado"]);
+      for (const [a, b, esperado] of PARES)
+        expect(
+          diferenca(presentes(acha(a, lado)), presentes(acha(b, lado))),
+          `${a} × ${b}, lado ${lado}`,
+        ).toEqual(esperado);
 
     // LADO: os conjuntos são IDÊNTICOS, e isso é o fato honesto sobre o marcador
     // compartilhado — a peça de rosto não some nem aparece, ela troca de posição.
     // Quem prova o lado é a asserção 3.
-    for (const familia of ["parametrico", "tracado"] as const)
+    for (const variante of ["parametrico", "tracado", "tonal"] as const)
       expect(
-        diferenca(presentes(acha(familia, "sob")), presentes(acha(familia, "sobre"))),
-        `familia ${familia}`,
+        diferenca(presentes(acha(variante, "sob")), presentes(acha(variante, "sobre"))),
+        `variante ${variante}`,
       ).toEqual([]);
   });
 
@@ -451,7 +612,7 @@ describe("a pilha de camadas — a emissão contra a tabela", () => {
   it.each(ELENCOS)("$nome — o censo fecha: nada é emitido fora da tabela", (elenco) => {
     const DESENHAVEL = /<(path|ellipse|rect|circle|use|image)\b/g;
     const emitidos = (elenco.corpo.match(DESENHAVEL) ?? []).length;
-    const declarados = ativas(elenco).reduce((a, c) => a + VEZES[c.id], 0);
+    const declarados = ativas(elenco).reduce((a, c) => a + quantas(elenco, c.id), 0);
 
     expect(
       emitidos,

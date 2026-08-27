@@ -55,10 +55,10 @@ function RegistroForm() {
   if (success) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-xl border p-5">
-        <h1 className="text-xl font-semibold">Conta criada!</h1>
+        <h1 className="text-xl font-semibold">Bem-vindo à Academia 64!</h1>
         <p className="text-sm text-zinc-600">
-          Se a confirmação por email estiver ativada, verifique sua caixa de
-          entrada. Caso contrário, você já pode fazer login.
+          Sua matrícula está feita. Se a confirmação por email estiver ativada,
+          verifique sua caixa de entrada; caso contrário, é só entrar.
         </p>
         <Link
           href={`/login?next=${encodeURIComponent(next)}`}
@@ -72,7 +72,15 @@ function RegistroForm() {
 
   return (
     <div className="mx-auto max-w-md space-y-4 rounded-xl border p-5">
-      <h1 className="text-xl font-semibold">Criar Conta</h1>
+      {/*
+        A landing promete "Fazer minha matrícula" e esta tela dizia "Criar
+        Conta" — o primeiro contato do aluno era a única tela do produto sem
+        uma palavra do mundo. O rótulo é o da porta que ele acabou de abrir.
+      */}
+      <h1 className="text-xl font-semibold">Matrícula</h1>
+      <p className="text-sm text-ink/70">
+        Sua vaga na Academia 64 começa aqui.
+      </p>
 
       {error ? (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">

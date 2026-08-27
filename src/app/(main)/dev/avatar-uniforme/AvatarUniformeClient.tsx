@@ -25,7 +25,7 @@ const VARIANTES = [128, 256, 512, 1024, 1920] as const;
 /** `slug` é nome de arquivo e não muda; `nome` é o título exibido (Bíblia §6). */
 const PECAS = [
   { slug: "soldado", nome: "Aprendiz", tier: 1, pano: "#78833B" },
-  { slug: "aspirante", nome: "Estudante", tier: 2, pano: "#384966" },
+  { slug: "aspirante", nome: "Explorador", tier: 2, pano: "#384966" },
 ] as const;
 
 const TAMANHOS = [

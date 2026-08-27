@@ -53,6 +53,13 @@ literal e uma imagem sem papel declarado vira contradição com a anterior:
 trancaça é uma barba, e citá-la como textura para um chapéu de feltro arrastaria pelo
 para onde não cabe. Ver [doc 23 §9](../../../docs/avatar/23-linha-de-arte.md).
 
+⚠️ **Desde 2026-08-22 a 3ª imagem é OPCIONAL para cabelo e barba.** O acabamento da
+trancaça foi medido e escrito em palavras — estrutura tonal, sombra, traço, unidade e
+borda — em [doc 24 §5](../../../docs/avatar/24-cabelo-e-barba-ficha-do-slot.md), com
+o bloco pronto para colar na §5.6. Anexá-la continua valendo e é mais forte quando a
+peça nova for da mesma textura; **para as outras, o texto evita a contradição** que a
+§9 do doc 23 alerta.
+
 ⚠️ **E ela não pode contradizer a 2ª.** A 2ª imagem já diz *"ignore o estilo dela"*;
 por isso a 3ª entra com o papel escrito — **acabamento**, não forma e não personagem.
 O registro da rota mostra por que isto importa: *"na dúvida, passe menos"* produziu
@@ -107,11 +114,37 @@ Todas medidas na peça que passou. Valem para toda barba nova, sem exceção.
 | linha da boca | **0 px** por cima |
 | miolo acima da boca | **vazio nas cinco; o `bigode` é a exceção medida** — com o contorno pintado pelo gerador sobra 1 px de vão a 56 e a 32 px, e o Doug aprovou a olho; com o `kk-traco` de 12 u ele funde. A segunda morte do bigode (2026-08-18) foi medida com colunas fora da boca (G27) e com o traço que não foi decidido (G29) |
 | pele nua abaixo da boca | **NÃO TEM PISO, e agora está medido por que** — ver o bloco logo abaixo (achado **G28**, fechado em 2026-08-20) |
-| contorno | 12 u de espessura **e `#000000` de cor**, igual ao do boneco. As duas metades são medidas em separado: `arte:espessura` e `arte:borda` |
+| contorno | 12 u de espessura **e azul-marinho `#000080` de cor** — ⛔ **mudou em 2026-08-22**, era `#000000` igual ao do boneco. Ver a seção *"O contorno da peça se pede em AZUL-MARINHO"*. As duas metades são medidas em separado: `arte:espessura` e `arte:borda` |
 | menor detalhe | ≥ 11 u para existir · ≥ 33 u para ler |
 | tinta | 1 componente contínuo · **na cor que o gerador quiser** · sem sombra projetada |
 | luz | **amplitude**, não faixa: `hi > lo` no esticão p2/p98. Peça chapada reprova na esteira |
 | o boneco | não se mexe: 0 px de deslocamento, escala 100,00% |
+| **topo** | **≥ y 270 u**, a base do olho. Acima disso encosta na cápsula |
+| **massa, largura, piso, tronco** | **não têm teto** — ver o bloco logo abaixo |
+
+⚠️ **OS TETOS DE TAMANHO CAÍRAM EM 2026-08-22, e não é afrouxamento — é medição.**
+Eles diziam massa ≤ 70 000 px, largura ≤ 1,00 da cabeça, piso ≤ y 545 e tronco ≤ 12%.
+Tinham nascido dias antes, da única barba que existia então (a v4: 54 264 px, 0,89,
+y 530, 8,93%).
+
+A **v10** os estoura em todos os quatro — 92 831 px, 1,02, y 581, 15,52% — e é a
+peça-padrão do slot: *"ficou perfeito, a melhor arte"*. E a **v8**, que tinha
+praticamente o mesmo tamanho dela (96 530 px, 1,02), reprovou **pela BOCA**, não pelo
+tamanho. Ou seja: **estes quatro números nunca reprovaram peça nenhuma.** Pedir 1,00
+de largura hoje é pedir uma barba menor que a aprovada.
+
+O quinto argumento, o do tronco, caiu por **decisão do Doug**: *"a barba pode sim
+cobrir parte da silhueta"* — sabendo que a peça de rosto é pintada POR CIMA da do
+traje, e que cada ponto de tronco coberto é traje que some. A troca é consciente.
+
+**O que continua reprovando é a BOCA, os olhos, a peça furada, a peça chapada e o
+contorno de baixo** — e nenhum deles é tamanho. A faixa observada nas quatro barbas,
+para o pedido ter escala concreta sem virar teto, está no
+[doc 24 §3.3](../../../docs/avatar/24-cabelo-e-barba-ficha-do-slot.md).
+
+⚠️ **O próximo teto de tamanho nasce da próxima barba reprovada por ser grande** — e
+o dia de escrevê-lo é aquele, não hoje. Um limite herdado sem medir é pior que
+nenhum.
 
 ⚠️ **O ciano instrumental saiu desta tabela em 2026-08-21, e não morreu — mudou de
 dono.** Ele continua sendo como a esteira reconhece a peça (o Gate −1 e o
@@ -182,16 +215,59 @@ gerador a lê como instrução de COR. Ela tem de ser instrução de **forma**, 
 de baixo nomeada — é o que o parágrafo abaixo faz. **Cole-o em todo pedido**, junto
 com o bloco de cores:
 
-> **O CONTORNO DA BARBA DÁ A VOLTA COMPLETA NELA.** A linha preta que envolve a barba
-> tem a **mesma espessura da linha preta que contorna o corpo do boneco** e não
-> afina em lugar nenhum. Ela existe nos quatro lados, e a **borda de baixo é a mais
-> importante**: onde a barba termina e começa a roupa ou o pescoço, tem de haver a
-> mesma linha preta grossa que existe nas laterais. A barba **nunca** termina com a
-> cor dela encostando direto na roupa, na pele ou no fundo. Se em algum ponto a linha
-> preta ficar mais fina que a do corpo do boneco, engrosse-a até ficar igual.
+> **O CONTORNO DA BARBA DÁ A VOLTA COMPLETA NELA.** A linha que envolve a barba tem a
+> **mesma espessura da linha preta que contorna o corpo do boneco** e não afina em
+> lugar nenhum. **A COR DESSA LINHA É AZUL-MARINHO BEM ESCURO, `#000080`** — não
+> preta, não cinza: um azul tão escuro que quase parece preto. TODA linha da barba usa
+> esse azul, o contorno de fora e qualquer divisão por dentro. As linhas do BONECO
+> continuam pretas como estão — o azul é só das linhas da BARBA. Ela existe nos quatro
+> lados, e a **borda de baixo é a mais importante**: onde a barba termina e começa a
+> roupa ou o pescoço, tem de haver a mesma linha grossa que existe nas laterais. A
+> barba **nunca** termina com a cor dela encostando direto na roupa, na pele ou no
+> fundo. Se em algum ponto a linha ficar mais fina que a do corpo do boneco,
+> engrosse-a até ficar igual.
 
 **Como conferir sem abrir a imagem:** `npx tsx .scratch/estilo/de-quem-e-a-borda.ts`
 imprime a banda de baixo por peça. Abaixo de ~8 px do canvas, a peça vaza no render.
+
+---
+
+## O contorno da peça se pede em AZUL-MARINHO — decisão do Doug, 2026-08-22
+
+> ⛔ **PORTADA DE `PEDIDO-CABELOS.md` EM 2026-08-23, e é pré-condição de qualquer
+> barba nova.** Este arquivo é de 22/08 14h37 e a decisão é de ~21h do mesmo dia:
+> ela foi escrita só no pedido do cabelo. Gerar barba por este documento sem esta
+> seção devolve **linha preta**, que é exatamente a causa que o Doug nomeou. A regra
+> vale para a barba pela mesma razão que vale para o cabelo: **as duas recolorem**,
+> e a esteira das duas separa peça de base por diferença de pixel.
+
+**A causa, nas palavras dele:** *"a linha do contorno do cabelo é igual ao contorno do
+boneco e, quando a linha do contorno do cabelo se conflita com o do avatar, a esteira
+erra."* O passo 1 da esteira é *peça = o que difere da base*, e *preto sobre preto
+difere ~0*. É UM mecanismo com dois sintomas, os dois já pagos **e um deles na
+barba**:
+
+- fio preto **sobre** o traço do boneco fica FORA da máscara — **o furo do maxilar da
+  `trancada` v10**, que é peça deste slot, e o canal da calota medido no Bloco A;
+- traço preto **novo** rente ao do boneco é indecidível — a mancha no ombro do
+  `chanel` de 2026-08-22 (1.928 px na esquerda + 93 na direita), que o Doug pegou a
+  olho com todos os gates verdes.
+
+**A regra: o contorno da peça vem em azul-marinho `#000080`, e FICA assim no PNG.**
+Não é o ciano proibido — o ciano era cor instrumental para repintar cor FINAL, e isto
+é desambiguação de LINHA numa peça que recolore inteira. Os dois porquês medidos:
+
+- **luminância ~9**: no render o contorno sai PRETO de graça — a máscara de tom
+  carrega luminância, e onde ela é ~0 aparece a forma de baixo, `var(--av-linha)`.
+  Nenhum passo de "voltar ao preto" existe, nem pode existir: o `--check` da esteira
+  re-roda sobre o PNG do repositório, e um PNG re-escurecido à mão recriaria a
+  ambiguidade a cada verificação. Cor mais clara que lum 40 é proibida — é o defeito
+  registrado da `entrada.png` (traço cinza lum 70, `arte:borda` reprova);
+- **128 níveis no canal azul** contra o preto do boneco: a esteira separa com 24 por
+  canal — são 5× a margem, com sobra para o reencode do Gemini (que o Gate −1 já
+  tolera, medido q95→q60).
+
+Para o olho é quase preto. Quem precisa da diferença é a máquina.
 
 ---
 

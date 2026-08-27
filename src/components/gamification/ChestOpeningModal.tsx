@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { soundManager } from "@/lib/sounds/soundManager";
 import { AvatarTronco } from "@/components/avatar/AvatarTronco";
-import { TRAJES_DA_ARTE } from "@/lib/avatar/estilo/trajes-da-arte";
+import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
+import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
+import { nomeDaPeca } from "@/lib/avatar/catalogo";
+import { corDaRaridade, nomeDaRaridade } from "@/lib/avatar/raridade";
 
 interface ChestOpeningModalProps {
   /** Ovo criado — a recompensa chega ao chocar. */
@@ -16,31 +19,19 @@ interface ChestOpeningModalProps {
    * são exclusivos: ovo, peça, ou XP.
    */
   itemSlug?: string;
+  /**
+   * O SLOT da peça sorteada — `traje`, `rosto`, `cabelo`.
+   *
+   * `useChests.ts:42` já o entregava e o modal o **jogava fora**: até 2026-08-23
+   * o baú só dava traje, então desenhar tronco e ler o nome de `TRAJES_DA_ARTE`
+   * dava certo por acidente. Com o cabelo no catálogo o acidente acaba — um cabelo
+   * sorteado apareceria como tronco vazio com o slug cru por baixo.
+   */
+  itemSlot?: string;
   /** A raridade do baú — é a cor da moldura do card da peça. */
   raridade?: string;
   onClose: () => void;
 }
-
-/**
- * A cor da raridade, e ela é a MESMA da vitrine do editor.
- *
- * Uma segunda tabela aqui divergiria da primeira no dia em que alguém acertasse o
- * roxo do épico num lugar só — e o aluno veria a peça sair do baú numa cor e
- * aparecer no guarda-roupa em outra.
- */
-const COR_DA_RARIDADE: Record<string, string> = {
-  common: "#94A3B8",
-  rare: "#3A55B5",
-  epic: "#7A3168",
-  legendary: "#C9A84C",
-};
-
-const NOME_DA_RARIDADE: Record<string, string> = {
-  common: "Comum",
-  rare: "Rara",
-  epic: "Épica",
-  legendary: "Lendária",
-};
 
 /**
  * Modal de abertura de baú — três fases, dois desfechos.
@@ -70,6 +61,7 @@ export default function ChestOpeningModal({
   isEgg = false,
   xp = 0,
   itemSlug,
+  itemSlot,
   raridade = "common",
   onClose,
 }: ChestOpeningModalProps) {
@@ -153,20 +145,48 @@ export default function ChestOpeningModal({
         {/* Fase 3b: A PEÇA — o baú voltou a dar objeto no B6 (2026-08-13) */}
         {phase === 3 && !isEgg && itemSlug && (
           <div className="animate-scale-in flex w-72 flex-col items-center rounded-2xl border-2 bg-white p-6 shadow-2xl"
-               style={{ borderColor: COR_DA_RARIDADE[raridade] ?? COR_DA_RARIDADE.common }}>
-            {/* O tronco, e não o boneco inteiro: a peça é o assunto do card, e é a
-                mesma decisão §5.2 do doc 21 que a vitrine do editor já segue. */}
+               style={{ borderColor: corDaRaridade(raridade) }}>
+            {/* O RECORTE SEGUE O SLOT, e é a mesma decisão §5.2 do doc 21 que a
+                vitrine do editor já segue: mostra-se o pedaço do boneco em que a
+                peça mora, não o boneco inteiro — a peça é o assunto do card.
+
+                Traje é tronco; cabelo, rosto, óculos e chapéu são cabeça. A cabeça
+                leva o cabelo junto quando a peça é de rosto porque a barba recolore
+                COM ele (D17): uma cabeça careca mostraria a barba numa cor que o
+                aluno não escolheu.
+
+                ⚠️ **O `else` era um buraco, e ele engolia dois slots.** Até
+                2026-08-27 qualquer peça que não fosse cabelo nem rosto caía no
+                `<AvatarTronco traje={itemSlug}>` — e `trajeDe()` de um slug que não
+                é traje não emite camada nenhuma. O aluno abria o baú, ganhava um
+                óculos (5 peças desde 2026-08-27) ou um chapéu (9 peças) e via um
+                TRONCO VAZIO com o nome da peça embaixo. Nenhuma régua estática
+                enxerga: `itemSlot` é `string`, então não há união a exaurir.
+
+                O chapéu é o único de cabeça que NÃO usa `<AvatarCabeca>`: a janela
+                do recorte corta 4 dos 9 (o `mago` perde 62,1 u de 482 à esquerda —
+                medido). Ele sai de corpo inteiro, como na vitrine. */}
             <div className="mb-3 grid place-items-center rounded-xl bg-warm-stone px-2 py-2">
-              <AvatarTronco skin={2} hair={null} hairColor={0} traje={itemSlug} altura={120} ns="bau" />
+              {itemSlot === "cabelo" ? (
+                <AvatarCabeca skin={2} hair={itemSlug} hairColor={0} lado={120} ns="bau" />
+              ) : itemSlot === "rosto" ? (
+                <AvatarCabeca skin={2} hair={null} hairColor={0} rosto={itemSlug} lado={120} ns="bau" />
+              ) : itemSlot === "oculos" ? (
+                <AvatarCabeca skin={2} hair={null} hairColor={0} oculos={itemSlug} lado={120} ns="bau" />
+              ) : itemSlot === "chapeu" ? (
+                <AvatarKokeshi skin={2} hair={null} hairColor={0} chapeu={itemSlug} altura={150} ns="bau" />
+              ) : (
+                <AvatarTronco skin={2} hair={null} hairColor={0} traje={itemSlug} altura={120} ns="bau" />
+              )}
             </div>
             {/* O nome da raridade vai ESCRITO junto da cor da moldura — a
                 "Colorblind Rule" do DESIGN.md: cor sozinha não informa nada. */}
             <p className="text-xs font-semibold uppercase tracking-wider"
-               style={{ color: COR_DA_RARIDADE[raridade] ?? COR_DA_RARIDADE.common }}>
-              Peça {NOME_DA_RARIDADE[raridade] ?? "Comum"}
+               style={{ color: corDaRaridade(raridade) }}>
+              Peça {nomeDaRaridade(raridade)}
             </p>
             <h3 className="mt-1 text-center text-lg font-bold text-ink">
-              {TRAJES_DA_ARTE[itemSlug]?.nome ?? itemSlug}
+              {nomeDaPeca(itemSlot ?? "traje", itemSlug)}
             </h3>
             <p className="mt-2 text-center text-sm text-ink/70">
               Já está no seu guarda-roupa. Vista no perfil quando quiser.

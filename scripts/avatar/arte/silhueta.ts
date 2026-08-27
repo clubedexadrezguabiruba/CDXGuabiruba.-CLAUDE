@@ -624,7 +624,7 @@ export function imprimirSonda(s: Sonda, rotulo: string): void {
 }
 
 if (process.argv[1]?.endsWith("silhueta.ts")) {
-  const arte = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const arte = process.argv[2] ?? `${PASTA}/chanel.png`;
   const destino = saidaDaArte(arte);
   mkdirSync(destino, { recursive: true });
   converter(arte)

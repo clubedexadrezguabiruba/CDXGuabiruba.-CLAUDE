@@ -1170,10 +1170,16 @@ achatada** (o *hat hair* dos jogos). Uma boina deixa a franja aparecer; um elmo
 fechado não pode ter mecha atravessando o metal.
 
 **A resposta vive no item, nunca no compositor.** Um campo declarado no chapéu
-(`escondeCabelo?: "nada" | "franja" | "tudo"`) e o `compor()` obedecendo — o
+(`escondeCabelo`) e o `compor()` obedecendo — o
 mesmo idioma do `atras` que as extensões já usam. A alternativa é um `if` por
 chapéu dentro do compositor, e seis chapéus × ~~cinco~~ ~~sete~~ **cinco** cabelos
-são ~~30~~ ~~42~~ **30 combinações** para consertar caso a caso. O número foi a 42
+são ~~30~~ ~~42~~ **30 combinações** para consertar caso a caso.
+
+> ✅ **FECHADO em 2026-08-25, e o campo NÃO é o enum acima.** Ele é uma **linha
+> medida**, extraída do alfa da própria arte pela esteira: acima dela o chapéu
+> contém o cabelo, abaixo dela o cabelo sai inteiro. As três palavras não
+> conseguiam dizer que a touca corta baixo e a cartola corta alto. O argumento e os
+> números estão no **doc 23 §8**; a régua dos 171 pares é `npm run arte:par`. O número foi a 42
 com a promoção de 2026-08-07 e **voltou a 30** com a poda de 2026-08-08, que tirou
 `curto`, `cacheado` e `tranca`. Ele **vai a 60** quando o catálogo chegar ao mínimo
 de 10, então o argumento não encolheu — só adiou. A contagem viva é

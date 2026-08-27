@@ -8,11 +8,16 @@ import Card, { CardTitle } from "@/components/ui/Card";
 import { AvatarCabeca } from "@/components/avatar/AvatarCabeca";
 import MolduraPatente from "@/components/avatar/MolduraPatente";
 import { xpForLevel } from "@/lib/gamification/xp";
+import {
+  proximoTitulo,
+  fraseDoProximoTitulo,
+  type DegrauDaEscada,
+} from "@/lib/gamification/proximoTitulo";
 import type { RankingData, RankingEntry } from "@/types/ranking";
 
 const ATALHOS = [
   { href: "/aulas", titulo: "Continuar Treinamento" },
-  { href: "/puzzles/rating", titulo: "Desafio Tático" },
+  { href: "/puzzles/rating", titulo: "Desafio do Dia" },
   { href: "/bots", titulo: "Enfrentar Bot" },
 ] as const;
 
@@ -46,6 +51,9 @@ export default async function DashboardPage() {
     { data: perfil },
     { data: titleData },
     { data: ranking, error: rankingError },
+    { data: escada },
+    { count: aulasConcluidas },
+    { data: aulasDoBanco },
   ] = await Promise.all([
     supabase
       .from("users")
@@ -54,11 +62,24 @@ export default async function DashboardPage() {
       .single(),
     supabase
       .from("user_titles")
-      .select("current_title")
+      // `achieved_tier` entrou junto com a linha do próximo título: o NÚMERO do
+      // degrau é o que a escada consulta, e o nome nunca serviu para isso.
+      .select("current_title, achieved_tier")
       .eq("user_id", data.user.id)
       .single(),
     // Ranking top 5 para preview (nomes já mascarados pela RPC)
     supabase.rpc("get_ranking_with_position", { p_type: "rating", p_limit: 5 }),
+    // As três abaixo alimentam a frase do próximo título. Entram nesta mesma
+    // Promise.all pelo motivo do comentário acima — nenhuma depende das outras.
+    // As duas primeiras são configuração global e minúsculas (8 e ~30 linhas);
+    // a terceira é um count, sem trazer linha nenhuma.
+    supabase.from("title_tiers").select("tier, title, trail, lessons_required"),
+    supabase
+      .from("user_lesson_progress")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", data.user.id)
+      .eq("completed", true),
+    supabase.from("lessons").select("trail"),
   ]);
 
   if (perfil && !perfil.avatar_chosen) {
@@ -70,6 +91,22 @@ export default async function DashboardPage() {
     .split(" ")[0];
 
   const title = titleData?.current_title ?? "Calouro";
+
+  // A frase do próximo degrau. A TRAVA está dentro de `proximoTitulo`: se a
+  // trilha do título seguinte não tiver aula no banco — hoje é o caso das
+  // trilhas 3 a 7 —, ele nomeia o título sem prometer prazo nenhum.
+  const aulasPorTrilha = new Map<string, number>();
+  for (const l of (aulasDoBanco ?? []) as { trail: string }[]) {
+    aulasPorTrilha.set(l.trail, (aulasPorTrilha.get(l.trail) ?? 0) + 1);
+  }
+  const fraseProximoTitulo = fraseDoProximoTitulo(
+    proximoTitulo(
+      titleData?.achieved_tier ?? 0,
+      (escada ?? []) as DegrauDaEscada[],
+      aulasConcluidas ?? 0,
+      aulasPorTrilha,
+    ),
+  );
 
   const response = ranking as RankingData | null;
   const entries: RankingEntry[] = response?.entries ?? [];
@@ -83,6 +120,7 @@ export default async function DashboardPage() {
         patente={title}
         xp={perfil?.xp}
         xpTotal={perfil ? xpForLevel(perfil.level) : undefined}
+        proximoTitulo={fraseProximoTitulo}
       />
 
       <div className="mx-auto max-w-2xl space-y-5 px-4 pt-5">
@@ -106,7 +144,19 @@ export default async function DashboardPage() {
           ))}
         </nav>
 
-        {/* Blocos client-side: missões, streak, baús, insígnias */}
+        {/*
+          A insinuação — a única do produto, e é o que entrega os 25% de
+          descoberta da fórmula tonal dentro do login. Até aqui o mundo da
+          Academia morava todo na landing, que o aluno logado nunca mais vê.
+          A frase é o exemplo pronto da Bíblia §8 (o meio da curva), e obedece
+          a regra 6 da §9: insinua que há mais Academia, sem esconder nada de
+          que o aluno precise para agir.
+        */}
+        <p className="px-1 text-sm text-ink/55 italic">
+          Há uma sala da Academia que você ainda não visitou.
+        </p>
+
+        {/* Blocos client-side: missões, streak, baús, conquistas */}
         <DailyPanel title={title} level={perfil?.level ?? 1} />
 
         {/* Tarefas da turma (só aparece se aluno tem tarefas) */}
@@ -153,10 +203,11 @@ export default async function DashboardPage() {
                   <MolduraPatente tier={entry.achieved_tier}>
                     <AvatarCabeca
                       skin={entry.avatar_skin}
-                      hair={entry.avatar_hair}
+                      hair={entry.avatar_cabelo}
                       hairColor={entry.avatar_hair_color}
                       chapeu={entry.avatar_chapeu}
                       rosto={entry.avatar_rosto}
+                      oculos={entry.avatar_oculos}
                       lado={32}
                       ns={`qh-${entry.user_id}`}
                     />

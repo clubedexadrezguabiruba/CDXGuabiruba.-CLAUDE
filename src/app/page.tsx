@@ -99,7 +99,7 @@ const lugares = [
   {
     num: "04",
     badge: "Disputa",
-    name: "a Arena",
+    name: "o Torneio",
     description: "Onde se prova o que se aprendeu. Duelos, quadro de honra e o prestígio de quem chegou lá por mérito.",
   },
   {

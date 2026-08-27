@@ -116,9 +116,9 @@ export interface FeedEvent {
   event_data: Record<string, unknown>;
   created_at: string;
   display_name: string | null;
-  /** A identidade kokeshi. `avatar_hair` NULL é a careca. */
+  /** A identidade kokeshi. `avatar_cabelo` NULL é a careca. */
   avatar_skin: number;
-  avatar_hair: string | null;
+  avatar_cabelo: string | null;
   avatar_hair_color: number;
   /**
    * As duas peças que o recorte de cabeça mostra. Ver `RankingEntry` — o mural cai
@@ -127,6 +127,8 @@ export interface FeedEvent {
    */
   avatar_chapeu: string | null;
   avatar_rosto: string | null;
+  /** `users.avatar_oculos` — slot próprio desde 2026-08-27. Convive com a barba. */
+  avatar_oculos: string | null;
   /**
    * O número da patente, para a `<MolduraPatente>`. Desde o B2 da moldura.
    *

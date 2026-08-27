@@ -44,7 +44,7 @@
  * cabelo do perfil, que troca a peça na mão do aluno) pelo mesmo caminho.
  */
 
-import { pecaDeCabeca } from "@/lib/avatar/catalogo";
+import { modeloDoSlug, pecaDeCabeca } from "@/lib/avatar/catalogo";
 import { compor, folhaAvatar } from "@/lib/avatar/estilo/compositor";
 import { MODELOS_CABELO, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
 import { TRAJES_DA_ARTE } from "@/lib/avatar/estilo/trajes-da-arte";
@@ -69,24 +69,30 @@ export const HREF_DA_FOLHA = "avatar-kokeshi";
 export interface AvatarKokeshiProps {
   /** `users.avatar_skin` — índice em `PELE`. Fora da faixa cai no default do banco. */
   skin: number;
-  /** `users.avatar_hair` — slug do catálogo. `null` é careca, que é ausência de peça. */
+  /** `users.avatar_cabelo` — slug de `avatar_catalogo`. `null` é careca, que é ausência de peça. */
   hair: string | null;
   /** `users.avatar_hair_color` — índice em `CABELO`. */
   hairColor: number;
   /**
-   * `users.avatar_chapeu` e `users.avatar_rosto` — slugs de `avatar_catalogo`.
+   * `users.avatar_chapeu`, `users.avatar_rosto` e `users.avatar_oculos` — slugs de
+   * `avatar_catalogo`.
    *
-   * **Opcionais, e ausentes o boneco é o de hoje.** São as duas únicas peças do
+   * **Opcionais, e ausentes o boneco é o de hoje.** São as três únicas peças do
    * guarda-roupa que entram no SVG pela cabeça; traje é tinta no tronco, e pet é
    * componente irmão, fora daqui (doc 21 §3.4). O `fundo` também era irmão, e
    * deixou de existir em 2026-08-13 — o palco é marfim para todo aluno.
    *
    * Slug que o código ainda não desenha degrada para ausência — ver `pecaDeCabeca`.
-   * Enquanto os dois catálogos estiverem vazios (até os Blocos 5 e 7), passar
-   * qualquer coisa aqui não muda um byte do que sai.
+   *
+   * ⚠️ **`oculos` era `rosto` até 2026-08-27**, e não é renome: são dois slots, duas
+   * colunas e duas peças que aparecem JUNTAS. O Doug: *"óculos e barba não podem ser
+   * a mesma coisa. Eu preciso que dê para vestir a barba e o óculos, ao mesmo
+   * tempo."* Quem passar só `rosto` continua desenhando a barba, e o boneco sai
+   * idêntico ao de antes — é o que mantém os selos de regressão de pé.
    */
   chapeu?: string | null;
   rosto?: string | null;
+  oculos?: string | null;
   /**
    * `users.avatar_traje` — slug de `avatar_catalogo`. Entrou no B5 (2026-08-13),
    * com a primeira peça de traje no catálogo.
@@ -136,15 +142,15 @@ const corDe = (paleta: readonly string[], i: number, padrao: number) =>
 /**
  * Slug → modelo, com o desconhecido virando careca.
  *
- * A FK do banco já impede slug inválido; isto cobre o intervalo em que uma peça sai
- * do catálogo do CÓDIGO antes de sair do banco — foi o que a poda de sete para cinco
- * modelos criou uma vez. Careca é um estado válido do produto, então degradar para
- * ela não inventa nada.
+ * Desde 2026-08-23 quem faz a tradução é `modeloDoSlug`, no catálogo: o cabelo
+ * virou peça de `avatar_catalogo` e o slug do banco passou a ter o prefixo
+ * (`cabelo-espetado`), enquanto o modelo do código continua nu (`espetado`). A
+ * função aceita as duas formas, então esta chamada não precisa saber de que lado
+ * da fronteira o valor veio — e o degradar para careca é o mesmo de antes, pelo
+ * mesmo motivo medido: a FK impede slug inválido, mas não cobre o intervalo em que
+ * uma peça sai do catálogo do CÓDIGO antes de sair do banco.
  */
-function modeloDe(hair: string | null): ModeloCabelo | undefined {
-  if (!hair) return undefined;
-  return (MODELOS_CABELO as string[]).includes(hair) ? (hair as ModeloCabelo) : undefined;
-}
+const modeloDe = modeloDoSlug;
 
 /**
  * Slug → peça de traje, com o desconhecido virando **ausência**.
@@ -174,12 +180,13 @@ export function svgDoAluno({
   hairColor,
   chapeu,
   rosto,
+  oculos,
   traje,
   animado = false,
   ns,
 }: Pick<
   AvatarKokeshiProps,
-  "skin" | "hair" | "hairColor" | "chapeu" | "rosto" | "traje" | "ns"
+  "skin" | "hair" | "hairColor" | "chapeu" | "rosto" | "oculos" | "traje" | "ns"
 > & {
   animado?: boolean;
 }): string {
@@ -191,6 +198,7 @@ export function svgDoAluno({
     // emite camada nenhuma e a string sai idêntica à de antes do Bloco 1.
     chapeu: pecaDeCabeca("chapeu", chapeu),
     rosto: pecaDeCabeca("rosto", rosto),
+    oculos: pecaDeCabeca("oculos", oculos),
     traje: trajeDe(traje),
     animado,
     ns,
@@ -204,6 +212,7 @@ export function AvatarKokeshi({
   hairColor,
   chapeu,
   rosto,
+  oculos,
   traje,
   altura,
   animado = false,
@@ -214,7 +223,7 @@ export function AvatarKokeshi({
   // segunda descrição da mesma proporção, e é assim que boneco esticado nasce.
   const largura = Math.round((altura * VIEWBOX.w) / VIEWBOX.h);
 
-  const svg = svgDoAluno({ skin, hair, hairColor, chapeu, rosto, traje, animado, ns }).replace(
+  const svg = svgDoAluno({ skin, hair, hairColor, chapeu, rosto, oculos, traje, animado, ns }).replace(
     "<svg ",
     `<svg width="${largura}" height="${altura}" `,
   );

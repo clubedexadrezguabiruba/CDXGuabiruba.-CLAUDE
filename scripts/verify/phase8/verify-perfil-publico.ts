@@ -82,7 +82,7 @@ import { getDbUrl } from "../db-url";
 const RAIZ = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..");
 
 /** As três colunas da identidade kokeshi (Bloco C), que o E.3 levou à matview. */
-const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_hair", "avatar_hair_color"] as const;
+const COLUNAS_IDENTIDADE = ["avatar_skin", "avatar_cabelo", "avatar_hair_color"] as const;
 
 /** O que `get_public_profile` deixou de devolver no E.3 — os três da pilha v2. */
 const CHAVES_MORTAS = ["avatar_config", "avatar_base", "equipped_items"] as const;
@@ -116,11 +116,12 @@ const LEGADAS_NA_VIEW = ["avatar_config", "avatar_base"] as const;
  */
 const PROP_PARA_COLUNA: Record<string, string> = {
   skin: "avatar_skin",
-  hair: "avatar_hair",
+  hair: "avatar_cabelo",
   hairColor: "avatar_hair_color",
   traje: "avatar_traje",
   chapeu: "avatar_chapeu",
   rosto: "avatar_rosto",
+  oculos: "avatar_oculos",
 };
 
 const TELA_PROPRIA = "src/app/(main)/perfil/PerfilClient.tsx";
@@ -335,34 +336,54 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     );
   }
 
-  // --- 5. O refresh, medido por comportamento ---
-  console.log("\n5. Trocar de cabelo chega ao perfil público NA HORA (papel authenticated)");
+  // --- 5. O refresh, medido por comportamento, pelas DUAS RPCs ---
+  //
+  // Era UMA só até 2026-08-23: `update_avatar_identity` gravava as três colunas
+  // e o refresh dela cobria tudo. O cabelo saiu de lá — ele é peça, e quem o
+  // veste é `equipar_peca`. São duas portas para o mesmo cache, e as DUAS têm
+  // de chamar `refresh_public_profiles()`: se só uma chamar, metade da
+  // identidade chega ao /perfil/[userId] dos colegas e a outra metade fica
+  // velha, sem sintoma nenhum até alguém subir de nível.
+  console.log("\n5. As DUAS RPCs chegam ao perfil público NA HORA (papel authenticated)");
 
-  const livres = await db<{ slug: string; min_level: number }[]>`
-    select slug, min_level from public.avatar_hair_catalog
-    where min_level <= ${cobaia.level} order by min_level, slug`;
+  const doCatalogo = await db<{ slug: string }[]>`
+    select slug from public.avatar_catalogo where slot = 'cabelo' order by slug`;
 
-  const hairAntes = (perfilAntes["avatar_hair"] as string | null) ?? null;
-  const alvo = livres.find((l) => l.slug !== hairAntes);
+  const hairAntes = (perfilAntes["avatar_cabelo"] as string | null) ?? null;
+  const alvo = doCatalogo.find((l) => l.slug !== hairAntes);
 
   if (!alvo) {
     nok(
-      "nenhum cabelo alcançável e diferente do atual para medir a troca",
-      `a cobaia está no nível ${cobaia.level} e o catálogo não oferece outro slug — sem troca, a conferência passaria por vacuidade`,
+      "nenhuma peça de cabelo diferente da atual para medir a troca",
+      "o catálogo não oferece outro slug — sem troca, a conferência passaria por vacuidade",
     );
   } else {
     const skinAlvo = skin === 5 ? 4 : 5;
     const corAlvo = cor === 3 ? 2 : 3;
 
+    // A peça é CONCEDIDA como dono antes de virar aluno: vestir é ato do aluno,
+    // conceder é ato do servidor. Sem a linha, `equipar_peca` negaria — e a
+    // conferência mediria a negação em vez do refresh.
+    const [{ dono }] = await db<{ dono: string }[]>`select current_user as dono`;
+    await db`insert into public.avatar_guarda_roupa (user_id, slug, fonte)
+             values (${cobaia.id}, ${alvo.slug}, 'bau') on conflict do nothing`;
+
     await db`select set_config('request.jwt.claims', ${JSON.stringify({
       sub: cobaia.id,
       role: "authenticated",
     })}, true)`;
-    await db`set local role authenticated`;
+    await db.unsafe("set local role authenticated");
 
-    const erroGravacao = await tentar(db, "sp_identidade", () =>
-      db`select public.update_avatar_identity(${skinAlvo}, ${alvo.slug}, ${corAlvo})`,
+    // Porta 1: a PEÇA, por equipar_peca.
+    const erroPeca = await tentar(db, "sp_peca", () =>
+      db`select public.equipar_peca('cabelo', ${alvo.slug})`,
     );
+    // Porta 2: as CORES, por update_avatar_identity — agora com 2 parâmetros.
+    const erroGravacao =
+      erroPeca ??
+      (await tentar(db, "sp_identidade", () =>
+        db`select public.update_avatar_identity(${skinAlvo}, ${corAlvo})`,
+      ));
 
     let perfilDepois: Record<string, unknown> | null = null;
     if (!erroGravacao) {
@@ -371,17 +392,19 @@ export async function conferir(db: Sql): Promise<Relatorio> {
       perfilDepois = linha.p;
     }
 
-    await db`reset role`;
+    // `reset role` não devolve o dono dentro da transação — medido no gate do
+    // cabelo, que reprovava por defeito próprio com "permission denied".
+    await db.unsafe(`set local role ${dono}`);
 
     if (erroGravacao) {
       nok(
-        `update_avatar_identity('${alvo.slug}') falhou como authenticated`,
+        `vestir "${alvo.slug}" e gravar as cores falhou como authenticated`,
         erroGravacao,
       );
     } else if (!perfilDepois) {
       nok("get_public_profile devolveu NULL depois da gravação", "o refresh pode ter apagado a linha da matview");
     } else {
-      const hairDepois = (perfilDepois["avatar_hair"] as string | null) ?? null;
+      const hairDepois = (perfilDepois["avatar_cabelo"] as string | null) ?? null;
       if (hairDepois === alvo.slug) {
         ok(
           `o perfil público passou de ${hairAntes === null ? "careca" : `"${hairAntes}"`} ` +
@@ -390,7 +413,7 @@ export async function conferir(db: Sql): Promise<Relatorio> {
       } else {
         nok(
           `o perfil público continua em ${hairDepois === null ? "careca" : `"${hairDepois}"`} depois de gravar "${alvo.slug}"`,
-          "update_avatar_identity não chama refresh_public_profiles(): o /perfil do aluno mostraria o cabelo novo e o /perfil/[userId] dos colegas o antigo, até alguém subir de nível",
+          "equipar_peca não chama refresh_public_profiles(): o /perfil do aluno mostraria o cabelo novo e o /perfil/[userId] dos colegas o antigo, até alguém subir de nível",
         );
       }
 
@@ -410,17 +433,24 @@ export async function conferir(db: Sql): Promise<Relatorio> {
   // Anti-regressão barata sobre o corpo, ao lado da prova comportamental: a
   // chamada pode passar por sorte (view recém-refrescada por outro caminho na
   // mesma transação); o PERFORM escrito é o mecanismo.
-  const [rpc] = await db<{ def: string }[]>`
-    select pg_get_functiondef(p.oid) as def from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname='public' and p.proname='update_avatar_identity'`;
-  if (rpc && /refresh_public_profiles\s*\(/.test(semComentario(rpc.def))) {
-    ok("update_avatar_identity chama refresh_public_profiles() no corpo");
-  } else {
-    nok(
-      "update_avatar_identity não chama refresh_public_profiles() no corpo",
-      "sem a chamada, a matview só é atualizada quando alguém sobe de nível",
-    );
+  //
+  // São DUAS funções desde 2026-08-23, e é aqui que a divisão fica cobrada por
+  // escrito: `equipar_peca` grava a peça, `update_avatar_identity` grava as
+  // cores, e as duas alimentam o mesmo cache.
+  for (const nome of ["equipar_peca", "update_avatar_identity"]) {
+    const [f] = await db<{ def: string }[]>`
+      select pg_get_functiondef(p.oid) as def from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname='public' and p.proname = ${nome}`;
+    if (f && /refresh_public_profiles\s*\(/.test(semComentario(f.def))) {
+      ok(`${nome} chama refresh_public_profiles() no corpo`);
+    } else {
+      nok(
+        `${nome} não chama refresh_public_profiles() no corpo`,
+        "sem a chamada, a matview só é atualizada quando alguém sobe de nível — e " +
+          "com duas portas, a que não refrescar deixa metade do boneco velha",
+      );
+    }
   }
 
   // --- 6. A lição 2 do Bloco B: quem lê da matview não pode ler coluna ausente ---

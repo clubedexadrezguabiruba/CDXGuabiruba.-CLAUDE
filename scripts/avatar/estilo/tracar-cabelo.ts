@@ -145,6 +145,7 @@ import {
   enquadramento,
   lum,
 } from "./medir";
+import { CONTROLE_PARAMETRICO } from "./controle-parametrico";
 
 /**
  * QUEM RASTERIZA É O CHROMIUM, E ISSO CUSTOU UMA RODADA.
@@ -2135,7 +2136,7 @@ const num = (v: number) => Number(v.toFixed(3));
  * reprovando. Por isso o `Math.min`.
  */
 function liberarORosto(med: Medida): { med: Medida; levante: number } {
-  const antes = folgaDoRosto({ id: "coque", nome: "medido", pontos: med.pontos });
+  const antes = folgaDoRosto({ id: "chanel", nome: "medido", pontos: med.pontos });
   // Meia unidade a mais que o déficit exato. Subtrair exatamente deixa a folga em
   // 23,999999 e o gate reprova com a mensagem "24.0 contra o piso de 24", que é
   // ilegível — o número impresso passa e o teste não. Meia unidade é 0,04 px a 56.
@@ -2175,7 +2176,7 @@ export function montarPeca(bruta: Medida) {
    */
   const extensoes = med.lobos.map((l) => ({ atras: true, forma: fecharLobo(l, -levante) }));
   const peca = {
-    id: "coque" as const,
+    id: "chanel" as const,
     nome: "medido",
     pontos: med.pontos,
     sombra: med.sombra,
@@ -2782,7 +2783,7 @@ function tracar(seg: Segmentacao, m: Mapa, aImagem: Ancoras): Tracado {
   }));
 
   const peca: Cabelo = {
-    id: "coque",
+    id: "chanel",
     nome: "traçado",
     massa: massaFina.map(paraTY),
     ...(claraContida.length ? { clara: claraContida.map(paraTY) } : {}),
@@ -3162,7 +3163,7 @@ async function idaEVolta() {
   const svg = compor({
     pele: PELE[1],
     cabelo: CABELO_TEAL,
-    modeloCabelo: "coque",
+    modeloCabelo: CONTROLE_PARAMETRICO,
     ns: "iv",
   });
   const bmp = await rasterizar(svg, ALTURA);
@@ -3171,7 +3172,7 @@ async function idaEVolta() {
   const aImg = ancoras(bmp);
   const med = medirFranja(segmentarPorMatiz(bmp), mapa(aImg, vb), aImg);
 
-  const esperado = CABELOS.coque.pontos!;
+  const esperado = CONTROLE_PARAMETRICO.pontos!;
   console.log("IDA E VOLTA — o `curto` de hoje, renderizado em teal e medido de volta");
   console.log(`raster ${bmp.w}x${bmp.h} · pescoço ${aImg.yPescoco}px · base ${aImg.yBase}px`);
 
@@ -3227,7 +3228,7 @@ async function idaEVolta() {
  */
 async function idaEVoltaMassa(): Promise<number> {
   const { vb } = await ancorasDoViewBox();
-  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: "coque", ns: "ivm" });
+  const svg = compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: CONTROLE_PARAMETRICO, ns: "ivm" });
   const bmp = await rasterizar(svg, ALTURA);
   const aImg = ancoras(bmp);
   const t = tracar(segmentarPorMatiz(bmp), mapa(aImg, vb), aImg);
@@ -3289,7 +3290,7 @@ async function diagnosticar(caminho?: string) {
   const bmp = caminho
     ? await cru(caminho)
     : await rasterizar(
-        compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: "coque", ns: "d" }),
+        compor({ pele: PELE[1], cabelo: CABELO_TEAL, modeloCabelo: CONTROLE_PARAMETRICO, ns: "d" }),
         ALTURA
       );
   const e = enquadramento(bmp);

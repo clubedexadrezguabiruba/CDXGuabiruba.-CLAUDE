@@ -13,7 +13,12 @@ export default async function AulasPage() {
 
   if (!user) redirect("/login");
 
-  const { data, error } = await supabase.rpc("get_lesson_map");
+  // As duas saem juntas: o mapa de aulas não depende da escada de títulos, e a
+  // escada é configuração global de 8 linhas.
+  const [{ data, error }, { data: escada }] = await Promise.all([
+    supabase.rpc("get_lesson_map"),
+    supabase.from("title_tiers").select("title, trail"),
+  ]);
 
   if (error) {
     console.error("[AulasPage] RPC error:", error);
@@ -36,5 +41,19 @@ export default async function AulasPage() {
 
   const lessons = computeUnlockStatus(rawLessons, rawGates);
 
-  return <LessonMap lessons={lessons} reviewGates={rawGates} />;
+  // Que título cada trilha entrega quando fecha. Vem de `title_tiers`, que é a
+  // régua — a alternativa era uma tabela em TS, que é exatamente a divergência
+  // que o gate (a2) do verify:avatar-db passou a impedir entre banco e código.
+  const tituloPorTrilha = new Map<string, string>();
+  for (const t of (escada ?? []) as { title: string; trail: string | null }[]) {
+    if (t.trail) tituloPorTrilha.set(t.trail, t.title);
+  }
+
+  return (
+    <LessonMap
+      lessons={lessons}
+      reviewGates={rawGates}
+      tituloPorTrilha={tituloPorTrilha}
+    />
+  );
 }

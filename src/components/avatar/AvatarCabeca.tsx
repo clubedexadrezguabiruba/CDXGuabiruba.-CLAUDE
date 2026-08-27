@@ -56,17 +56,19 @@ export function AvatarCabeca({
   hairColor,
   chapeu,
   rosto,
+  oculos,
   lado,
   animado = false,
   ns,
   rotulo,
 }: AvatarCabecaProps) {
-  // Chapéu e rosto vêm junto porque são exatamente as duas peças que o recorte de
-  // cabeça mostra — é por isso que as RPCs de ranking servem essas duas e não as
-  // quatro (doc 21 §7, Bloco 1). Traje não aparece aqui, e pet nem existe dentro
-  // do SVG. Eram cinco peças: `fundo` morreu em 2026-08-13.
+  // Chapéu, rosto e óculos vêm junto porque são exatamente as peças que o recorte de
+  // cabeça mostra — é por isso que as RPCs de ranking servem essas TRÊS e não as
+  // cinco (doc 21 §7, Bloco 1). Traje não aparece aqui, e pet nem existe dentro do
+  // SVG. `fundo` morreu em 2026-08-13; `oculos` nasceu em 2026-08-27, saindo do
+  // slot `rosto` para poder conviver com a barba.
   const svg = recortarNaCabeca(
-    svgDoAluno({ skin, hair, hairColor, chapeu, rosto, animado, ns }),
+    svgDoAluno({ skin, hair, hairColor, chapeu, rosto, oculos, animado, ns }),
     RECORTE_CABECA,
   ).replace("<svg ", `<svg width="${lado}" height="${lado}" `);
 

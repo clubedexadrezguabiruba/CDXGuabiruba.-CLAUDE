@@ -267,6 +267,33 @@ export async function conferir(db: Sql): Promise<Relatorio> {
 
   const [ovosAntes] = await db<{ n: number }[]>`select count(*)::int as n from user_eggs`;
 
+  // O XP NÃO PODE APARECER FORA DO `common` — a não ser como fallback de pool
+  // vazio, que é legítimo. A distinção é medível: se houver peça inédita daquela
+  // raridade no catálogo, XP ali é o desenho errado, não o degradar previsto.
+  //
+  // ⚠️ ESTA QUERY RODA **ANTES** DO LAÇO, e o lugar dela é a conferência.
+  // Ela media o pool DEPOIS das 60 aberturas até 2026-08-23 — e as aberturas
+  // esvaziam o próprio pool que se quer medir: peça sorteada vira linha em
+  // `avatar_guarda_roupa` e some do `NOT EXISTS`. Medido na produção daquele dia:
+  // pool real `legendary 1`, pool medido `(vazio)`, porque a `rosto-barba-trancada`
+  // saiu no meio do laço. Com o pool lido como vazio, **todo** XP fora do `common`
+  // vira "fallback legítimo" e a conferência aprova por VACUIDADE. Não aparecia
+  // porque o pool não-common tinha uma peça só; com o cabelo dentro do catálogo
+  // ele fica grande, e o verde falso cairia justamente aqui.
+  const inedito = await db<{ raridade: string; n: number }[]>`
+    select c.raridade, count(*)::int as n
+    from avatar_catalogo c
+    where c.origem = 'bau'
+      and not exists (
+        select 1 from avatar_guarda_roupa g
+        where g.user_id = ${cobaia.id} and g.slug = c.slug)
+    group by c.raridade`;
+  const poolDe = new Map(inedito.map((r) => [r.raridade, r.n]));
+  console.log(
+    `   pool inédito ANTES das ${ABERTURAS} aberturas: ` +
+      (inedito.length ? inedito.map((r) => `${r.raridade} ${r.n}`).join(" · ") : "(vazio)"),
+  );
+
   const resultados: Resultado[] = [];
   const chaves: string[] = [];
   let erro: string | null = null;
@@ -318,22 +345,19 @@ export async function conferir(db: Sql): Promise<Relatorio> {
     );
   }
 
-  // O XP NÃO PODE APARECER FORA DO `common` — a não ser como fallback de pool
-  // vazio, que é legítimo. A distinção é medível: se houver peça inédita daquela
-  // raridade no catálogo, XP ali é o desenho errado, não o degradar previsto.
-  const inedito = await db<{ raridade: string; n: number }[]>`
-    select c.raridade, count(*)::int as n
-    from avatar_catalogo c
-    where c.origem = 'bau'
-      and not exists (
-        select 1 from avatar_guarda_roupa g
-        where g.user_id = ${cobaia.id} and g.slug = c.slug)
-    group by c.raridade`;
-  const poolDe = new Map(inedito.map((r) => [r.raridade, r.n]));
-
-  const xpIndevido = resultados.filter(
-    (r) => r.is_xp && r.rarity !== "common" && (poolDe.get(r.rarity ?? "") ?? 0) > 0,
-  );
+  // O pool ENCOLHE durante o laço: peça sorteada vira linha no guarda-roupa e sai
+  // do `NOT EXISTS`. Então nem o pool inicial nem o final julgam — só o pool **no
+  // instante de cada abertura**. Medido na produção de 2026-08-23: a peça
+  // `legendary` saiu na abertura #8 e os XPs `legendary` vieram em #21, #35 e #54;
+  // com o pool inicial congelado os três seriam acusados, e são fallback legítimo.
+  // Refazemos o pool passo a passo, na ordem em que as aberturas aconteceram.
+  const restante = new Map(poolDe);
+  const xpIndevido: Resultado[] = [];
+  for (const r of resultados) {
+    const rar = r.rarity ?? "";
+    if (r.is_xp && rar !== "common" && (restante.get(rar) ?? 0) > 0) xpIndevido.push(r);
+    if (r.item_slug) restante.set(rar, (restante.get(rar) ?? 0) - 1);
+  }
   if (xpIndevido.length === 0) {
     ok(
       "XP só saiu no pool common ou com o pool esgotado — " +

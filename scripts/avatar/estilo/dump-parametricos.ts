@@ -41,7 +41,11 @@
 import { writeFileSync } from "fs";
 import { createHash } from "node:crypto";
 
-import { MODELOS_PARAMETRICOS, MODELOS_TRACADOS } from "../../../src/lib/avatar/estilo/cabelo";
+import {
+  MODELOS_PARAMETRICOS,
+  MODELOS_TONAIS,
+  MODELOS_TRACADOS,
+} from "../../../src/lib/avatar/estilo/cabelo";
 import { compor } from "../../../src/lib/avatar/estilo/compositor";
 import { CABELO, PELE } from "../../../src/lib/avatar/palette";
 
@@ -59,26 +63,49 @@ const svgDe = (modelo?: Parameters<typeof compor>[0]["modeloCabelo"], animado = 
 const sha = (s: string) => createHash("sha256").update(s, "utf-8").digest("hex");
 const cssDe = (svg: string) => svg.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
 
+/**
+ * As contagens do cabeçalho, DERIVADAS. Ver o aviso dentro dele: escrever "quinze"
+ * à mão foi o que produziu um cabeçalho que discordava do próprio arquivo.
+ */
+const N_PARAM = MODELOS_PARAMETRICOS.length * 2;
+const N_TRAC = MODELOS_TRACADOS.length * 2;
+const N_TONAL = MODELOS_TONAIS.length * 2;
+const TOTAL = N_PARAM + N_TRAC + N_TONAL + 1;
+
 const CABECALHO = `/**
- * OS SETE MODELOS COMO ELES SAEM HOJE — o congelamento da regressão.
+ * O CATÁLOGO INTEIRO COMO ELE SAI HOJE — o congelamento da regressão.
  *
  * ---------------------------------------------------------------------------
- * QUINZE SELOS, EM TRÊS GRUPOS QUE NÃO SIGNIFICAM A MESMA COISA
+ * ${TOTAL} SELOS, EM QUATRO GRUPOS QUE NÃO SIGNIFICAM A MESMA COISA
  * ---------------------------------------------------------------------------
  *
- * **10 paramétricos** (5 modelos × parado/animado) — congelados desde o B4. Um
- * movimento aqui é a pergunta *"por que os paramétricos mudaram?"*.
+ * ⚠️ **Os números desta seção são DERIVADOS das listas de família, não escritos.**
+ * Eles já envelheceram uma vez: o cabeçalho dizia "quinze selos" com onze no
+ * arquivo, porque a poda de 2026-08-08 mudou o elenco e a prosa ficou. Número de
+ * contagem em prosa é a coisa que este repositório paga mais caro.
  *
- * **4 traçados promovidos** (\`espetado\` e \`chanel\`, aprovados pelo Doug em
- * 2026-08-07) — congelados desde a promoção. Um movimento aqui quer dizer que a
- * saída da **rota de arte** mudou: ou uma arte foi redesenhada, ou o
- * \`converter()\` passou a produzir outra coisa. Nos dois casos há uma peça
- * aprovada mudando de aparência, e a decisão é do Doug.
+ * **${N_PARAM} paramétricos** (${MODELOS_PARAMETRICOS.length} modelo(s) × parado/animado — ${MODELOS_PARAMETRICOS.join(", ")}) —
+ * congelados desde o B4. Um movimento aqui é a pergunta *"por que os paramétricos
+ * mudaram?"*.
+ *
+ * **${N_TRAC} traçados promovidos** (${MODELOS_TRACADOS.join(", ")}) — congelados desde a
+ * promoção de cada um. Um movimento aqui quer dizer que a saída da **rota de arte**
+ * mudou: ou uma arte foi redesenhada, ou o \`converter()\` passou a produzir outra
+ * coisa. Nos dois casos há uma peça aprovada mudando de aparência, e a decisão é do
+ * Doug.
+ *
+ * **${N_TONAL} tonais promovidos** (${MODELOS_TONAIS.join(", ")}) — o grupo mais novo, e ele
+ * **nasceu de um buraco medido**. Quando o \`chanel\` migrou de \`MODELOS_TRACADOS\`
+ * para \`MODELOS_TONAIS\` em 2026-08-22, este arquivo só emitia as duas primeiras
+ * listas: os dois selos dele **pararam de ser conferidos por ninguém** e ficaram no
+ * disco como texto morto, descobertos na promoção do \`moicano\` no mesmo dia. A
+ * regra da rota — *"um paramétrico que mude de família não pode sumir do teste em
+ * silêncio"* — valia para a saída e não tinha quem cobrasse a chegada. Agora tem.
  *
  * **1 careca** — o teto de regressão absoluto do estilo.
  *
  * ⚠️ **O nome \`PARAMETRICO_CONGELADO\` ficou estreito e não foi trocado**: ele
- * guarda os quinze, não só os dez paramétricos. Renomear custaria nove arquivos, a
+ * guarda os ${TOTAL}, não só os ${N_PARAM} paramétricos. Renomear custaria nove arquivos, a
  * maioria em prosa (\`ESTADO-DA-ROTA\`, o runbook 19, a skill), por um ganho de
  * nome — e o que este repositório paga caro é número escrito em muitos lugares,
  * não nome estreito com o esclarecimento ao lado. Fica escrito aqui.
@@ -105,9 +132,9 @@ const CABECALHO = `/**
  *
  * O \`css\` é o bloco \`<style>\` inteiro, em texto, e é onde a mudança do B4 teria
  * caído. Quando o teste quebra, é ele que aparece no diff do vitest e diz em uma
- * olhada se a regra que vazou foi a do cabelo. Guardar o SVG completo dos onze casos
- * custaria 89 KB de fixture para melhorar um relatório que estas duas linhas já
- * resolvem.
+ * olhada se a regra que vazou foi a do cabelo. Guardar o SVG completo dos ${TOTAL} casos
+ * custaria fixture de dezenas de KB para melhorar um relatório que estas duas linhas
+ * já resolvem.
  *
  * ---------------------------------------------------------------------------
  * QUANDO REGERAR — E QUANDO **NÃO**
@@ -165,6 +192,23 @@ const CABECALHO = `/**
  * que aponta para peça apagada não reprova: ele deixa de existir**, e o gate passa
  * por vacuidade.
  *
+ * O caso 2 aconteceu uma SEGUNDA vez, em 2026-08-25: **o \`viewBox\` foi de 500 para
+ * 600 de largura**, para caber chapéu de aba comprida. Os **29 selos** se moveram, e
+ * **os \`bytes\` são idênticos em todos** — só o \`sha\` mudou.
+ *
+ * A prova de que foi o QUADRO e não o desenho está medida: desfazendo no SVG de hoje
+ * **apenas dois tokens** — \`viewBox="0 0 600 700"\` de volta a 500, e
+ * \`translate(70 \` de volta a 20 —, **os 28 selos de cabelo voltam a bater byte a
+ * byte**. Nenhum outro caractere se moveu.
+ *
+ * ⚠️ E o caminho até essa prova achou um defeito de verdade: \`pathFacetaEsq\` e
+ * \`pathFacetaDir\` escreviam \`VIEWBOX.w + FORA\` na aba que fecha o polígono fora da
+ * silhueta. Ali o número queria dizer *"além da borda direita do DESENHO"*, e as duas
+ * medidas valeram 500 até aquele dia. Com o quadro em 600 os quatro números andaram
+ * 100 unidades **sem mudar um pixel do render** — a aba já estava fora da figura. Os
+ * selos pegaram; o olho não pegaria. Corrigido para \`LARGURA_INTERNA + FORA\`, que é a
+ * constante que nasceu no mesmo dia para separar as duas larguras.
+ *
  * GERADO por \`npm run avatar:congelar\` (\`scripts/avatar/estilo/dump-parametricos.ts\`).
  * Não edite à mão: um arquivo meio regerado mistura duas gerações e ninguém
  * consegue mais dizer quais linhas descrevem o quê.
@@ -185,9 +229,14 @@ function principal(): void {
   // não pode escorregar para dentro do congelado sem ninguém decidir.
   const parametricos = MODELOS_PARAMETRICOS.flatMap(selosDe);
   const tracados = MODELOS_TRACADOS.flatMap(selosDe);
+  // O TERCEIRO GRUPO, e ele existe porque faltava: sem esta linha, uma peça que
+  // migra para a família tonal sai dos selos e não entra em nenhum — foi o que
+  // aconteceu com o `chanel` entre a promoção dele e a do `moicano`.
+  const tonais = MODELOS_TONAIS.flatMap(selosDe);
   const casos: [string, string][] = [
     ...parametricos,
     ...tracados,
+    ...tonais,
     ["__careca", svgDe(undefined, false)],
   ];
 
@@ -216,6 +265,7 @@ function principal(): void {
   };
   grupo(`${parametricos.length} PARAMÉTRICOS (${MODELOS_PARAMETRICOS.join(", ")})`, parametricos);
   grupo(`${tracados.length} TRAÇADOS PROMOVIDOS (${MODELOS_TRACADOS.join(", ")})`, tracados);
+  grupo(`${tonais.length} TONAIS PROMOVIDOS (${MODELOS_TONAIS.join(", ")})`, tonais);
   grupo(`1 CARECA — o teto de regressão absoluto`, [casos[casos.length - 1]]);
 
   console.log(

@@ -1285,7 +1285,7 @@ const lit = (p: PontoFranja) => `{ t: ${p.t.toFixed(3)}, y: ${p.y.toFixed(3)} }`
 const litXY = (p: { x: number; y: number }) => `{ x: ${p.x.toFixed(1)}, y: ${p.y.toFixed(1)} }`;
 
 if (process.argv[1]?.endsWith("converter.ts")) {
-  const caminho = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const caminho = process.argv[2] ?? `${PASTA}/chanel.png`;
   const SAIDA = `${saidaDaArte(caminho)}/peca`;
   converter(caminho)
     .then((c) => {

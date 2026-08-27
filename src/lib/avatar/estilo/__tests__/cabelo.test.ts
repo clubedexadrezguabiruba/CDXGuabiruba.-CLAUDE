@@ -41,6 +41,8 @@ import {
   sobrancelhaCoberta,
   pathCabelo,
   pathCabeloClaro,
+  pathCabeloNucleo,
+  pathCabeloPretas,
   sobrancelhaEscondida,
   sombraSobreAFranja,
 } from "../cabelo";
@@ -50,7 +52,9 @@ import { SANGRIA, bordasEm } from "../geometria";
 import { conferirSvg } from "../../svgContrato";
 import { CABELO, PELE } from "../../palette";
 
-const svgDe = (modelo?: (typeof MODELOS_CABELO)[number]) =>
+// Aceita `Cabelo` além do nome de modelo desde 2026-08-24: com `MODELOS_PARAMETRICOS`
+// vazia, os blocos que medem aquela família só têm fixture para compor.
+const svgDe = (modelo?: Parameters<typeof compor>[0]["modeloCabelo"]) =>
   compor({ pele: PELE[1], cabelo: CABELO[1], modeloCabelo: modelo, ns: "t" });
 
 const formas = (svg: string) => (svg.match(/<(path|ellipse|rect|circle|use)\b/g) ?? []).length;
@@ -81,8 +85,21 @@ const PONTOS_PARAMETRICO: readonly PontoFranja[] = [
   { t: 1.14, y: 228 },
 ];
 
+/**
+ * O `id` que as FIXTURAS sintéticas deste arquivo carregam — e ele é rótulo, não alvo.
+ *
+ * O que se mede abaixo é a geometria **declarada na fixture**: pontos, massa, sombra.
+ * A peça do catálogo com esse nome nunca é lida. O campo existe porque `Cabelo["id"]`
+ * é a união fechada `ModeloCabelo`, então a fixture precisa de UM nome vivo.
+ *
+ * Era `"coque"` até 2026-08-24, quando o Doug apagou aquele modelo. Ficar num só
+ * lugar é o conserto: com o nome escrito em cinco fixtures, a próxima poda de elenco
+ * volta a quebrar cinco linhas em vez de uma.
+ */
+const ID_FIXTURA = "chanel" as const;
+
 const CURTO_PARAMETRICO: Cabelo = {
-  id: "coque",
+  id: ID_FIXTURA,
   nome: "curto (paramétrico congelado)",
   pontos: PONTOS_PARAMETRICO,
 };
@@ -106,22 +123,140 @@ const CURTO_PARAMETRICO: Cabelo = {
  */
 const camadasDaTouca = (c: Cabelo): number => {
   if (c.pontos) return 2;
+  // A TONAL NÃO TEM TOUCA — e devolver 0 aqui é o certo, não uma falta.
+  //
+  // Ela não é clipada pelo crânio: é peça sobreposta, e as duas passadas dela saem
+  // por `sobrepor()`, longe de `cabeloNoCranio`. Quem conta as camadas dela é o
+  // bloco "a família tonal" no fim deste arquivo, e o censo da pilha.
+  if (c.tonal) return 0;
   if (!c.massa) return 0;
   if (c.nucleo?.length) return 2 + (c.clara ? 1 : 0) + (c.pretas?.length ? 1 : 0);
   return 1 + (c.clara ? 1 : 0) + (c.linhas?.length ? 1 : 0);
 };
 
 /**
- * OS BYTES DAS DUAS PEÇAS PROMOVIDAS, medidos na promoção (2026-08-07).
+ * OS BYTES DAS PEÇAS DE ARTE PROMOVIDAS, medidos na promoção de cada uma.
  *
- * Eles estouram `ORCAMENTO_COMPOSTO.bytes` (10 240) e **isso não veta** — decisão A
- * do Doug, e o doc 15:463 já dizia que teto de bytes não veta arte aprovada. O
- * número fica aqui como registro exato em vez de sumir num teto folgado.
+ * Três dos quatro estouram `ORCAMENTO_COMPOSTO.bytes` (10 240) e **isso não veta** —
+ * decisão A do Doug, e o doc 15:463 já dizia que teto de bytes não veta arte
+ * aprovada. O número fica aqui como registro exato em vez de sumir num teto folgado.
+ *
+ * ⚠️ **O `moicano` CABE (9 731), e é o primeiro que cabe.** Até 2026-08-22 este
+ * bloco afirmava o estouro com um `toBeGreaterThan`, como se peça de arte fosse
+ * sempre mais pesada que paramétrica — e a tonal desmentiu: ela é o mesmo `d` duas
+ * vezes, e quando o `d` é curto o composto sai menor que a crista de 11 pontos que
+ * ela substituiu. A afirmação virou este parágrafo, que é onde ela sempre foi;
+ * quem reprova é o valor exato abaixo, que não mudou de papel.
  *
  * Quando um destes se mover, a pergunta é a mesma dos selos: *por que uma peça
  * aprovada mudou?* — e a resposta não é editar este número.
  */
-const BYTES_TRACADOS = { espetado: 13319, chanel: 11867, assimetrico: 14074 } as const;
+const BYTES_DA_ARTE = {
+  // ⚠️ **O NÚMERO MUDOU PORQUE A PEÇA MUDOU, e o `espetado` é o único caso do
+  // arquivo.** Ele valia 13 319 para a peça TRAÇADA que o Doug reprovou a olho e
+  // mandou apagar em 2026-08-24. O modelo voltou no mesmo dia, com arte nova, tonal e
+  // aprovada — e o slug `cabelo-espetado` estava livre porque a migration daquela
+  // manhã fez `DELETE`, sem lápide. Mesma chave, outra peça: 13 319 -> **14 372**.
+  //
+  // É a única circunstância em que um destes números se move sem ser defeito, e ela
+  // fica escrita aqui para que a pergunta continue sendo *"por que uma peça aprovada
+  // mudou?"* em todos os outros casos.
+  espetado: 14372,
+  // TONAL, promovida em 2026-08-22 — e o número CAIU de 14 074 para 12 176 nessa
+  // migração, o que é o padrão da família e não uma peça que encolheu: a tonal
+  // troca massa + núcleo + claras + pretas por silhueta + máscara, e o DEFLATE
+  // deduz a repetição do `d`. Ver as duas linhas abaixo, que caíram do mesmo jeito.
+  assimetrico: 12176,
+  // TONAL, promovida em 2026-08-22. Ela paga o `d` DUAS VEZES — a silhueta preta e a
+  // mesma forma vestida pela máscara — e ainda assim o boneco composto sai mais leve
+  // em gzip que a versão traçada (16,9 contra 17,8 KB em 30 bonecos, bancada do Bloco
+  // A): o DEFLATE deduz a repetição, e não deduzia massa + núcleo + claras + pretas.
+  chanel: 12620,
+  // TONAL, promovida em 2026-08-22, e a PRIMEIRA peça de arte que CABE no teto:
+  // 9 731 contra os 10 240 de `ORCAMENTO_COMPOSTO.bytes`. Ver o `it` abaixo — a
+  // asserção que dizia "o registro é do estouro" caiu com ela.
+  moicano: 9731,
+  // TONAL desde a origem, e a PRIMEIRA peça que ENTRA no elenco em vez de
+  // substituir — as outras eram um elenco fechado sendo refeito peça a peça. Por
+  // isso ela é a primeira que exigiu migration: `avatar_hair_catalog` guardava uma
+  // linha por slug, e um cabelo desenhado e não semeado é opção que a tela oferece
+  // e o servidor nega. Ela entrou no catálogo em 20260823110000, já na gramática
+  // nova, como `rare`.
+  "burst-fade": 11616,
+
+  // ---------------------------------------------------------------------------
+  // O LOTE DE 2026-08-24 — seis promovidas de uma vez, e o elenco fecha em DEZ
+  //
+  // Todas tonais, todas medidas na promoção. O que este bloco de seis ensina, e
+  // que peça a peça não deixava ver: **o peso do composto não segue a massa da
+  // arte.** A `cachos-anjo` tem 93 715 px e sai com 16 255 B; a `longo-unilateral`
+  // tem 149 717 px — 60% mais massa — e sai com 10 949 B. Quem manda é o `d`, e o
+  // `d` é contorno recortado: cacho recorta, mecha lisa não.
+  // ---------------------------------------------------------------------------
+
+  // A MAIS PESADA DO ELENCO INTEIRO — 16 255 B, contra 13 319 do `espetado`
+  // apagado, que era o recorde. 9 012 B de `d` pagos duas vezes (a silhueta e a
+  // mesma forma vestida pela máscara) é o que um cacho custa.
+  "cachos-anjo": 16255,
+  // **A PRIMEIRA PEÇA DE ARTE QUE FICA ABAIXO DA MAIS LEVE ATÉ HOJE** — 9 663 B
+  // contra os 9 731 do moicano, que era "a primeira que cabe". Ela cabe com folga
+  // em `ORCAMENTO_COMPOSTO.bytes` (10 240) e passa a ser a peça mais leve do slot.
+  "curto-repartido": 9663,
+  // 10 949 B com a MAIOR massa do elenco (149 717 px). Estoura o teto por 709 B, e
+  // a decisão A continua valendo: teto não veta arte aprovada.
+  "longo-unilateral": 10949,
+  pixie: 10837,
+  "rabo-baixo": 10768,
+  // 14 622 B, a segunda mais pesada. É a única peça do slot com DOIS componentes
+  // na máscara, e os 7 372 B de `d` são o preço de traçar os dois.
+  "trancas-duplas": 14622,
+  // A reentrada do `coque` apagado nesta mesma manhã, aprovada horas depois das
+  // seis acima. 10 865 B — estoura o teto por 625 B, e a decisão A vale.
+  "coque-simples": 10865,
+  // A SEGUNDA arte com esse nome — a primeira foi reprovada no desenho e apagada.
+  // Única peça do catálogo com 3 componentes, e 11 755 B com apenas 4 506 B de `d`:
+  // três mechas custam menos que um cacho (a `cachos-anjo` paga 9 012 B por uma só).
+  "maria-chiquinha": 11755,
+  // **O NOVO RECORDE DE LEVEZA — 9 649 B**, tomado da `curto-repartido` (9 663) no
+  // mesmo dia em que ela o tomou do `moicano` (9 731). É a terceira peça do slot que
+  // CABE em `ORCAMENTO_COMPOSTO.bytes`, e as três são de arte.
+  "tigela-franja": 9649,
+  // ─────────────────────────────────────────────────────────────────────────
+  // O LOTE DE 2026-08-25 — cinco promovidas de uma vez, medidas na promoção.
+  //
+  // ⚠️ **Nenhuma das cinco cabe em `ORCAMENTO_COMPOSTO.bytes` (10 240)**, e é a
+  // decisão A de novo: o teto não veta arte aprovada. A `coques-duplos` chega a
+  // 173 B de caber; a `dreadlocks` passa 63%.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // 4 210 B de `d` para um coque só. Mais pesada que a `coques-duplos`, que tem
+  // DOIS — o desenho do individual é mais detalhado, não maior.
+  "coque-individual": 11462,
+  // A MAIS LEVE das cinco, e a que chega mais perto do teto: **10 413**, 173 B
+  // acima dos 10 240. `d` de 3 168 B, o mais curto do lote.
+  "coques-duplos": 10413,
+  // **A PEÇA MAIS PESADA DO SLOT INTEIRO — 16 672 B**, tomando o posto do
+  // `espetado` (14 372). O `d` sozinho é 9 436 B: as tranças são muitas formas
+  // longas, e a tonal paga o `d` duas vezes.
+  dreadlocks: 16672,
+  // 11 851 B com `d` de 4 606. O topolete custa em altura, não em contorno.
+  elvis: 11851,
+  // 11 504 B para a MENOR massa do elenco (75 060 px) — a peça mais leve em tinta
+  // é a quarta mais pesada em bytes do lote. Massa e bytes não andam juntos: quem
+  // paga é o comprimento do contorno, não a área que ele cerca.
+  //
+  // ⚠️ **11 504 -> 10 916 em 2026-08-26, e o motivo é ARTE, não esteira.** O Doug
+  // apontou no render: a orla rente à borda DIREITA do rosto — ~24 u de largura, do
+  // olho ao queixo — não era cabelo, era a sombra do rosto, que ficou pintada no PNG
+  // e entrou como massa (a peça sai por DIFERENÇA contra a base). Provado trocando
+  // as cores: 9 223 px daquela faixa andavam com `--av-cabelo` em vez de com a pele.
+  //
+  // O conserto foi na ORIGEM — aqueles pixels da arte voltaram à cor da base, e a
+  // esteira regerou. Depois: **39 px** ainda andam com o cabelo ali, e são o contorno
+  // da própria cabeça, de 1 u. O lado esquerdo, que é sweep legítimo, ficou intacto
+  // (9 223 -> 9 192, diferença de retraçado). A arte de antes está guardada.
+  "curto-penteado": 10916,
+} as const;
 
 describe("a base careca não paga nada pelo slot de cabelo", () => {
   const careca = svgDe();
@@ -142,7 +277,12 @@ describe("a base careca não paga nada pelo slot de cabelo", () => {
 });
 
 describe("com modelo, o cabelo é o único leitor de --av-cabelo", () => {
-  const svg = svgDe("coque");
+  // A peça é a FIXTURE paramétrica, e não uma do catálogo. O bloco mede as duas
+  // classes da touca — `.kk-cabelo` (clara) e `.kk-cabelo-s` (escura) —, que só a
+  // família paramétrica emite. Ele compunha `svgDe("coque")` até 2026-08-24; com o
+  // `coque` apagado, apontar para uma peça viva põe uma TONAL aqui, e a tonal não
+  // emite nenhuma das duas: o teste reprovaria por trocar de família, não por defeito.
+  const svg = svgDe(CURTO_PARAMETRICO);
 
   it("declara as duas custom properties", () => {
     expect(svg).toContain("--av-cabelo:");
@@ -182,17 +322,38 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     // Vale para as duas famílias, e é a única forma da pergunta que sobrevive a um
     // laço fechado, onde "a última ponta" é vizinha da primeira.
     const cobertura = coberturaDaCoroa(modelo);
-    if (cobertura === null) {
-      expect(modelo).toBe("moicano");
+    // ⚠️ `null` ERA A SAÍDA DO MOICANO, e ela aprovava por VACUIDADE.
+    //
+    // Enquanto ele era paramétrico não havia tabela de pontos nem `d` para amostrar,
+    // então a régua não tinha o que medir e devolvia nada — e este teste dava por
+    // atendida a exceção sem ter olhado um pixel. Desde a promoção tonal dele
+    // (2026-08-22) `poligonoDoTracado` alimenta a régua, e nenhum dos cinco modelos
+    // devolve `null`. Esta linha existe para que voltar àquele estado REPROVE.
+    expect(cobertura, "a régua não teve o que medir — aprovar aqui é vacuidade").not.toBeNull();
+    if (modelo === "moicano") {
+      // O couro cabeludo à mostra dos dois lados **é** o moicano, e a exceção
+      // continua sendo dele. O que mudou é que ela passou a ser um NÚMERO: a peça
+      // cobre 48,5% da coroa, medido na arte aprovada pelo Doug em 2026-08-22.
+      // Antes a exceção era "a régua não mediu", que valia para qualquer coisa.
+      expect(cobertura).toBeCloseTo(0.4847, 4);
       return;
     }
     expect(cobertura).toBe(1);
   });
 
-  it("está em UMA família só: `pontos` ou `massa`, nunca os dois", () => {
-    // Com os dois, existiriam duas descrições da mesma borda — e `pathCabelo`
+  it("está em UMA família só: `pontos`, `massa` ou `tonal` — nunca duas", () => {
+    // Com duas, existiriam duas descrições da mesma borda — e `pathCabelo`
     // desenharia uma delas em silêncio, enquanto as réguas mediriam a outra.
-    expect(Boolean(cabelo.pontos) && Boolean(cabelo.massa)).toBe(false);
+    //
+    // O par mais caro é `massa` + `tonal`: a máscara de luminosidade é recortada na
+    // silhueta EXATA que o `potrace` devolveu, então uma massa decimada por corda ao
+    // lado dela poria o claro-escuro fora de registro com a peça que o pinta.
+    const familias = [
+      cabelo.pontos && "pontos",
+      cabelo.massa && "massa",
+      cabelo.tonal && "tonal",
+    ].filter(Boolean);
+    expect(familias.length, `declara ${familias.join(" + ")}`).toBeLessThanOrEqual(1);
   });
 
   it("não tem região clara vazando da massa", () => {
@@ -203,7 +364,7 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
 
   it(`deixa testa sobre cada sobrancelha — ${FOLGA_ROSTO} u na desenhada, a arte na traçada`, () => {
     const f = folgaDoRosto(modelo);
-    if (cabelo.massa) {
+    if (cabelo.massa || cabelo.tonal) {
       // O piso da peça TRAÇADA não é `FOLGA_ROSTO` e não é verificável aqui: a folga
       // dela é um fato da arte, e o que o traço controla é não piorá-la — `folga da
       // arte − meio traço`, que exige o PNG do lado e é o gate 3 de
@@ -237,12 +398,12 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
   });
 
   it(
-    cabelo.massa
+    cabelo.massa || cabelo.tonal
       ? "REGISTRA os bytes — o teto não veta arte aprovada (decisão A)"
       : "cabe no teto de bytes do orçamento composto",
     () => {
       const bytes = Buffer.byteLength(svgDe(modelo), "utf-8");
-      if (cabelo.massa) {
+      if (cabelo.massa || cabelo.tonal) {
         // DECISÃO A, 2026-08-06: `ORCAMENTO_COMPOSTO.bytes` é autoimposto e o doc
         // 15:463 declara que ele **não veta arte aprovada**. Uma peça traçada de arte
         // real tem mais pontos que uma paramétrica, e as duas promovidas estouram.
@@ -252,8 +413,7 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
         // quando alguém o remede de propósito. É a mesma doutrina dos selos.
         //
         // Medido em 2026-08-07, na promoção:
-        expect(bytes).toBe(BYTES_TRACADOS[modelo as keyof typeof BYTES_TRACADOS]);
-        expect(bytes).toBeGreaterThan(ORCAMENTO_COMPOSTO.bytes); // o registro é do ESTOURO
+        expect(bytes).toBe(BYTES_DA_ARTE[modelo as keyof typeof BYTES_DA_ARTE]);
         return;
       }
       expect(bytes).toBeLessThanOrEqual(ORCAMENTO_COMPOSTO.bytes);
@@ -278,7 +438,12 @@ describe.each(MODELOS_CABELO)("o modelo %s", (modelo) => {
     // concordando com o emissor, que é o que este teste existe para não fazer.
     const escondida = sobrancelhaEscondida(cabelo);
     const sobrancelhas = (escondida.esq ? 1 : 0) + (escondida.dir ? 1 : 0);
-    expect(formas(svg)).toBe(19 - sobrancelhas + camadasDaTouca(cabelo) + grupos);
+    // A TONAL PAGA PELO QUE DECLARA, e não por uma constante: ela não tem touca (não é
+    // clipada pelo crânio — ver `camadasDaTouca`), e o que ela emite são as passadas de
+    // `tonal.formas`. Escrever "2" aqui seria a régua repetindo o emissor; `formas.length`
+    // é o DADO, e o dia em que uma peça tonal tiver três passadas a conta acompanha.
+    const passadas = cabelo.tonal?.formas.length ?? 0;
+    expect(formas(svg)).toBe(19 - sobrancelhas + camadasDaTouca(cabelo) + passadas + grupos);
   });
 });
 
@@ -308,21 +473,31 @@ describe("a touca é uma curva aberta fechada FORA da silhueta", () => {
  * graça: sem `sombra` declarada, nada muda.
  */
 describe("a faixa de sombra", () => {
-  it("em todo modelo PARAMÉTRICO é paralela — min e max iguais a 22, a assinatura do defeito", () => {
-    const parametricos = MODELOS_CABELO.filter((m) => CABELOS[m].pontos);
-    // Se um dia não sobrar nenhum, é porque todos foram traçados — e aí quem mede
-    // a mesma coisa é `contencaoDaClara`. Zero modelos aqui não pode passar calado.
-    expect(parametricos.length).toBeGreaterThan(0);
-    for (const modelo of parametricos) {
-      const { min, max } = sombraSobreAFranja(modelo);
-      expect(min).toBe(22);
-      expect(max).toBe(22);
-    }
+  it("na franja PARAMÉTRICA é paralela — min e max iguais a 22, a assinatura do defeito", () => {
+    // ⚠️ **O CATÁLOGO FICOU SEM PARAMÉTRICO em 2026-08-24**, quando o Doug apagou o
+    // `coque`. Este teste percorria `MODELOS_CABELO.filter(m => CABELOS[m].pontos)` e
+    // tinha uma guarda contra vacuidade — `expect(parametricos.length).toBeGreaterThan(0)`
+    // —, que fez o que devia: reprovou em vez de passar medindo lista vazia.
+    //
+    // A saída NÃO é apagar a guarda: o comportamento medido aqui é do EMISSOR, e ele
+    // continua vivo em `sombraSobreAFranja`. O que mudou é de onde vem a franja —
+    // fixture congelada, como o resto deste arquivo já faz desde `PONTOS_PARAMETRICO`.
+    // A guarda vira a linha abaixo, que declara o estado e reprova se ele mudar sem
+    // ninguém olhar: no dia em que um paramétrico voltar ao catálogo, este teste cobra
+    // que ele seja medido junto.
+    expect(
+      MODELOS_CABELO.filter((m) => CABELOS[m].pontos),
+      "voltou a existir paramétrico no catálogo — meça-o aqui, não só a fixture",
+    ).toEqual([]);
+
+    const { min, max } = sombraSobreAFranja(CURTO_PARAMETRICO);
+    expect(min).toBe(22);
+    expect(max).toBe(22);
   });
 
   /** A franja paramétrica, com a sombra afinando e engrossando ao longo dela. */
   const comSombra: Cabelo = {
-    id: "coque",
+    id: ID_FIXTURA,
     nome: "curto (sombra própria)",
     pontos: PONTOS_PARAMETRICO,
     sombra: PONTOS_PARAMETRICO.map((p, i) => ({ t: p.t, y: p.y - (12 + 22 * (i % 2)) })),
@@ -398,7 +573,7 @@ describe("o laço fechado", () => {
   ];
 
   const tracado: Cabelo = {
-    id: "coque",
+    id: ID_FIXTURA,
     nome: "curto (traçado)",
     massa: MASSA,
     clara: CLARA,
@@ -480,8 +655,157 @@ describe("o laço fechado", () => {
   });
 
   it("sem região clara, a peça é chapada e o compositor não emite forma vazia", () => {
-    const chapado: Cabelo = { id: "coque", nome: "chapado", massa: MASSA };
+    const chapado: Cabelo = { id: ID_FIXTURA, nome: "chapado", massa: MASSA };
     expect(pathCabeloClaro(chapado)).toBe("");
     expect(pathCabelo(chapado)).not.toBe("");
+  });
+
+  /**
+   * LAÇO VAZIO É AUSÊNCIA DE LAÇO — e até 2026-08-24 ele derrubava o compositor.
+   *
+   * `clara: []` é um array **truthy**, então `pathCabeloClaro` o tratava como "tem
+   * clara", chamava `lacoTY([])` e `laco` lia `pts[0].x` de um array vazio:
+   * `TypeError: Cannot read properties of undefined (reading 'x')`, com a pilha
+   * inteira passando por `compor()`.
+   *
+   * Não é caso hipotético. `converter()` — a esteira traçada — devolve
+   * exatamente isso ao traçar a arte `chanel.png`: massa de 43 pontos, **`clara`
+   * com 0**, 27 `claras`, 18 `nucleo`, 26 `pretas`. Foi assim que o `arte:reguas`
+   * estourou, e a reprovação estava certa.
+   *
+   * As quatro asserções cobrem os quatro caminhos que chegam a `laco`, porque a
+   * guarda que as fecha é uma só e a régua tem de provar que ela vale para todos:
+   * `massa` (:1042), `clara`/`claras` (:1061), `nucleo` (:1078) e `pretas` (:1085).
+   */
+  it("laço VAZIO não derruba o compositor — ele não emite forma, que é o mesmo que não ter", () => {
+    const base = { id: ID_FIXTURA, nome: "laço vazio", massa: MASSA } as const;
+
+    expect(pathCabeloClaro({ ...base, clara: [] })).toBe("");
+    expect(pathCabeloClaro({ ...base, claras: [[]] })).toBe("");
+    expect(pathCabeloNucleo({ ...base, nucleo: [[]] })).toBe("");
+    expect(pathCabeloPretas({ ...base, pretas: [[]] })).toBe("");
+
+    // E a massa vazia, que é o caminho mais fatal dos quatro: sem esta linha a peça
+    // inteira derrubava `compor()` em vez de sair chapada.
+    expect(pathCabelo({ id: ID_FIXTURA, nome: "massa vazia", massa: [] })).toBe("");
+
+    // O CONTRA-CONTROLE, e sem ele as cinco linhas acima passariam por vacuidade:
+    // uma guarda que devolvesse "" para TUDO satisfaria todas elas.
+    expect(pathCabeloClaro({ ...base, clara: MASSA })).not.toBe("");
+    expect(pathCabelo(base)).not.toBe("");
+  });
+});
+
+/**
+ * A FAMÍLIA TONAL — silhueta em vetor, claro-escuro em máscara de luminosidade.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ELA É MEDIDA POR UM LITERAL SINTÉTICO, E NÃO POR UM MODELO DO CATÁLOGO
+ * ---------------------------------------------------------------------------
+ *
+ * Porque **o catálogo não tem nenhum**, e esse é o estado correto de 2026-08-22: o
+ * Doug decidiu refazer os cinco modelos neste padrão, arte a arte, com parecer dele
+ * entre uma e outra. `MODELOS_TONAIS` está vazia de propósito.
+ *
+ * Um teste que esperasse a primeira promoção para nascer deixaria a espinha inteira
+ * — o tipo, o ramo do compositor, o CSS que ela **não** emite — sem gate no bloco em
+ * que ela foi escrita. A união `CabeloOuModelo` já permite compor um literal, e é o
+ * mesmo recurso que `pilha-de-camadas.test.ts` usa pelo mesmo motivo.
+ *
+ * O `d` é um triângulo qualquer: aqui não se mede desenho, mede-se EMISSÃO.
+ */
+describe("a família tonal", () => {
+  const D = "M 120 120 L 380 120 L 380 300 Z";
+  const TONAL: Cabelo = {
+    id: "chanel",
+    nome: "sintético tonal",
+    tonal: {
+      formas: [
+        { d: D, cor: "var(--av-linha)", semTraco: true },
+        { d: D, cor: "var(--av-cabelo, #262626)", semTraco: true },
+      ],
+      tom: { arte: "/items/cabelo/zz-tonal-tom.png", x: 120, y: 120, w: 260, h: 180 },
+    },
+  };
+  const svg = compor({ pele: PELE[1], cabelo: CABELO[1], modeloCabelo: TONAL, ns: "t" });
+
+  it("emite as duas formas com o MESMO `d`, e a de cima vestida pela máscara", () => {
+    // A de baixo é o preto que aparece onde a máscara cede; a de cima é a cor do
+    // cabelo. `d` diferentes fariam o preto vazar pelas beiradas ou sumir.
+    const paths = [...svg.matchAll(/<path d="([^"]+)"([^/]*)\/>/g)].filter((m) => m[1] === D);
+    expect(paths, "as duas passadas da silhueta").toHaveLength(2);
+    expect(paths[0][2]).toContain('fill="var(--av-linha)"');
+    expect(paths[0][2]).not.toContain("mask=");
+    expect(paths[1][2]).toContain('fill="var(--av-cabelo, #262626)"');
+    expect(paths[1][2]).toContain('mask="url(#t-tom-cabelo)"');
+  });
+
+  it("a máscara leva o SLOT no id — é o que a impede de colidir com a do rosto", () => {
+    // Um aluno de barba E cabelo põe DUAS máscaras no mesmo `<svg>`, e o ranking põe
+    // 30 bonecos num documento só. `${ns}-tom-${slot}` é único nos dois eixos, pelo
+    // mesmo motivo que `${ns}-fe` e `${ns}-fd` já são.
+    expect(svg).toContain('<mask id="t-tom-cabelo"');
+    expect(svg).not.toContain('id="t-tom-rosto"');
+    expect(svg).toContain('href="/items/cabelo/zz-tonal-tom.png"');
+  });
+
+  it("`fill-rule=\"evenodd\"` nas duas — sem ela a janela de feição vira mancha", () => {
+    // O `d` vem do `potrace`, que declara a regra na saída dele; a esteira extrai só
+    // o `d`, então quem reemite é o compositor. Sem ela o SVG cai em `nonzero`, que
+    // PREENCHE os buracos — foi assim que 100% do traço do sorriso virou barba em
+    // 2026-08-20.
+    const comRegra = [...svg.matchAll(/<path d="([^"]+)" fill-rule="evenodd"/g)].filter(
+      (m) => m[1] === D,
+    );
+    expect(comRegra).toHaveLength(2);
+  });
+
+  it("NÃO emite regra de CSS de cabelo — a cor mora no dado, não na classe", () => {
+    // `sobrepor()` escreve `fill` direto. Emitir `.kk-cabelo*` aqui seria CSS morto:
+    // regra sem elemento correspondente, que ninguém vê e todo boneco paga. É o
+    // avesso do que `folha-unica.test.ts` mede, e o avesso também custa.
+    for (const classe of ["kk-cabelo", "kk-cabelo-s", "kk-cabelo-m", "kk-cabelo-l", "kk-cabelo-e"])
+      expect(svg, `${classe} saiu sem elemento que a use`).not.toContain(`.${classe}{`);
+    expect(svg).not.toContain('class="kk-cabelo');
+  });
+
+  it("`semTraco` nas duas: nenhum `kk-traco` por cima da peça (G29)", () => {
+    // Peça de arte usa o contorno que o gerador pintou (5,2 u), não o `kk-traco` de
+    // 12 u do compositor — com ele, bigode e boca fundem a 56 e a 32 px.
+    const traco = [...svg.matchAll(/<path class="kk-traco"[^>]*d="([^"]+)"/g)];
+    expect(traco.filter((m) => m[1] === D)).toHaveLength(0);
+  });
+
+  it("recolore: `--av-cabelo` e `--av-cabelo-s` continuam sendo emitidas", () => {
+    // A cor é escolha do aluno (emenda à D27) e chega por custom property. Sem elas
+    // o `fill` cai na reserva `#262626` e o boneco aparece de cabelo preto com loiro
+    // escolhido — o defeito que `rosto-cor.test.ts` mede do lado da barba.
+    expect(svg).toContain(`--av-cabelo:${CABELO[1]}`);
+    expect(svg).toContain("--av-cabelo-s:");
+  });
+
+  it("passa no contrato do SVG e cabe no orçamento de FORMAS", () => {
+    // Nenhuma custom property nova: a Regra Inviolável nº 4 continua de pé, e
+    // `svgContrato.ts` reprovaria qualquer `--av-*` fora do contrato.
+    expect(conferirSvg(svg)).toEqual([]);
+    expect(formas(svg)).toBeLessThanOrEqual(ORCAMENTO_COMPOSTO.formas);
+  });
+
+  it("não emite touca nem extensão — a peça é UMA silhueta", () => {
+    // `cabeloNoCranio` não é chamada (o ramo gateia antes), e `Cabelo.tonal` não tem
+    // onde declarar extensão. Ver `temExtensao` em `camadas.ts`: uma extensão numa
+    // peça tonal sairia como classe sem regra.
+    expect(camadasDaTouca(TONAL)).toBe(0);
+    expect(pathCabelo(TONAL)).toBe("");
+    expect(pathCabeloClaro(TONAL)).toBe("");
+  });
+
+  it("a base careca continua intocada — o tonal não vaza para quem não tem cabelo", () => {
+    // O teto de regressão da base é o teto absoluto do estilo, e o controle negativo
+    // de todo bloco que mexe no slot.
+    const careca = svgDe();
+    expect(careca).not.toContain("--av-cabelo");
+    expect(careca).not.toContain("-tom-cabelo");
+    expect(formas(careca)).toBe(19);
   });
 });

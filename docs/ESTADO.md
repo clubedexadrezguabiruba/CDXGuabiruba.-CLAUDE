@@ -372,10 +372,10 @@ de alunos menores de idade.
 <!-- VOLATIL:inicio -->
 | | |
 |---|---|
-| **Branch** | `avatar/bloco5-rosto` |
-| **Commits à frente de `origin/main`** | 4 |
-| **Árvore** | **11 arquivos sujos** |
-| **Último commit** | 3f39ea8 · 2026-08-21 · feat(avatar): a barba fica sendo UMA — a trancaça vira a peça-padrão da linha de arte |
+| **Branch** | `avatar/barba-trancada-v10` |
+| **Commits à frente de `origin/main`** | 27 |
+| **Árvore** | **51 arquivos sujos** |
+| **Último commit** | 21d9599 · 2026-08-27 · docs(avatar): o pedido de arte dos ÓCULOS — a armação é do Doug, a lente é do código |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -391,9 +391,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **34 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **41 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:rostos-check` · `arte:traco` · `arte:borda` · `arte:peso`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:chapeus-check` · `arte:apertos-check` · `arte:par` · `arte:rostos-check` · `arte:oculos-check` · `arte:cabelos-check` · `arte:traco` · `arte:borda` · `arte:figurinha` · `arte:perimetro` · `arte:peso`
 
 ## Frentes
 
@@ -401,7 +401,7 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 |---|---|---|
 | Backlog do avatar | **30 de 67** (45%) | `docs/avatar/14-backlog-execucao.md` |
 | Auditoria do avatar | **2 de 92** (2%) | `docs/avatar/13-checklist-de-verificacao.md` |
-| Catálogo de cabelo | **5 de 10** no mínimo (faltam **5**) | `docs/avatar/19-rota-de-arte-runbook.md` |
+| Catálogo de cabelo | **19 de 10** no mínimo ✅ | `docs/avatar/19-rota-de-arte-runbook.md` |
 
 Backlog do avatar, fase a fase:
 
@@ -424,9 +424,9 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 92 |
-| **Rotas (`page.tsx`)** | 33 |
-| **Arquivos de teste** | 22 |
+| **Migrations** | 102 |
+| **Rotas (`page.tsx`)** | 34 |
+| **Arquivos de teste** | 26 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes
@@ -434,11 +434,11 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-21 |
+| `CLAUDE.md` | 2026-08-27 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-11 |
-| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-11 |
+| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-27 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
 | `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-20 |
 | `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-11 |

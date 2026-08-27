@@ -32,13 +32,16 @@ import {
   CABELOS,
   MODELOS_CABELO,
   MODELOS_PARAMETRICOS,
+  MODELOS_TONAIS,
   MODELOS_TRACADOS,
+  SOBRANCELHA_COBERTA,
+  completudeDasFamilias,
   arcosDeTraco,
   coberturaDaSobrancelha,
   pathCabelo,
   pathCabeloLinhas,
 } from "../cabelo";
-import type { Cabelo, PontoFranja } from "../cabelo";
+import type { Cabelo, ModeloCabelo, PontoFranja } from "../cabelo";
 import { PECAS_DA_ARTE } from "../pecas-da-arte";
 import { SOBRANCELHA } from "../geometria";
 import { compor } from "../compositor";
@@ -69,9 +72,45 @@ const MASSA: readonly PontoFranja[] = [
   { t: -0.2, y: 30 },
 ];
 
+/**
+ * O `id` das FIXTURAS sintéticas — rótulo, não alvo. Ver o gêmeo em `cabelo.test.ts`.
+ *
+ * Era `"coque"` até 2026-08-24, quando o Doug apagou o último paramétrico do elenco.
+ * A união `ModeloCabelo` exige um nome vivo; nenhuma destas fixtures lê a peça do
+ * catálogo com esse nome.
+ */
+const ID_FIXTURA = "chanel" as const;
+
+/**
+ * UM PARAMÉTRICO SINTÉTICO — e ele nasceu porque o catálogo ficou sem nenhum.
+ *
+ * Três testes abaixo compunham a peça `coque` do catálogo para exercitar a família:
+ * `.kk-cabelo-s` com fill e stroke, `pathCabeloLinhas` devolvendo vazio, `arcosDeTraco`
+ * devolvendo `null`. Nenhum deles queria AQUELA peça — queriam *uma* peça com
+ * `pontos`. Com `MODELOS_PARAMETRICOS` vazia, apontar para o catálogo é impossível, e
+ * apontar para uma peça tonal mediria outra família em silêncio.
+ *
+ * Os pontos são os de `cabelo.test.ts` (`PONTOS_PARAMETRICO`), pelo mesmo motivo que
+ * lá: congelar a forma aqui separa *como a família se emite* de *o que o catálogo tem*.
+ */
+const PARAMETRICO: Cabelo = {
+  id: ID_FIXTURA,
+  nome: "paramétrico (fixture)",
+  pontos: [
+    { t: -0.12, y: 232 },
+    { t: 0.05, y: 178 },
+    { t: 0.2, y: 134 },
+    { t: 0.42, y: 124 },
+    { t: 0.68, y: 123 },
+    { t: 0.88, y: 130 },
+    { t: 0.99, y: 176 },
+    { t: 1.14, y: 228 },
+  ],
+};
+
 /** Traço na borda de baixo (0→7) e num pedaço da volta. A coroa fica sem linha. */
 const tracado: Cabelo = {
-  id: "coque",
+  id: ID_FIXTURA,
   nome: "curto (traçado, com arcos de traço)",
   massa: MASSA,
   linhas: [
@@ -91,14 +130,119 @@ const conferirSelo = (chave: string, svg: string) => {
   expect(sha(svg), `${chave}: algum byte fora do <style> mudou`).toBe(antes.sha);
 };
 
-describe("as duas famílias do catálogo são declaradas, não inferidas", () => {
-  it("toda peça do catálogo está em EXATAMENTE uma das duas listas", () => {
-    // Sem esta amarra, um modelo novo nasceria fora das duas listas e escaparia dos
-    // dois blocos de selo abaixo — em silêncio, e justamente no primeiro dia dele.
-    // É o modo de falha por vacuidade, escrito na forma que este arquivo permite.
-    const declarados = [...MODELOS_PARAMETRICOS, ...MODELOS_TRACADOS];
+describe("as TRÊS famílias do catálogo são declaradas, não inferidas", () => {
+  it("toda peça do catálogo está em EXATAMENTE uma das três listas", () => {
+    // Sem esta amarra, um modelo novo nasceria fora das listas e escaparia dos blocos
+    // de selo abaixo — em silêncio, e justamente no primeiro dia dele. É o modo de
+    // falha por vacuidade, escrito na forma que este arquivo permite.
+    //
+    // A régua mora em `cabelo.ts` (`completudeDasFamilias`) e não aqui porque a
+    // TERCEIRA lista nasceu vazia: uma soma escrita neste arquivo teria de ser
+    // reescrita a cada promoção, e é exatamente o tipo de número que este
+    // repositório já pagou para não manter em dois lugares.
+    const { foraDasListas, emDuasListas } = completudeDasFamilias();
+    expect(foraDasListas, "modelo do catálogo fora das três listas").toEqual([]);
+    expect(emDuasListas, "modelo em mais de uma lista").toEqual([]);
+  });
+
+  it("as três listas somam o catálogo, e a soma é conferida contra `MODELOS_CABELO`", () => {
+    // O par da amarra acima, pelo lado do conjunto: `completudeDasFamilias` responde
+    // pelas duas queixas, mas não afirma que a UNIÃO é o catálogo — ela poderia
+    // aprovar um id declarado que não existisse em `CABELOS`.
+    const declarados = [...MODELOS_PARAMETRICOS, ...MODELOS_TRACADOS, ...MODELOS_TONAIS];
     expect([...declarados].sort()).toEqual([...MODELOS_CABELO].sort());
-    expect(new Set(declarados).size, "um modelo aparece nas duas listas").toBe(declarados.length);
+  });
+
+  it("quantas peças cada família tem — e o dia em que uma migrar, é aqui que se lê", () => {
+    // ⚠️ ESTES NÚMEROS SÃO PARA CAIR, uma vez por promoção. Eles não defendem nada
+    // sozinhos: declaram o estado do elenco, que o plano de 2026-08-22 move peça a
+    // peça — os cinco modelos vão para o padrão tonal, cada um depois do parecer do
+    // Doug sobre a folha.
+    //
+    // O `chanel` foi o primeiro: migrou de `MODELOS_TRACADOS` para `MODELOS_TONAIS`
+    // em 2026-08-22, com a arte velha sobrescrita e a linha dele apagada de `ARTES`
+    // em `scripts/avatar/arte/pecas.ts`.
+    //
+    // Quando a próxima migrar, este teste reprova, e a mensagem diz o que fazer:
+    // conferir que a promoção regravou os selos DAQUELA peça, e então mover o
+    // número. Sem ele, o bloco de selos dos traçados encolheria em silêncio.
+    //
+    // ⚠️ O `burst-fade` subiu o tonal para 3 em 2026-08-22 SEM baixar nenhum dos
+    // outros dois: ele não migrou de família, entrou de fora. É o caso que a leitura
+    // ingênua destes números não prevê — "tonal subiu, então traçado desceu" é falso
+    // aqui —, e é por isso que a soma vive na asserção de conjunto acima, não nesta.
+    //
+    // ⚠️ A `assimetrico` migrou em 2026-08-22/23: TRAÇADA -> TONAL. É o caso
+    // "normal" que este bloco prevê, e o par de números move junto — tonal 3 -> 4,
+    // traçado 2 -> 1. O selo dela foi regravado na mesma passada (`avatar:congelar`
+    // escreveu 13 selos, contra 11: o `assimetrico` normal e o animado entraram, e
+    // NENHUM selo existente mudou de bytes). O registro de bytes dela em
+    // `cabelo.test.ts` caiu de 14 074 para 12 176, que é o que a família tonal faz.
+    //
+    // ⚠️ **2026-08-24: as duas últimas não migraram — foram APAGADAS.** O Doug
+    // reprovou `espetado` (cor vazando pelo contorno) e `coque` (duas vezes, a última
+    // com 9,0% da peça fora do `viewBox`), e decidiu desenhar arte nova em vez de
+    // refazer aquelas. Traçado 1 -> 0 e paramétrico 1 -> 0 **sem** o tonal subir: é o
+    // terceiro caso que este bloco vê, depois de "migrou" e "entrou de fora".
+    // ⚠️ **2026-08-24, algumas horas depois: SETE entraram de fora, de uma vez.** É o
+    // quarto caso, e ele é o primeiro que a instrução "nunca em lote" da mensagem
+    // abaixo não previa — ela nasceu quando a promoção era peça a peça, com o Doug
+    // olhando a folha de contato entre cada duas. Ele trocou o lugar do parecer para
+    // o render do `/dev/avatar-kokeshi`, onde as peças ainda não promovidas aparecem
+    // no seletor "da arte · tonal", e julgou as sete numa sessão só.
+    //
+    // O que a instrução protegia continua protegido, e é o que importa: **os selos
+    // foram regravados porque as peças são novas, nunca para calar vermelho.** A
+    // prova está no diff de `parametrico-congelado.ts`, 13 selos -> 23:
+    //
+    //   +14  as 7 peças novas × 2 (parado/animado)
+    //   − 4  os selos ÓRFÃOS do `espetado` e do `coque`, apagados do catálogo de
+    //        manhã e esquecidos aqui. `conferirSelo` percorre as listas, então selo
+    //        de peça inexistente nunca é lido — ele não reprovava, e por isso ficou
+    //     0  **nenhum dos 8 selos tonais anteriores mudou de bytes ou de SHA**
+    //
+    // ⚠️ **2026-08-25: CINCO entraram de fora, e é o mesmo quarto caso.** Três
+    // (`coque-individual`, `coques-duplos`, `dreadlocks`) estavam no seletor desde
+    // 2026-08-24 esperando o parecer; duas (`elvis`, `curto-penteado`) atravessaram a
+    // esteira no próprio dia 25, quando a §5-E do doc 22 foi reescrita pela pasta de
+    // entrega e revelou que elas nunca tinham entrado. O Doug: *"já olhei e todos
+    // aprovados"*. O tonal vai de 14 para **19**.
+    //
+    // A prova de que o lote é de peças NOVAS foi feita ANTES de aceitar o número, e
+    // é a mesma de 2026-08-24 — o diff de `parametrico-congelado.ts`, 14 -> 19:
+    //
+    //   +5  `coque-individual`, `coques-duplos`, `curto-penteado`, `dreadlocks`, `elvis`
+    //    0  **nenhum selo anterior mudou, e nenhum sumiu** — os 14 vieram byte a byte
+    //
+    // Selo que se move numa promoção que não é dele continua sendo defeito.
+    expect(
+      MODELOS_TONAIS.length,
+      "uma peça migrou para a família tonal: regrave o selo DELA (`npm run avatar:congelar`) " +
+        "e atualize este número — nunca em lote, a menos que o lote seja de peças NOVAS " +
+        "e nenhum selo anterior tenha se mexido",
+    ).toBe(19);
+    expect(
+      MODELOS_TRACADOS.length,
+      "a família traçada está VAZIA desde 2026-08-24: se alguém entrou, os selos dos " +
+        "traçados voltaram a medir e este número precisa subir junto",
+    ).toBe(0);
+    expect(
+      MODELOS_PARAMETRICOS.length,
+      "a família paramétrica está VAZIA desde 2026-08-24 — mesma regra da linha acima",
+    ).toBe(0);
+  });
+
+  it("nenhum modelo declara duas famílias ao mesmo tempo — `pontos` × `massa` × `tonal`", () => {
+    // A exclusividade é lei desde 2026-08-06 (`Cabelo`, docstring): duas descrições
+    // da mesma borda divergem sempre. Com o braço tonal ela passa a ter três lados, e
+    // o mais caro é `massa` + `tonal`: a máscara de tom é recortada na silhueta EXATA
+    // do potrace, então uma massa decimada por corda ao lado dela poria o
+    // claro-escuro fora de registro com a peça que o pinta.
+    for (const m of MODELOS_CABELO) {
+      const c = CABELOS[m];
+      const familias = [c.pontos && "pontos", c.massa && "massa", c.tonal && "tonal"].filter(Boolean);
+      expect(familias.length, `${m} declara ${familias.join(" + ")}`).toBeLessThanOrEqual(1);
+    }
   });
 });
 
@@ -112,7 +256,7 @@ describe("a regressão: o B4 não vazou para a família paramétrica", () => {
     // filtrado por `massa`. Com o filtro, um paramétrico que ganhasse `massa` por
     // acidente sairia da lista e deixaria de ser conferido: o teste concordaria com
     // o defeito que ele existe para pegar.
-    for (const modelo of MODELOS_PARAMETRICOS) {
+    for (const modelo of MODELOS_PARAMETRICOS as readonly ModeloCabelo[]) {
       expect(CABELOS[modelo].massa, `${modelo} deixou de ser paramétrico`).toBeUndefined();
     }
   });
@@ -150,7 +294,7 @@ describe("os traçados promovidos continuam byte a byte", () => {
   it("eles são traçados mesmo — `massa` presente, `pontos` ausente", () => {
     // O par da amarra de família do bloco de cima, na direção contrária. Sem ela,
     // um traçado que voltasse a ser paramétrico passaria pelos selos calado.
-    for (const modelo of MODELOS_TRACADOS) {
+    for (const modelo of MODELOS_TRACADOS as readonly ModeloCabelo[]) {
       expect(CABELOS[modelo].massa, `${modelo} perdeu a massa`).toBeDefined();
       expect(CABELOS[modelo].pontos, `${modelo} virou paramétrico`).toBeUndefined();
     }
@@ -160,12 +304,74 @@ describe("os traçados promovidos continuam byte a byte", () => {
     // `PECAS_DA_ARTE.entrada.id` é `"entrada"`, gravado por `arte/pecas.ts` a partir
     // de `entrada.png`. Importar o objeto inteiro poria `CABELOS.espetado.id ===
     // "entrada"` em runtime — o cast do arquivo gerado mascara isso no tipo.
-    for (const modelo of MODELOS_TRACADOS) {
+    for (const modelo of MODELOS_TRACADOS as readonly ModeloCabelo[]) {
       expect(CABELOS[modelo].id, `${modelo} carrega o id do arquivo de origem`).toBe(modelo);
     }
   });
 
   it.each(MODELOS_TRACADOS)("%s compõe byte a byte igual ao da aprovação", (modelo) => {
+    for (const animado of [false, true]) {
+      conferirSelo(`${modelo}${animado ? " (animado)" : ""}`, svgDe(modelo, animado));
+    }
+  });
+});
+
+/**
+ * OS TONAIS PROMOVIDOS — e este bloco existe porque o buraco dele foi medido.
+ *
+ * Quando o `chanel` migrou de `MODELOS_TRACADOS` para `MODELOS_TONAIS`, em
+ * 2026-08-22, `dump-parametricos.ts` só emitia paramétricos e traçados. Os dois
+ * selos dele **saíram do teste sem sair do arquivo**: ficaram no disco como texto que
+ * ninguém lia, e por isso passaram despercebidos — um selo morto não reprova, ele
+ * some. Foi descoberto na promoção do `moicano`, no mesmo dia, quando o segundo
+ * modelo ia pelo mesmo caminho.
+ *
+ * A regra da rota de arte diz *"um paramétrico que mude de família não pode sumir do
+ * teste em silêncio"*, e ela era cobrada só na saída — a lista de origem encolhia e
+ * `completudeDasFamilias` reclamava. Não havia nada cobrando a **chegada**. Este
+ * bloco é essa cobrança.
+ *
+ * O que um movimento aqui quer dizer é o mesmo do bloco de cima, por outra esteira:
+ * a máscara de tom ou a silhueta mudaram, e quem escreve as duas é
+ * `npm run arte:cabelos` a partir do PNG aprovado. `arte:cabelos --check` (em
+ * `verify:arte`) pega o literal defasando da esteira; estes selos pegam o passo
+ * seguinte, que é o render mudando.
+ */
+describe("os tonais promovidos continuam byte a byte", () => {
+  it("eles são tonais mesmo — `tonal` presente, `pontos` e `massa` ausentes", () => {
+    // O par da amarra de família dos dois blocos de cima. O `moicano` veio da
+    // família PARAMÉTRICA (2026-08-22), então aqui a queixa cobre os dois lados:
+    // voltar a ter `pontos` é desfazer a promoção dele; ganhar `massa` é confundi-lo
+    // com a família traçada, cujo `d` é outro.
+    for (const modelo of MODELOS_TONAIS) {
+      expect(CABELOS[modelo].tonal, `${modelo} perdeu o braço tonal`).toBeDefined();
+      expect(CABELOS[modelo].pontos, `${modelo} virou paramétrico`).toBeUndefined();
+      expect(CABELOS[modelo].massa, `${modelo} virou traçado`).toBeUndefined();
+    }
+  });
+
+  it("a máscara de tom é um CAMINHO servido à parte, nunca bytes embutidos", () => {
+    // O `data:` foi a primeira versão e custava 753,0 KB de gzip num ranking de 30,
+    // contra 17,6 KB com arquivo externo: o boneco composto passa da janela de
+    // 32 768 B do DEFLATE e a dedução do blob morre. A trava é o campo ser um
+    // caminho — e um `data:` aqui reprova antes de alguém medir gzip de novo.
+    for (const modelo of MODELOS_TONAIS) {
+      const arte = CABELOS[modelo].tonal?.tom.arte ?? "";
+      expect(arte, `${modelo} sem máscara de tom`).not.toBe("");
+      expect(arte.startsWith("/items/"), `${modelo}: a máscara não é caminho — "${arte.slice(0, 24)}…"`).toBe(true);
+    }
+  });
+
+  it("o catálogo sobrescreve a identidade que o gerador gravou do NOME DO ARQUIVO", () => {
+    // Mesma armadilha dos traçados: `CABELOS_DA_ARTE.moicano.id` é `"cabelo-moicano"`
+    // ou o nome do arquivo, gravado pela esteira — e o cast do literal gerado
+    // mascara isso no tipo.
+    for (const modelo of MODELOS_TONAIS) {
+      expect(CABELOS[modelo].id, `${modelo} carrega o id do arquivo de origem`).toBe(modelo);
+    }
+  });
+
+  it.each(MODELOS_TONAIS)("%s compõe byte a byte igual ao da aprovação", (modelo) => {
     for (const animado of [false, true]) {
       conferirSelo(`${modelo}${animado ? " (animado)" : ""}`, svgDe(modelo, animado));
     }
@@ -211,7 +417,7 @@ describe("a peça sobreposta é emitida DEPOIS das feições, e o cabelo tapa o 
   it("o paramétrico não tem peça sobreposta — e é por isso que a ordem nunca o afetou", () => {
     // O controle negativo do bloco. Se um dia um paramétrico passar a emitir massa
     // fora do clip, esta linha cai e o teste de cima passa a valer para ele também.
-    for (const modelo of MODELOS_PARAMETRICOS) {
+    for (const modelo of MODELOS_PARAMETRICOS as readonly ModeloCabelo[]) {
       expect(iPeca(svgDe(modelo)), `${modelo} passou a emitir massa fora do clip`).toBe(-1);
     }
   });
@@ -232,6 +438,20 @@ describe("a sobrancelha coberta pelo cabelo não é desenhada", () => {
    * REMOVE elemento. Por isso o número é exato dos dois lados: 2 para quem não é
    * coberto, 1 para a `entrada-2`. Zero reprova.
    */
+  /**
+   * ⚠️ O LIMIAR É LIDO DE `cabelo.ts`, NUNCA COPIADO — e esta linha nasceu de um
+   * defeito real (2026-08-23).
+   *
+   * Este bloco trazia `0.85` escrito à mão em cinco lugares. Quando a `assimetrico`
+   * derrubou `SOBRANCELHA_COBERTA` para **0.50** — decisão medida, com o docstring
+   * da constante guardando os dois casos que a provaram —, o produto passou a
+   * esconder a sobrancelha dela e o teste continuou cobrando 85%. As três asserções
+   * abaixo reprovaram sobre um render que estava CERTO, e o número que a mensagem
+   * mostrava (74,1%) era exatamente o da peça que motivou a mudança.
+   *
+   * Segunda cópia de régua é a classe de bug que este repositório mais persegue.
+   * Importando a constante, mover o limiar volta a ser uma linha em um arquivo.
+   */
   const quantasSobrancelhas = (svg: string) =>
     (svg.match(new RegExp(`<path class="kk-risco" stroke-width="${SOBRANCELHA.espessura}"`, "g")) ?? [])
       .length;
@@ -242,7 +462,8 @@ describe("a sobrancelha coberta pelo cabelo não é desenhada", () => {
     // continuaria verde medindo a peça errada.
     for (const modelo of MODELOS_CABELO) {
       const c = coberturaDaSobrancelha(CABELOS[modelo]);
-      const cobertas = (c.esq >= 0.85 ? 1 : 0) + (c.dir >= 0.85 ? 1 : 0);
+      const cobertas =
+        (c.esq >= SOBRANCELHA_COBERTA ? 1 : 0) + (c.dir >= SOBRANCELHA_COBERTA ? 1 : 0);
       expect(quantasSobrancelhas(svgDe(modelo)), `${modelo}: emissão × cobertura`).toBe(
         2 - cobertas,
       );
@@ -256,8 +477,12 @@ describe("a sobrancelha coberta pelo cabelo não é desenhada", () => {
     // que **ninguém** cobre (0 − 0 = 2 sempre) ou em que **todos** cobrem. Ela só
     // mede alguma coisa enquanto os dois lados existirem, e é isto que cobra isso.
     const coberturas = MODELOS_CABELO.map((m) => coberturaDaSobrancelha(CABELOS[m]));
-    const comCobertura = coberturas.filter((c) => c.esq >= 0.85 || c.dir >= 0.85);
-    const semCobertura = coberturas.filter((c) => c.esq < 0.85 && c.dir < 0.85);
+    const comCobertura = coberturas.filter(
+      (c) => c.esq >= SOBRANCELHA_COBERTA || c.dir >= SOBRANCELHA_COBERTA,
+    );
+    const semCobertura = coberturas.filter(
+      (c) => c.esq < SOBRANCELHA_COBERTA && c.dir < SOBRANCELHA_COBERTA,
+    );
     expect(comCobertura.length, "nenhuma peça cobre sobrancelha — a régua ficou vácua").toBeGreaterThan(0);
     expect(semCobertura.length, "todas as peças cobrem — a régua ficou vácua").toBeGreaterThan(0);
   });
@@ -267,15 +492,19 @@ describe("a sobrancelha coberta pelo cabelo não é desenhada", () => {
     // O par de asserções que impede o teste de passar medindo o nada: a esquerda
     // tem de estar coberta E a direita tem de estar livre. Uma peça que cobrisse as
     // duas, ou nenhuma, cairia aqui em vez de passar calada.
-    expect(c.esq, "a assimetrico deixou de cobrir a sobrancelha esquerda").toBeGreaterThan(0.85);
-    expect(c.dir, "a assimetrico passou a cobrir a direita também").toBeLessThan(0.85);
+    expect(c.esq, "a assimetrico deixou de cobrir a sobrancelha esquerda").toBeGreaterThan(
+      SOBRANCELHA_COBERTA,
+    );
+    expect(c.dir, "a assimetrico passou a cobrir a direita também").toBeLessThan(
+      SOBRANCELHA_COBERTA,
+    );
     expect(quantasSobrancelhas(svgDe("assimetrico"))).toBe(1);
   });
 });
 
 describe("as classes do cabelo saem por família, e nenhuma regra sai à toa", () => {
   it("o paramétrico emite `.kk-cabelo-s` com fill E stroke, e nenhuma das duas novas", () => {
-    const css = cssDe(svgDe("coque"));
+    const css = cssDe(svgDe(PARAMETRICO));
     expect(css).toContain(".t .kk-cabelo-s{fill:var(--av-cabelo-s);stroke:var(--av-linha)");
     expect(css).not.toContain(".kk-cabelo-m");
     expect(css).not.toContain(".kk-cabelo-l");
@@ -291,7 +520,7 @@ describe("as classes do cabelo saem por família, e nenhuma regra sai à toa", (
   });
 
   it("traçado SEM arcos não emite `.kk-cabelo-l` — regra emitida à toa custa bytes", () => {
-    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: ID_FIXTURA, nome: "chapado de traço", massa: MASSA };
     const css = cssDe(svgDe(semTraco));
     expect(css).toContain(".kk-cabelo-m");
     expect(css).not.toContain(".kk-cabelo-l");
@@ -328,9 +557,9 @@ describe("o traço é a própria massa, no trecho apontado", () => {
   });
 
   it("sem `linhas`, não há path de traço — e o compositor não emite forma vazia", () => {
-    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: ID_FIXTURA, nome: "chapado de traço", massa: MASSA };
     expect(pathCabeloLinhas(semTraco)).toBe("");
-    expect(pathCabeloLinhas("coque")).toBe("");
+    expect(pathCabeloLinhas(PARAMETRICO)).toBe("");
   });
 });
 
@@ -343,8 +572,8 @@ describe("a régua dos arcos", () => {
   });
 
   it("devolve `null` quando não há o que medir, e os dois casos são nomeados", () => {
-    expect(arcosDeTraco("coque")).toBeNull(); // paramétrico
-    expect(arcosDeTraco({ id: "coque", nome: "chapado", massa: MASSA })).toBeNull();
+    expect(arcosDeTraco(PARAMETRICO)).toBeNull(); // paramétrico
+    expect(arcosDeTraco({ id: ID_FIXTURA, nome: "chapado", massa: MASSA })).toBeNull();
   });
 
   it("R10: reprova índice fora da massa — o `d` sairia com NaN e nada acusaria", () => {
@@ -382,7 +611,7 @@ describe("a peça traçada composta", () => {
   });
 
   it("paga UMA forma pelo traço, e só quando há arcos", () => {
-    const semTraco: Cabelo = { id: "coque", nome: "chapado de traço", massa: MASSA };
+    const semTraco: Cabelo = { id: ID_FIXTURA, nome: "chapado de traço", massa: MASSA };
     // Sem clara: massa (1) + traço (1). A base careca são 19.
     expect(formas(svgDe(tracado))).toBe(19 + 2);
     expect(formas(svgDe(semTraco))).toBe(19 + 1);

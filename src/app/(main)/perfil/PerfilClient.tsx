@@ -9,8 +9,8 @@ import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import MolduraPatente from "@/components/avatar/MolduraPatente";
 import EditorDeAparencia, {
   type Aparencia,
-  type CabeloDoCatalogo,
-  type TrajeDoCatalogo,
+  type PecaDoCatalogo,
+  type SlotDaVitrine,
 } from "@/components/avatar/EditorDeAparencia";
 import { createClient } from "@/lib/supabase/client";
 import Card, { CardTitle } from "@/components/ui/Card";
@@ -65,12 +65,34 @@ interface PerfilClientProps {
   profile: ProfileData;
   /** As 3 colunas do Bloco C, como o servidor as gravou. É o palco em repouso. */
   aparencia: Aparencia;
-  /** `avatar_hair_catalog` inteiro — inclusive o que este aluno ainda não alcança. */
-  catalogoCabelo: CabeloDoCatalogo[];
+  /** `avatar_catalogo` do slot cabelo, inteiro, com `possui` já resolvido. */
+  catalogoCabelo: PecaDoCatalogo[];
   /** `avatar_catalogo` do slot traje, inteiro, com `possui` já resolvido. */
-  catalogoTraje: TrajeDoCatalogo[];
+  catalogoTraje: PecaDoCatalogo[];
+  /** `avatar_catalogo` do slot rosto, inteiro, com `possui` já resolvido. */
+  catalogoRosto: PecaDoCatalogo[];
+  /**
+   * `avatar_catalogo` do slot `oculos` — SLOT PRÓPRIO desde 2026-08-27.
+   *
+   * Lista separada da do rosto, e não um filtro dela: o aluno veste os dois ao mesmo
+   * tempo, e cada slot tem a própria coluna em `users`.
+   */
+  catalogoOculos: PecaDoCatalogo[];
+  /**
+   * `avatar_catalogo` do slot `chapeu` — as 9 peças, com `possui` já resolvido.
+   *
+   * O slot nasceu completo (arte, coluna, RPC, prop no componente) e **sem vitrine**:
+   * até 2026-08-27 não havia grupo no editor, e as 9 peças eram inalcançáveis.
+   */
+  catalogoChapeu: PecaDoCatalogo[];
   /** `users.avatar_traje`. `null` é o macacão de treino — ausência de peça. */
   trajeInicial: string | null;
+  /** `users.avatar_rosto`. `null` é rosto limpo. */
+  rostoInicial: string | null;
+  /** `users.avatar_oculos`. `null` é sem óculos. */
+  oculosInicial: string | null;
+  /** `users.avatar_chapeu`. `null` é cabeça descoberta. */
+  chapeuInicial: string | null;
   botsDefeated: number;
   lessonsCompleted: number;
   puzzlesSolved: number;
@@ -297,7 +319,13 @@ export default function PerfilClient({
   aparencia,
   catalogoCabelo,
   catalogoTraje,
+  catalogoRosto,
+  catalogoOculos,
+  catalogoChapeu,
   trajeInicial,
+  rostoInicial,
+  oculosInicial,
+  chapeuInicial,
   botsDefeated,
   lessonsCompleted,
   puzzlesSolved,
@@ -312,16 +340,28 @@ export default function PerfilClient({
   // diferença entre os dois é o que o aviso de "não salvo" mede.
   const [salvo, setSalvo] = useState<Aparencia>(aparencia);
   const [emProva, setEmProva] = useState<Aparencia>(aparencia);
+  // O cabelo saiu desta conta em 2026-08-23: ele grava no clique, então nunca
+  // está "não salvo". Sobraram as duas cores, que são o que o botão manda.
   const naoSalvo =
-    emProva.skin !== salvo.skin ||
-    emProva.hair !== salvo.hair ||
-    emProva.hairColor !== salvo.hairColor;
+    emProva.skin !== salvo.skin || emProva.hairColor !== salvo.hairColor;
 
-  // O TRAJE NÃO TEM ESTADO "EM PROVA", e a assimetria é do banco: `equipar_peca`
-  // recebe um slot por chamada e é idempotente, então vestir já é o fato. Este
-  // estado só existe para o palco repintar sem esperar o `router.refresh()` — e
-  // ele só muda DEPOIS de o servidor confirmar.
+  // AS PEÇAS NÃO TÊM ESTADO "EM PROVA", e a assimetria é do banco: `equipar_peca`
+  // recebe um slot por chamada e é idempotente, então vestir já é o fato. Estes
+  // estados só existem para o palco repintar sem esperar o `router.refresh()` — e
+  // eles só mudam DEPOIS de o servidor confirmar.
+  //
+  // ⚠️ O CABELO ENTROU NESSE REGIME EM 2026-08-23, e é a única mudança de
+  // comportamento que o aluno percebe: ele deixou de ser "em prova" junto com as
+  // cores e passou a gravar no clique, como o traje. O `naoSalvo` acima continua
+  // medindo só o que ainda espera o botão — as duas cores da emenda à D27.
   const [traje, setTraje] = useState<string | null>(trajeInicial);
+  const [rosto, setRosto] = useState<string | null>(rostoInicial);
+  // Estado SEPARADO do rosto, e é o que faz a combinação existir: enquanto os dois
+  // dividiam o slot, este era o mesmo `useState` e um clique tirava o outro.
+  const [oculos, setOculos] = useState<string | null>(oculosInicial);
+  // O chapéu tem estado próprio pelo mesmo motivo dos outros: `equipar_peca` grava
+  // um slot por chamada, e o palco repinta sem esperar o `router.refresh()`.
+  const [chapeu, setChapeu] = useState<string | null>(chapeuInicial);
 
   /**
    * A PRIMEIRA CHAMADORA DE `equipar_peca` — ela existia desde o Bloco 1 e nunca
@@ -335,14 +375,27 @@ export default function PerfilClient({
    * já está no estado local. Recarregar a árvore inteira por uma troca de roupa
    * custaria as seis consultas do `page.tsx` a cada clique.
    */
-  async function trocarTraje(slug: string | null): Promise<string | null> {
+  async function trocarPeca(
+    slot: SlotDaVitrine,
+    slug: string | null,
+  ): Promise<string | null> {
     const supabase = createClient();
     const { error } = await supabase.rpc("equipar_peca", {
-      p_slot: "traje",
+      p_slot: slot,
       p_slug: slug,
     });
     if (error) return `Não foi possível vestir essa peça. ${error.message}`;
-    setTraje(slug);
+    if (slot === "traje") setTraje(slug);
+    else if (slot === "rosto") setRosto(slug);
+    else if (slot === "oculos") setOculos(slug);
+    else if (slot === "chapeu") setChapeu(slug);
+    else {
+      // O cabelo mora nos DOIS estados de aparência porque é o palco que o
+      // desenha: `emProva` para repintar agora, `salvo` para o aviso de "não
+      // salvo" não acusar uma peça que o servidor já gravou.
+      setEmProva((a) => ({ ...a, hair: slug }));
+      setSalvo((a) => ({ ...a, hair: slug }));
+    }
     return null;
   }
 
@@ -374,7 +427,7 @@ export default function PerfilClient({
     {
       label: "Tática",
       stats: [
-        { icon: <IconTarget />, value: puzzlesSolved.toString(), label: "Puzzles", accent: true },
+        { icon: <IconTarget />, value: puzzlesSolved.toString(), label: "Desafios", accent: true },
         { icon: <IconBolt />, value: profile.puzzleBestStreak > 0 ? profile.puzzleBestStreak.toString() : "—", label: "Melhor Seq.", accent: false },
         { icon: <IconFlame />, value: profile.longestStreak > 0 ? profile.longestStreak.toString() : "—", label: "Rec. Streak", accent: false },
       ],
@@ -392,7 +445,7 @@ export default function PerfilClient({
       stats: [
         { icon: <IconBook />, value: lessonsCompleted.toString(), label: "Aulas", accent: false },
         { icon: <IconBot />, value: `${botsDefeated}/10`, label: "Bots", accent: false },
-        { icon: <IconTrophy />, value: `${unlockedCount}/${achievements.length}`, label: "Insígnias", accent: false },
+        { icon: <IconTrophy />, value: `${unlockedCount}/${achievements.length}`, label: "Conquistas", accent: false },
       ],
     },
   ];
@@ -444,6 +497,16 @@ export default function PerfilClient({
                   hair={emProva.hair}
                   hairColor={emProva.hairColor}
                   traje={traje}
+                  rosto={rosto}
+                  // O `oculos` faltava aqui desde que o slot nasceu, e a falta era
+                  // MUDA: prop opcional ausente não é erro de `typecheck`, então o
+                  // aluno equipava o óculos, o banco gravava, a navbar desenhava — e
+                  // este palco, o boneco grande do próprio perfil, saía sem ele.
+                  oculos={oculos}
+                  // E o `chapeu` faltava pelo mesmo motivo, desde sempre: a coluna
+                  // existe no banco desde o Bloco 1 e nenhuma tela a passava para o
+                  // palco. Prop opcional ausente continua invisível ao `typecheck`.
+                  chapeu={chapeu}
                   altura={168}
                   animado
                   ns="palco"
@@ -479,6 +542,17 @@ export default function PerfilClient({
                   style={{ width: `${xpPercent}%` }}
                 />
               </div>
+              {/*
+                NÍVEL × TÍTULO, dito de uma vez — o registro de formação é o
+                lugar certo, porque é aqui que os dois números aparecem juntos.
+                São duas progressões com ritmos deliberadamente diferentes: o
+                nível sobe com qualquer atividade, o título só com trilha
+                concluída (~um semestre). Sem esta linha, a lentidão do título
+                lê como defeito em vez de projeto.
+              */}
+              <p className="mt-2 text-center text-xs text-ink/55">
+                O nível mede sua presença. O título mede sua formação.
+              </p>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-sm">
@@ -548,7 +622,7 @@ export default function PerfilClient({
               <div className="border-l-[3px] border-amber-400 px-5 py-4">
                 <div className="flex items-center justify-between pl-3">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-stone-600">
-                    Insígnias
+                    Conquistas
                   </h3>
                   <span className="text-xs font-bold tabular-nums text-amber-700">
                     {unlockedCount}/{achievements.length}
@@ -574,7 +648,7 @@ export default function PerfilClient({
                   </div>
                 ) : (
                   <p className="py-4 text-center text-sm text-stone-400">
-                    Nenhuma insígnia desbloqueada ainda.
+                    Nenhuma conquista desbloqueada ainda.
                   </p>
                 )}
 
@@ -582,7 +656,7 @@ export default function PerfilClient({
                   onClick={() => setShowAllAchievements(!showAllAchievements)}
                   className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-300 py-2.5 text-sm font-semibold text-stone-500 transition-colors hover:border-amber-400 hover:text-amber-700"
                 >
-                  {showAllAchievements ? "Ocultar detalhes" : "Ver todas as insígnias"}
+                  {showAllAchievements ? "Ocultar detalhes" : "Ver todas as conquistas"}
                   <IconChevron open={showAllAchievements} />
                 </button>
 
@@ -606,10 +680,16 @@ export default function PerfilClient({
               <EditorDeAparencia
                 valor={emProva}
                 aoMudar={setEmProva}
-                catalogo={catalogoCabelo}
+                cabelos={catalogoCabelo}
                 trajes={catalogoTraje}
                 traje={traje}
-                aoTrocarTraje={trocarTraje}
+                rostos={catalogoRosto}
+                rosto={rosto}
+                oculos={catalogoOculos}
+                oculosAtual={oculos}
+                chapeus={catalogoChapeu}
+                chapeu={chapeu}
+                aoTrocarPeca={trocarPeca}
                 nivel={profile.level}
                 tier={profile.achievedTier}
                 rotuloAcao="Salvar aparência"

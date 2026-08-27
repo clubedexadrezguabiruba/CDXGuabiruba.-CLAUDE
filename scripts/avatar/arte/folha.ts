@@ -75,6 +75,8 @@ import { converter, type Convertido } from "./converter";
 import { medirCoroa } from "./coroa";
 import { gateMenosUm, type Laudo } from "./gate-menos-um";
 import { sondar, type Sonda } from "./silhueta";
+import { CONTROLE_PARAMETRICO } from "../estilo/controle-parametrico";
+import { ARTES_PROMOVIDAS } from "./promovidas";
 
 const b64 = (p: string) => `data:image/png;base64,${readFileSync(p).toString("base64")}`;
 
@@ -125,10 +127,10 @@ interface Medida {
 }
 
 async function principal(): Promise<void> {
-  const artes =
-    process.argv.length > 2
-      ? process.argv.slice(2)
-      : [`${PASTA}/entrada.png`, `${PASTA}/entrada-2.png`, `${PASTA}/chanel.png`];
+  // Sem alvo na linha de comando, a folha cobre as artes PROMOVIDAS — derivadas, não
+  // escritas. Eram `entrada`, `entrada-2` e `chanel` à mão, e as duas primeiras saíram
+  // do repositório em 2026-08-24 com o `espetado` e o `assimetrico` traçado.
+  const artes = process.argv.length > 2 ? process.argv.slice(2) : ARTES_PROMOVIDAS;
 
   // --------------------------------------------------------------- as medidas
   const medidas: Medida[] = [];
@@ -150,8 +152,8 @@ async function principal(): Promise<void> {
 
   // O CONTROLE: uma peça do catálogo que nunca passou por arte nenhuma, e que o
   // Doug já aprovou. Ele vai AO LADO das três, não a três seções de distância.
-  const controleCoroa = await medirCoroa(CABELOS.coque, "f-controle", `${PASTA}/reguas`);
-  const controleSonda = await sondar(CABELOS.coque, "f-controle", `${PASTA}/reguas`);
+  const controleCoroa = await medirCoroa(CONTROLE_PARAMETRICO, "f-controle", `${PASTA}/reguas`);
+  const controleSonda = await sondar(CONTROLE_PARAMETRICO, "f-controle", `${PASTA}/reguas`);
   const carecaCoroa = await medirCoroa(undefined, "f-careca", `${PASTA}/reguas`);
 
   // --------------------------------------------------------------- os renders
@@ -233,7 +235,7 @@ async function principal(): Promise<void> {
 
   const tela: Record<string, string> = {};
   for (const m of medidas) tela[m.nome] = await em56(m.nome, m.c.peca);
-  tela["controle"] = await em56("controle", CABELOS.coque);
+  tela["controle"] = await em56("controle", CONTROLE_PARAMETRICO);
 
   /**
    * O RECORTE É FEITO COM `sharp.extract`, e não com `clip-path` no HTML.
@@ -275,7 +277,7 @@ async function principal(): Promise<void> {
   // topo medido protege.
   const alvos: [string, Cabelo | undefined][] = [
     ...medidas.map((m) => [m.nome, m.c.peca] as [string, Cabelo]),
-    ["controle", CABELOS.coque],
+    ["controle", CONTROLE_PARAMETRICO],
     ["careca", undefined],
   ];
   const largC = Math.round((ALT_CLOSE * VIEWBOX.w) / VIEWBOX.h);

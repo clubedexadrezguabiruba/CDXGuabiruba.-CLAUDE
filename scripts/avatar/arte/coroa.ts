@@ -168,7 +168,7 @@ export async function medirCoroa(
 }
 
 if (process.argv[1]?.endsWith("coroa.ts")) {
-  const arte = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const arte = process.argv[2] ?? `${PASTA}/chanel.png`;
   const destino = saidaDaArte(arte);
   mkdirSync(destino, { recursive: true });
   converter(arte)

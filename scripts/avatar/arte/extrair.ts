@@ -119,6 +119,7 @@ import {
   regiaoDoPixel,
   saidaDaArte,
 } from "./base";
+import { ehLinhaInstrumental } from "./linha-instrumental";
 import {
   type Componente,
   type Img,
@@ -383,7 +384,36 @@ export function mascaraDaPeca(
     return ehEscuro(base.data[j], base.data[j + 1], base.data[j + 2]);
   };
 
-  // A busca em largura: semeia no ciano e anda por `ciano ∪ preto ancorado`.
+  // A SEMENTE: ciano **ou LINHA INSTRUMENTAL**. A busca anda por `ciano ∪ preto
+  // ancorado`.
+  //
+  // ---------------------------------------------------------------------------
+  // A LINHA ENTROU COMO SEMENTE EM 2026-08-27, E O DEFEITO TEM NÚMERO
+  // ---------------------------------------------------------------------------
+  //
+  // Semear só no ciano funcionou enquanto toda peça era MASSA com um fio em volta:
+  // o `assimetrico` tem 35 661 px de linha azul e uma cúpula inteira de ciano para
+  // semear, então a linha é alcançada pelo crescimento e ninguém notou a falta.
+  //
+  // O quarto óculos quebrou isso, e quebrou pela proporção: **21 901 px de linha
+  // contra 1 863 px de massa** — 92% da peça é fio. Uma armação fina é quase toda
+  // contorno por definição, e o pedaço de aro que não encosta em ciano nenhum nunca
+  // era alcançado. Medido no Gate −1: **8 321 px mudados em "rosto", dos quais
+  // 7 542 px (90,6%) "preto novo"**, e mesmo assim **56 ladrilhos** de forma —
+  // porque o julgamento é `região ∧ ¬peça` e a peça não continha o próprio aro. A
+  // arte reprovava com a mensagem *"o gerador redesenhou o boneco"* sobre uma arte
+  // em que o boneco está intacto, que é o mesmo modo de falha da `entrada-2` e da
+  // `rala`, pela terceira vez.
+  //
+  // **A linha instrumental é uma declaração, não uma inferência.** Ela existe desde
+  // 2026-08-22 para o gerador poder dizer *"esta linha é minha"*, e `restaurar-peca`
+  // a reescreve como `(L, L, L+48)` — um marcador que nada na base de edição tem
+  // (ela é monocromática entre 26,9° e 43,2° de matiz, `cor-proibida.ts`). Semear
+  // nela não afrouxa nada: é ler o que a arte já declarou.
+  //
+  // ⚠️ **Respingo medido, não argumentado:** `arte:pecas --check`,
+  // `arte:cabelos --check`, `arte:rostos --check`, `arte:trajes --check` e
+  // `arte:chapeus --check` conferem caractere a caractere depois desta linha.
   const peca = new Uint8Array(n);
   {
     const fila = new Int32Array(n);
@@ -394,7 +424,12 @@ export function mascaraDaPeca(
     // já tinha, que é o que pode ser contorno do boneco.
     const aceita = (i: number) =>
       !peca[i] && permitida[i] && (teal[i] || (escuro[i] && (!eraEscuro(i) || perto[i])));
-    for (let i = 0; i < n; i++) if (teal[i] && permitida[i]) (peca[i] = 1), (fila[fim++] = i);
+    const semente = (i: number) => {
+      if (teal[i]) return true;
+      const j = i * 3;
+      return ehLinhaInstrumental(arte.data[j], arte.data[j + 1], arte.data[j + 2]);
+    };
+    for (let i = 0; i < n; i++) if (semente(i) && permitida[i]) (peca[i] = 1), (fila[fim++] = i);
     while (ini < fim) {
       const p = fila[ini++];
       const x = p % arte.w;
@@ -476,6 +511,49 @@ export function mascaraDaPeca(
  */
 const NIVEL_TRAJE = 24;
 
+/**
+ * O SEGUNDO CORTE, e ele existe porque UM corte não distingue duas coisas fracas.
+ *
+ * `NIVEL_TRAJE` responde *"este pixel mudou?"*. Ele não responde *"esta mudança é a
+ * PEÇA?"* — e há duas mudanças fracas com significados opostos:
+ *
+ *  - o **anti-aliasing da borda de verdade**: 1 a 3 px em que a tinta da peça se
+ *    mistura com o que está atrás. É peça, e cortá-lo come a silhueta;
+ *  - o **halo** que o gerador pinta em volta: uma sombra larga e fraca, que não é
+ *    peça nenhuma e entra na máscara colada na peça — a conectividade a adota.
+ *
+ * A diferença entre as duas não é a intensidade; é a DISTÂNCIA até tinta forte. O
+ * anti-aliasing está colado nela por construção. O halo se afasta.
+ *
+ * Então o corte vira histerese, a mesma ideia do Canny: **forte** entra sempre;
+ * **fraco** entra só se houver forte a até `ALCANCE_DO_FRACO` px.
+ *
+ * ⚠️ **Medido em 2026-08-25, no `chapeu-cand-10`** — a arte que o Doug aprovou no
+ * render e que a `arte:perimetro` reprovava a 78,8%. Ele pegou de olho o que a régua
+ * não sabia dizer: *"onde vc marcou em magenta, nem é parte do chapéu"*. Era o halo:
+ *
+ * | onde | diferença contra a base, mediana |
+ * |---|---|
+ * | a massa do chapéu | **223** |
+ * | a borda com linha | 66 |
+ * | os 632 px que reprovavam | **29** — raspando o corte de 24 |
+ *
+ * O respingo foi medido ANTES de aceitar, e o controle é o que decide: as **oito**
+ * peças de chapéu que já passavam ficam entre −0,1 e 0,0 ponto, e a `toca-curta`
+ * **que o Doug reprovou** continua reprovada (50,0% → 53,8%). O conserto não salva
+ * arte ruim; ele para de contar sombra como peça.
+ */
+const NIVEL_FORTE = 100;
+
+/**
+ * Quantos pixels o fraco pode estar do forte: **3**.
+ *
+ * É o anti-aliasing de uma borda, com folga — e o número não é escolhido para caber
+ * numa arte: entre `K = 2` e `K = 6` o veredito de **todas** as dez peças medidas é
+ * o mesmo. Insensível ao parâmetro é o que separa uma régua de um ajuste.
+ */
+const ALCANCE_DO_FRACO = 3;
+
 export interface ExtracaoPorCampo {
   /** 1 onde há peça. */
   mascara: Uint8Array;
@@ -519,15 +597,44 @@ export async function extrairPorCampo(
   const n = arte.w * arte.h;
 
   // ---------------------------------------------- 1. diferença dentro do campo
+  //
+  // Com HISTERESE — ver `NIVEL_FORTE`. O laço marca as duas classes; o fraco só
+  // sobrevive ao passo seguinte se tiver forte por perto.
   const cru = new Uint8Array(n);
+  const forte = new Uint8Array(n);
   let foraDoCampo = 0;
   for (let y = 0; y < arte.h; y++) {
     for (let x = 0; x < arte.w; x++) {
-      if (delta(base, arte, x, y) <= NIVEL_TRAJE) continue;
+      const d = delta(base, arte, x, y);
+      if (d <= NIVEL_TRAJE) continue;
       const u = paraUnidade(x, y);
-      if (campo(u.x, u.y)) cru[y * arte.w + x] = 1;
-      else foraDoCampo++;
+      if (!campo(u.x, u.y)) {
+        foraDoCampo++;
+        continue;
+      }
+      const i = y * arte.w + x;
+      cru[i] = 1;
+      if (d > NIVEL_FORTE) forte[i] = 1;
     }
+  }
+
+  // O ALCANCE do forte: dilatação de `ALCANCE_DO_FRACO` passos por 4-vizinhança.
+  // Fraco fora dele é halo, e sai da máscara antes do salpico — se ficasse, a
+  // conectividade o adotaria por estar colado na peça, que é exatamente como ele
+  // entrava até 2026-08-25.
+  {
+    let alcance = Uint8Array.from(forte);
+    for (let passo = 0; passo < ALCANCE_DO_FRACO; passo++) {
+      const nova = Uint8Array.from(alcance);
+      for (let y = 1; y < arte.h - 1; y++)
+        for (let x = 1; x < arte.w - 1; x++) {
+          const i = y * arte.w + x;
+          if (alcance[i]) continue;
+          if (alcance[i - 1] || alcance[i + 1] || alcance[i - arte.w] || alcance[i + arte.w]) nova[i] = 1;
+        }
+      alcance = nova;
+    }
+    for (let i = 0; i < n; i++) if (cru[i] && !alcance[i]) cru[i] = 0;
   }
 
   // ------------------------------------------------------------ 2. o salpico
@@ -866,7 +973,7 @@ export function imprimirExtracao(e: Extracao, caminho: string): void {
 }
 
 if (process.argv[1]?.endsWith("extrair.ts")) {
-  const caminho = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const caminho = process.argv[2] ?? `${PASTA}/chanel.png`;
   const pasta = process.argv[3] ?? `${saidaDaArte(caminho)}/peca`;
   extrair(caminho)
     .then(async (e) => {

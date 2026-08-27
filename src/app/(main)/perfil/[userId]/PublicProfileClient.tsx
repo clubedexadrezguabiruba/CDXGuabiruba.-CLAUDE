@@ -15,7 +15,7 @@ interface Props {
  * O avatar saiu daqui no Bloco D e voltou no E.4.
  *
  * Ele não é buscado: as colunas chegam prontas dentro de `get_public_profile`,
- * que o E.3 reescreveu para devolver `avatar_skin`/`avatar_hair`/`avatar_hair_color`
+ * que o E.3 reescreveu para devolver `avatar_skin`/`avatar_cabelo`/`avatar_hair_color`
  * no lugar do `equipped_items` fixo em `[]` da pilha v2. Índice e slug, a mesma
  * língua do banco — a tradução para hex é do `<AvatarKokeshi>`.
  *
@@ -60,9 +60,12 @@ export default function PublicProfileClient({ profile }: Props) {
           <span className="grid place-items-center bg-warm-stone px-2 py-2">
             <AvatarKokeshi
               skin={profile.avatar_skin}
-              hair={profile.avatar_hair}
+              hair={profile.avatar_cabelo}
               hairColor={profile.avatar_hair_color}
               traje={profile.avatar_traje}
+              rosto={profile.avatar_rosto}
+              oculos={profile.avatar_oculos}
+              chapeu={profile.avatar_chapeu}
               altura={104}
               ns="perfil-publico"
               rotulo={`Avatar de ${profile.public_name}`}
@@ -105,7 +108,7 @@ export default function PublicProfileClient({ profile }: Props) {
       {/* Stats grid */}
       <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-zinc-700">
-          Histórico de Combate
+          Histórico de Partidas
         </h2>
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           <StatItem label="Rating" value={profile.puzzle_rating.toString()} />
@@ -147,7 +150,7 @@ export default function PublicProfileClient({ profile }: Props) {
       {/* Conquistas desbloqueadas */}
       <div className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-zinc-700">
-          Insígnias Conquistadas
+          Suas Conquistas
           <span className="ml-1 text-xs font-normal text-zinc-400">
             ({profile.achievements_count})
           </span>
@@ -155,7 +158,7 @@ export default function PublicProfileClient({ profile }: Props) {
 
         {profile.achievements.length === 0 ? (
           <p className="py-4 text-center text-sm text-zinc-400">
-            Nenhuma insígnia conquistada ainda.
+            Nenhuma conquista ainda.
           </p>
         ) : (
           <div className="grid gap-2">

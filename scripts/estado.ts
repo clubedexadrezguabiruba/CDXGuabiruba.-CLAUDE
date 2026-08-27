@@ -240,8 +240,34 @@ const CABELOS_MINIMO = 10;
 
 export function medirCabelos(fonte: string | null): { tem: number; minimo: number } {
   if (!fonte) return { tem: 0, minimo: CABELOS_MINIMO };
-  const uniao = /export type ModeloCabelo =([\s\S]*?);/.exec(fonte);
-  const tem = uniao ? (uniao[1].match(/\|\s*"[^"]+"/g) ?? []).length : 0;
+
+  // ⚠️ OS COMENTÁRIOS SAEM ANTES DE QUALQUER COISA, e este é o segundo defeito
+  // desta função no mesmo dia — o primeiro conserto não bastou.
+  //
+  // A união deste projeto é comentada linha a linha, e prosa contém pontuação:
+  //
+  //   `...aprovou as catorze de uma vez ("os 13 aprovados", mais esta)` -> aspas,
+  //     e a contagem soma um membro que não existe;
+  //   `...ela reusa o slug limpo; a arte que reprovou ficou no disco` -> ponto e
+  //     vírgula, e o `([\s\S]*?);` fecha a união ali, perdendo tudo depois.
+  //
+  // Medido em 2026-08-24 com 14 modelos no catálogo: 14 − 2 perdidos + 1 falso =
+  // **13**. Os dois erros se cancelavam em parte, que é o pior jeito de errar.
+  //
+  // Varrer o comentário fora é o conserto no lugar certo: apagar a prosa ofensora
+  // de `cabelo.ts` consertaria o número de hoje e deixaria a armadilha armada para
+  // o próximo que escrever um ponto e vírgula ali.
+  const semComentarios = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+
+  const uniao = /export type ModeloCabelo =([\s\S]*?);/.exec(semComentarios);
+  // Conta os NOMES, não as barras. A versão original exigia `|` à frente de cada um
+  // (`/\|\s*"[^"]+"/g`) e o primeiro membro de uma união não tem barra: a conta saía
+  // sempre uma a menos — 3 para os 4 cabelos do catálogo — e com um modelo só
+  // devolveria 0, que aqui é o valor de "não medi".
+  //
+  // Coberto por `scripts/__tests__/medir-cabelos.test.ts`, cuja primeira asserção é
+  // o painel contra `MODELOS_CABELO` — foi ela que pegou os dois defeitos.
+  const tem = uniao ? (uniao[1].match(/"[^"]+"/g) ?? []).length : 0;
   return { tem, minimo: CABELOS_MINIMO };
 }
 

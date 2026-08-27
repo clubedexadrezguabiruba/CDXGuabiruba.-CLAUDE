@@ -7,7 +7,7 @@ import { useAchievements, type Achievement } from "@/hooks/useAchievements";
 
 const CATEGORY_LABELS: Record<string, string> = {
   bots: "Bots",
-  puzzles: "Puzzles",
+  puzzles: "Desafios",
   lessons: "Aulas",
   progression: "Progressão",
   streak: "Sequência",
@@ -76,7 +76,7 @@ export default function AchievementPanel() {
   if (loading) {
     return (
       <Card>
-        <CardTitle>Insígnias</CardTitle>
+        <CardTitle>Conquistas</CardTitle>
         <div className="flex items-center justify-center py-6 text-sm text-ink/45">
           Carregando conquistas...
         </div>
@@ -87,7 +87,7 @@ export default function AchievementPanel() {
   if (error) {
     return (
       <Card>
-        <CardTitle>Insígnias</CardTitle>
+        <CardTitle>Conquistas</CardTitle>
         <p className="text-sm text-erro">Erro: {error}</p>
       </Card>
     );
@@ -129,7 +129,7 @@ export default function AchievementPanel() {
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between">
-        <CardTitle className="mb-0">Insígnias</CardTitle>
+        <CardTitle className="mb-0">Conquistas</CardTitle>
         <span className="text-sm font-medium text-ink/55">
           {unlockedCount}/{achievements.length}
         </span>
@@ -155,8 +155,14 @@ export default function AchievementPanel() {
           })}
         </div>
       ) : (
+        /*
+          O estado vazio é onde o Arquivo se apresenta: ele é o lugar do mapa
+          que guarda "o que ainda não foi mostrado", e a estante de troféus é a
+          primeira mecânica que lhe dá função (D10). Aqui a frase trabalha
+          dobrado — nomeia o lugar e diz o que fazer para preencher a estante.
+        */
         <p className="py-4 text-center text-sm text-ink/45">
-          Nenhuma insígnia desbloqueada ainda.
+          Sua estante no Arquivo ainda está vazia. Jogue, estude e volte para vê-la crescer.
         </p>
       )}
 

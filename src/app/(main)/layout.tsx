@@ -20,13 +20,14 @@ export default async function MainLayout({
     level: number;
     role: string;
     avatar_skin: number;
-    avatar_hair: string | null;
+    avatar_cabelo: string | null;
     avatar_hair_color: number;
     // As duas peças do recorte de cabeça (achado G22). A navbar é a única das cinco
     // telas que não passa por RPC de lista: ela lê `users` direto, então aqui a
     // chave não se perde num cast — ela nem sai do banco se faltar no SELECT.
     avatar_chapeu: string | null;
     avatar_rosto: string | null;
+    avatar_oculos: string | null;
     avatar_chosen: boolean;
   } | null = null;
   let title: string = "Calouro";
@@ -46,7 +47,7 @@ export default async function MainLayout({
     const { data } = await supabase
       .from("users")
       .select(
-        "display_name, level, role, avatar_skin, avatar_hair, avatar_hair_color, avatar_chapeu, avatar_rosto, avatar_chosen",
+        "display_name, level, role, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_chapeu, avatar_rosto, avatar_oculos, avatar_chosen",
       )
       .eq("id", user.id)
       .single();
@@ -84,10 +85,11 @@ export default async function MainLayout({
     // novo é ruído, não acessibilidade.
     <AvatarCabeca
       skin={profile.avatar_skin}
-      hair={profile.avatar_hair}
+      hair={profile.avatar_cabelo}
       hairColor={profile.avatar_hair_color}
       chapeu={profile.avatar_chapeu}
       rosto={profile.avatar_rosto}
+      oculos={profile.avatar_oculos}
       lado={32}
       ns="nav"
     />
@@ -124,7 +126,24 @@ export default async function MainLayout({
                   <span className="sr-only">Monte seu personagem</span>
                 </Link>
               ) : (
-                <MolduraPatente tier={tier}>{boneco}</MolduraPatente>
+                /*
+                  O boneco é a porta de volta ao Saguão, e isso resolve um
+                  buraco de navegação: a §7 da Bíblia lista "Início" como o
+                  primeiro item do menu, e não havia NENHUM caminho de volta —
+                  nem link, nem logo clicável. Um oitavo link de texto era a
+                  saída óbvia e é a errada: o comentário medido logo abaixo diz
+                  que os 7 atuais + "Sair" já somam 451 px numa tela de 375.
+                  O boneco já está aqui, já é o elemento mais reconhecível da
+                  barra, e levar o aluno para casa não lhe custa um pixel de
+                  largura.
+                */
+                <Link
+                  href="/dashboard"
+                  className="inline-flex shrink-0 rounded-lg transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-warm-ivory"
+                >
+                  <MolduraPatente tier={tier}>{boneco}</MolduraPatente>
+                  <span className="sr-only">Ir para o Saguão</span>
+                </Link>
               )}
               <div className="min-w-0 text-sm">
                 <span className="block max-w-30 truncate font-medium sm:max-w-none">

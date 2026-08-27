@@ -27,7 +27,7 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 
-import { construirRosto } from "../barba-para-formas";
+import { ESTEIRA, construirPecaTonal, construirRosto } from "../barba-para-formas";
 import { LADO, paraUnidade } from "../base";
 
 const ARTE = "scripts/avatar/arte/barba-trancada.png";
@@ -60,7 +60,7 @@ describe("o tom contínuo que a esteira emite", () => {
     ]);
   });
 
-  it("o PNG decodifica na metade da caixa — a resolução é 50% e é medida", async () => {
+  it("o PNG decodifica na fração declarada da caixa — e ela vem de `ESTEIRA`", async () => {
     const meta = await sharp(peca.tom.png).metadata();
 
     // A bbox da máscara, recalculada aqui pelo caminho independente.
@@ -80,7 +80,11 @@ describe("o tom contínuo que a esteira emite", () => {
     const MW = x1 - x0 + 1;
     const MH = y1 - y0 + 1;
 
-    expect(meta.width).toBe(Math.round(MW * 0.5));
+    // A fração sai da TABELA do slot, não de um literal: os 50% são número da
+    // barba, e `EsteiraDoSlot.resolucaoDoTom` existe justamente porque cada slot tem
+    // direito ao próprio. Um teste com `0.5` escrito à mão reprovaria a primeira
+    // medição legítima do slot cabelo.
+    expect(meta.width).toBe(Math.round(MW * ESTEIRA.rosto.resolucaoDoTom));
     expect(meta.width).toBe(peca.tomPx.w);
     expect(meta.height).toBe(peca.tomPx.h);
 
@@ -160,5 +164,91 @@ describe("o tom contínuo que a esteira emite", () => {
     // encostar isto muda antes de alguém descobrir pela folha.
     expect(peca.pxNoRosto).toBe(0);
     expect(peca.componentes).toBe(1);
+  });
+});
+
+/**
+ * A ESTEIRA É **UMA**, E O SLOT SÓ TROCA DOIS PARÂMETROS — medido, não declarado.
+ *
+ * Este é o bloco que impede a generalização de 2026-08-22 de ser só uma afirmação de
+ * docstring. A tese de `construirPecaTonal` é que o slot escolhe **duas** coisas da
+ * tabela `ESTEIRA` — prefixo do slug e resolução do tom — e mais nada: base careca,
+ * diferença contra a base, recorte de feições, aresta nua, figurinha, esticão por
+ * percentil e traçado são idênticos nos dois slots.
+ *
+ * A prova é passar a MESMA arte pelos dois e exigir que a saída geométrica seja
+ * igual. Se algum dia o slot vazar para dentro da esteira — um recorte diferente, um
+ * limiar diferente —, é aqui que cai, e cai antes de qualquer peça ser desenhada.
+ *
+ * A cobaia é `chanel.png`, arte de CABELO versionada. Ela é do elenco velho e tem
+ * poucos tons: serve para medir a mecânica, nunca o padrão tonal (que é o que a
+ * suíte acima cobra sobre a `barba-trancada`).
+ */
+describe("a esteira é uma só, parametrizada por slot", () => {
+  const ARTE_CABELO = "scripts/avatar/arte/chanel.png";
+
+  it("a tabela declara os dois slots que recolorem, e só eles", () => {
+    // Slot novo aqui é DECISÃO: chapéu e pet têm cor assada e saem por
+    // `peca-de-arte.ts`. Um terceiro aparecendo sem medição própria de resolução é o
+    // que esta linha pega.
+    expect(Object.keys(ESTEIRA).sort()).toEqual(["cabelo", "rosto"]);
+    expect(ESTEIRA.rosto.prefixo).toBe("rosto-");
+    expect(ESTEIRA.cabelo.prefixo).toBe("cabelo-");
+  });
+
+  it("`construirRosto` é o mesmo que `construirPecaTonal(…, \"rosto\")` — o wrapper não desvia", () => {
+    // A barba não pode ter mudado um byte ao slot cabelo nascer, e o selo que prova
+    // isso é `arte:rostos --check`. Esta linha prova o degrau anterior: as duas
+    // portas de entrada levam à mesma esteira.
+    expect(peca.slot).toBe("rosto");
+    expect(peca.slug).toBe("rosto-barba-trancada");
+  });
+
+  // 30 s em vez dos 5 s padrão. Medido solo: 699 ms este e 390 ms o seguinte — o que
+  // estoura é a contenção da corrida paralela, e ela apertou em 2026-08-25 com o
+  // `RECORTE` 8% mais largo. Teto folgado aqui não afrouxa asserção nenhuma: ele só
+  // impede que a máquina do dia decida se o teste passa.
+  it("a MESMA arte pelos dois slots dá a MESMA geometria — só o nome muda", { timeout: 30_000 }, async () => {
+    const comoRosto = await construirPecaTonal(ARTE_CABELO, "rosto");
+    const comoCabelo = await construirPecaTonal(ARTE_CABELO, "cabelo");
+
+    // O que o slot muda:
+    expect(comoRosto.slug).toBe("rosto-chanel");
+    expect(comoCabelo.slug).toBe("cabelo-chanel");
+    expect(comoCabelo.slot).toBe("cabelo");
+
+    // O que ele NÃO muda — e é o arquivo inteiro:
+    expect(comoCabelo.formas[0].d).toBe(comoRosto.formas[0].d);
+    expect(comoCabelo.formas[1].d).toBe(comoRosto.formas[1].d);
+    expect(comoCabelo.esticao).toEqual(comoRosto.esticao);
+    expect(comoCabelo.pxPeca).toBe(comoRosto.pxPeca);
+    expect(comoCabelo.pxNoRosto).toBe(comoRosto.pxNoRosto);
+    expect(comoCabelo.pxPreenchidos).toBe(comoRosto.pxPreenchidos);
+    expect(comoCabelo.componentes).toBe(comoRosto.componentes);
+    expect(Buffer.from(comoCabelo.mascara).equals(Buffer.from(comoRosto.mascara))).toBe(true);
+    // A caixa do tom é geometria, não parâmetro: ela é a bbox da máscara.
+    expect(comoCabelo.tom.x).toBe(comoRosto.tom.x);
+    expect(comoCabelo.tom.y).toBe(comoRosto.tom.y);
+    expect(comoCabelo.tom.w).toBe(comoRosto.tom.w);
+    expect(comoCabelo.tom.h).toBe(comoRosto.tom.h);
+
+    // ⚠️ O PNG **não** entra na lista acima, e a ausência é a tese: ele depende de
+    // `resolucaoDoTom`, que é justamente um dos dois parâmetros. Hoje os dois slots
+    // carregam 0,5 e o buffer sai igual; no dia em que o cabelo medir o próprio
+    // número, esta linha é a que declara que a diferença é legítima.
+    expect(comoCabelo.tomPx.w).toBe(
+      Math.round((comoRosto.tomPx.w * ESTEIRA.cabelo.resolucaoDoTom) / ESTEIRA.rosto.resolucaoDoTom),
+    );
+  });
+
+  it("o slug do cabelo carrega o prefixo do slot — e o PNG de tom mora na pasta dele", { timeout: 30_000 }, async () => {
+    // `avatar_catalogo` não tem linha de cabelo (ele é escolha livre da D27), então o
+    // prefixo aqui não é chave primária: é o que faz laudo, folha, literal e arquivo
+    // de máscara falarem o mesmo nome. `public/items/cabelo/cabelo-chanel-tom.png`.
+    const p = await construirPecaTonal(ARTE_CABELO, "cabelo");
+    expect(p.slug.startsWith(ESTEIRA.cabelo.prefixo)).toBe(true);
+    expect(p.formas).toHaveLength(2);
+    expect(p.formas[0].d).toBe(p.formas[1].d);
+    expect(p.formas.every((f) => f.semTraco)).toBe(true);
   });
 });

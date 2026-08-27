@@ -184,8 +184,10 @@ O que **não** mudou, e é desta emenda:
 | §7, Bloco 2 inteiro | traje por patente, a promoção veste | **redefinido** — ver §0.6 |
 | §7, Bloco 3 (Fundo) | estreia a esteira de baú | **passa a ser o traje** — o traje chega ao baú primeiro |
 
-O que **não** muda: §3 (arquitetura de slot), §3.3, §3.4, §5 (o editor), §6.1
+O que **não** muda: §3 (arquitetura de slot), §3.4, §5 (o editor), §6.1
 (transbordo), §6.2 (o volume é da arte), §8 (os gates), e a esteira do doc 19 §12.
+⛔ **A §3.3 saiu desta lista em 2026-08-23** — ela foi revogada, e o cabelo migrou
+para `avatar_catalogo`. O motivo está na própria seção.
 
 ### 0.6 O Bloco 2 redefinido
 
@@ -439,17 +441,39 @@ E chama `refresh_public_profiles()` no fim, como a irmã dela. Server-authority
 como manda a regra inviolável nº 1 do `CLAUDE.md`: o client envia a intenção, o
 servidor decide.
 
-### 3.3 O que NÃO se mexe
+### 3.3 O que NÃO se mexe — ⛔ REVOGADO EM 2026-08-23
 
-**O cabelo fica exatamente como está.** `avatar_hair_catalog`, as três colunas
+> **Esta seção foi revogada inteira.** O cabelo migrou para `avatar_catalogo` em
+> 2026-08-23; `avatar_hair_catalog` não existe mais e `users.avatar_hair` virou
+> `users.avatar_cabelo`, com FK para `avatar_catalogo(slug)`. O texto original fica
+> abaixo, riscado, porque a razão dele é instrutiva: ela era **de custo**, nunca de
+> produto, e é assim que uma decisão de custo envelhece.
+>
+> **Por que caiu.** O Doug decidiu que **todo item vestível tem raridade e vem de
+> baú**. Isso não é preferência: é incompatível com a gramática antiga **por
+> constraint**. `avatar_guarda_roupa.slug` referencia `avatar_catalogo(slug)`
+> (`20260811160000_bloco1_fundacao_dos_slots.sql:155`), então *ter* uma peça exige
+> estar naquela tabela. "Cabelo com posse" e "cabelo fora de `avatar_catalogo`" não
+> podem ser verdade ao mesmo tempo. Manter as duas gramáticas teria custado um
+> segundo guarda-roupa, um segundo sorteio e um segundo `equipar_peca` — mais caro
+> que a migração que esta seção evitava.
+>
+> **O que sobreviveu:** a negação medida de `verify-cabelo-catalogo.ts` não foi
+> apagada; ela trocou de objeto e continua no mesmo caminho e no mesmo nome npm. E
+> a amarra entre `PELE.length`/`CABELO.length` e o `CHECK BETWEEN 0 AND 7` ficou
+> **verbatim** — era a única cópia dela no repositório.
+>
+> O catálogo do slot está em [doc 22 §5-E](22-catalogo-de-pecas.md).
+
+~~**O cabelo fica exatamente como está.** `avatar_hair_catalog`, as três colunas
 de identidade e a RPC `update_avatar_identity` são código provado, com gate
 próprio (`verify:cabelo-catalogo`, incluindo negação medida em
 `verify-cabelo-catalogo.ts:240-411`) e com o Doug tendo conferido na tela.
 Migrá-lo para o catálogo novo seria refatoração além do pedido — proibida pela
-regra nº 3 do `CLAUDE.md`.
+regra nº 3 do `CLAUDE.md`.~~
 
-O preço é honesto: **duas gramáticas convivem** — a do cabelo e a dos cinco
-slots novos. É menos caro que mexer no que funciona.
+~~O preço é honesto: **duas gramáticas convivem** — a do cabelo e a dos cinco
+slots novos. É menos caro que mexer no que funciona.~~
 
 ### 3.4 No render: quem entra no `compor()` e quem não entra
 
@@ -645,12 +669,12 @@ o contrário do que pedia.
 | **Chapéu** | **Um chapéu de prova em código primeiro**; os demais pela rota que a peça pedir | A rota de arte foi desenhada para servir chapéu (`ESTADO-DA-ROTA.md:546-548`), mas **nunca foi exercitada com um** — e o teto disponível é zero. O de prova mede o teto real antes da Frente B |
 | **Pet** | Código: SVG animado por CSS — o protótipo "Peãozinho de Madeira" já existe (`src/lib/avatar/prototipo/pet.ts`) | Não toca o boneco. Tema: peças de xadrez vivas. 4 pets iniciais, não os 20 do Bloco 8 |
 
-**Antes do primeiro chapéu, uma decisão obrigatória: a regra chapéu × cabelo.**
-Cada chapéu precisa de uma de quatro respostas — mostra o cabelo inteiro,
-esconde só a franja, esconde tudo, ou pede variante achatada. **A resposta vive
-no item, nunca no compositor**: campo `escondeCabelo?: "nada" | "franja" |
-"tudo"`, e o `compor()` obedecendo. Decidir isso **depois** dos chapéus
-desenhados custa redesenho (doc 15, Bloco 8).
+**A regra chapéu × cabelo — FECHADA em 2026-08-25, e não é enum.** Esta seção
+pedia uma de quatro respostas por peça (mostra tudo, só a franja, esconde tudo,
+variante achatada). Nenhuma delas foi escolhida: **a resposta é uma LINHA medida**,
+extraída do alfa da própria arte pela esteira, e continua vivendo no item e não no
+compositor (`escondeCabelo`). Nenhum chapéu precisou de redesenho. O argumento
+está no **doc 23 §8**; a régua dos 171 pares é `npm run arte:par`.
 
 ## 7. Os blocos de execução
 
@@ -722,8 +746,8 @@ congelados, byte a byte.
 >    rosto → chapéu. Óculos POR CIMA do cabelo porque, sem haste, a peça que a
 >    criança desbloqueou não pode depender de qual franja está por baixo; chapéu
 >    por último porque ele disputa o crânio e vence. A regra fina
->    (`escondeCabelo`) continua sendo decisão obrigatória do **Bloco 7** — este
->    bloco só garantiu o lugar.
+>    (`escondeCabelo`) era decisão obrigatória do **Bloco 7** — este bloco só
+>    garantiu o lugar, e a linha chegou em 2026-08-25 sem mover ninguém na pilha.
 >
 > **O `rpc-baseline.json` subiu de propósito:** +1 em `get_ranking`,
 > `get_ranking_with_position`, `get_public_profile`, `get_class_ranking` e
@@ -1033,8 +1057,8 @@ número) e o fim da proporção 5:7.
 
 ### Bloco 7 — Chapéus
 
-**Antes do primeiro:** decidir a regra chapéu × cabelo (§6) — campo
-`escondeCabelo` no item.
+**Antes do primeiro:** ~~decidir a regra chapéu × cabelo (§6)~~ — feito em
+2026-08-25: `escondeCabelo` é linha medida no item, derivada pela esteira.
 
 4-6 chapéus, rota de arte ou código conforme a peça pedir; origem mista.
 

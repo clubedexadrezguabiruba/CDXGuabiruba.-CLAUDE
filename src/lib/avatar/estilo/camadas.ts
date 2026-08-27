@@ -54,17 +54,48 @@
  */
 
 /** Quem responde pela camada — e é quem decide se ela pode mudar de lugar. */
-export type DonoDeCamada = "sistema" | "traje" | "cabelo" | "rosto" | "chapeu";
+export type DonoDeCamada = "sistema" | "traje" | "cabelo" | "rosto" | "oculos" | "chapeu";
 
 /**
  * EM QUE FAMÍLIA DE CABELO A LINHA EXISTE.
  *
- * As duas famílias são **exclusivas por modelo** (`cabelo.ts`: um cabelo tem
- * `pontos` OU `massa`), e `compor()` propaga essa exclusividade para a pilha: a
- * linha `cabelo-parametrico` e a linha `cabelo-tracado` nunca são emitidas juntas.
- * É isso que este campo declara — não uma preferência, uma impossibilidade.
+ * As famílias são **exclusivas por modelo** (`cabelo.ts`: um cabelo tem `pontos`, OU
+ * `massa`, OU `tonal`), e `compor()` propaga essa exclusividade para a pilha: a
+ * linha `cabelo-parametrico` e a linha `cabelo-sobreposto` nunca são emitidas
+ * juntas. É isso que este campo declara — não uma preferência, uma impossibilidade.
+ *
+ * ---------------------------------------------------------------------------
+ * ⚠️ CADA VALOR É UM **CONJUNTO** DE FAMÍLIAS, NÃO UMA FAMÍLIA
+ * ---------------------------------------------------------------------------
+ *
+ * `cabelo.ts` tem TRÊS famílias desde 2026-08-22 — `pontos`, `massa` e `tonal`, a
+ * última nascida com o padrão da `rosto-barba-trancada`. E os conjuntos de que a
+ * pilha precisa **não são as três**, porque nenhuma linha existe em exatamente uma:
+ *
+ *   `cabelo-parametrico`        → {pontos}                  dentro do clip do crânio
+ *   `cabelo-sobreposto`         → {massa, tonal}            fora de todo clip
+ *   `cabelo-extensoes-*`        → {pontos, massa}           quem declara `extensoes`
+ *
+ * Três conjuntos distintos, e dois deles com dois elementos. Um valor por FAMÍLIA
+ * não os expressaria: seria preciso partir linhas que saem no mesmo lugar, e a regra
+ * das quatro válvulas (ver `PILHA`) reprova isso no item 3 — a resposta que não
+ * particiona nada não é linha.
+ *
+ * Então os valores nomeiam os conjuntos, e cada nome diz **o que a família tem em
+ * comum**, nunca "as duas que sobraram":
+ *
+ *  - **`parametrico`** — a franja em `{t, y}`, clipada pelo crânio;
+ *  - **`sobreposto`** — a peça é dona da própria silhueta e sai fora de todo clip,
+ *    depois das feições. `massa` e `tonal` diferem nas sub-camadas DENTRO da linha
+ *    (quatro contra duas) e em nada mais que a pilha veja;
+ *  - **`temExtensao`** — a peça pode declarar `Cabelo.extensoes`. A tonal **não
+ *    pode**, e isso é mecânico: `extensoesCabelo()` emite `.kk-cabelo-e`, e a
+ *    família tonal não emite regra de cabelo nenhuma (`estilo()`), porque pinta
+ *    `fill` direto. Uma extensão numa peça tonal sairia como classe sem regra —
+ *    exatamente o que `folha-unica.test.ts` reprova;
+ *  - **`qualquer`** — as três.
  */
-export type FamiliaDeCabelo = "parametrico" | "tracado" | "qualquer";
+export type FamiliaDeCabelo = "parametrico" | "sobreposto" | "temExtensao" | "qualquer";
 
 /**
  * DE QUE LADO DO CABELO A PEÇA DE ROSTO VESTE — e a pergunta que decide é UMA.
@@ -182,18 +213,31 @@ export interface Camada {
  * Senão, a resposta é da tabela.
  *
  * ---------------------------------------------------------------------------
- * `escondeCabelo` — DECLARADA AQUI, IMPLEMENTADA NO BLOCO 7
+ * `escondeCabelo` — DECLARADA AQUI, IMPLEMENTADA EM 2026-08-25
  * ---------------------------------------------------------------------------
  *
- * O chapéu disputa o crânio e vence, e a regra fina — *mostra tudo / esconde tudo* —
+ * O chapéu disputa o crânio e vence, e a regra fina — *o que este chapéu contém* —
  * mora no ITEM. Ela é **supressão**, não ordenação: pluga nas quatro linhas de
  * `dono: "cabelo"` (`cabelo-extensoes-atras`, `cabelo-parametrico`,
- * `cabelo-extensoes-frente`, `cabelo-tracado`) apagando-as, sem mover ninguém.
+ * `cabelo-extensoes-frente`, `cabelo-sobreposto`) recortando-as, sem mover ninguém.
+ * `compor()` embrulha as quatro em `contidoPeloChapeu`, uma por uma, e é por isso
+ * que a tabela abaixo não ganhou nem perdeu linha.
  *
- * **O campo honesto é `"nada" | "tudo"`, e as duas alternativas caem por medição:**
- * `"franja"` não é implementável — nem a franja paramétrica nem a massa traçada
- * declaram sub-caminho separável, e recortá-lo pediria a máscara que o doc 15 §7c
- * item 17 veta —, e `"achatada"` é direção de arte, não bandeira.
+ * **O campo NÃO é enum, e a razão está medida.** Este bloco dizia *"o campo honesto
+ * é `"nada" | "tudo"`"*, com `"franja"` descartada por precisar de máscara que o
+ * doc 15 §7c item 17 veta. Duas coisas mudaram desde então:
+ *
+ *  - **a máscara chegou de qualquer forma.** `sobrepor()` emite um `<mask>` de
+ *    luminosidade por peça, em runtime, desde o tonal — e os 19 cabelos do elenco
+ *    são tonais. O argumento que matava `"franja"` deixou de valer no dia em que a
+ *    peça tonal entrou;
+ *  - **os dois extremos são a mesma coisa.** `"nada"` é a linha no infinito e
+ *    `"tudo"` é a linha no queixo. Um enum de três palavras não consegue dizer que
+ *    a touca corta baixo e a cartola corta alto; uma **linha medida** diz, e sai da
+ *    própria arte sem ninguém escolher número (`oclusao-do-chapeu.ts`).
+ *
+ * `"achatada"` continua fora, e pelo motivo de sempre: é direção de arte, não
+ * bandeira. O argumento longo está em `PecaDeChapeu.escondeCabelo` (`tipos.ts`).
  */
 export const PILHA = [
   {
@@ -249,7 +293,7 @@ export const PILHA = [
     dono: "cabelo",
     onde: "compor() → extensoesCabelo(modelo, true)",
     porQue: "o coque fica preso atrás: a cabeça opaca come a emenda, oclusão em vez de máscara",
-    familiaCabelo: "qualquer",
+    familiaCabelo: "temExtensao",
     ladoDoRosto: "qualquer",
   },
   {
@@ -284,7 +328,7 @@ export const PILHA = [
     dono: "cabelo",
     onde: "compor() → cabeloNoCranio()",
     porQue:
-      "dentro do clip do crânio, porque a peça não sabe onde o crânio termina — e é de propósito (cabelo.ts). EXCLUSIVA com `cabelo-tracado`",
+      "dentro do clip do crânio, porque a peça não sabe onde o crânio termina — e é de propósito (cabelo.ts). EXCLUSIVA com `cabelo-sobreposto`",
     familiaCabelo: "parametrico",
     ladoDoRosto: "qualquer",
     grupo: "clip-cabeca",
@@ -312,7 +356,7 @@ export const PILHA = [
     dono: "cabelo",
     onde: "compor() → extensoesCabelo(modelo, false)",
     porQue: "massa que excede a silhueta pela frente, com borda própria emitida junto",
-    familiaCabelo: "qualquer",
+    familiaCabelo: "temExtensao",
     ladoDoRosto: "qualquer",
   },
   {
@@ -352,12 +396,12 @@ export const PILHA = [
     ladoDoRosto: "sob",
   },
   {
-    id: "cabelo-tracado",
+    id: "cabelo-sobreposto",
     dono: "cabelo",
-    onde: "compor() → pecaSobreposta()",
+    onde: "compor() → pecaSobreposta(), ou sobrepor(…, \"cabelo\") na família tonal",
     porQue:
-      "peça sobreposta, fora de todo clip, dona da própria silhueta. Depois das feições desde 2026-08-08, porque cabelo que cai sobre a testa tem de tapar a sobrancelha. UMA linha da pilha, até QUATRO sub-camadas dentro dela (silhueta preta → núcleo → clara → pretas), e elas não se partem",
-    familiaCabelo: "tracado",
+      "peça sobreposta, fora de todo clip, dona da própria silhueta. Depois das feições desde 2026-08-08, porque cabelo que cai sobre a testa tem de tapar a sobrancelha. UMA linha da pilha, e as sub-camadas dentro dela não a partem: até QUATRO na família traçada (silhueta preta → núcleo → clara → pretas) e DUAS na tonal (silhueta preta → a mesma curva vestida pela máscara de luminosidade). A tonal sai pela MESMA função que desenha barba e chapéu (`sobrepor()`), no mesmo lugar da pilha — ver `FamiliaDeCabelo`",
+    familiaCabelo: "sobreposto",
     ladoDoRosto: "qualquer",
   },
   {
@@ -365,9 +409,18 @@ export const PILHA = [
     dono: "rosto",
     onde: "compor() → rosto(false)",
     porQue:
-      "O ÓCULOS. Sem haste não há o que apoiar (doc 21 §2c), e a peça que a criança desbloqueou não pode depender de qual franja está embaixo",
+      "Peça de ROSTO que veste por cima do cabelo. ⚠️ SEM PEÇA HOJE, e isso é declarado: ela era do ÓCULOS, e o óculos virou slot próprio em 2026-08-27 (o Doug: *\"óculos e barba não podem ser a mesma coisa\"*). O que sobrou aqui é a possibilidade — `PecaDeRosto.cabeloPorCima` continua sendo `boolean` e a partição continua no compositor. Apagar a linha e o campo junto é decisão SEPARADA e não foi tomada: ela mexe na trava `cabeloPorCima?: never` do chapéu e do óculos, que existe para os dois não escolherem lado. Enquanto não for tomada, esta linha é caminho vivo sem cobaia — a mesma forma de vacuidade que o `franja-da-borda` teve, e é por isso que está escrito aqui em vez de ficar implícito",
     familiaCabelo: "qualquer",
     ladoDoRosto: "sobre",
+  },
+  {
+    id: "oculos",
+    dono: "oculos",
+    onde: "compor() → sobrepor(estado.oculos)",
+    porQue:
+      "O ÓCULOS, em slot próprio desde 2026-08-27. Ele vem DEPOIS do cabelo e ANTES do chapéu: sem haste não há o que apoiar (doc 21 §2c), a lente é livre para exceder o rosto, e a peça que a criança desbloqueou não pode depender de qual franja está embaixo — mas um chapéu de aba baixa PODE cobri-lo, que é o que aba faz. Ele não participa da partição de `rosto()`: `PecaDeOculos` declara `cabeloPorCima?: never`, então não tem lado a escolher",
+    familiaCabelo: "qualquer",
+    ladoDoRosto: "qualquer",
   },
   {
     id: "chapeu",

@@ -1,10 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import PerfilClient from "./PerfilClient";
-import type {
-  Aparencia,
-  CabeloDoCatalogo,
-  TrajeDoCatalogo,
-} from "@/components/avatar/EditorDeAparencia";
+import type { Aparencia, PecaDoCatalogo } from "@/components/avatar/EditorDeAparencia";
 
 export interface ProfileData {
   userId: string;
@@ -41,24 +37,37 @@ export default async function PerfilPage() {
   // Buscar dados do perfil
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_hair, avatar_hair_color, avatar_traje")
+    .select("display_name, level, xp, puzzle_rating, puzzle_best_streak, rush_3min_record, rush_5min_record, rush_resistencia_record, created_at, avatar_skin, avatar_cabelo, avatar_hair_color, avatar_traje, avatar_rosto, avatar_oculos, avatar_chapeu")
     .eq("id", user.id)
     .single();
 
-  // A régua de desbloqueio vem do banco a cada carga, e não de uma cópia em
-  // `cabelo.ts`: quem decide quem pode usar o quê é o servidor (Regra Inviolável
-  // nº 1). O aluno lê o catálogo INTEIRO, inclusive as linhas que não alcança —
-  // é o que permite mostrar o cadeado com o nível que falta.
-  const { data: catalogoCabelo } = await supabase
-    .from("avatar_hair_catalog")
-    .select("slug, min_level");
-
-  // O catálogo de traje INTEIRO, pelo mesmo motivo do cabelo: é o que permite a
-  // VITRINE mostrar o que o aluno ainda não tem. Quem recusa é `equipar_peca`.
-  const { data: catalogoTraje } = await supabase
+  // O catálogo INTEIRO dos cinco slots que a tela veste, numa leitura só.
+  //
+  // Eram DUAS consultas até 2026-08-23 — uma em `avatar_hair_catalog` e outra em
+  // `avatar_catalogo` filtrando o traje —, porque o cabelo tinha tabela própria.
+  // Ele passou a ser peça de baú como as outras, e o `.in(...)` no lugar do
+  // `.eq(...)` é literalmente o que sobrou da migração do lado da leitura.
+  //
+  // ⚠️ ESTA LISTA TEM DE ANDAR JUNTO COM OS `doSlot(...)` LÁ EMBAIXO, e o dia em
+  // que ela não andou custou o slot inteiro: `oculos` nasceu em 2026-08-27, ganhou
+  // coluna, RPC, componente e vitrine — e ficou de fora daqui. `doSlot("oculos")`
+  // devolvia `[]`, `[]` é *truthy* em JS, então a seção renderizava com a ficha da
+  // ausência e nada mais. Build, `typecheck` e `verify:all` passaram os quatro; o
+  // aluno é que não tinha óculos para vestir. Medido por HTTP com sessão logada em
+  // `e2e/avatar-barba-e-oculos.spec.ts`, que é o gate desta linha.
+  //
+  // `chapeu` entrou em 2026-08-27 por um buraco PARECIDO e não igual: lá a consulta
+  // esquecia um slot que a tela já oferecia; aqui a tela nunca ofereceu o slot. As 9
+  // peças estavam no catálogo desde a esteira de arte, e o editor não tinha o grupo.
+  // O gate é `e2e/avatar-chapeu.spec.ts`.
+  //
+  // O aluno lê o catálogo INTEIRO, inclusive as peças que não tem: é o que permite
+  // a VITRINE mostrar o que ele ainda deseja. Quem recusa é `equipar_peca`, no
+  // servidor (Regra Inviolável nº 1) — a lista aqui é informação, nunca trava.
+  const { data: catalogo } = await supabase
     .from("avatar_catalogo")
-    .select("slug, origem, min_level, min_tier, raridade")
-    .eq("slot", "traje");
+    .select("slug, slot, origem, min_level, min_tier, raridade")
+    .in("slot", ["cabelo", "traje", "rosto", "oculos", "chapeu"]);
 
   // O guarda-roupa dele — a outra metade da vitrine. Peça de baú sem linha aqui
   // aparece em silhueta; a RLS já limita a leitura ao próprio aluno.
@@ -124,25 +133,31 @@ export default async function PerfilPage() {
 
   const aparencia: Aparencia = {
     skin: profile?.avatar_skin ?? 2,
-    hair: profile?.avatar_hair ?? null,
+    hair: profile?.avatar_cabelo ?? null,
     hairColor: profile?.avatar_hair_color ?? 0,
   };
+
+  // O `possui` é montado AQUI, no servidor, e não no cliente: juntar catálogo com
+  // guarda-roupa é a única conta que decide silhueta × peça, e ela não pode
+  // depender de duas listas chegarem à tela em ordens diferentes.
+  const doSlot = (slot: string): PecaDoCatalogo[] =>
+    ((catalogo ?? []) as ({ slot: string } & Omit<PecaDoCatalogo, "possui">)[])
+      .filter((c) => c.slot === slot)
+      .map(({ slot: _slot, ...c }) => ({ ...c, possui: possuidas.has(c.slug) }));
 
   return (
     <PerfilClient
       profile={profileData}
       aparencia={aparencia}
-      catalogoCabelo={(catalogoCabelo as CabeloDoCatalogo[] | null) ?? []}
-      catalogoTraje={
-        // O `possui` é montado AQUI, no servidor, e não no cliente: juntar catálogo
-        // com guarda-roupa é a única conta que decide silhueta × peça, e ela não
-        // pode depender de duas listas chegarem à tela em ordens diferentes.
-        ((catalogoTraje ?? []) as Omit<TrajeDoCatalogo, "possui">[]).map((t) => ({
-          ...t,
-          possui: possuidas.has(t.slug),
-        }))
-      }
+      catalogoCabelo={doSlot("cabelo")}
+      catalogoTraje={doSlot("traje")}
+      catalogoRosto={doSlot("rosto")}
+      catalogoOculos={doSlot("oculos")}
+      catalogoChapeu={doSlot("chapeu")}
       trajeInicial={profile?.avatar_traje ?? null}
+      rostoInicial={profile?.avatar_rosto ?? null}
+      oculosInicial={profile?.avatar_oculos ?? null}
+      chapeuInicial={profile?.avatar_chapeu ?? null}
       botsDefeated={botsDefeated ?? 0}
       lessonsCompleted={lessonsCompleted ?? 0}
       puzzlesSolved={puzzlesSolved ?? 0}

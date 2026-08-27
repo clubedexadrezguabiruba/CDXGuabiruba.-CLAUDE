@@ -1,12 +1,18 @@
 /**
  * O DASHBOARD NÃO PODE VOLTAR A ENFILEIRAR AS CONSULTAS.
  *
- * Contar consultas não prova nada — em fila ou em paralelo, são três do mesmo
- * jeito. O que este teste mede é QUANDO cada uma parte: as três ficam penduradas
- * sem resolver, e a asserção é que as três já saíram antes de qualquer resposta
+ * Contar consultas não prova nada — em fila ou em paralelo, são as mesmas. O
+ * que este teste mede é QUANDO cada uma parte: todas ficam penduradas sem
+ * resolver, e a asserção é que todas já saíram antes de qualquer resposta
  * chegar. Em fila, só a primeira teria saído.
  *
  * Achado T10 de docs/achados.md.
+ *
+ * ERAM TRÊS E VIRARAM SEIS em 2026-08-23, com a linha do próximo título (D11).
+ * As três novas — a régua `title_tiers`, a contagem de aulas concluídas e as
+ * trilhas que têm aula — entraram na MESMA `Promise.all`, e é exatamente isso
+ * que este teste existe para travar: a tentação, ao adicionar consulta, é
+ * escrever um `await` solto logo abaixo dos que já estavam lá.
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
@@ -36,23 +42,48 @@ const banco = vi.hoisted(() => {
   };
 });
 
+/**
+ * A resposta presa de cada tabela. `user_lesson_progress` devolve `count`
+ * porque a consulta real é `head: true` — ela não traz linha nenhuma.
+ */
+const RESPOSTA: Record<string, unknown> = {
+  users: { data: null as unknown, error: null },
+  user_titles: { data: { current_title: "Cabo", achieved_tier: 1 }, error: null },
+  title_tiers: {
+    data: [
+      { tier: 1, title: "Aprendiz", trail: "recruta", lessons_required: 15 },
+      { tier: 2, title: "Explorador", trail: "soldado", lessons_required: 30 },
+      { tier: 3, title: "Analista", trail: "aspirante", lessons_required: 45 },
+    ],
+    error: null,
+  },
+  user_lesson_progress: { count: 28, error: null },
+  lessons: { data: [{ trail: "recruta" }, { trail: "soldado" }], error: null },
+};
+
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: {
       getUser: async () => ({ data: { user: { id: "aluno-1" } }, error: null }),
     },
+    /**
+     * O construtor do Supabase é encadeável E aguardável: `.eq()` devolve ele
+     * mesmo, `.single()` e o `await` resolvem a mesma promessa. A promessa
+     * nasce no `select()` — é lá que a consulta "parte", e é o instante que
+     * este teste mede.
+     */
     from: (tabela: string) => ({
-      select: () => ({
-        eq: () => ({
-          single: () =>
-            tabela === "users"
-              ? banco.presa("users", { data: banco.perfil, error: null })
-              : banco.presa("user_titles", {
-                  data: { current_title: "Cabo" },
-                  error: null,
-                }),
-        }),
-      }),
+      select: () => {
+        const valor = tabela === "users" ? { data: banco.perfil, error: null } : RESPOSTA[tabela];
+        const promessa = banco.presa(tabela, valor);
+        const construtor = {
+          eq: () => construtor,
+          single: () => promessa,
+          then: (ok: (v: unknown) => unknown, err?: (e: unknown) => unknown) =>
+            promessa.then(ok, err),
+        };
+        return construtor;
+      },
     }),
     rpc: () =>
       banco.presa("rpc:ranking", {
@@ -89,6 +120,7 @@ vi.mock("@/components/layout/FaixaDeComando", () => ({
 
 import DashboardPage from "../page";
 import DailyPanel from "@/components/gamification/DailyPanel";
+import FaixaDeComando from "@/components/layout/FaixaDeComando";
 
 // ── Utilidades ───────────────────────────────────────────────
 
@@ -124,13 +156,21 @@ describe("dashboard — as consultas do servidor", () => {
     banco.presas.length = 0;
   });
 
-  it("dispara perfil, título e ranking JUNTOS, antes de qualquer resposta chegar", async () => {
+  it("dispara as SEIS consultas JUNTAS, antes de qualquer resposta chegar", async () => {
     const emVoo = DashboardPage();
 
-    // Só o `getUser` teve resposta. As outras três continuam penduradas.
+    // Só o `getUser` teve resposta. As outras seis continuam penduradas.
     await respirar();
 
-    expect(banco.iniciadas).toEqual(["users", "user_titles", "rpc:ranking"]);
+    expect(banco.iniciadas).toEqual([
+      "users",
+      "user_titles",
+      "rpc:ranking",
+      // As três do próximo título entraram no mesmo lote, não numa segunda onda.
+      "title_tiers",
+      "user_lesson_progress",
+      "lessons",
+    ]);
 
     // Agora solta tudo e deixa a página terminar.
     for (const soltar of banco.presas) soltar();
@@ -147,5 +187,26 @@ describe("dashboard — as consultas do servidor", () => {
     expect(props).not.toBeNull();
     expect(props!.level).toBe(banco.perfil.level);
     expect(props!.title).toBe("Cabo");
+  });
+
+  /**
+   * A fiação da linha do próximo título (D11), de ponta a ponta: o tier vem de
+   * `user_titles`, o nome do degrau seguinte vem de `title_tiers`, a contagem
+   * sai da diferença entre o marco e as aulas concluídas — e a frase só traz
+   * NÚMERO porque 28 de 30 está dentro da reta final.
+   *
+   * A trava do conteúdo tem teste próprio, na unidade
+   * (`lib/gamification/__tests__/proximoTitulo.test.ts`). Aqui o que se prova é
+   * que os quatro dados chegam ao componente certo.
+   */
+  it("monta a frase do próximo título a partir das quatro fontes e a entrega à faixa", async () => {
+    const emVoo = DashboardPage();
+    await respirar();
+    for (const soltar of banco.presas) soltar();
+
+    const props = acharProps(await emVoo, FaixaDeComando);
+
+    expect(props).not.toBeNull();
+    expect(props!.proximoTitulo).toBe("Faltam 2 aulas para você virar Explorador.");
   });
 });

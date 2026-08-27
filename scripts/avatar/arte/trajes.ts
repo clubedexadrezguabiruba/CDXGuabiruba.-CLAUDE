@@ -80,9 +80,15 @@ const CABECALHO = `/**
  *    deixou de vestir o boneco em 2026-08-13, e a cor do traje passou a ser final e
  *    livre (doc 21 §0);
  *  - **\`escalaMedida\` é ausente de propósito.** Com ela ausente o compositor usa
- *    \`k = 1\` (\`compositor.ts:373\`), e o \`<image>\` ocupa o \`viewBox\` inteiro — que
- *    é exatamente o retângulo em que o PNG foi recortado (px 212→812 × 92→932,
- *    600 × 840, 5:7). A colagem é conta, não ajuste.
+ *    \`k = 1\` (\`colarArte\`), e o \`<image>\` ocupa a \`CAIXA_DA_ARTE\` inteira — que
+ *    é exatamente o retângulo em que o PNG foi recortado (px 212→812 × 2→932,
+ *    600 × 930). A colagem é conta, não ajuste.
+ *
+ *    ⚠️ **A caixa era o \`viewBox\` até 2026-08-24** (px 92→932, 600 × 840, 5:7).
+ *    Ela subiu para dar teto ao chapéu, que é peça de \`<image>\` e só alcançava
+ *    39,5 unidades acima da coroa. Os dois trajes foram re-exportados no recorte
+ *    novo no mesmo commit; o respingo medido no render foi de **3 px em 1,4 milhão**
+ *    na farda e **0** no gambesão.
  */`;
 
 const RODAPE = `

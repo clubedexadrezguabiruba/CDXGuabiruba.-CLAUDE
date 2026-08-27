@@ -219,6 +219,21 @@ de mostrar que ficou:**
 byte quer dizer que a mudança veio do conversor e vale para todos — isso é achado
 (`docs/achados.md`), não rebase.
 
+## Depois de promover CABELO: vestir a peça — §7b do runbook
+
+⚠️ **A peça não está pronta quando entra em `CABELOS`.** Um cabelo novo nasce com
+**nove pares por decidir**, um por chapéu, e o `verify:arte` reprova até que os nove
+estejam no `scripts/avatar/arte/aperto.json`.
+
+O motivo é de largura: os penteados têm de 105% a 133% da largura da cabeça e os
+chapéus não têm folga para eles; abaixo da aba não há o que esconder, então o conserto
+é **estreitar o cabelo**, não cortar. O número é do OLHO do Doug, par a par, em
+`/dev/avatar-oclusao` — **não tente derivá-lo de largura**, isso já foi medido e cai.
+
+Fluxo: par na mesa -> aperto nos botões -> `gravar par` (inclusive `1,00`, que também
+é decisão) -> nos nove chapéus -> `npm run arte:apertos`. Detalhe e as quatro
+reprovações: **§7b do runbook**.
+
 ## O que os gates NÃO pegam — e é declarado
 
 **Beleza.** A folha e o olho do Doug julgam a peça; os controles julgam a régua.

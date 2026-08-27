@@ -39,7 +39,24 @@ import { converter } from "./converter";
 import { medirCoroa } from "./coroa";
 import { extrair } from "./extrair";
 
-const ARTES = ["entrada", "entrada-2", "chanel"];
+/**
+ * A LISTA PADRÃO É A DA ROTA TRAÇADA — e o `chanel` saiu dela em 2026-08-22.
+ *
+ * Esta régua mede a arte pelo `converter` (traçado) **e** o render pelo `medirCoroa`,
+ * que compõe a peça pela família traçada. Quando o `chanel` foi promovido ao padrão
+ * tonal, `chanel.png` foi substituído pela arte v3 — e o `converter` sobre ela devolve
+ * um `claras` cuja faixa `t` não gera ponto nenhum: `pathCabeloClaro`
+ * (`cabelo.ts:1003` → `laco`, `cabelo.ts:688`) lê `.x` de `undefined` e o comando
+ * inteiro morre com exit 1. Medido: a arte ANTERIOR do `chanel` passa (faixa 12,0 u,
+ * 14 px escuros), a atual estoura.
+ *
+ * Então a lista padrão são as **duas artes que continuam traçadas** — `entrada`
+ * (`espetado`) e `entrada-2` (`assimetrico`), exatamente `MODELOS_TRACADOS`. Arte de
+ * outra família se mede passando o nome na linha de comando, e aí a metade do RENDER
+ * sai pela família errada: ela vale como diagnóstico da ARTE, nunca como o que o
+ * produto desenha.
+ */
+const ARTES = process.argv.slice(2).length ? process.argv.slice(2) : ["entrada", "entrada-2"];
 
 /** Unidades do `viewBox` viram pixels no tamanho que manda, o do ranking. */
 const U_POR_PX_56 = VIEWBOX.h / 56;

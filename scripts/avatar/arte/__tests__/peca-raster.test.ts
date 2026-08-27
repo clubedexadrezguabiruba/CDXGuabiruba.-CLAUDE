@@ -38,7 +38,7 @@ import { join } from "path";
 import sharp from "sharp";
 
 import { PNG_BASE } from "../base";
-import { construirPeca } from "../peca-de-arte";
+import { RECORTE, construirPeca } from "../peca-de-arte";
 import { CONGELADAS_NO_VETOR, TRAJE, formatoDoTraje } from "../traje";
 
 describe("`formatoDoTraje` — a trava do «não regenere», e ela é pura", () => {
@@ -101,7 +101,13 @@ describe("a esteira do raster, numa fixture sintética", () => {
 
     // O `viewBox` é o mesmo dos dois braços — é o que mantém `colarArte()` sendo uma
     // conta só, com `k = 1` ocupando o retângulo inteiro.
-    expect(svg).toContain('viewBox="0 0 600 840"');
+    //
+    // **DERIVADO de `RECORTE`, e não mais escrito à mão.** Ele dizia `600 840` em
+    // literal, e em 2026-08-24 o recorte cresceu para 600 × 930 — a `CAIXA_DA_ARTE`
+    // subiu para dar teto ao chapéu. Um literal aqui reprova a cada mudança de
+    // recorte sem dizer nada sobre o que o teste existe para guardar, que é as duas
+    // pontas usarem O MESMO retângulo.
+    expect(svg).toContain(`viewBox="0 0 ${RECORTE.w} ${RECORTE.h}"`);
 
     // E o payload decodifica como WEBP: os bytes 0–3 são "RIFF" e os 8–11, "WEBP".
     const b64 = /base64,([^"]+)"/.exec(svg)![1];

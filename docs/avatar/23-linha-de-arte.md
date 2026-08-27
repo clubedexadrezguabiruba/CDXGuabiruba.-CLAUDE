@@ -310,6 +310,36 @@ nº 4 lida do lado da esteira:
 `traje-farda` e `traje-gambesao` estão **congeladas no vetor** por decisão do Doug,
 com trava mecânica em `traje.ts`.
 
+### 4.5 A PEÇA É FIGURINHA — opaca por dentro, e vale para os dois lados
+
+*Decidida em 2026-08-22, depois de a `trancada` v10 chegar ao render com o traço do
+maxilar do boneco aparecendo dentro da barba.*
+
+> **"A peça é colada como figurinha: nada atrás dela pode ser visto."** — o Doug
+
+A peça cobre o que ela cobre, inteiro. As **únicas** janelas que uma peça de rosto
+mantém abertas são as **feições** — a espinha da boca e as cápsulas dos olhos —, e
+elas são abertas de propósito pelo recorte da esteira, porque a linha da boca é da
+base e nunca da peça (doc 24 §3: *0 px de tinta na boca, sem tolerância*).
+
+**Por que isto virou lei e não conserto de uma peça:** a esteira reconhece a peça
+pelo que *difere da base careca*, então **fio escuro pintado sobre o traço preto do
+boneco não entra na peça** — a diferença é ~0. O furo que sobra não é escolha de
+ninguém: é o critério de reconhecimento falhando em silêncio, e ele **piora quanto
+maior a peça** (a `trancada` v4 tinha 2 furos, a v10 tinha 4). Nenhuma régua de arte
+pega isso, porque a arte está certa.
+
+Quem garante é a esteira, no **passo 2c** de `barba-para-formas.ts`: furo interior
+sem feição dentro é preenchido, e o pixel preenchido carrega a luminância que a arte
+tem ali — então o tom continua saindo do desenho, e a Regra Inviolável nº 4 continua
+de pé. **Não se pede isso ao gerador e não se conserta na arte** — as duas coisas
+foram tentadas em 2026-08-22 e as duas foram reprovadas a olho.
+
+⚠️ **A régua que decide é a PROVA DA FIGURINHA, e ela é do render:** trocar a cor da
+pele do boneco não pode mudar pixel nenhum dentro da pegada da silhueta, fora das
+janelas de feição. Ela não precisa saber a causa nem olhar a arte. Gate:
+`scripts/avatar/arte/__tests__/figurinha.test.ts`.
+
 ---
 
 ## 5. Raridade em desenho, por slot
@@ -389,24 +419,49 @@ e é melhor descobrir aqui do que no gerador.
 
 ---
 
-## 8. A decisão que o chapéu deve tomar antes do primeiro desenho
+## 8. `escondeCabelo` — DECIDIDO em 2026-08-25, e não é um enum
 
-O doc 15 marca **`escondeCabelo`** como decisão obrigatória antes de desenhar o
-primeiro chapéu, e ela não é técnica — é de produto:
+Este documento registrava a decisão como aberta, com três valores possíveis. Ela
+foi decidida medindo, e a resposta **não é nenhum dos três**: é uma linha.
 
-| valor | o que quer dizer | custo |
+### 8.1 Por que os três valores caíram
+
+| valor | o que quer dizer | por que caiu |
 |---|---|---|
-| `"nada"` | o cabelo aparece inteiro sob o chapéu | o chapéu tem de ser desenhado *sobre* um cabelo que ele não conhece |
-| `"franja"` | some a calota, fica a franja | o meio-termo, e o que a maior parte dos jogos faz |
-| `"tudo"` | o chapéu substitui o cabelo | perde-se a cor escolhida pelo aluno em quem usa chapéu — e a cor do cabelo é **uma das duas** que ele escolhe |
+| `"nada"` | o cabelo aparece inteiro sob o chapéu | **é o que estava em produção, e quebra.** Medido nos 171 pares: o `moicano` deixava 29,2% da própria massa acima da linha da `touca-de-la`; o `coque-individual` furava o topo da `cartola` com 0,2% da massa subindo 238 u. Lê como cabelo *nascendo através* do chapéu |
+| `"franja"` | some a calota, fica a franja | caiu por falta de sub-caminho separável (`camadas.ts`), e **a razão caducou** — o tonal trouxe `<mask>` em runtime de qualquer forma. Mas ela já não bastava: franja é *uma* altura de corte, e cada chapéu corta na sua |
+| `"tudo"` | o chapéu substitui o cabelo | apaga **uma das duas cores que o aluno escolhe**. Colide com a Regra Inviolável nº 4 na prática |
 
-⚠️ **`"tudo"` colide com a Regra Inviolável nº 4 na prática**, ainda que não na
-letra: um aluno que escolheu o cabelo e vestiu um chapéu que o esconde perdeu metade
-da própria escolha. Se for `"tudo"`, tem de ser por peça e por decisão, nunca por
-padrão do slot.
+**O que os três não conseguem dizer:** que a touca corta baixo e a cartola corta
+alto. Medido nos 9 chapéus, a linha de baixo sobre o crânio vai de **y 130**
+(`mago`) a **y 170** (`cartola`) no ponto mais alto, e de 183 a 290 no mais baixo —
+uma faixa de 160 unidades. Um enum de três palavras não cabe nisso.
 
-**Este documento não decide.** Ele registra que a decisão está aberta e que ela vem
-antes do primeiro pedido de chapéu — que é o H3.
+### 8.2 O que ficou no lugar
+
+**`escondeCabelo` é o `d` da região que o chapéu contém.** Abaixo dela o cabelo sai
+inteiro — franja, costeleta, rabo, trança —, acima dela o chapéu o contém. `"nada"`
+e `"tudo"` viram casos degenerados da mesma coisa: a linha no infinito e a linha no
+queixo.
+
+**Ninguém escreve esse valor.** `oclusao-do-chapeu.ts` o extrai do alfa do próprio
+`.svg` da peça, respondendo ponto a ponto *"dá para chegar aqui vindo de baixo sem
+atravessar o chapéu?"*. Não há campo novo para preencher no pedido de arte, não há
+decisão por peça, e a linha não tem como divergir do desenho: mudou a arte, mudou a
+linha, na mesma passada da esteira. Custa ~243 B por chapéu.
+
+Resultado medido, antes → depois, nos 171 pares: escape médio de **5,62% → 0,12%**.
+
+### 8.3 O que a decisão NÃO resolve, e é decisão de produto
+
+Um penteado cuja identidade mora **em cima da cabeça** não tem o que sobrar debaixo
+de um chapéu. Medido: em **11 dos 171 pares** sobra menos de 3% da massa do cabelo —
+e 9 deles são o `moicano`, que some inteiro debaixo dos nove chapéus.
+
+Isso é fisicamente correto (um moicano sob uma touca some na vida real também) e é
+**produto ruim**: a criança que desbloqueou a peça não a vê, e perde junto a cor que
+escolheu. `npm run arte:par` conta e nomeia esses pares **sem reprovar** — régua que
+reprova decisão de produto é régua decidindo pelo dono.
 
 ---
 

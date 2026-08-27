@@ -829,7 +829,7 @@ export interface Importacao {
  * `tracar-cabelo.ts`, consumidas por `export`. O que esta função troca é só **de onde
  * vem a máscara**: papel declarado em vez de componente conexa adivinhada no pixel.
  */
-export async function importarPeca(caminhoSemantica: string, id: Cabelo["id"] = "coque"): Promise<Importacao> {
+export async function importarPeca(caminhoSemantica: string, id: Cabelo["id"] = "chanel"): Promise<Importacao> {
   const falhas: string[] = [];
   const achados: string[] = [];
   const laudo: string[] = [];

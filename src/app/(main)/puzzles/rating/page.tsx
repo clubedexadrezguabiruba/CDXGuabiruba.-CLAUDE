@@ -208,7 +208,7 @@ export default function PuzzleRatingPage() {
           className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700"
         >
           <ArrowLeft className="h-4 w-4" />
-          Puzzles
+          Desafios
         </Link>
         {/* Mobile: rating + streak inline */}
         <div className="flex items-center gap-3 lg:hidden">
@@ -224,6 +224,13 @@ export default function PuzzleRatingPage() {
           </div>
         </div>
       </div>
+
+      {/*
+        A tela mais usada do produto não tinha h1 nenhum — só números soltos.
+        Quem chega por link direto, ou usa leitor de tela, não sabia onde
+        estava. O nome é o da própria tela no hub de Desafios.
+      */}
+      <h1 className="sr-only">Modo Rating — Desafios</h1>
 
       {/* Two-column on desktop */}
       <div className="lg:flex lg:gap-6">
@@ -290,7 +297,7 @@ export default function PuzzleRatingPage() {
               {state.streak > 0 && (
                 <div className="mt-3 flex items-center gap-1.5 text-orange-500">
                   <Flame className="h-4 w-4" />
-                  <span className="text-sm font-bold">Streak: {state.streak}</span>
+                  <span className="text-sm font-bold">Sequência: {state.streak}</span>
                 </div>
               )}
             </div>
@@ -324,7 +331,7 @@ export default function PuzzleRatingPage() {
                 {state.result.streak >= 3 && (
                   <div className="mt-1 flex items-center justify-center gap-1 text-orange-500">
                     <Flame className="h-4 w-4" />
-                    <span className="font-bold">Streak: {state.result.streak}</span>
+                    <span className="font-bold">Sequência: {state.result.streak}</span>
                   </div>
                 )}
                 <button

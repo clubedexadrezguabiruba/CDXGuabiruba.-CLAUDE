@@ -1,5 +1,12 @@
 /**
- * A BARBA DE ARTE VIRANDO `formas[]` — a esteira de quem RECOLORE.
+ * A ARTE VIRANDO `formas[]` + TOM — a esteira de quem RECOLORE, nos DOIS slots.
+ *
+ * ⚠️ **O nome do arquivo diz `barba` e ele nunca foi só da barba.** O docstring do
+ * gate da aresta nua já dizia *"vale para todo o slot rosto"*; desde 2026-08-22 vale
+ * também para o **cabelo**, que é o outro eixo que o aluno recolore. O que muda por
+ * slot são dois campos de `ESTEIRA` — prefixo do slug e resolução do tom —, e nada
+ * mais. O nome fica porque renomear arquivo é churn sem medição por trás; a verdade
+ * está escrita em `ESTEIRA` e em `construirPecaTonal`.
  *
  * ---------------------------------------------------------------------------
  * POR QUE ESTA ESTEIRA É OUTRA, E NÃO A DO TRAJE
@@ -7,10 +14,10 @@
  *
  * A pergunta que bifurca toda peça nova é uma só (Regra Inviolável nº 4, doc 19
  * §12): **a peça recolore?** Traje, chapéu, óculos e pet têm cor assada, saem por
- * `peca-de-arte.ts` como `.svg` avulso e o compositor os cola com `<image>`. A
- * barba recolore junto com o cabelo (D17) — um `.svg` de cor assada seria preto
- * fixo — então ela tem de sair em **caminhos com token de cor**, no modo `formas`
- * de `PecaSobreposta`.
+ * `peca-de-arte.ts` como `.svg` avulso e o compositor os cola com `<image>`. Barba
+ * e cabelo recolorem (D17 e a emenda à D27: barba é cabelo) — um `.svg` de cor
+ * assada seria preto fixo — então eles têm de sair em **caminhos com token de
+ * cor**, no modo `formas` de `PecaSobreposta`.
  *
  * É por isso que este arquivo existe ao lado de `peca-de-arte.ts` em vez de
  * reusá-lo: não é outra configuração de traçador, é outro **destino de tipo**.
@@ -32,8 +39,9 @@
  *   forma 2 — **o MESMO `d`**, em `var(--av-cabelo, …)`, vestido pela máscara.
  *   tom     — um PNG **cinza** da luminância da arte, na caixa da peça. Ele é
  *             **servido à parte**, como o `.svg` do traje: o SVG do boneco carrega o
- *             caminho, não os bytes. Quem grava o arquivo é `rostos.ts` — ver o
- *             campo `tom` de `RostoDeArte` e `TomDaPeca` em `tipos.ts`.
+ *             caminho, não os bytes. Quem grava o arquivo é `rostos.ts` (ou
+ *             `cabelos.ts`) — ver o campo `tom` de `PecaTonalDeArte` e
+ *             `TomDaPeca` em `tipos.ts`.
  *
  * Onde a arte é clara a cor do cabelo aparece cheia; onde escurece ela cede e o
  * preto de baixo aparece. **A máscara não tem cor** — é um canal de cinza —, então
@@ -67,6 +75,7 @@
  *
  * Uso:
  *   npx tsx scripts/avatar/arte/barba-para-formas.ts scripts/avatar/arte/barba-cheia.png
+ *   ... --slot cabelo  (a mesma esteira, com o prefixo e a resolução do outro slot)
  *   ... --sem-limite   (não recorta as feições — só para medir o que o recorte custa)
  */
 import { Potrace } from "potrace";
@@ -146,6 +155,76 @@ const PERCENTIS: readonly [number, number] = [0.02, 0.98];
  * é pendência escrita, não omissão.
  */
 const RESOLUCAO_DO_TOM = 0.5;
+
+// ---------------------------------------------------------------------------
+// O QUE MUDA POR SLOT — e é só isto. A esteira é uma.
+// ---------------------------------------------------------------------------
+
+/**
+ * OS SLOTS QUE RECOLOREM — e por que a esteira é **uma**, parametrizada.
+ *
+ * A pergunta que bifurca toda peça nova é *a peça recolore?* (Regra Inviolável nº 4,
+ * doc 19 §12), e ela **não é uma pergunta sobre o slot**: quem tem cor assada sai
+ * por `peca-de-arte.ts` como `.svg` avulso, quem recolore sai daqui. Hoje isso é a
+ * barba (slot `rosto`) e o cabelo — os dois eixos de escolha do aluno.
+ *
+ * Este arquivo se chama `barba-para-formas.ts` e **nunca foi a esteira da barba**: o
+ * docstring do gate da aresta nua já dizia *"vale para todo o slot rosto"*, a base
+ * careca é a mesma, o passo 1 (diferença contra a base) é o mesmo, o recorte de
+ * feições é o mesmo e a figurinha (2c) é a mesma. Copiar tudo isso para um
+ * `cabelo-para-formas.ts` criaria **duas descrições da mesma esteira** — o defeito
+ * que este repositório inteiro evita, e que já custou seis medições de um pipeline
+ * morto e a contagem de gates aparecendo em quatro valores.
+ *
+ * Então o que varia por slot é uma tabela de DOIS campos, e a esteira não vê
+ * nenhum dos dois até precisar.
+ */
+export interface EsteiraDoSlot {
+  /**
+   * O prefixo do slug — `rosto-`, `cabelo-`.
+   *
+   * Ele é obrigatório porque `avatar_catalogo` tem chave primária única para
+   * **todos** os slots: `chapeu-bone` e `rosto-bone` são peças diferentes que sem o
+   * prefixo colidiriam. **Desde 2026-08-23 isso vale para o cabelo também** — ele
+   * deixou de ser escolha livre com tabela própria e virou peça de baú, com linha em
+   * `avatar_catalogo` e `users.avatar_cabelo` referenciando-a (doc 22 §5-E). Antes
+   * dessa data o prefixo do cabelo era só convenção de nome de arquivo; agora é o
+   * slug de verdade. O nome continua dizendo de si mesmo o que é —
+   * `public/items/cabelo/cabelo-chanel-tom.png` —, e a peça atravessa laudo, folha,
+   * literal e banco com um nome só.
+   */
+  readonly prefixo: string;
+  /**
+   * A resolução do PNG de tom, em fração da caixa da peça.
+   *
+   * ⚠️ **Os 50% são número DA BARBA, e por isso este campo existe.** O docstring de
+   * `RESOLUCAO_DO_TOM` já declarava a pendência com todas as letras: *"cada slot tem
+   * direito ao próprio número"*. Assar 0,5 na esteira seria calibrar o slot cabelo
+   * pelo primeiro desenho que passou pelo slot rosto — o erro que `PISO_DISTINCAO`
+   * nomeia em `folha-base.ts`.
+   *
+   * O do cabelo entra aqui **como provisório declarado** e é medido na primeira peça
+   * real (escada 100% → 50% → 35%, contando tons distintos no render, doc 23 §4.1).
+   */
+  readonly resolucaoDoTom: number;
+}
+
+/**
+ * A TABELA — dois slots, e ela é escrita, nunca derivada de nome de pasta.
+ *
+ * Slot novo aqui é decisão, não descoberta: `chapeu` e `pet` têm **cor assada** e
+ * saem por `peca-de-arte.ts`. Se um dia um deles recolorir, a linha entra com o
+ * número medido dele, não herdado.
+ */
+export const ESTEIRA: Record<SlotTonal, EsteiraDoSlot> = {
+  rosto: { prefixo: "rosto-", resolucaoDoTom: RESOLUCAO_DO_TOM },
+  // ⚠️ PROVISÓRIO DECLARADO: herdado da barba até a primeira peça de cabelo medir a
+  // própria escada. Ver `EsteiraDoSlot.resolucaoDoTom`.
+  cabelo: { prefixo: "cabelo-", resolucaoDoTom: RESOLUCAO_DO_TOM },
+};
+
+/** Os slots cuja peça RECOLORE. Os de cor assada não passam por aqui. */
+export type SlotTonal = "rosto" | "cabelo";
 
 /**
  * A ILHA MÍNIMA — 50 px² no canvas de edição, e o número sai da SOBRANCELHA.
@@ -298,9 +377,11 @@ export function paraUnidades(d: string): string {
 // A peça
 // ---------------------------------------------------------------------------
 
-export interface RostoDeArte {
-  /** `barba-cheia.png` → `rosto-barba-cheia`. */
+export interface PecaTonalDeArte {
+  /** `barba-cheia.png` → `rosto-barba-cheia`; `chanel.png` → `cabelo-chanel`. */
   slug: string;
+  /** De que slot ela é. O que o slot muda está em `ESTEIRA`. */
+  slot: SlotTonal;
   /** O caminho do PNG de origem. */
   arte: string;
   /**
@@ -328,19 +409,28 @@ export interface RostoDeArte {
   pxNoRosto: number;
   ruidoDaPeca: number;
   componentes: number;
+  /** Furos sem feição dentro, preenchidos pela regra da figurinha (passo 2c). */
+  pxPreenchidos: number;
+  /** Janelas com feição dentro — as únicas que a figurinha mantém abertas. */
+  janelasDeFeicao: number;
   /** A máscara final da peça, para quem quiser medir fidelidade contra o render. */
   mascara: Uint8Array;
 }
 
 /**
- * `barba-cheia.png` → `rosto-barba-cheia`.
+ * `barba-cheia.png` + `rosto` → `rosto-barba-cheia`; `chanel.png` + `cabelo` →
+ * `cabelo-chanel`.
  *
- * O prefixo `rosto-` é o do SLOT, e ele é obrigatório: `avatar_catalogo` tem uma
+ * O prefixo é o do SLOT, e no `rosto` ele é obrigatório: `avatar_catalogo` tem uma
  * chave primária só para os quatro slots, e `chapeu-bone` e `rosto-bone` são peças
- * diferentes que sem o prefixo colidiriam.
+ * diferentes que sem o prefixo colidiriam. Ver `EsteiraDoSlot.prefixo` para o
+ * cabelo, que não tem catálogo e o carrega por outro motivo.
  */
-export const slugDoRosto = (caminhoArte: string): string =>
-  `rosto-${(caminhoArte.split(/[\/]/).pop() ?? "").replace(/\.png$/i, "")}`;
+export const slugDaPeca = (caminhoArte: string, slot: SlotTonal): string =>
+  `${ESTEIRA[slot].prefixo}${(caminhoArte.split(/[\/]/).pop() ?? "").replace(/\.png$/i, "")}`;
+
+/** O de sempre, para quem já chamava. `slugDaPeca(arte, "rosto")`. */
+export const slugDoRosto = (caminhoArte: string): string => slugDaPeca(caminhoArte, "rosto");
 
 /**
  * A COR DE CADA FORMA, e as duas reservas estão escritas aqui de propósito.
@@ -363,11 +453,27 @@ export const slugDoRosto = (caminhoArte: string): string =>
 export const COR_CONTORNO = "var(--av-linha)";
 export const COR_MIOLO = "var(--av-cabelo, #262626)";
 
-/** Traça uma arte de barba já aprovada. Não repara nada — ver o topo. */
-export async function construirRosto(
+/**
+ * Traça uma arte já aprovada, de um slot que RECOLORE. Não repara nada — ver o topo.
+ *
+ * ⚠️ **`Tonal` no nome não é enfeite: `peca-de-arte.ts` já exporta um
+ * `construirPeca`**, e ele é o do outro lado da bifurcação — a peça de **cor
+ * assada**, que sai como `.svg`/WEBP avulso e o compositor cola com `<image>`. Dois
+ * `construirPeca` na mesma pasta, cada um de um braço da Regra Inviolável nº 4,
+ * seriam a pior colisão de nome possível: as duas assinaturas aceitam um caminho de
+ * PNG e devolvem uma peça, então trocar uma pela outra **compila**.
+ *
+ * O `slot` não muda a esteira; ele escolhe duas coisas na tabela `ESTEIRA` — o
+ * prefixo do slug e a resolução do PNG de tom. Tudo mais — base careca, diferença
+ * contra a base, recorte de feições, aresta nua, figurinha, esticão por percentil,
+ * traçado — é idêntico, e é por isso que existe **uma** esteira e não duas.
+ */
+export async function construirPecaTonal(
   caminhoArte: string,
+  slot: SlotTonal,
   opcoes: { semLimite?: boolean } = {},
-): Promise<RostoDeArte> {
+): Promise<PecaTonalDeArte> {
+  const { resolucaoDoTom } = ESTEIRA[slot];
   const { data: A, info } = await cru(caminhoArte);
   const { data: B } = await cru(PNG_BASE);
   const W = info.width;
@@ -463,6 +569,95 @@ export async function construirRosto(
     );
   }
 
+  // --- 2c. A FIGURINHA — todo furo sem feição dentro é preenchido ---
+  //
+  // Decisão do Doug, 2026-08-22: *"a barba é colada como figurinha — nada atrás
+  // dela pode ser visto"*. O defeito que a fundou: a v10 da `trancada` chegou ao
+  // render com o traço do maxilar do boneco aparecendo DENTRO da barba, e a causa
+  // era o passo 1 — a peça é "o que difere da base", e fio escuro pintado sobre o
+  // traço PRETO da base difere em ~0. O pixel ficava fora da máscara, o `potrace`
+  // o devolvia como FURO na silhueta, e pelo furo aparecia o que estivesse por
+  // baixo no produto: `cabeca-contorno`, pele, e o traje que o aluno vestir.
+  //
+  // O furo não é reparo de arte — é topologia da máscara. O pixel preenchido entra
+  // no TOM com a luminância que a arte tem ali (passo 3), então onde a arte é
+  // escura o render mostra `var(--av-linha)` contínuo com os fios vizinhos, e onde
+  // ela é clara mostra a cor do cabelo — o render passa a reproduzir a arte que o
+  // Doug aprovou, em vez das camadas de baixo.
+  //
+  // As ÚNICAS janelas que ficam abertas são as que contêm FEIÇÃO — a espinha da
+  // boca e as cápsulas dos olhos, as mesmas regiões que o recorte do passo 2
+  // protege. A linha da boca é da base, nunca da peça (doc 24 §3: "0 px de tinta
+  // na boca, sem tolerância"), então a janela dela é desenho, não defeito.
+  //
+  // Medido na v10 no dia da decisão: 4 furos sem feição (644 px), o maior com
+  // 373 px colado no contorno do maxilar. O gate é `__tests__/figurinha.test.ts`.
+  const alcancaBorda = new Uint8Array(n);
+  {
+    const fila: number[] = [];
+    const põe = (i: number) => {
+      if (!pecaLimpa.m[i] && !alcancaBorda[i]) {
+        alcancaBorda[i] = 1;
+        fila.push(i);
+      }
+    };
+    for (let x = 0; x < W; x++) {
+      põe(x);
+      põe((H - 1) * W + x);
+    }
+    for (let y = 0; y < H; y++) {
+      põe(y * W);
+      põe(y * W + W - 1);
+    }
+    while (fila.length) {
+      const i = fila.pop()!;
+      const x = i % W;
+      const y = (i / W) | 0;
+      if (x > 0) põe(i - 1);
+      if (x < W - 1) põe(i + 1);
+      if (y > 0) põe(i - W);
+      if (y < H - 1) põe(i + W);
+    }
+  }
+  // Cada furo é uma componente do que sobrou; a pergunta é uma por componente.
+  let pxPreenchidos = 0;
+  let janelasDeFeicao = 0;
+  {
+    const visto = new Uint8Array(n);
+    for (let i0 = 0; i0 < n; i0++) {
+      if (pecaLimpa.m[i0] || alcancaBorda[i0] || visto[i0]) continue;
+      visto[i0] = 1;
+      const pilha = [i0];
+      const furo: number[] = [];
+      let temFeicao = false;
+      while (pilha.length) {
+        const i = pilha.pop()!;
+        furo.push(i);
+        const x = i % W;
+        const y = (i / W) | 0;
+        const u = paraUnidade(x, y);
+        if (naEspinhaDaBoca(u.x, u.y) || naCapsulaDoOlho(u.x, u.y)) temFeicao = true;
+        for (const q of [
+          x > 0 ? i - 1 : -1,
+          x < W - 1 ? i + 1 : -1,
+          y > 0 ? i - W : -1,
+          y < H - 1 ? i + W : -1,
+        ])
+          if (q >= 0 && !pecaLimpa.m[q] && !alcancaBorda[q] && !visto[q]) {
+            visto[q] = 1;
+            pilha.push(q);
+          }
+      }
+      if (temFeicao) {
+        janelasDeFeicao++;
+        continue;
+      }
+      for (const i of furo) pecaLimpa.m[i] = 1;
+      pxPreenchidos += furo.length;
+    }
+  }
+  pecaLimpa.mantidos += pxPreenchidos;
+
   // --- 3. O TOM — a caixa da peça, o esticão por percentil, e o PNG cinza ---
   //
   // A partição contorno × miolo MORREU AQUI. Ela existia para dar duas cores a uma
@@ -538,10 +733,10 @@ export async function construirRosto(
         : 0;
     }
   const pngTom = await sharp(cinza, { raw: { width: MW, height: MH, channels: 1 } })
-    .resize(Math.round(MW * RESOLUCAO_DO_TOM))
+    .resize(Math.round(MW * resolucaoDoTom))
     .png({ compressionLevel: 9, palette: true })
     .toBuffer();
-  const tomW = Math.round(MW * RESOLUCAO_DO_TOM);
+  const tomW = Math.round(MW * resolucaoDoTom);
   const tomH = Math.round((MH * tomW) / MW);
 
   // A CAIXA EM UNIDADES — `x1 + 1` e `y1 + 1` porque a caixa vai até a borda EXTERNA
@@ -562,7 +757,8 @@ export async function construirRosto(
     throw new Error("o buffer de tom não começa com a assinatura PNG");
 
   return {
-    slug: slugDoRosto(caminhoArte),
+    slug: slugDaPeca(caminhoArte, slot),
+    slot,
     arte: caminhoArte,
     formas: [
       { d: dPeca, cor: COR_CONTORNO, semTraco: true },
@@ -575,27 +771,45 @@ export async function construirRosto(
     pxNoRosto,
     ruidoDaPeca: peca0.descartados,
     componentes: pecaLimpa.quantas,
+    pxPreenchidos,
+    janelasDeFeicao,
     mascara: pecaLimpa.m,
   };
 }
 
+/**
+ * A ESTEIRA DO SLOT `rosto`, com a assinatura de sempre.
+ *
+ * Ela não é compatibilidade por cortesia: é o que faz a generalização ser
+ * **provável** em vez de declarada. Todos os chamadores de hoje — `rostos.ts`,
+ * `folha-rosto.ts`, `figurinha.test.ts`, `tom-da-peca.test.ts` — continuam
+ * chamando esta, e os selos da `barba-trancada` provam byte a byte que a barba não
+ * mudou um byte ao slot `cabelo` nascer.
+ */
+export const construirRosto = (
+  caminhoArte: string,
+  opcoes: { semLimite?: boolean } = {},
+): Promise<PecaTonalDeArte> => construirPecaTonal(caminhoArte, "rosto", opcoes);
+
 // ---------------------------------------------------------------------------
-// O CLI — laudo e nada mais. Quem escreve o literal é `rostos.ts`.
+// O CLI — laudo e nada mais. Quem escreve o literal é `rostos.ts`/`cabelos.ts`.
 // ---------------------------------------------------------------------------
 
 async function principal(): Promise<void> {
   const arte = process.argv[2];
   const semLimite = process.argv.includes("--sem-limite");
-  if (!arte) {
-    console.error("uso: barba-para-formas.ts <arte.png> [--sem-limite]");
+  const i = process.argv.indexOf("--slot");
+  const slot = (i > 0 ? process.argv[i + 1] : "rosto") as SlotTonal;
+  if (!arte || !(slot in ESTEIRA)) {
+    console.error("uso: barba-para-formas.ts <arte.png> [--slot rosto|cabelo] [--sem-limite]");
     process.exit(2);
   }
 
-  const p = await construirRosto(arte, { semLimite });
+  const p = await construirPecaTonal(arte, slot, { semLimite });
   const [f1, f2] = p.formas;
 
   console.log(`
-BARBA -> silhueta + tom — ${arte}
+${slot.toUpperCase()} -> silhueta + tom — ${arte}
 `);
   console.log(`  slug                           ${p.slug}`);
   console.log(
@@ -607,6 +821,10 @@ BARBA -> silhueta + tom — ${arte}
       `${semLimite ? "MANTIDOS (--sem-limite)" : "recortados, como na extração"}`,
   );
   console.log(`  a peça, afinal                 ${p.pxPeca} px`);
+  console.log(
+    `  figurinha (passo 2c)           ${p.pxPreenchidos} px de furo preenchido · ` +
+      `${p.janelasDeFeicao} janela(s) de feição aberta(s)`,
+  );
   console.log(
     `
   esticão (p${PERCENTIS[0] * 100}/p${PERCENTIS[1] * 100})            ` +

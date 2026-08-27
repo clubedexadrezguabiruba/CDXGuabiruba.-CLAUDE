@@ -45,7 +45,7 @@ export const HONRA = [
   { pos: 2, nome: "R. Souza", patente: "Estrategista", rating: 1655 },
   { pos: 3, nome: "Ana", patente: "Analista", rating: 1420, eu: true },
   { pos: 4, nome: "P. Xavier", patente: "Analista", rating: 1388 },
-  { pos: 5, nome: "M. Duarte", patente: "Estudante", rating: 1301 },
+  { pos: 5, nome: "M. Duarte", patente: "Explorador", rating: 1301 },
 ] as const;
 
 export const INSIGNIAS = [

@@ -98,7 +98,7 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
       {events.length === 0 ? (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-zinc-500">
-            Nenhum evento no mural ainda. As conquistas dos membros aparecerao aqui.
+            Nenhum evento no mural ainda. As conquistas dos membros aparecerão aqui.
           </p>
         </div>
       ) : (
@@ -122,10 +122,11 @@ export default function MuralClient({ classId, className }: MuralClientProps) {
                   <MolduraPatente tier={event.achieved_tier}>
                     <AvatarCabeca
                       skin={event.avatar_skin}
-                      hair={event.avatar_hair}
+                      hair={event.avatar_cabelo}
                       hairColor={event.avatar_hair_color}
                       chapeu={event.avatar_chapeu}
                       rosto={event.avatar_rosto}
+                      oculos={event.avatar_oculos}
                       lado={32}
                       ns={`mu-${event.id}`}
                     />

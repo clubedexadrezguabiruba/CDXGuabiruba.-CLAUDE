@@ -104,9 +104,9 @@ export interface MedidaDaEscala {
  * de um `console.log` não pode ser conferida por ninguém.
  */
 export async function medirEscala(arte?: string): Promise<MedidaDaEscala> {
-  const destino = saidaDaArte(arte ?? `${PASTA}/entrada.png`);
+  const destino = saidaDaArte(arte ?? `${PASTA}/chanel.png`);
   mkdirSync(destino, { recursive: true });
-  const c = await converter(arte ?? `${PASTA}/entrada.png`);
+  const c = await converter(arte ?? `${PASTA}/chanel.png`);
 
   const larg = Math.round((ALT * VIEWBOX.w) / VIEWBOX.h);
   const nav = await abrirNavegador();
@@ -186,7 +186,7 @@ export async function medirEscala(arte?: string): Promise<MedidaDaEscala> {
 }
 
 async function principal() {
-  const arte = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const arte = process.argv[2] ?? `${PASTA}/chanel.png`;
   const m = await medirEscala(arte);
   const { carecaCem, careca92, pecaCem, peca92, coroaEm } = m;
   const QUADRO_ALT = 70;

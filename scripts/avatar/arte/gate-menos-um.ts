@@ -915,7 +915,7 @@ if (process.argv[1]?.endsWith("gate-menos-um.ts")) {
   // da rota (Bloco 4), e `.scratch/` **não é versionado**. Sem argumento, ou isto
   // falhava com ENOENT, ou — pior — conferia uma arte que só existe na máquina de
   // quem rodou. Os outros oito scripts da rota já usavam `PASTA`.
-  const caminho = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const caminho = process.argv[2] ?? `${PASTA}/chanel.png`;
   gateMenosUm(caminho)
     .then((l) => {
       imprimirLaudo(l, caminho);

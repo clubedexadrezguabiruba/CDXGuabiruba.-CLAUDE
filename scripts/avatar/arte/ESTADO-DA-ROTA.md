@@ -4740,3 +4740,4099 @@ luminância e **reprova peça chapada** por construção (`hi <= lo`): o pedido
 
 `typecheck` 0 · `lint` 0 · **605 testes** · `verify:arte` **exit 0**, agora com
 `arte:borda` dentro.
+
+---
+
+## 2026-08-22 — a v10 da `trancada`, e a FIGURINHA
+
+A `barba-trancada` v10 (`7d348ea3f198f0de97a7bed0c549ff1b`, 92 831 px) entrou pela
+esteira e **aprovou em tudo** — Gate −1, traço, borda, rostos-check — e chegou ao
+`/dev/avatar-kokeshi` com o traço do maxilar do boneco **aparecendo dentro da
+barba**. O Doug pegou a olho, como sempre.
+
+### A causa, e o que ela ensina sobre a régua
+
+Não era camada (`cabeca-contorno` é a 303, `rosto-sob-cabelo` a 346 — a barba já ia
+por cima) e não era desenho (a arte foi aprovada de perto, ampliada, antes de
+qualquer conserto).
+
+Era o **passo 1 de `construirRosto`**: a peça é *"o que difere da base careca em
+> 24 por canal"*. Fio de barba pintado exatamente sobre o traço PRETO da base
+difere em ~0 — o pixel ficava fora da máscara, o `potrace` o devolvia como **furo**,
+e pelo furo aparecia o que estivesse por baixo: o contorno do maxilar, a pele, e o
+traje que o aluno vestir. **É sistêmico e piora com o tamanho da peça:** a v4 tinha
+2 furos, a v10 tinha 4.
+
+Duas tentativas anteriores morreram aqui, e as duas por medir a coisa errada:
+
+1. **o reparo por programa** (interpolação horizontal dos vizinhos, 2026-08-22 de
+   manhã) — mexia na ARTE. Todas as réguas melhoraram e o Doug reprovou a olho.
+   Revertido inteiro;
+2. **o laudo que disse "tapar o furo não basta"** — mediu o cinza da máscara nos
+   pixels do maxilar (5 de 255) e concluiu que sairia preto do mesmo jeito. Está
+   certo e é irrelevante: preto ali é o **desenho**. O que o olho via era a **pele**
+   vazando e o arco com forma de maxilar, não a falta de luz.
+
+### O conserto — passo 2c, e é topologia
+
+> *"a barba é colada como figurinha — nada atrás dela pode ser visto"* — o Doug,
+> 2026-08-22, e é a regra que ficou.
+
+Depois do recorte das feições, **todo furo interior da máscara é preenchido**,
+exceto o que contém feição dentro (a espinha da boca, as cápsulas dos olhos — as
+mesmas regiões que o passo 2 já protege). A arte **não é tocada**: o pixel
+preenchido entra no tom com a luminância que a arte tem ali, então o render passa a
+reproduzir a arte aprovada em vez das camadas de baixo.
+
+| régua | antes | depois |
+|---|---|---|
+| furos sem feição na máscara | 4 (o maior 373 px, u x341→368 y341→412) | **0** |
+| subcaminhos do `d` | 6 | **2** — contorno + boca |
+| `d` das duas formas | 14 656 B | **12 040 B** |
+| máscara de tom | 26 231 B | 26 246 B (os furos passam a carregar tom) |
+| **prova da figurinha** (troca pele clara ↔ escura; nada dentro pode mudar) | 512 px mudam, 364 no furo do maxilar | **141 px, todos na franja da boca** — maxilar **0** |
+
+**A prova da figurinha é a régua que faltava**, e ela é do RENDER: se nada atrás da
+peça é visto, trocar a pele não pode mudar pixel dentro da pegada da silhueta. Ela
+não depende de conhecer a causa nem de olhar a arte — e teria pego este defeito no
+dia em que ele nasceu.
+
+### O gate
+
+`scripts/avatar/arte/__tests__/figurinha.test.ts` — falhou com os 4 furos antes do
+fix, passa com 0 depois. Ele vale para **todo o slot `rosto`**, não só para esta
+peça.
+
+### O selo de bytes estava vermelho no HEAD
+
+O wip `41bef8f` entrou com o `d` em 14 656 B contra o selo de 14 800 e **a suíte
+ficou vermelha no commit** — ninguém rodou `npm test`. Fica registrado porque o selo
+existe justamente para isso: mudança de esteira que passe despercebida.
+
+### Gates
+
+`typecheck` 0 · `lint` 0 · **608 testes** · `verify:arte` **exit 0**, com o
+`peso-baseline` regravado em 26 274 B depois da aprovação do Doug.
+
+**Aprovada e promovida** — parecer do Doug no `localhost`: *"ficou perfeito, a melhor
+arte, quero este padrão sempre"*.
+
+---
+
+# 2026-08-22 · O ELENCO DE CABELO VAI PARA O PADRÃO TONAL — Bloco A, a espinha
+
+> *"ficou perfeito, a melhor arte, quero este padrão sempre"* — o Doug sobre a
+> `rosto-barba-trancada` v10. A decisão que saiu daí: **os cinco modelos de cabelo
+> são refeitos no padrão dela**, elenco inteiro, arte a arte, com parecer dele entre
+> uma peça e a seguinte. Coerência visual vale mais que o trabalho já feito.
+
+Este bloco **não desenhou nada e não promoveu nada**. Ele construiu a espinha e
+mediu, no dia 1, os dois riscos técnicos que o plano declarou.
+
+## A decisão de arquitetura: o cabelo REUSA a esteira do rosto
+
+`barba-para-formas.ts` nunca foi a esteira da barba — o docstring do gate da aresta
+nua já dizia *"vale para todo o slot rosto"*. Base careca, diferença contra a base,
+recorte de feições, aresta nua, figurinha (2c), esticão por percentil e traçado são
+os mesmos para quem recolore, seja no queixo ou no crânio. Copiar tudo isso para um
+`cabelo-para-formas.ts` criaria duas descrições da mesma esteira.
+
+O que varia por slot são **dois campos**, e eles viraram tabela (`ESTEIRA`):
+
+| campo | `rosto` | `cabelo` |
+|---|---|---|
+| `prefixo` do slug | `rosto-` | `cabelo-` |
+| `resolucaoDoTom` | 0,5 | 0,5 — **provisório declarado**, herdado da barba |
+
+A resolução do cabelo é medida na primeira peça real (escada 100% → 50% → 35%,
+contando tons distintos no render, doc 23 §4.1). O campo existe justamente para que
+o número da barba não vire o número de todo mundo por omissão.
+
+## O que nasceu
+
+| arquivo | o que é |
+|---|---|
+| `Cabelo.tonal` (`cabelo.ts`) | a 3ª família: `{ formas: {d,cor,semTraco}[]; tom: TomDaPeca }` — o mesmo shape do braço `formas` de `PecaSobreposta`, de propósito |
+| `MODELOS_TONAIS` + `completudeDasFamilias()` | a lista escrita (vazia hoje) e a régua que cobra que as TRÊS somem `MODELOS_CABELO` |
+| ramo tonal em `compor()` | `sobrepor({…}, ns, "cabelo")`, na MESMA posição da pilha do cabelo traçado. **Zero função de render nova** |
+| `construirPecaTonal(arte, slot)` | a esteira parametrizada. `construirRosto` continua existindo, com a assinatura de sempre |
+| `scripts/avatar/arte/cabelos.ts` | o gerador de `cabelos-da-arte.ts` + o PNG de tom em `public/items/cabelo/`. `arte:cabelos` / `arte:cabelos-check`, e o `--check` entrou em `verify:arte` |
+| `scripts/avatar/arte/folha-cabelo.ts` | a folha do slot: 5 colunas — arte · traçado · só o cabelo · **+ trancada** · + trancada em outra cor —, minis a 32 e 56 px |
+| `.scratch/estilo/bancada-cabelo-tonal.ts` | a bancada dos dois riscos |
+
+`Tonal` no nome não é enfeite: **`peca-de-arte.ts` já exporta um `construirPeca`**, e
+é o do outro braço da Regra Inviolável nº 4 (cor assada). As duas assinaturas aceitam
+um caminho de PNG e devolvem uma peça, então trocar uma pela outra **compilaria**.
+Achado e consertado dentro do bloco.
+
+## A bancada — as 3 artes do elenco VELHO, sem promover nenhuma
+
+`entrada.png`, `chanel.png` e `entrada-2.png` foram desenhadas para a família
+traçada e têm 2–3 tons chapados. Elas provam a **mecânica**, nunca o padrão.
+
+### Risco 1 — o canal do traço da calota: **existe na máscara e não vira mordida**
+
+A hipótese: fio escuro pintado sobre o traço PRETO do crânio difere ~0 da base, cai
+fora da máscara, e — como no cabelo o traço corre pela calota inteira — o buraco
+alcança a borda da peça. Buraco que alcança a borda **não é furo**: a inundação do 2c
+vem de fora e passa por ele, e o que sobra é uma mordida na silhueta.
+
+A régua: fechamento morfológico. `canal = fecha(máscara, R=9 px) − máscara` é
+exatamente o conjunto de reentrâncias que o 2c não fechou, porque toda cavidade
+fechada já foi preenchida antes. O vazamento é medido no RENDER a 340 px, trocando
+pele **e** traje: pixel que muda é pixel por onde se vê o que está atrás.
+
+| arte | canal na máscara | sobre o traço da base | vazou sobre o traço | vazou em concavidade do desenho |
+|---|---|---|---|---|
+| `entrada` (espetado) | 3 036 px | 368 px (12,1%) | **4 px** de 115 | 443 px de 725 |
+| `chanel` | 850 px | 810 px (**95,3%**) | **0 px** de 260 | 6 px de 11 |
+| `entrada-2` (assimétrico) | 1 433 px | 1 026 px (71,6%) | **1 px** de 320 | 132 px de 145 |
+
+**A linha do `chanel` é a que decide.** É a arte cujo canal é quase todo do traço — e
+ela vaza **zero**. O motivo: o que aparece pelo canal ali é o próprio contorno preto
+do boneco, que não muda ao trocar pele e traje e é da mesma cor que a camada de baixo
+da peça (`var(--av-linha)`). O canal é **preto sobre preto**: existe topologicamente e
+é invisível.
+
+O vazamento que sobra mora na outra coluna — concavidade do DESENHO, a fenda entre
+dois espetos, que o fechamento a R=9 preenche por ser estreita e que peça nenhuma
+quer preenchida. Ali a régua é que está larga, não a peça furada.
+
+**Conclusão: nenhum conserto no 2c hoje.** O plano previa a bifurcação (*"se aparecer:
+conserto no passo 2c"*) e ela não apareceu.
+
+⚠️ **A ressalva, declarada:** as três artes são do elenco velho e nenhuma foi
+desenhada como figurinha. Uma arte nova com fio **claro** sobre o traço do crânio
+abriria canal onde o que aparece é PELE, e aí o vazamento é visível. A régua está
+escrita e roda em um comando — ela é reaplicada na primeira peça real do Bloco B.
+
+### Risco 2 — o peso do composto contra a janela do DEFLATE: **folga em todos**
+
+| caso | 1 boneco | folga na janela (32 768 B) | 30 bonecos, gzip |
+|---|---|---|---|
+| careca + trancada | 19 314 B | +13 454 | 14,6 KB |
+| `chanel` **tonal** + trancada | 24 307 B | +8 461 | **16,9 KB** |
+| `chanel` **traçado** (o de hoje) + trancada | 24 328 B | +8 440 | 17,8 KB |
+| `entrada-2` tonal + trancada | 28 910 B | +3 858 | 19,3 KB |
+| `entrada` tonal + trancada | 29 374 B | +3 394 | 19,6 KB |
+
+Nenhum cruza a janela, e o tonal é **mais leve em gzip** que o traçado de hoje na
+mesma peça (16,9 contra 17,8 KB) — porque o tonal é um `d` repetido duas vezes, que
+o DEFLATE deduz, contra massa + núcleo + claras + pretas, todos diferentes.
+
+⚠️ **O teto real está declarado:** o pior caso deixa **3 394 B** de folga com 9 666 B
+de `d`. Uma peça com ~13 KB de `d` cruzaria a janela e o gzip dos 30 despencaria.
+`coque` e `moicano` são as candidatas — se uma delas chegar grande, a saída medida é
+`optTolerance` maior no `potrace` do cabelo, e o número vai ao Doug antes.
+
+## Os gates que nasceram junto
+
+- **`arte:cabelos --check`** em `verify:arte` — o literal gerado confere caractere a
+  caractere, e o PNG de tom byte a byte. Vazio hoje, e conferir o vazio é honesto:
+  ele reprova quem escrever peça à mão no arquivo gerado;
+- **`pilha-de-camadas.test.ts` ganhou a 3ª variante.** A linha `cabelo-tracado` virou
+  `cabelo-sobreposto` e `FamiliaDeCabelo` passou a nomear **conjuntos** de famílias
+  (`sobreposto` = {traçado, tonal}, `temExtensao` = {paramétrico, traçado}) — nenhuma
+  camada nova. Provado não-vácuo: movendo a peça para antes das feições, os dois
+  elencos tonais reprovam na asserção 3;
+- **`figurinha.test.ts` atravessa os DOIS slots**, com contagem exata de janelas de
+  feição — 1 na barba (a boca, cuja linha é da base) e 0 no cabelo;
+- **`tom-da-peca.test.ts`** ganhou o bloco que prova a tese da esteira única: a MESMA
+  arte pelos dois slots dá `d`, máscara, esticão, contagens e caixa **idênticos** — só
+  o slug muda;
+- **`arteDaPecaNoDeploy.test.ts`** já lê `CABELOS_DA_ARTE`, então a primeira promoção
+  nasce coberta sem ninguém lembrar de plugar o slot;
+- **`cabelo.test.ts`** ganhou o bloco da família tonal, medido sobre um literal
+  sintético: as duas formas com o mesmo `d`, a máscara com o slot no id, `evenodd` nas
+  duas, `semTraco` nas duas, **nenhuma regra de CSS de cabelo** e a base careca
+  intocada;
+- **`folha-nao-diverge.test.ts`** vigia a folha do cabelo desde o dia zero.
+
+## O que NÃO mudou — e é o que os selos provam
+
+Os cinco modelos atuais continuam em produção, byte a byte. `arte:rostos --check`
+confere `rostos-da-arte.ts` caractere a caractere e o PNG da `barba-trancada` byte a
+byte; `arte:pecas --check` idem para as três peças traçadas; os 11 selos de
+`parametrico-congelado.ts` não se moveram. Nenhuma migration (cabelo é escolha livre
+da D27, não catálogo). `tracar-cabelo.ts` continua de pé — é biblioteca.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**641 testes** (eram 612) · `verify:arte` **exit 0** com 35 scripts · `verify:estado`
+**exit 0** depois de `npm run estado`.
+
+## O que fica pendente, declarado
+
+1. **A prova da figurinha no RENDER não virou gate de suíte.** Ela roda na bancada e
+   mede o que precisa medir; virar teste hoje custaria um chromium por rodada para
+   medir uma arte que nunca será promovida. Entra no Bloco B, sobre a peça real;
+2. **`MODELOS_TONAIS` está vazia**, e há uma asserção escrita **para cair** na
+   primeira promoção (`linhas-cabelo.test.ts`), com a instrução no texto da falha:
+   regravar o selo DAQUELA peça, nunca em lote;
+3. **`PEDIDO-CABELOS.md` é do Bloco B** — ele nasce do prompt aprovado da trancada,
+   com o parágrafo do "onde cabe" trocado pelo do cabelo (doc 24 §5.6).
+
+---
+
+# 2026-08-22 · `coque-simples` — REPROVADA pelo Doug, e apagada
+
+Arte de coque vinda de outro gerador (`coque_simples(rare).jpg`, JPEG, 249.085 B).
+Atravessou a esteira do rosto inteira com os três gates verdes — Gate −1 **APROVADA**
+(rosto 0, corpo 0, sobrancelha 0), `arte:traco` **0 px** apagados, `arte:borda` **0 px**
+de cinza — e o laudo saiu limpo: 61.382 px, figurinha 65 px de furo, **0 janela de
+feição**, esticão lum 0→138, tom 216×165 (17,3 KB), `d` 10.158 B. A conferência de 7
+perguntas fechadas sobre a folha também passou.
+
+**O Doug reprovou olhando, e mandou apagar.** É o padrão registrado: régua verde e o
+olho dele reprovando — nenhum número desta rota diz que a peça é bonita (§"o que os
+gates NÃO pegam"). Apagados: `coque-simples-crua.jpg`, `coque-simples.png` e
+`folha-cabelo-coque-simples.png`. Nada chegou a `NOMES`, a `CABELOS_DA_ARTE` nem à
+prateleira `public/items/cabelo/`.
+
+**As duas medições que sobrevivem, porque valem para a próxima arte do slot:**
+
+1. **a arte é anterior à regra do contorno em azul-marinho** — `restaurar-peca`
+   imprimiu `linha instr.: 0 px`, isto é, as linhas da peça vieram em PRETO. O
+   mecanismo *preto sobre preto difere ~0* estava ativo: a máscara mediu **360 u** de
+   largura contra os **364** do crânio, os ~2 u de cada lado comidos pelo traço do
+   boneco. Toda arte de cabelo pedida a partir de agora tem de vir no `#000080`;
+2. **um coque tem 2 componentes por construção** — a calota (37.813 px, x 77,5→436,7,
+   y 45,0→218,3) e o coque (23.504 px, y **−55,8**→46,7, que passa do topo do viewBox).
+   As caixas se sobrepõem em y e não há fresta entre elas. A massa total, 61.382 px, é
+   **metade** da faixa de 113–196 mil do doc 24 §4 — porque aquela faixa foi medida em
+   cabelos que descem pelos lados do rosto, e um corte preso não desce. Não é peça
+   rala; é a faixa que não cobria corte preso.
+
+---
+
+# 2026-08-22 · O CONTORNO AZUL — a causa que o Doug nomeou, e a esteira que aprendeu a ver
+
+> *"a linha do contorno do cabelo é igual ao contorno do boneco e, quando a linha do
+> contorno do cabelo se conflita com o do avatar, a esteira erra."* — o Doug, depois
+> de reprovar a olho duas peças que passaram em todos os gates.
+
+Ele estava certo, e a causa dele é **melhor que a que eu tinha**. O passo 1 da esteira
+é *peça = o que difere da base*, e **preto sobre preto difere ~0**. Um mecanismo, dois
+sintomas, os dois já pagos antes: o furo do maxilar da `trancada` v10 (o fio some da
+máscara e vira buraco) e a mancha no ombro do `chanel` (a esteira não decide de quem é
+a linha, e a figurinha fecha torto).
+
+## A régua que provou, e o número que fecha
+
+O gerador passa a desenhar **as linhas da peça em azul escuro**. Elas então diferem da
+base **inclusive por cima do traço preto**.
+
+| medida | v1 (linha preta) | v3 (linha azul) |
+|---|---|---|
+| linha da peça **sobre o traço do boneco**, dentro da máscara | **0%** — sumia inteira | **8 169 px, 100%** |
+| **figurinha (2c)** — furos que a esteira teve de tapar | 5 536 px | **32 px** |
+| `d` das duas formas | 6 256 B | 5 378 B |
+| máscara de tom | 282×243, 34,5 KB | 254×227, 26,8 KB |
+
+**A figurinha caiu de 5 536 px para 32.** Ela existia para tapar buracos que nasciam do
+preto-sobre-preto; com a linha marcada, os buracos não se formam. O 2c fica como rede,
+não como remendo principal.
+
+## O que NÃO funciona: recolorir arte pronta
+
+Tentado e medido antes da arte nova. Pedir ao Gemini que trocasse a cor do contorno de
+uma arte já entregue converteu **4,5%** dos cruzamentos. **No cruzamento o gerador é
+tão cego quanto a esteira** — ele vê uma linha preta só e não sabe que são duas. A arte
+precisa nascer com o azul.
+
+## Duas correções em `restaurar-peca.ts`, e as duas nasceram de reprovação
+
+### 1. A linha instrumental sobrevive ao passo de matiz — `(L, L, L+48)`
+
+Sem isso o passo 3 **acende** a linha: matiz → 180° transforma azul em ciano, e um
+`#0000FF` sairia com luminância **200** — o contorno da peça sairia BRILHANTE no avatar
+da criança.
+
+⚠️ **A primeira versão mapeava para um `#000030` CHAPADO, e o Doug reprovou a olho.**
+Medido depois: **52,0%** da peça num balde de tom só e **68,1%** dela abaixo de
+luminância 16 (contra 48,3% e 56,3% na arte de linha preta). Marcar a linha é dizer
+*"esta linha é da peça"* — não é dizer *"esta linha é toda igual"*. Com `(L, L, L+48)`
+a variação sobrevive: 47,0% e 55,7%, melhor que a arte de linha preta.
+
+**A pista que ficou aberta:** o contorno que o Gemini entrega tem luminância ~32, e
+preservá-la deixa o contorno cinza-escuro em vez de preto. O meio-termo não testado é
+**ancorar o piso** — mapear a luminância da linha para uma faixa que comece em 0 e
+guarde a variação por cima.
+
+### 2. O forasteiro volta a ser base — o piso de tamanho não bastava
+
+A v3 do `chanel` veio com o **rodapé do boneco redesenhado**: 11 832 px em u y 599→653,
+solto, longe de qualquer cabelo (a peça acaba em u y 385). Ele tem **9,9% da maior**,
+passou pelo piso de 5%, foi tratado como peça e sobreviveu à restauração — e o Gate −1
+reprovou por forma no corpo, corretamente. Mas a limpeza é trabalho do `restaurar-peca`.
+
+A régua nova é a REGIÃO: o componente do cabelo mede **97,7%** dos pixels em
+`permitida`; o do rodapé, **0,8%**. Piso em metade, no meio de um vão enorme. **O maior
+componente nunca é julgado por isso** — peça pode cobrir o tronco.
+
+## O que foi promovido, e o que reprovou
+
+- **`chanel` — APROVADO e promovido.** `chanel.png` é a arte nova (v3), `CABELOS.chanel`
+  espalha `CABELOS_DA_ARTE.chanel`, o id migrou de `MODELOS_TRACADOS` para
+  `MODELOS_TONAIS`, `chanel` saiu de `ARTES` em `pecas.ts` (um nome de arquivo, uma
+  arte, uma esteira), máscara em `public/items/cabelo/cabelo-chanel-tom.png`, selo de
+  bytes regravado só o dele (13 484 → **12 620**);
+- **`espetado` — REPROVADO pelo Doug**, e o defeito é **da arte**: *"cor vazando pelo
+  contorno do cabelo em todo o rosto, especialmente acima da sobrancelha direita"*. A
+  arte está no disco (`espetado-crua.jpg`, `espetado.png`) e passou todos os gates.
+
+### O que já está descartado no espetado, medido — para ninguém remedir
+
+| régua | chanel (aprovado) | espetado (reprovado) | separa? |
+|---|---|---|---|
+| espessura do traço, p50 | 9,6 u | **10,4 u** | **não** — o reprovado é MAIS grosso |
+| perímetro abaixo de 8 u | 38,3% | **6,6%** | **não** |
+| tom na aresta (anel 0) | lum 70, 35% claros | lum 38, 11% claros | **não** — mais escuro |
+| render, anel 0 | lum 67, 43% já é cor | lum 65, 42% já é cor | **não** |
+| cor encostando em claro sem linha | 3 810 px / 148 trechos | 4 338 px / 145 trechos | **não** |
+
+**Não é espessura e não é propriedade global da borda.** O próximo pedido tem de atacar
+a **opacidade** do contorno — a cor atravessa a linha em vez de parar nela —, nunca
+pedir linha mais grossa.
+
+## Três buracos de régua que a promoção do chanel fechou
+
+A família tonal não tem tabela de pontos, então `poligonoDaTouca` devolvia `null` e as
+réguas **passavam sem medir**. `poligonoDoTracado` (em `cabelo.ts`) amostra o `d` do
+potrace em cordas e alimenta as três:
+
+| régua | antes (vazio) | agora, no chanel |
+|---|---|---|
+| `coberturaDaCoroa` | `null` | **1** |
+| `folgaDoRosto` | `Infinity` | esq **−237,9** · dir **−240,7** |
+| `coberturaDaSobrancelha` | `0` por `!m.massa` | **0/205 dos dois lados**, medido |
+
+## As réguas de bancada desta rodada (`.scratch/cabelos/`, fora do git)
+
+`chegada.ts <arte-crua>` — a conferência de chegada: fração de linha azul (alvo ~20%),
+linha ainda preta, azul sobre o traço do boneco, e quanto mexeu no corpo. **Rodar SEMPRE
+antes de gastar esteira.** Mais `tons.ts` (achatamento do tom), `borda-vaza.ts` (a faixa
+da borda no tom), `render-borda.ts` e `onde-vaza.ts` (o mesmo no render), `close2.ts`
+(close arte × render em coordenada medida), `componentes.ts`, `ladrilhos.ts`.
+
+
+---
+
+# 2026-08-22 · `coque` — REPROVADA pelo Doug e apagada, e a esteira aprendeu quatro coisas
+
+Arte de coque vinda do Gemini, em **duas idas**: a primeira com sombra projetada, a
+segunda depois de o Doug pedir a remoção. Ela atravessou a esteira inteira com os três
+gates verdes nas duas versões e **o Doug reprovou a olho**, como no `coque-simples`.
+Apagados `coque-crua.png`, `coque.png`, `folha-cabelo-coque.png` e a pasta `coque/`.
+Nada chegou a `NOMES`, a `CABELOS_DA_ARTE` nem à prateleira.
+
+**A causa medida da reprovação está no pedido agora** (`PEDIDO-CABELOS.md`, "o teto real
+é o `viewBox`"): a caixa da máscara começava em **u y −47,5**, e **8 921 px — 9,0% da
+peça — ficavam acima do `viewBox`**, cortados numa linha reta de 214 px. A coroa do
+coque era guilhotinada. O `chanel` aprovado começa em u y 8,3 e corta 0 px.
+
+## O que a rodada deixa de pé: quatro réguas novas em `restaurar-peca.ts`
+
+O Doug reprovou três defeitos a olho — *"vazou azul da mecha lateral esquerda"*,
+*"vazou azul do topo direito da cabeça, exterior"* e *"a sombra natural da lateral
+direita do rosto ficou pintada de azul"*. A leitura da folha por subagente provou que
+**não eram três defeitos: era um mecanismo em três lugares**, mais um segundo mecanismo
+por baixo. As quatro réguas que nasceram disso valem para toda arte futura.
+
+### 1. `clareouABase` — o gerador APAGA o sombreado do boneco
+
+A causa que o Doug nomeou, e ele estava literalmente certo. A base tem sombreado próprio
+na lateral do rosto (luminância 102 a 186 em x 560→730 · y 300→470). O gerador pintou
+pele LISA por cima:
+
+```
+x=710 y=340    base 200,152,112  →  crua 229,167,118   dif 29  →  saída 118,229,229
+```
+
+Diferença 29 > `NIVEL`, então virou peça, e o matiz 180° devolveu ciano brilhante no
+rosto — **4 063 px num bloco só**. A régua é a direção da luminância: **tinta escurece,
+apagamento clareia**. Só onde a base é clara (lum ≥ 100), só clareamento, só salto ≤ 40.
+
+⚠️ **Régua de COR foi tentada e não separa**: a crista de cabelo castanho tem a mesma
+cromaticidade da pele. Medido — não remeça.
+
+### 2. `apagouAteOFundo` — o gerador apaga o boneco ATÉ O FUNDO
+
+A mesma doença no traço preto, que a régua 1 exclui de propósito. O gerador apagou **320
+px do contorno** no alto da cabeça e pintou o FUNDO por cima; na arte o aro é quase
+invisível (Δ 24), no traçado vira **10 px de teal cheio**. A régua não tem zona
+cinzenta: **a arte pintou a cor do fundo onde a base não era fundo**, e peça da cor do
+fundo seria invisível.
+
+Ela também absorve o **rodapé apagado**, que antes saía pela regra do forasteiro:
+11 461 px no `coque`, 11 667 px no `chanel`. Os dois geradores fazem isso sempre.
+
+### 3. `HALO_LINHA` — o antialias da linha instrumental TAMBÉM é linha
+
+`ehLinhaInstrumental` exige lum < 60, e o teto existe para que cabelo pintado de azul
+não vire marcação. Mas a linha some num antialias que mistura o `#000080` com o que
+estiver do outro lado: onde esse lado é claro, o pixel do meio é azul **e claro**, passa
+do teto e cai no matiz. Eram **1 393 px** saindo com luminância 186. O conserto não mexe
+no teto — a linha **cresce 2 px a partir do núcleo já reconhecido**, só por pixel
+azul-dominante, então a semente é sempre escura.
+
+### 4. `PISO_COBERTURA` + `ANEIS_DE_BORDA` — a silhueta é binária, o antialias não
+
+A família tonal desenha duas formas com o mesmo `d`, e não existe alpha: um pixel de
+borda que é 30% cabelo entra **como 100% cabelo**. Medido na folha:
+
+```
+arte (714,180)  248,255,255  →  traçado  35,138,139     (quase branco vira teal cheio)
+arte (730,360)  169,219,219  →  traçado  30,122,123
+```
+
+A régua é a mistura `A = α·C + (1−α)·B`, com `C` estimado pelo vizinho mais coberto num
+raio de 3, e `α` por projeção. Fica quem tem **α ≥ ½** — sem limiar arbitrário.
+
+⚠️ **Ela SÓ vale na borda, e o miolo ensinou isso caro.** A primeira versão julgava a
+peça inteira e a figurinha saltou de 186 para **6 229 px de furo**: dentro da peça a luz
+varia muito, então a crista clara de um fio, projetada contra o vizinho escuro, saía com
+α < ½ sendo 100% peça. Com os 3 anéis externos só, a figurinha voltou a **464 px**. O
+modelo da mistura descreve a borda; no miolo não há base embaixo e a conta perde sentido.
+
+### 5. `voltaABase` — e esta nasceu de reprovação de gate
+
+As três réguas acima tiravam pixel da peça, e só. A franja de 4 px do passo 4 então o
+preservava **com a cor do gerador** — nem peça, nem boneco. `arte:traco` reprovou com
+**87 px em 22 ilhas**, a maior em u x 413→420 · y 68→76, exatamente onde o contorno
+tinha sido apagado: o que contava como "coberto pela peça" virou "traço apagado", e o
+gate estava certo. As três réguas terminam na mesma frase: **a base volta**. Depois:
+28 px em 28 ilhas, maior de **1 px** contra um piso de 8 — exit 0.
+
+## O que foi tentado e DESCARTADO, medido
+
+**"A peça é o que o contorno azul fecha"** — inundar a partir de fora, atravessando só
+peça que não é linha, e chamar de véu o que a inundação alcança. É a ideia mais elegante
+da rodada e **o contorno não fecha**: vazou por **46,0% do `coque`** e **25,4% do
+`chanel`**. Não reproponha sem antes provar que o contorno fecha.
+
+## O efeito medido, antes e depois
+
+Nas três caixas que o Doug apontou, contando **pixels claros** — os que viram cor cheia
+no traçado:
+
+| caixa | antes | depois |
+|---|---|---|
+| mecha lateral esquerda · x 322→352 · y 386→476 | 376 | **25** |
+| topo direito exterior · x 698→743 · y 165→224 | 408 | **78** |
+| lateral direita do rosto · x 646→730 · y 256→374 | 1 554 | **50** |
+
+Ciano claro sobre pele, na peça inteira: **5 503 → 962 px** já na primeira régua.
+
+## O CONTROLE no `chanel` promovido — e por que ele não corre risco
+
+`cabelos.ts` roda `construirPecaTonal` sobre o **`.png` já restaurado**; `restaurar-peca`
+não está no caminho do `--check`. Mexer nele não pode quebrar peça promovida, e
+`verify:arte` exit 0 comprova.
+
+Ainda assim, o número: refazendo o `chanel` pela esteira nova, a máscara vai de
+422,5×377,5 para **422,5×375** e o `d` de 2 689 para **1 927 B**. A silhueta fica mais
+enxuta. **O elenco fica com uma peça da regra velha** — é o custo declarado, e ele se
+paga sozinho quando o `chanel` for refeito ou quando as outras quatro entrarem.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**640 testes** · `verify:arte` **exit 0** · e na arte reprovada, antes de apagar:
+`arte:gate` APROVADA (rosto 0, corpo 0, sobrancelha 0), `arte:traco` 0, `arte:borda` 0.
+
+## O que fica pendente, declarado
+
+1. **Nenhuma peça no repositório exercita as quatro réguas novas.** Elas nasceram sobre
+   uma arte que foi apagada, com controle no `chanel` e nada mais. A primeira arte que
+   passar por aqui é quem as prova de verdade;
+2. **O blush não é coberto por régua nenhuma.** O gerador pintou rubor na bochecha — em
+   uma ida só na esquerda, na outra nas duas. É *escurecimento com desvio de matiz*,
+   mecanismo diferente dos quatro acima. Nas duas vezes o piso de ruído deu conta (o
+   componente solto), mas quando ele encosta na mecha vira peça: medido em 1 114 px na
+   bochecha direita. Se aparecer de novo, é régua nova ou é cláusula no pedido;
+3. **O teto do `viewBox` entrou no `PEDIDO-CABELOS.md`** e ainda não foi exercitado por
+   nenhum pedido.
+
+---
+
+# 2026-08-22 · `assimetrico` tonal — a esteira passou limpa, e a SOBRANCELHA caiu no vão
+
+A 3ª peça do elenco tonal (depois de `chanel` e `moicano`). Arte do Gemini já com o
+contorno em azul-marinho, 1024², sobre a base oficial. **Atravessou a esteira inteira
+sem um conserto** — nenhuma régua reprovou, nenhuma reentrada.
+
+## A chegada, antes de gastar esteira
+
+| medida | `assimetrico` | alvo |
+|---|---|---|
+| peça (difere da base) | 176 882 px | faixa 113–196 mil (doc 24 §4) |
+| linha **azul** | 35 661 px = **20,2%** | ~20% |
+| linha ainda **preta** | 1 508 px = **0,9%** | perto de 0 |
+| azul **sobre o traço do boneco** | **3 947 px** | > 0 — o conjunto que a v1 perdia inteiro |
+
+**É a primeira arte que nasce inteira sob a regra do contorno azul**, e a chegada
+mediu o que a regra prometia: a linha da peça existe por cima do traço do boneco em
+vez de sumir nele.
+
+## Os três gates, e as quatro réguas do `coque` finalmente exercitadas
+
+`restaurar-peca` — **1 componente**, 325 px de ruído, `clareouABase` 139 px,
+`apagouAteOFundo` 120 px, cobertura 3 539 px nos 3 anéis de borda. As quatro réguas
+nasceram sobre uma arte que foi apagada (o `coque`), com controle só no `chanel`; a
+pendência nº 1 daquele bloco **fecha aqui** — elas rodaram sobre a arte que ficou, e
+os números são pequenos, que é o que se espera de arte limpa.
+
+| gate | resultado |
+|---|---|
+| **Gate −1** | **APROVADA** — forma **0 ladrilho** em rosto e corpo, deslocamento 0/0, escala 100,00%. Dos 27 150 px nas protegidas, **98,7% é peça cobrindo o boneco**, 321 px (1,2%) não explicado |
+| `arte:traco` | **18 px em 18 ilhas, maior 1 px** contra piso de 8 — traço do boneco inteiro. Controle reprovou nas duas alturas |
+| `arte:borda` | **0 px de cinza** — contorno preto. Contra-controle (preto 20) passou, como deve |
+
+## A peça
+
+`cabelo-assimetrico` · **173 283 px** · 1 componente · **0 px** descartados nas
+feições · figurinha do 2c **524 px** com **0 janela de feição** · esticão lum
+**16 → 192** · tom **267×344** (42 510 B) · `d` **5 014 B** nas 2 formas.
+
+**A caixa da máscara começa em u y 12,5** — o teto do `viewBox` que matou o `coque`
+(y −47,5, 9,0% da peça guilhotinada) não é tocado. Foi a primeira coisa conferida.
+
+### As duas pendências de bancada do Bloco A, reaplicadas
+
+| régua | `assimetrico` | o que diz |
+|---|---|---|
+| **prova da figurinha no render** | **0 px vazados de 51 041 (0,000%)** | opaca — nada atrás dela é visto |
+| **canal** (fecha R=9 − máscara) | 163 px, 21 sobre o traço da base | vazou **25 px** (0,049%), **0 sobre o traço** |
+| vazamento em concavidade do desenho | 42 px de 44 | régua larga, não peça furada — igual ao medido no Bloco A |
+
+O risco 1 do Bloco A (*"fio claro sobre o traço do crânio abre canal onde aparece
+PELE"*) **não apareceu**, e desta vez sobre arte desenhada como figurinha, que era a
+ressalva declarada lá.
+
+### O risco 2 — peso, e sobra folga
+
+| caso | 1 boneco | folga na janela (32 768 B) | 30 bonecos, gzip |
+|---|---|---|---|
+| careca + trancada | 19 314 B | +13 454 | 14,6 KB |
+| **`assimetrico` tonal** + trancada | **24 724 B** | **+8 044** | **17,5 KB** |
+| `chanel` traçado (o de hoje) + trancada | 25 081 B | +7 687 | 17,6 KB |
+
+A peça mais pesada do elenco tonal em pixels (173 mil, contra 119 mil do `chanel` e
+40 mil do `moicano`) tem o **2º menor `d`** — 5 014 B. Massa grande não é `d` grande:
+o que engorda o `d` é contorno recortado, não área.
+
+## A leitura da folha — 6 perguntas fechadas, subagente, 4 min
+
+Cinco passaram: as mesmas partes da arte (só três sujeirinhas não migraram, e a peça
+ficou mais limpa sem elas), o claro-escuro modelado fio a fio em vez de mancha
+chapada, contorno contínuo e miolo opaco, boneco intacto, boca e os dois olhos
+visíveis.
+
+**A sexta reprovou, e era a que a régua tinha previsto.**
+
+### `SOBRANCELHA_COBERTA` — a primeira peça a cair DENTRO do vão
+
+`coberturaDaSobrancelha` mede **esq 74,1% · dir 0%**. O limiar é **85,0%**, e o
+comentário dele diz, com todas as letras, que o número é honesto *porque mora num vão
+vazio*:
+
+| modelo | esq | dir |
+|---|---|---|
+| `coque` · `moicano` · `espetado` · `chanel` | 0,0% | 0,0% |
+| **`assimetrico` tonal (novo)** | **74,1%** | 0,0% |
+| `assimetrico` traçado (`entrada-2`, em produção) | 97,6% | 0,0% |
+
+Abaixo de 85% a sobrancelha **é desenhada**. A leitura da folha mediu o que sobra:
+*"um caroço arredondado de ≈22×10 px, cerca de um terço do comprimento da direita,
+grudado na borda escura do cabelo, sem nenhuma pele acima dele — funde com o contorno
+preto e vira um calombo na linha da mecha."* É o achado **G5** de volta, na família
+nova, e é exatamente o que o doc do limiar escreveu como regra de movimento:
+*"o pedaço visível tem de continuar lendo como sobrancelha."*
+
+O subagente mediu o mesmo caroço nas colunas 1 e 2 da folha: **o recorte vem da ARTE**,
+não do traçado.
+
+**O vão continua enorme depois do achado** — 0,0% de um lado, 74,1% do outro. Qualquer
+valor em (0 %, 74,1 %) se comporta igual no catálogo de hoje.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**650 testes** · `verify:arte` **exit 0**.
+
+`arteDaPecaNoDeploy` **reprovou uma vez e estava certo**: `cabelo-assimetrico-tom.png`
+não estava rastreado pelo git, e arquivo ignorado não chega à Vercel por mais que
+exista nesta máquina. `git add` e verde. É a terceira vez que esse gate paga o próprio
+custo.
+
+## Onde parou
+
+A peça está em `CABELOS_DA_ARTE` e aparece no seletor *"da arte · tonal"* do
+`/dev/avatar-kokeshi`. **Não foi promovida** — `CABELOS.assimetrico` continua
+espalhando `PECAS_DA_ARTE["entrada-2"]`, e `assimetrico` continua em
+`MODELOS_TRACADOS`. Falta o parecer do Doug, e com ele a decisão da sobrancelha.
+
+
+---
+
+# 2026-08-24 · O ELENCO FECHA EM QUATRO — `espetado` e `coque` são APAGADOS
+
+O Doug encerrou a fila de conversão do elenco de cabelo pela outra ponta: em vez de
+refazer as duas peças que faltavam no padrão tonal, **apagou as duas**. *"exclui eles
+e vou criar novas artes."* E, no mesmo gesto: *"exclui as todas as barbas tb (deixe
+apenas a trançada, que aprovei)."*
+
+A regra do plano de 2026-08-22 era *"nenhuma peça some antes de ter substituta"*. Ela
+cai, e a razão está à vista: **as duas já tinham sido reprovadas por ele**, então o
+que a regra protegia era peça reprovada em produção.
+
+| peça | a reprovação | medida |
+|---|---|---|
+| `espetado` | a olho, com todos os gates verdes | *"cor vazando pelo contorno do cabelo em todo o rosto, especialmente acima da sobrancelha direita"*. Cinco réguas não a separaram do `chanel` aprovado |
+| `coque` | duas vezes | a 2ª: caixa da máscara em u y −47,5, **8 921 px (9,0%) fora do `viewBox`**, guilhotinados em linha reta de 214 px |
+
+## O que o banco disse antes de eu escrever uma linha
+
+```
+TOTAL DE CONTAS: 19
+VESTINDO CABELO:     cabelo-espetado  4        <- e só ele
+NO GUARDA-ROUPA:     cabelo-assimetrico 19 · cabelo-espetado 19
+CATÁLOGO DE ROSTO:   rosto-barba-trancada (só ela)
+VESTINDO ROSTO:      ninguém
+```
+
+Duas coisas mudaram o tamanho do trabalho:
+
+1. **o `coque` sai de graça** — ninguém tem, ninguém veste, e a arte dele nem existe
+   no disco desde a 2ª reprovação;
+2. **as barbas JÁ ESTAVAM excluídas** — no catálogo e no banco só existe a trançada, e
+   a `barba-cheia` saiu numa migration de 2026-08-21. O que sobrava eram **9,7 MB de
+   pastas de bancada**, nunca rastreadas pelo git (o `.gitignore` de
+   `scripts/avatar/arte/` ignora subpasta).
+
+**As 4 contas ficam CARECAS**, escolha dele. A alternativa oferecida era trocar pelo
+`cabelo-assimetrico`, que as 19 já possuem.
+
+## As três famílias viraram uma, e as duas listas ficam
+
+`MODELOS_PARAMETRICOS` e `MODELOS_TRACADOS` estão **vazias**. Elas não foram apagadas,
+e o motivo é o de sempre: elas são a régua, não o conteúdo — `completudeDasFamilias`
+soma as três contra `MODELOS_CABELO`, e uma peça que nascesse fora do tonal precisa
+continuar tendo onde reprovar. `ARTES` em `pecas.ts` esvaziou junto, e
+`pecas-da-arte.ts` foi regerado com catálogo vazio.
+
+É o terceiro caso que o bloco de contagem de `linhas-cabelo.test.ts` vê, depois de
+"migrou de família" e "entrou de fora": **traçado 1 → 0 e paramétrico 1 → 0 sem o
+tonal subir**.
+
+## O CONTROLE PARAMÉTRICO, e por que ele não é a peça ressuscitada
+
+Nove arquivos de bancada mediam contra `CABELOS.coque` — *"sem controle, 'melhorou'
+não tem escala"*. A geometria dele nunca foi o problema (o que o Doug reprovou foi a
+ARTE tonal que tentou substituí-la), então ela sobrevive como
+`scripts/avatar/estilo/controle-parametrico.ts`: fora do bundle, não vestível, com o
+`id` emprestado de uma peça viva só para satisfazer a união fechada.
+
+`pontosElipse` veio junto — o único chamador dela no produto era a calota do `coque`.
+
+## O ACHADO: duas réguas julgavam 1 dos 4 cabelos e diziam "aprovado"
+
+Encontrado ao ter de editar a lista para tirar a `entrada.png`. `arte:traco` e
+`arte:borda` percorriam uma constante `APROVADAS` **escrita à mão em cada um dos dois
+arquivos**, e as duas cópias estavam defasadas do mesmo jeito:
+
+```
+listavam:  barba-trancada · chanel · entrada · entrada-2
+faltavam:  moicano · assimetrico · burst-fade      (promovidos em 2026-08-22)
+```
+
+**Medido antes de consertar**, porque omissão de régua e defeito de arte são coisas
+diferentes: `arte:borda` dá **0 px de cinza** nas três; `arte:traco` dá 0 px apagados
+em duas e **18 px em 18 ilhas de 1 px** no `assimetrico`, contra piso de 8 por
+componente. A omissão não escondia defeito — escondia a possibilidade de haver um, que
+é a única coisa que uma régua faz.
+
+**O conserto é derivação, não uma terceira cópia.** `promovidas.ts` passa a guardar os
+mapas `NOMES` de cabelo e rosto, e as duas réguas leem `ARTES_PROMOVIDAS` de lá. Os
+mapas saíram de `cabelos.ts` / `rostos.ts` por um motivo mecânico: aqueles dois
+arquivos chamam `principal()` no topo do módulo, e importá-los de dentro de uma régua
+rodaria o gerador junto com a medição.
+
+## O que foi apagado, e é irreversível fora do histórico
+
+| | |
+|---|---|
+| do git | `entrada.png` · `entrada-2.png` · `espetado.png` · `espetado-crua.jpg` (2,6 MB) |
+| do disco (nunca rastreadas) | 11 pastas `barba-*` (menos `barba-trancada`) + `entrada/` · `entrada-2/` · `espetado/` — **9,7 MB** |
+| do código | `CABELOS.espetado` · `CABELOS.coque` · os dois da união `ModeloCabelo` · `pontosElipse` de `cabelo.ts` · o `DEFEITO_REGISTRADO` do `arte:borda` |
+| do banco | migration `20260824080000_espetado_e_coque_saem_do_catalogo.sql` |
+
+## Os testes que mudaram, e nenhum mudou de número por conveniência
+
+Três reprovaram por eu ter trocado o `coque` por uma peça **tonal**, onde o teste
+precisava de uma **não tonal** — e as três estavam certas em reprovar:
+
+1. *"a camada clara lê --av-cabelo"* — a tonal não emite `.kk-cabelo` nem
+   `.kk-cabelo-s`. Passou a compor a fixture paramétrica;
+2. *"em todo modelo PARAMÉTRICO a faixa de sombra é paralela"* — a guarda contra
+   vacuidade (`expect(parametricos.length).toBeGreaterThan(0)`) fez o que devia. Ela
+   virou `toEqual([])` com mensagem: *"voltou a existir paramétrico no catálogo — meça-o
+   aqui, não só a fixture"*;
+3. *"os 30 do ranking com TOM emitem 30 máscaras"* — viraram **60**, porque o cabelo
+   tonal traz a própria máscara. O teste passou a exigir `N * 2` e a conferir os dois
+   slots, o que **amplia** o que ele prova: a colisão temida é de `${ns}-tom-${slot}`,
+   e agora o mesmo `ns` carrega dois slots.
+
+O `id` das fixtures sintéticas virou `ID_FIXTURA`, num lugar só por arquivo — com o
+nome escrito em cinco fixtures, a próxima poda de elenco voltaria a quebrar cinco
+linhas em vez de uma. É a lição de `SOBRANCELHA_COBERTA`, de 2026-08-23.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx`) ·
+**651 testes** · `verify:all` **37 passed | 1 failed**, e a única reprovação é a que a
+migration fecha: *"slot cabelo: 2 slug(s) no banco que o código não desenha"*.
+
+## A migration foi aplicada, e a cadeia seguiu — o que estava ATRÁS do gate vermelho
+
+⚠️ **O `verify:all` PARA no primeiro gate que reprova.** Enquanto o do banco estava
+vermelho esperando a migration, tudo depois dele **não rodava** — e eu li "1 reprovação,
+o resto verde" e escrevi isso numa mensagem de commit. Não estava medido. Aplicada a
+migration, a cadeia foi de ~580 para ~1391 linhas e encontrou duas coisas.
+
+### 1. Um crash no PRODUTO — `laco([])`
+
+`laco` lia `pts[0].x` de um array vazio e lançava
+`TypeError: Cannot read properties of undefined (reading 'x')`, com a pilha inteira
+passando por `compor()`: a tela quebra em vez de o cabelo sair chapado.
+
+O caminho não é hipotético: `clara: []` é array **truthy**, e `converter()` devolve
+exatamente isso ao traçar `chanel.png` — massa 43, **`clara` 0**, 27 `claras`, 18
+`nucleo`, 26 `pretas`. A guarda mora em `laco()` e não nos quatro chamadores, porque
+quatro guardas iguais divergem. Teste com as 4 asserções + contra-controle: falha antes
+na linha 673, passa depois.
+
+### 2. Três réguas de bancada perderam a COBAIA
+
+Régua sem exemplo-ruim é detector de fumaça sem fumaça: ninguém sabe se a pilha está
+viva. As três usavam `entrada.png` / `entrada-2.png`, e nenhuma das 4 artes vivas
+serve — medido:
+
+| régua | o que ela precisava | as 4 vivas |
+|---|---|---|
+| **escala** | peça CRUA que encosta no teto (o espetado subia a −38,9 u) | o `chanel` começa em y **8,5** e cabe. As 4 cabem **de propósito** — o teto entrou no pedido |
+| **porque-reprovou** | arte com repintura > 90% nas protegidas | chanel **7,4%**, assimetrico 0,1%, moicano e burst-fade **0 px**. A repintura ERA o defeito do espetado |
+| **salpico** | a faixa do queixo esvaziar | chanel **12 297 → 10 787 px (−12,3%)**, e está certo: é um bob que desce abaixo do queixo, ali é cabelo legítimo |
+
+**As três foram APOSENTADAS**, com o número que as mata escrito onde cada uma morava.
+Fabricar cobaia por programa foi oferecido e o Doug recusou: *"você não desenha nenhum
+item direto"*. E ele fixou o escopo: **a esteira que importa é a que aprovou a barba
+trançada, os dois trajes e os cabelos**.
+
+⚠️ **`medirEscala`, `porqueReprovou` e a limpeza de salpico NÃO foram apagadas** — as
+três continuam de pé e continuam rodando na rota. Saiu a bancada, não a ferramenta.
+
+### A conta das esteiras, que ele pediu: são DUAS
+
+`construirRosto(caminho)` é literalmente `construirPecaTonal(caminho, "rosto")`
+(`barba-para-formas.ts:789-792`). **Barba e cabelo são a mesma esteira, dois slots.** O
+traje é a outra (`traje.ts` → `construir`). A traçada é uma terceira, e é a que não
+aprovou nenhuma peça viva — as três réguas aposentadas eram dela.
+
+## Onde parou
+
+**Fechado e verde.** `verify:all` **exit 0** com a migration aplicada, **652** testes,
+`arte:reguas` **12 de 12**, build 0. Três commits: `ad77054` (o código que o commit de
+ontem deixou na mesa), `404fca2` (o elenco fecha em 4) e `293e926` (o crash e as três
+réguas).
+
+O banco, medido depois: **ninguém vestindo cabelo** (as 4 contas ficaram carecas, decisão
+dele), `cabelo-assimetrico` nas 19 do guarda-roupa, e **uma só peça inicial**.
+
+**O próximo passo é arte nova do Doug**, e ela não precisa se chamar `espetado` nem
+`coque` — o slot está livre. O molde do pedido está em [PEDIDO-CABELOS.md](PEDIDO-CABELOS.md).
+
+```
+npx tsx scripts/apply-migration.ts supabase/migrations/20260824080000_espetado_e_coque_saem_do_catalogo.sql
+```
+
+Depois dela: o slot de cabelo tem **4 peças**, todas tonais, e **uma só peça inicial**
+(`cabelo-assimetrico`) — o `cabelo-espetado` era a outra. A migration tem uma asserção
+que reprova se nenhuma sobrar; uma só passa, mas fica declarado que conta nova nasce
+com um cabelo em vez de dois.
+
+---
+
+# 2026-08-24 · SEIS ARTES NOVAS DE UMA VEZ — o primeiro LOTE, e a esteira não piscou
+
+O elenco tinha fechado em quatro naquela manhã, com as duas reprovadas apagadas e o
+slot livre. O Doug entregou **seis artes novas** em `~/Downloads/cabelos` e mudou o
+lugar do parecer: *"em vez de gerar a folha, vou fazer aprovação visual direto no
+`/dev/avatar-kokeshi`"*. **A folha de contato sai do caminho do cabelo** — e com ela
+sai a leitura por subagente do §14, que era o passo caro.
+
+## O que a pasta tinha, medido por HASH e não pelo nome
+
+Treze arquivos, e sete deles não eram trabalho:
+
+| hash bate com | arquivos |
+|---|---|
+| `base-oficial.png` do repo | `BASE-OFICIAL.png` |
+| os quatro `-crua.png` promovidos | `chanel` · `moicano` · `assimetrico` · `Burst_Fade` |
+| nada — mas **já julgados e apagados** | `espetado(common).png` · `coque_simples(rare).jpg` |
+
+**Seis eram novas de verdade.** Uma delas, `longo_unilateral(epic).png`, é de
+2026-08-22 22:12 — **um minuto depois** da `assimetrico` — e nunca tinha sido
+importada. Ela estava na pasta desde antes da poda do elenco e passou despercebida em
+duas rodadas.
+
+⚠️ **Conferir por hash antes de gastar esteira virou o primeiro passo do lote.** Pelo
+nome do arquivo, dez das treze pareceriam artes a processar; quatro delas teriam
+sobrescrito peça em produção pelo caminho do `-crua`.
+
+## O custo real, e ele mata a pergunta da paralelização
+
+O Doug perguntou se dava para acelerar com subagentes ou com vários chats
+simultâneos. A resposta é **não, e não é por prudência — é por aritmética**:
+
+| | |
+|---|---|
+| `restaurar-peca` numa arte 1024² | **1,97 s** |
+| a qualificação inteira de uma arte (restaurar + 3 gates) | **< 30 s**, com o `npm` incluso |
+| as seis, em série | **~3 min** |
+
+E a metade que sobra não paraleliza de jeito nenhum: `promovidas.ts` e
+`cabelos-da-arte.ts` são **arquivo único**, e `arte:cabelos` **regenera o literal
+inteiro** — custa o mesmo para 1 ou para 10 peças. Vários chats na mesma cópia de
+trabalho se sobrescreveriam em silêncio, e o `--check` só acusaria depois. Worktrees
+trocariam a colisão por seis merges no mesmo arquivo gerado.
+
+**O gargalo verdadeiro é o olho do Doug**, e ele é serial por natureza. O que o lote
+faz de fato é baratear ESSE passo: as seis aparecem juntas no seletor
+*"da arte · tonal"* e ele julga tudo numa sessão só.
+
+## As seis, medidas
+
+| peça | massa | comp. | Gate −1 | corpo / sobrancelha | tom | `d` | topo (u) | folga até o teto |
+|---|---|---|---|---|---|---|---|---|
+| `cachos-anjo` | 93.715 px | 1 | **APROVADA** | 0 / 0 px | 268×180 · 24,1 KB | 9.012 B | −25,1 | 51,6 px |
+| `curto-repartido` | 81.478 px | 1 | **APROVADA** | 0 / 0 px | 246×165 · 20,7 KB | 2.414 B | −2,6 | 72,3 px |
+| `longo-unilateral` | 149.717 px | 1 | **APROVADA** | 25.084 / 1.091 px | 267×344 · 38,1 KB | 3.782 B | +12,5 | 86,1 px |
+| `pixie` | 86.980 px | 1 | **APROVADA** | 0 / 64 px | 249×175 · 22,1 KB | 3.598 B | −7,9 | 67,7 px |
+| `rabo-baixo` | 106.920 px | 1 | **APROVADA** | 1.007 / 0 px | 261×306 · 28,2 KB | 3.532 B | −3,3 | 71,6 px |
+| `trancas-duplas` | 122.667 px | **2** | **APROVADA** | 19 / 9 px | 255×320 · 31,5 KB | 7.372 B | +1,1 | 75,4 px |
+
+Nas seis: deslocamento **0/0 px**, escala **100,00%**, **0 ladrilho de forma** em rosto
+e em corpo, **0 px descartados nas FEIÇÕES**. `arte:traco` com o traço do boneco
+inteiro (a `longo-unilateral` tem 15 px em 15 ilhas de 1 px, contra piso de 8 por
+componente — o mesmo perfil do `assimetrico` promovido) e `arte:borda` com **0 px de
+cinza** nas seis.
+
+## Três coisas que pareciam achado e a medição desmontou
+
+Ficam registradas porque as três teriam virado pergunta ao Doug — e as três eram
+minhas, não das artes.
+
+### 1. "A `longo-unilateral` cobre o tronco, isso é o caso proibido"
+
+Ela mede **25.084 px (8,07%)** de tinta em `corpo` e **1.091 px (17,83%)** em
+`sobrancelha`. Parece exceção até medir a peça que **já está em produção**:
+
+| | corpo | sobrancelha |
+|---|---|---|
+| `assimetrico` (promovido, aprovado pelo Doug) | 27.147 px · **8,74%** | 1.096 px · **17,91%** |
+| `longo-unilateral` (nova) | 25.084 px · **8,07%** | 1.091 px · **17,83%** |
+
+A peça nova é **mais leve nas duas contas**. O que o `PEDIDO-CABELOS.md` proíbe é
+cabelo que precise ficar **atrás** da cabeça (`extensao` com `atras: true`, que a
+esteira tonal não traça); cabelo que cai **na frente** do tronco é figurinha opaca
+desenhada por cima, e é o que o `chanel` e o `assimetrico` já fazem.
+
+### 2. "60% da peça é linha, isso vai renderizar preto"
+
+`restaurar-peca` classifica cada pixel da peça em *recolorido* ou *linha
+instrumental*, e as artes novas vinham com fração de linha alta. A comparação com o
+elenco aprovado desmonta a preocupação:
+
+| peça | linha / massa |
+|---|---|
+| `chanel` (**aprovado**) | 79.457 / 116.932 = **68,0%** |
+| `longo-unilateral` | 90.115 / 149.717 = 60,2% |
+| `cachos-anjo` | 49.178 / 88.175 = 55,8% |
+| `trancas-duplas` | 66.546 / 121.920 = 54,6% |
+| `curto-repartido` | 32.070 / 81.253 = 39,5% |
+| `moicano` (aprovado) | 13.665 / 39.452 = 34,6% |
+| `burst-fade` (aprovado) | 25.942 / 87.824 = 29,5% |
+| `assimetrico` (aprovado) | 36.189 / 172.759 = 20,9% |
+
+**A peça mais carregada de linha do repositório é a primeira que o Doug aprovou.** A
+faixa aprovada vai de 20,9% a 68,0%, e as seis novas caem dentro dela.
+
+⚠️ A medição foi feita gravando a saída do `restaurar-peca` **no scratchpad**, nunca
+sobre o `.png` do repositório: `arte:cabelos --check` re-roda a esteira sobre aquele
+arquivo, e regravá-lo mudaria o literal de peça promovida.
+
+### 3. A régua do teto do `viewBox` NÃO reproduz a guilhotina do `coque`
+
+O teto é o defeito que matou o `coque` (caixa em u y −47,5, 8.921 px = 9,0%
+guilhotinados). Medindo com `naTela()` na escala do produto — **92%, que é
+`ESCALA_PADRAO` desde 2026-08-06** —, o topo do quadro fica em **u y −81,1**, e a
+peça com menos folga do elenco inteiro é o **`moicano`, aprovado e em produção, com
+24,8 px**. Nenhuma das seis chega perto: a mais alta é a `cachos-anjo`, com 51,6 px.
+
+**Pela mesma conta, o `coque` (−47,5 u) teria 28,9 px de folga — ou seja, não estaria
+cortado.** Ou aquela medição foi feita a **100%** (a base de edição, não o que a
+criança vê), ou ela mediu outra coisa. **É hipótese, não medição**, e fica declarada
+em vez de virar régua. Enquanto não for resolvida, a conta do teto a 92% é a que vale
+para decidir peça nova, porque é a escala em que o produto compõe.
+
+## O que ficou pendente de propósito
+
+1. **A RARIDADE veio no nome do arquivo e não foi aplicada** — `cachos_anjo(legendary)`,
+   `longo_unilateral(epic)`, os outros quatro `common`. Raridade é do servidor
+   (`avatar_catalogo`, Regra Inviolável nº 1) e entra na migration **da promoção**,
+   não aqui;
+2. **`arte:peso` marca as seis como "NOVA — sem teto ainda"**, e isso é o desenho do
+   gate: o baseline entra no `--update` que se roda **quando a peça é aprovada**.
+   Inventar teto a partir de peça não julgada é congelar o que ainda pode mudar;
+3. **`trancas-duplas` tem 2 componentes** (107.539 + 14.381 px, o segundo com 13,4% do
+   maior, bem acima do piso de ruído de 5%). É a primeira peça do slot que não é uma
+   mancha só. A esteira tonal traça por `potrace`, que emite subcaminhos no mesmo `d`
+   — a limitação de UM laço era da família traçada (`Cabelo.massa`), hoje vazia. O
+   `d` saiu com 7.372 B e o gate de feições deu 0 px, mas **nenhuma régua afirma que
+   os dois componentes sobreviveram**: quem confirma é o render;
+4. **`espetado` e `coque_simples` continuam na pasta do Doug** e ficaram de fora — as
+   duas já foram julgadas e apagadas por ele. Retentar uma delas é decisão dele.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx:285`) ·
+**670 testes** (eram 652; os 18 novos são os testes parametrizados pelo catálogo, que
+cresceram com as peças) · `verify:all` **exit 0**, a cadeia inteira dos 19 gates ·
+`npm run build` **exit 0**.
+
+## Onde parou
+
+> ⚠️ **A seção abaixo foi superada horas depois, no bloco seguinte:** o parecer
+> veio, as seis foram promovidas e uma sétima entrou. Ela fica como registro do
+> estado no momento em que foi escrita.
+
+As seis estão em `CABELOS_DA_ARTE` e aparecem no seletor *"da arte · tonal"* do
+`/dev/avatar-kokeshi`. **Nenhuma foi promovida** — `CABELOS` continua com as quatro de
+ontem, e é `CABELOS` que a criança vê.
+
+**Falta o parecer do Doug, peça a peça.** Aprovada uma, a promoção é: espalhar
+`...CABELOS_DA_ARTE.<chave>` em `CABELOS` com a identidade sobrescrita, o `id` para
+`MODELOS_TONAIS`, `arte:peso --update` para gravar o teto, e a migration que semeia o
+slug em `avatar_catalogo` com a raridade do nome do arquivo.
+
+---
+
+# 2026-08-24 (parte 2) · O PARECER VEIO NO RENDER, e SETE foram promovidas
+
+O bloco acima terminou em *"falta o parecer do Doug, peça a peça"*. Ele veio no meio
+da execução, curto: **"gostei dos resultados no dev local host"** e, para as seis,
+**"todas as seis"**. Horas depois, a sétima: **"coque simples gostei"**.
+
+**A folha de contato saiu do caminho do cabelo, e este bloco é a prova de que ela era
+o gargalo.** A esteira custa 2 s por arte; a folha custava uma leitura por subagente
+de 8 a 12 min, mais uma ida e volta com o Doug por peça. Com o parecer no seletor
+*"da arte · tonal"* do `/dev/avatar-kokeshi`, sete peças custaram uma sessão.
+
+## As duas artes que ele mandou repassar, e o hash decidiu uma delas
+
+Ele respondeu à pergunta sobre `espetado` e `coque_simples` assim: *"passe na esteira,
+pois são artes novas já — apaguei as velhas e coloquei o mesmo nome"*.
+
+**Conferido antes de gastar esteira**, porque o nome do arquivo não é evidência:
+
+| | hash no Downloads | hash do blob que `404fca2` apagou | veredito |
+|---|---|---|---|
+| `espetado(common).png` | `177e75c989ae` | `eceea8fea692` (`-crua.jpg`) · `85f4971ca9d9` (`.png`) | **arte diferente** — ele está certo |
+| `coque_simples(rare).jpg` | `22ec07e74e16` | — (a arte do `coque` não existia no disco desde a 2ª reprovação) | sem termo de comparação |
+
+## `coque-simples` — a reentrada, e o defeito que a matou NÃO se repete
+
+| medida | `coque` (reprovado 2×) | `coque-simples` (aprovado) |
+|---|---|---|
+| topo da caixa da máscara | u y **−47,5** | u y **−30,0** |
+| px acima do `viewBox` | **8 921 px · 9,0% da peça** | — |
+| folga até o topo do quadro (92%) | — | **47,0 px** |
+
+**A arte nova nasceu 17,5 u mais baixa.** É exatamente o que o `PEDIDO-CABELOS.md`
+manda para peça que prende cabelo em cima, e é a primeira vez que aquela cláusula é
+exercitada e passa.
+
+Números: 62 797 px em 1 componente · Gate −1 **APROVADA** com 0 px e 0 ladrilho em
+rosto, corpo e sobrancelha · tom 229×150 (16,1 KB) · `d` 3 620 B · composto 10 865 B.
+
+## `espetado` — REPROVOU, e a causa é um BURACO NO GATE, não a arte
+
+```
+✗ rosto — 18 ladrilhos de 16 px, maior grupo contíguo 17 (teto 1)
+   PEÇA cobrindo o boneco   2 362 px  79,0%   ← isento
+   REPINTURA das feições        1 px   0,0%
+   NÃO EXPLICADO              625 px  20,9%   ← é isto que reprova
+```
+
+A sonda reproduz os **625 px exatos** com os mesmos limiares de
+`porque-reprovou.ts:43-48`, e mede o que eles são:
+
+| | |
+|---|---|
+| onde estão | **100% sobre PELE CLARA**, em 24 componentes; os dois maiores somam 589 px em u x 286→313 · y 185→219 — entre os olhos, do topo da região do rosto até acima da linha dos olhos (`OLHO.cy` = 232) |
+| que cor têm | base `rgb(233,177,131)` → arte `rgb(116,138,144)`, Δ luminância **−56,3** |
+| que matiz | **187°** — **7° do ciano instrumental** |
+| por que não contam | **saturação 0,13**, abaixo de `SAT_MIN = 0,18` |
+
+**São pixels da própria peça, escuros demais para o teste de matiz reconhecer.**
+`restaurar-peca` os tratou como peça (levou o matiz a 180 preservando saturação e
+luminância, então nada de nascimento cinzento vira colorido); o Gate −1, que reconhece
+a peça pelo ciano com piso de saturação, não os vê — e o que ele não vê como peça, ele
+conta como *o gerador redesenhou o boneco*.
+
+É a mesma FAMÍLIA de defeito que o Bloco 2b consertou para outro mecanismo (*"a arte
+reprova por estar certa"*), com uma variável diferente: lá era preto sobre preto, aqui
+é **cinza escuro perto do ciano**.
+
+### O buraco é PRÉ-EXISTENTE, e está em produção — medido nas 12 artes
+
+`peça` = pixels a ≤30° do ciano. `invisível` = os mesmos, com saturação < 0,18 e que
+não caem em "preto novo" (que o gate isenta por outro caminho).
+
+| arte | peça | invisível | % | **em região protegida** |
+|---|---|---|---|---|
+| `trancas-duplas` (promovida) | 55 374 | 46 591 | **84,1%** | 0 |
+| `pixie` (promovida) | 36 205 | 28 279 | 78,1% | 0 |
+| **`espetado`** | 80 080 | 46 836 | 58,5% | **531** ← reprova |
+| `cachos-anjo` (promovida) | 38 997 | 21 361 | 54,8% | 0 |
+| `moicano` (em produção) | 25 787 | 4 897 | 19,0% | 0 |
+| `burst-fade` (em produção) | 61 882 | 12 242 | 19,8% | 0 |
+| `curto-repartido` (promovida) | 49 183 | 9 145 | 18,6% | 0 |
+| **`chanel`** (em produção desde 2026-08-22) | 57 198 | 6 990 | 12,2% | **107** |
+| `coque-simples` (promovida) | 19 401 | 1 551 | 8,0% | 0 |
+| `rabo-baixo` (promovida) | 57 888 | 2 221 | 3,8% | 4 |
+| `assimetrico` (em produção) | 136 570 | 10 | 0,0% | 1 |
+| `longo-unilateral` (promovida) | 59 602 | 1 | 0,0% | 0 |
+
+**O `chanel` que a criança usa hoje tem 107 px invisíveis dentro do rosto.** Ele passou
+porque estavam espalhados e nenhum grupo contíguo alcançou o teto de 1 ladrilho de
+16 px. A `espetado` tem 531 px **num bloco só**, e é só isso que separa as duas.
+
+⚠️ **NADA FOI MEXIDO NO GATE**, e é de propósito. Baixar `SAT_MIN` é afrouxar o gate,
+e este repositório já pagou para saber a diferença entre *"o gate ficou certo"* e
+*"o gate afrouxou"* (Bloco 2b, o buraco aberto e fechado no mesmo bloco). Há pelo menos
+três saídas defensáveis e a escolha é do Doug:
+
+1. **piso de saturação dependente da luminância** — saturação colapsa quando a luz vai
+   a zero, e um piso fixo julga pixel escuro com a régua do claro;
+2. **conectividade ancorada no ciano**, que é o que `extrair.ts` já faz com o preto
+   desde o 2a: cinza que ENCOSTA em ciano reconhecido é peça; cinza solto não é;
+3. **nada** — a arte volta ao gerador com a cláusula "sem sombra chapada cinza sobre a
+   pele", e o gate continua estrito.
+
+A saída 2 tem precedente medido neste repositório e não move limiar nenhum. **Não foi
+implementada.**
+
+## O que foi promovido, e o que a promoção obrigou a regravar
+
+Sete peças em `CABELOS`, `ModeloCabelo` e `MODELOS_TONAIS`. O elenco vai de **4 para
+11** — e **11 de 10 bate o piso** de `CABELOS_MINIMO` pela primeira vez desde que ele
+foi encomendado em 2026-08-07.
+
+| selo | antes | depois |
+|---|---|---|
+| `parametrico-congelado.ts` | 13 selos | **23** (+14 das 7 × 2; −4 ÓRFÃOS de `espetado`/`coque`, apagados do catálogo de manhã e esquecidos aqui) |
+| `BYTES_DA_ARTE` (`cabelo.test.ts`) | 5 entradas | **12** |
+| `MODELOS_TONAIS.length` | 4 | **11** |
+| `peso-baseline.json` | 9 peças | **16** |
+
+⚠️ **Nenhum dos 8 selos tonais anteriores mudou de byte ou de SHA** — conferido no
+diff. É a única prova que separa "regravei porque as peças são novas" de "regravei
+para calar vermelho", e a instrução *"nunca em lote"* do `linhas-cabelo.test.ts`
+passou a dizer isso com todas as letras em vez de proibir o lote.
+
+### Dois números que só um lote deixa ver
+
+**O peso do composto não segue a massa da arte.** A `cachos-anjo` tem 93 715 px e sai
+com 16 255 B — a peça mais pesada do elenco inteiro. A `longo-unilateral` tem 149 717
+px, **60% mais massa**, e sai com 10 949 B. Quem manda é o `d`, e o `d` é contorno
+recortado: cacho recorta, mecha lisa não.
+
+**E a peça mais leve do slot passou a ser de ARTE.** A `curto-repartido` fecha em
+9 663 B, abaixo dos 9 731 do `moicano` — que era "a primeira que cabe" no
+`ORCAMENTO_COMPOSTO.bytes` de 10 240. A doutrina de que arte é mais pesada que
+paramétrica já tinha caído em 2026-08-22; agora caiu também o recorde.
+
+## O DEFEITO ACHADO NO PAINEL — `medirCabelos` contava uma a menos, sempre
+
+Encontrado ao conferir o `verify:estado` depois da primeira leva: ele dizia *"Catálogo
+de cabelo: **3** de 10"* com **4** peças em `CABELOS`.
+
+**Causa, com arquivo e linha:** `scripts/estado.ts:244` contava com
+`/\|\s*"[^"]+"/g` — uma **barra** antes de cada nome. O primeiro membro de uma união
+TypeScript não tem barra à frente, então ele nunca entrava na conta. Com um modelo só,
+o painel diria **0**, que ali é o valor de *"não medi"*.
+
+`docs/ESTADO.md` é o arquivo que o `CLAUDE.md` manda ler primeiro, e número errado
+nele é pior que número nenhum: parece medido.
+
+**Conserto:** contar os NOMES (`/"[^"]+"/g`), não as barras.
+**Gate:** `scripts/__tests__/medir-cabelos.test.ts`, 4 asserções, a primeira delas
+sendo o painel contra `MODELOS_CABELO`. **Falha antes** (2 de 4: 3≠4 e 0≠1),
+**passa depois** (4 de 4). O painel foi de "3 de 10 (faltam 7)" para "4 de 10 (faltam
+6)" e, com a promoção, para **"11 de 10 ✅"**.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx:285`) ·
+**768 testes** (eram 652 na manhã) · `verify:arte` **PASS** · `npm run build` **exit 0**.
+
+`verify:all` **reprova em exatamente um gate**, e é o "falha antes" da migration:
+
+```
+[FAIL] slot cabelo: 7 peça(s) do código sem linha no banco —
+       cabelo-cachos-anjo, cabelo-curto-repartido, cabelo-longo-unilateral,
+       cabelo-pixie, cabelo-rabo-baixo, cabelo-trancas-duplas, cabelo-coque-simples
+```
+
+⚠️ **A cadeia PARA no primeiro vermelho**, então "o resto está verde" seria território
+não medido — o erro que foi cometido nesta mesma rota em 2026-08-24 de manhã. Os 13
+gates que ficam atrás dele foram rodados **um a um**, à mão: `verify:perfil-publico`,
+`verify:identidade-nas-listas`, `verify:turmas`, `verify:privileges`,
+`verify:xp-curve`, `verify:no-dup-rpc`, `verify:puzzle-authority`, `verify:curriculo`,
+`verify:pose`, `verify:design-tokens`, `verify:estado`, `verify:aberturas`,
+`verify:fonte-peca` — **13 PASS, 0 FAIL**.
+
+## Onde parou — três decisões do Doug, nenhuma minha
+
+1. **A MIGRATION NÃO FOI APLICADA.** O comando foi recusado por ele. Ela está escrita
+   em `supabase/migrations/20260824100000_sete_cabelos_novos_entram_no_catalogo.sql` e
+   fecha o único gate vermelho:
+
+   ```
+   npx tsx scripts/apply-migration.ts supabase/migrations/20260824100000_sete_cabelos_novos_entram_no_catalogo.sql
+   ```
+
+2. **O slot tem UMA peça inicial e o desenho do produto pede DUAS.** A segunda era o
+   `cabelo-espetado`, apagado de manhã; a migration de ontem declarou a queda como
+   consequência, não como escolha. Restaurar exige eleger **uma entre os quatro
+   commons novos** (`curto-repartido`, `pixie`, `rabo-baixo`, `trancas-duplas`), e isso
+   é decisão de produto. Custa um `UPDATE` de uma linha.
+
+3. **O buraco do piso de saturação no Gate −1**, com as três saídas medidas acima. Ele
+   não bloqueia nada hoje — bloqueia a `espetado`, e só ela.
+
+---
+
+# 2026-08-24 (parte 3) · O ELENCO FECHA EM CATORZE, e uma peça de 3 mechas derrubou duas réguas
+
+O Doug continuou entregando arte enquanto a promoção anterior ainda estava sendo
+escrita: `tigela_franja`, `espetadonovo`, `maria_chiquinha`. E aprovou tudo —
+**"os 13 aprovados"**, mais a última. O slot vai de **4 para 14** num dia.
+
+## O `espetado` volta na TERCEIRA tentativa, e o número que separa é o do buraco
+
+| | 1ª | 2ª | **3ª (esta)** |
+|---|---|---|---|
+| como caiu | o Doug a olho, com todos os gates verdes | **Gate −1**: 18 ladrilhos no rosto | — |
+| px de peça invisíveis ao gate | — | **46 836** (58,5%) | 8 495 (13,2%) |
+| **dos quais em região protegida** | — | **531**, num bloco só | **0** |
+| massa | — | 80 080 px | 97 103 px |
+
+⚠️ **Ele reusa o slug limpo, e isso foi conferido em vez de suposto.** A migration
+`20260824080000` fez `DELETE FROM avatar_catalogo`, sem lápide, então `cabelo-espetado`
+estava livre. **A afirmação de que "slug não ressuscita", escrita no comentário do
+`coque-simples` horas antes, estava ERRADA** e foi corrigida no lugar: o motivo do
+nome novo lá é só que foi assim que o Doug nomeou o arquivo.
+
+**A arte reprovada NÃO foi apagada** — virou `espetado-vetado-crua.png` e
+`espetado-vetado.png`. Ela é a única cobaia do buraco do piso de saturação, e três
+réguas foram aposentadas nesta mesma rota, em 2026-08-24 de manhã, por não terem
+cobaia. Não se repete o erro no mesmo dia.
+
+⚠️ **O buraco do Gate −1 continua ABERTO.** Ele não bloqueia mais nenhuma peça, mas o
+`chanel` em produção tem 107 px de peça invisível dentro do rosto. As três saídas
+medidas estão na parte 2.
+
+## O ACHADO GRANDE: as réguas achatavam o `d` e iam apagar uma sobrancelha
+
+A `maria-chiquinha` chegou com **3 componentes** — a massa da cabeça e as duas
+chiquinhas — e reprovou em `cabelo.test.ts`:
+
+```
+maria-chiquinha › cobre a coroa inteira: 0,8690, esperado 1
+```
+
+13,1% de coroa descoberta se lê como **couro cabeludo à mostra**, que é o defeito que
+aquela régua existe para pegar. Antes de dizer isso ao Doug, as duas hipóteses foram
+separadas por medição.
+
+### A causa, com arquivo e linha
+
+`poligonoDoTracado` (`cabelo.ts:1567`) achata o `d` INTEIRO numa lista de pontos só —
+sem noção de subcaminho. Para um `d` de vários `M`, ela **emenda o fim de um
+componente no começo do seguinte**, criando arestas que não existem em desenho
+nenhum. `dentroDe` passa a responder sobre uma forma que ninguém desenhou.
+
+Medindo a UNIÃO dos 3 subcaminhos, com a mesma amostragem: **1,0000**. A peça cobre a
+coroa inteira. **A régua estava acusando a arte de um furo que era dela.**
+
+### ⚠️ E não era só o número — o defeito CHEGAVA AO BONECO
+
+`coberturaDaSobrancelha` usava a mesma função, e o compositor **omite a sobrancelha
+que a peça cobre em ≥ 85%** (`SOBRANCELHA_COBERTA`). Medido nas duas versões, sobre a
+mesma arte:
+
+| | esquerda | direita | consequência |
+|---|---|---|---|
+| `d` achatado | **94,6%** | 38,5% | **acima do limiar — a sobrancelha esquerda NÃO era desenhada** |
+| somando componentes | **5,4%** | 2,4% | as duas desenhadas |
+
+O SVG composto: **13 696 B sem a sobrancelha, 13 783 B com ela.** Os 87 bytes são o
+`path` dela. **Um boneco de sobrancelha só teria ido ao ar**, com o `npm test` verde e
+sem régua nenhuma reclamando — a única coisa que reclamou foi a cobertura da coroa, e
+por outro motivo.
+
+### O conserto, e o que ele NÃO move
+
+`subcaminhosDoTracado(d)` devolve **um polígono por subcaminho**; `poligonoDaTouca`
+passa a devolver lista; `coberturaDaCoroa` e `coberturaDaSobrancelha` perguntam
+*"dentro de ALGUM"*. Peça de um componente devolve lista de um, e o resultado é
+idêntico byte a byte.
+
+**Medido nas 14 peças, antes e depois:** só a `maria-chiquinha` se move. `moicano`
+0,4847 e `assimetrico` 74,1% batem com os valores registrados em 2026-08-22.
+
+⚠️ **A `trancas-duplas`, com 2 componentes, dava 1,0000 nas duas contas.** Foi sorte
+da geometria dela — as arestas fantasma caíram fora da faixa medida. **Régua que
+acerta por onde a arte calhou de ficar é régua que ainda não errou**, e é por isso que
+o teste novo não usa peça real como controle.
+
+### O gate: `src/lib/avatar/estilo/__tests__/coroa-multicomponente.test.ts`
+
+Rodado contra a régua antiga, revertendo **só o mecanismo**:
+
+| asserção | achatado | somando |
+|---|---|---|
+| duas metades sintéticas cobrem a coroa | **0,6725** ✗ | **1,0** ✓ |
+| `maria-chiquinha` real, 3 componentes | **0,8690** ✗ | **1,0** ✓ |
+| a mesma peça não cobre sobrancelha | esq 94,6% ✗ | esq 5,4% ✓ |
+| contra-controle: uma metade só | 0,6725 ✓ | 0,6725 ✓ |
+| controle: um componente só | 1,0 ✓ | 1,0 ✓ |
+
+Os dois controles passam nas duas versões — é o que prova que o conserto não mexeu em
+peça de uma mecha.
+
+## O SEGUNDO defeito de `medirCabelos`, e quem o pegou foi o teste do primeiro
+
+O conserto da manhã (contar nomes em vez de barras) não bastou. Com 14 modelos, o
+painel dizia **13** — e a asserção *"o painel não pode discordar do produto"*, escrita
+horas antes, reprovou sozinha.
+
+A união deste projeto é comentada linha a linha, e **prosa tem pontuação**:
+
+| na prosa | efeito |
+|---|---|
+| `...aprovou as catorze de uma vez ("os 13 aprovados", mais esta)` | as **aspas** viram um membro falso: **+1** |
+| `...ela reusa o slug limpo; a arte que reprovou ficou no disco` | o **ponto e vírgula** fecha o `([\s\S]*?);` ali: **−2** |
+
+14 − 2 + 1 = **13**. Os dois erros se cancelavam em parte, que é o pior jeito de errar.
+
+**O conserto varre o comentário antes de qualquer coisa**, e não a prosa ofensora de
+`cabelo.ts`: apagar a frase consertaria o número de hoje e deixaria a armadilha armada
+para o próximo ponto e vírgula. Três asserções novas no teste, uma por forma de
+comentário (linha com aspas, linha com `;`, bloco `/** */`).
+
+**Lição, e ela vale para todo gate deste repositório:** o teste que se escreve junto
+com o conserto é o que pega o conserto seguinte. Sem ele, o painel teria voltado a
+mentir em silêncio no mesmo dia.
+
+## As três peças
+
+| peça | massa | comp. | `d` | composto | folga | notas |
+|---|---|---|---|---|---|---|
+| `tigela-franja` | 83 375 px | 1 | **2 400 B** | **9 649 B** | 64,7 px | o `d` e o composto mais leves do elenco · **0 px** invisíveis ao gate |
+| `espetado` | 97 103 px | 1 | 7 124 B | 14 372 B | 58,5 px | 3ª tentativa do modelo |
+| `maria-chiquinha` | 108 095 px | **3** | 6 538 B | 13 783 B | 70,0 px | esticão lum **15 → 249**, o mais largo do elenco |
+
+A `tigela-franja` tomou o recorde de leveza da `curto-repartido` (9 663 B) no mesmo dia
+em que ela o tomou do `moicano` (9 731 B). **As três peças que cabem em
+`ORCAMENTO_COMPOSTO.bytes` são todas de arte** — a doutrina de que arte é mais pesada
+que paramétrica está morta em todas as pontas.
+
+A `maria-chiquinha` também exercita `apagouAteOFundo` com peso pela primeira vez: o
+gerador apagou **3 856 px** do boneco até o fundo, contra 0 a 127 nas outras treze
+artes do dia. `restaurar-peca` devolveu a base em todos, e o Gate −1 fechou em 0 px.
+
+## As selagens, e a única que se moveu por motivo legítimo
+
+| selo | antes | depois |
+|---|---|---|
+| `parametrico-congelado.ts` | 23 | **29** (14 × 2 + careca) |
+| `BYTES_DA_ARTE` | 12 | **15** |
+| `MODELOS_TONAIS.length` | 11 | **14** |
+| `peso-baseline.json` | 16 | **19** |
+
+Dois valores existentes mudaram, e os dois têm causa escrita ao lado:
+
+- **`espetado` 13 319 → 14 372.** Mesma chave, PEÇA DIFERENTE — a antiga era traçada e
+  foi apagada, esta é tonal. É o único caso do arquivo em que um número se move sem
+  ser defeito;
+- **`maria-chiquinha` 13 696 → 13 783.** Os 87 bytes da sobrancelha que o conserto
+  devolveu.
+
+Nenhum outro selo mudou de bytes ou de SHA — conferido no diff, que é a única prova
+que separa *"regravei porque a peça é nova"* de *"regravei para calar vermelho"*.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente) · **824 testes**
+(eram 652 na manhã) · `verify:arte` **PASS** · `npm run build` **exit 0**.
+
+`verify:all` reprova em **um** gate, o "falha antes" da migration:
+
+```
+[FAIL] slot cabelo: 10 peça(s) do código sem linha no banco
+```
+
+Os **13 gates atrás dele foram rodados um a um**: 13 PASS, 0 FAIL. O painel mede
+**"Catálogo de cabelo: 14 de 10 no mínimo ✅"** — o piso encomendado em 2026-08-07 é
+batido com folga pela primeira vez.
+
+## Onde parou
+
+1. **A MIGRATION NÃO FOI APLICADA** (o Doug recusou o comando na primeira vez). Ela
+   agora semeia **10 slugs** e afirma que o slot fecha em 14:
+   ```
+   npx tsx scripts/apply-migration.ts supabase/migrations/20260824100000_dez_cabelos_novos_entram_no_catalogo.sql
+   ```
+2. **UMA peça inicial onde o desenho pede duas.** Agora há **sete commons** para
+   escolher. `UPDATE` de uma linha.
+3. **O buraco do piso de saturação no Gate −1**, com a cobaia preservada.
+
+---
+
+## 2026-08-24 (adendo) · A `maria-chiquinha` é REPROVADA e apagada — o elenco fica em 13
+
+*"não aprovo. delete e vou regenerar a arte."* A reprovação é do **desenho**, e não
+tem relação com o defeito de régua que ela revelou.
+
+O que saiu: `CABELOS["maria-chiquinha"]`, o nome da união, a linha de `MODELOS_TONAIS`,
+`NOMES_CABELO`, o selo de bytes, os arquivos de arte, o PNG de tom e a linha da
+migration. Selos **29 → 27**, `peso-baseline` **19 → 18**, `MODELOS_TONAIS.length`
+**14 → 13**, painel **"13 de 10 ✅"**.
+
+⚠️ **O conserto de `subcaminhosDoTracado` FICA, e o teste dele não depende da arte.**
+As duas asserções que a citavam foram trocadas por controles sintéticos, e a da
+sobrancelha ficou **mais forte** no caminho:
+
+| asserção sintética | régua achatada | somando componentes |
+|---|---|---|
+| duas metades cobrem a coroa | 0,6725 ✗ | **1,0** ✓ |
+| dois tufos fora do crânio não cobrem sobrancelha | **100,0%** ✗ | **0,0%** ✓ |
+
+Com a régua antiga, dois tufos que não encostam na sobrancelha eram lidos como
+cobrindo-a **por inteiro** — e o compositor a omitiria. É o mesmo defeito da arte
+apagada, agora medido sem depender dela.
+
+Fica declarado: **nenhuma peça do catálogo tem 3 componentes hoje.** A
+`trancas-duplas` tem 2 e não discrimina (dava 1,0000 nas duas versões). O caso de 3
+só existe nos sintéticos, e um `it` novo avisa se o catálogo ficar sem peça
+multi-componente nenhuma.
+
+`typecheck` 0 · `lint` 0 erros · **808 testes** · `verify:arte` PASS · `build` 0.
+A migration passou a semear **9 slugs** e a afirmar que o slot fecha em **13**:
+`supabase/migrations/20260824100000_nove_cabelos_novos_entram_no_catalogo.sql`.
+
+---
+
+# 2026-08-24 (parte 4) · O elenco fecha o dia em CATORZE — e a lição da esteira que não se mexe
+
+Fecha aqui o dia que começou com o elenco cortado a quatro. **Dezoito artes
+atravessaram a esteira**, catorze estão no catálogo, três esperam parecer e duas foram
+apagadas por reprovação de desenho.
+
+## A maria chiquinha, em duas voltas
+
+| | 1ª arte (`d8fc2e0604f3`) | 2ª arte (`1d66558e2e11`) |
+|---|---|---|
+| Gate −1 | APROVADA | APROVADA — 0 px em rosto, corpo **e** sobrancelha |
+| componentes | 3 | 3 |
+| coroa · sobrancelha | 1,0000 · 0,0/0,0% | 1,0000 · 0,0/0,0% |
+| apagou até o fundo | **3 856 px** | 46 px |
+| veredito do Doug | ✗ *"não aprovo. delete e vou regenerar a arte"* | ✅ promovida |
+
+**A ordem do parecer mudou por causa da primeira.** Eu a promovi sobre um "aprovado"
+dado antes de ele ver o boneco montado, e ele reprovou depois — retrabalho nos dois
+lados. Desde então: **a peça entra no seletor, ele olha o render, e só então eu
+promovo.** Vale para toda peça nova.
+
+## O ACHADO QUE FICOU: as réguas não sabiam somar mechas
+
+Foi a 1ª maria chiquinha que o revelou, e ele sobreviveu à reprovação dela porque é
+defeito de programa, não de arte. **Está em produção e não foi revertido.**
+
+`poligonoDoTracado` achatava o `d` inteiro numa lista de pontos só, sem noção de
+subcaminho. Numa peça de três mechas ele emenda o fim de uma no começo da outra e
+inventa arestas que não existem em desenho nenhum:
+
+| | `d` achatado | somando componentes |
+|---|---|---|
+| `coberturaDaCoroa` | 0,8690 — "13% de couro cabeludo à mostra" | **1,0000** |
+| `coberturaDaSobrancelha` esq | **94,6%** — acima do limiar de 85% | **5,4%** |
+
+⚠️ **O segundo número é o que importa: o compositor OMITE a sobrancelha coberta em
+≥85%.** O boneco sairia com **uma sobrancelha só**, com todos os testes verdes. A
+diferença no SVG composto eram 87 bytes — o `path` dela.
+
+Conserto: `subcaminhosDoTracado` devolve um polígono por subcaminho, e *"dentro da
+peça"* virou *"dentro de ALGUM"*. Gate em `coroa-multicomponente.test.ts`, com
+controles sintéticos que **não dependem de arte nenhuma** — rodados contra a régua
+antiga: coroa 0,6725 ✗ → 1,0 ✓ e sobrancelha 100,0% ✗ → 0,0% ✓, com dois controles
+passando nas duas versões.
+
+## O SEGUNDO defeito de `medirCabelos`, pego pelo teste do primeiro
+
+De manhã eu consertei a contagem do painel (contar nomes, não barras). **Não bastou**:
+com 14 modelos ele dizia 13, e quem reprovou foi a asserção *"o painel não pode
+discordar do produto"* escrita horas antes.
+
+A união é comentada linha a linha, e prosa tem pontuação: `("os 13 aprovados"` somava
+um membro falso pelas **aspas**; `o slug limpo; a arte` fechava a união no **ponto e
+vírgula**. 14 − 2 + 1 = 13, com os erros se cancelando em parte.
+
+Conserto: varrer comentário antes de contar. Três asserções novas, uma por forma de
+comentário. **A lição vale para todo gate daqui: o teste escrito junto com o conserto é
+o que pega o conserto seguinte.**
+
+---
+
+# ⚠️ A LIÇÃO DO DIA, e ela custou uma reversão inteira
+
+## O que aconteceu
+
+O `duplo-coque-real` chegou e o Doug apontou, no render: *"quase perfeito, corrija este
+erro — onde indiquei deve ser o rosto do avatar"*. Uma mancha de cabelo na bochecha
+esquerda.
+
+**Reproduzido e medido, e a arte estava certa:** 3 511 px em que a ARTE tem pele e o
+RENDER tem cabelo, o maior bloco com 1 302 px em u x 103→128 · y 259→329 — exatamente
+onde ele marcou.
+
+**Causa, com arquivo e linha:** o passo **2c, a "figurinha"**
+(`barba-para-formas.ts:572`). Ele preenche toda ilha de boneco cercada por peça que não
+tenha olho ou boca dentro. A regra é decisão do Doug de 2026-08-22 (*"a barba é colada
+como figurinha, nada atrás dela pode ser visto"*) e nasceu de um defeito real: o traço
+do maxilar aparecendo dentro da barba. Medido: 3 096 px de furo preenchido no
+`duplo-coque-real`, contra 197 no `dreadlocks` e 32 no `chanel`.
+
+**A bancada achou um discriminador com vão enorme** — o que a BASE tem debaixo do furo:
+
+| arte | 4 maiores furos | base PRETA dentro |
+|---|---|---|
+| `barba-trancada` (fundou a regra, TEM de preencher) | 371 · 117 · 77 · 77 px | **100% · 100% · 99% · 100%** |
+| `duplo-coque-real` (não pode preencher) | 1 724 · 519 · 407 · 84 px | **24% · 0% · 0% · 33%** |
+
+A causa é a mesma escrita no comentário da regra: furo falso nasce de **preto sobre
+preto**. Sobre pele isso não acontece.
+
+## E o conserto foi REVERTIDO, por decisão dele
+
+O conserto funcionava. O que ele **não** era é local:
+
+| peça | maiores vãos sobre pele que a regra nova abriria |
+|---|---|
+| `cachos-anjo` (aprovada) | **653 · 416 · 283 · 261 · 213 px** |
+| `moicano` (em produção) | 196 · 177 · 55 |
+| `assimetrico` (em produção) | 195 · 132 · 29 |
+| `espetado` (aprovada) | 164 · 158 · 128 |
+| `coques-duplos` | 49 · 49 · 37 |
+| `barba-trancada` (em produção) | 31 · 26 · 20 — **sub-pixel a 56** |
+
+**18 testes reprovaram**: o conserto muda a geometria das 15 peças. Tentei salvar com
+piso de tamanho e **medi que não existe** — a `cachos-anjo` aprovada tem vãos de 653 px,
+maiores que o 2º e o 3º do `duplo-coque-real`.
+
+O Doug foi direto: *"a esteira estava perfeita (aprovou várias artes seguidas). agora
+que vc tentou consertar uma, mexeu em 3 que estavam aprovadas. deixe como estava."*
+
+Revertido por `git checkout` do arquivo, e **conferido**: `git diff` dos dois literais
+e dos PNGs de tom **vazio** — byte a byte o que estava.
+
+## A REGRA QUE FICA, e ela é a lição
+
+> **Esteira que está aprovando arte não se mexe para consertar um caso.** Antes de
+> tocar num passo compartilhado, meça em QUANTAS peças aprovadas ele muda alguma
+> coisa. Se mexer em peça que o Doug já julgou, o conserto deixou de ser conserto e
+> virou proposta — e proposta se leva a ele ANTES do primeiro `git diff`, não depois de
+> 18 testes vermelhos.
+
+O erro não foi o diagnóstico (estava certo e medido). Foi a **ordem**: medir o respingo
+é o primeiro passo, não o último.
+
+## A saída pelo DESENHO, para a próxima vez
+
+A figurinha só preenche ilha **fechada** — a busca começa na borda da imagem e tudo que
+ela alcança fica intacto. Então, num cabelo com vão:
+
+- **vão que desemboca na borda de fora do cabelo NUNCA é preenchido.** Duas mechas que
+  se separam e o espaço continua até embaixo: o programa não encosta;
+- vão **cercado** por cabelo dos quatro lados é lido como falha de recorte e some.
+
+É a instrução que vale para o pedido de arte, e ela não custa uma linha de código.
+
+---
+
+## Onde o dia parou
+
+**Catálogo: 14 peças**, todas tonais. `MODELOS_PARAMETRICOS` e `MODELOS_TRACADOS`
+seguem vazias.
+
+```
+chanel · moicano · assimetrico · burst-fade          (as 4 de 2026-08-22)
+cachos-anjo · curto-repartido · longo-unilateral · pixie · rabo-baixo ·
+trancas-duplas · coque-simples · tigela-franja · espetado · maria-chiquinha
+```
+
+**No seletor "da arte · tonal", esperando parecer — 3:** `coques-duplos`,
+`coque-individual`, `dreadlocks`. Todas com Gate −1 aprovada, traço e borda limpos,
+coroa 1,0000 e sobrancelhas 0/0.
+
+| peça | massa | `d` | topo · folga |
+|---|---|---|---|
+| `coques-duplos` | 91 870 px | 3 168 B | u 0 · 74,6 px |
+| `coque-individual` | 81 666 px | 4 210 B | u −55 · **24,0 px** |
+| `dreadlocks` | 144 527 px | **9 436 B** | u −28,3 · 48,6 px |
+
+**Apagadas por reprovação de desenho:** a 1ª `maria-chiquinha` e o `duplo-coque-real`.
+
+## A régua do teto do `viewBox` foi VALIDADA contra o render
+
+A ressalva declarada de manhã (*"minha régua não reproduz a guilhotina do coque"*)
+fechou: renderizando e contando tinta na primeira linha do quadro,
+
+| peça | tinta na 1ª linha | linha mais alta | régua previa |
+|---|---|---|---|
+| `coque-individual` | 0 | y 24 | 24,0 px |
+| `moicano` | 0 | y 25 | 24,8 px |
+| `coques-duplos` | 0 | y 74 | 74,6 px |
+| `chanel` | 0 | y 82 | 82,3 px |
+
+**A régua prevê o render com 1 px de erro.** A guilhotina registrada no `coque` antigo
+foi medida em outro enquadramento (provavelmente a 100%, a base de edição).
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em `GameReview.tsx:285`)
+· **833 testes em 41 arquivos** (eram 652 na manhã) · `verify:arte` **PASS** ·
+`npm run build` **exit 0** · painel **"Catálogo de cabelo: 14 de 10 ✅"**.
+
+⚠️ `recorte-cabeca.test.ts` reprovou UMA vez na corrida cheia e passou sozinho e na
+corrida seguinte — é instabilidade do arquivo que renderiza por Playwright, não defeito.
+
+## O QUE FICA PENDENTE — três coisas, todas do Doug
+
+1. **A MIGRATION NUNCA FOI APLICADA**, e é o único gate vermelho do `verify:all`
+   (`slot cabelo: 10 peça(s) do código sem linha no banco`). Ela está correta e
+   consistente com o catálogo de 14:
+   ```
+   npx tsx scripts/apply-migration.ts supabase/migrations/20260824100000_dez_cabelos_novos_entram_no_catalogo.sql
+   ```
+   Os 13 gates que ficam atrás dele foram rodados **um a um**: 13 PASS.
+2. **UMA peça inicial onde o desenho do produto pede DUAS.** A segunda era o
+   `cabelo-espetado` velho, apagado de manhã. Há **sete commons** para escolher, e é
+   um `UPDATE` de uma linha.
+3. **O buraco do piso de saturação no Gate −1**: peça escura com saturação < 0,18 não é
+   reconhecida como peça. O `chanel` em produção tem 107 px assim dentro do rosto,
+   espalhados. A cobaia está preservada em `espetado-vetado*.png`. Três saídas medidas
+   na parte 2 — e, depois do episódio da figurinha, vale dizer: **qualquer uma delas
+   mexe na esteira, então meça o respingo nas 15 peças ANTES de tocar no arquivo.**
+
+---
+
+# 2026-08-24 (parte 5) · O `duplo-coque-real` volta, morre de novo na MESMA bochecha — e desta vez deixa uma régua
+
+O Doug entregou `coque_duplo_real_novo(legendary).jpg` e mudou o pedido de lugar:
+*"sem folha, quer aprovar visualmente direto no localhost dev"*. A arte é nova de
+verdade — hash `f2ec8ea0cf60`, que não bate com nenhum `-crua` do repositório.
+
+**Ela atravessou a esteira inteira sem uma reprovação de máquina, e foi reprovada
+pelo olho dele em uma frase: *"erro na bochecha"*.** É a segunda arte desta família a
+morrer do mesmo jeito no mesmo dia.
+
+## A peça, medida — e ela é a maior do slot
+
+| | |
+|---|---|
+| peça (difere da base) | **234 198 px** em 1 componente — a maior que já passou por aqui (a 2ª é a `assimetrico`, 173 283) |
+| linha instrumental | 74 729 px = 31,9% da peça |
+| Gate −1 | **APROVADA** — 0 ladrilho em rosto e corpo, deslocamento 0/0, escala 100,00%. Dos 6 639 px nas protegidas, 88,4% é peça cobrindo o boneco, 557 px (8,4%) não explicado |
+| `arte:traco` | **0 px** apagado, 0 ilhas |
+| `arte:borda` | **0 px** de cinza |
+| `d` | 11 012 B — o maior do slot (o 2º é `dreadlocks`, 9 436) |
+| tom | 309×389 · **59,1 KB** — o maior do slot (o 2º é `assimetrico`/`longo-unilateral`, 38,1) |
+| caixa da máscara | u x −14,2 y **−37,5** w 515 h 647,5 |
+
+**O teto do `viewBox` NÃO foi tocado**, e foi a primeira coisa conferida — é o eixo
+que matou o `coque` de manhã. A régua validada contra o render na parte 4
+(`folga_px = 74,6 + 0,92 × topoU`, conferida em 4 peças com 1 px de erro) dá
+**40,1 px de folga**. A terceira mais apertada do elenco, e sobra.
+
+## O DEFEITO, e ele não está no desenho
+
+A mancha da bochecha **não existe na arte** — ali ela tem pele lisa. Quem a inventa é o
+passo **2c da esteira, a "figurinha"** (`barba-para-formas.ts:572`), que preenche todo
+furo FECHADO sem olho ou boca dentro.
+
+| | |
+|---|---|
+| figurinha (2c) | **5 633 px** de furo preenchido, 0 janela de feição aberta |
+| desses, cabelo sobre PELE | **3 390 px** |
+| **num bloco só** | **3 160 px**, em u x 84→134 · y 242→339 |
+
+A caixa que o Doug marcou na versão de manhã — u x 103→128 · y 259→329 — **cabe
+inteira dentro desta**. Mesmo lugar, maior.
+
+**Nenhum gate podia ter pego isso, e o motivo é estrutural:** todos eles medem a ARTE
+contra a BASE, e a arte está certa. O defeito nasce depois, na máscara.
+
+## A decisão dele: apagar, e o elenco fica em 14
+
+Com três saídas medidas na mesa — redesenhar com o vão aberto, pôr piso de tamanho na
+figurinha, ou apagar — ele escolheu **apagar**. *"Apagar e ficar em 14."* É a terceira
+arte da família do coque duplo a cair.
+
+**A saída foi conferida byte a byte:** `git diff` **vazio** contra o índice depois de
+remover a entrada de `promovidas.ts`, regerar `cabelos-da-arte.ts`, apagar o `.png`, o
+`-crua.jpg`, a pasta do painel do gate e a máscara de tom. Nenhuma das 14 peças
+aprovadas moveu um byte — o critério de fronteira da §7 do runbook.
+
+## A RÉGUA QUE FICA — `arte:figurinha`, e ela é a amarra do §14 cumprida
+
+*"Reprovação do Doug vira régua antes da próxima arte entrar na esteira."* Esta não
+tinha, e é por isso que o custo não caiu entre a primeira e a segunda arte.
+
+`scripts/avatar/arte/figurinha-sobre-pele.ts` é **a primeira régua da rota que mede a
+MÁSCARA FINAL contra a arte**, em vez da arte contra a base. Depois do
+`restaurar-peca`, fora da peça o pixel é idêntico ao da base — então *"a máscara cobre
+e a arte não tem peça aqui"* é `mascara[i] && arte == base`, sem limiar escolhido a
+dedo. Sob o furo, três classes, e só uma é defeito: base **preta** (furo falso, o caso
+que fundou a regra), base **fundo**, base **pele**.
+
+### A área foi tentada primeiro e NÃO separa nada
+
+| | cabelo sobre pele, no total |
+|---|---|
+| `cachos-anjo` — **aprovada, em produção** | **5 060 px** |
+| `duplo-coque-real` — reprovado pelo Doug | **3 390 px** |
+
+Um piso por área reprovaria peça aprovada. É o erro do G28 na letra: medir o piso nas
+peças em vez de no boneco.
+
+### O eixo que separa é a LARGURA, e o piso sai do traço
+
+A figurinha existe para tapar fio que a máscara perdeu por cair sobre traço preto, e
+**fio tem a espessura do traço**. Então a pergunta é *que disco cabe dentro do furo*, e
+o piso é `2 × TRACO × ESCALA` = **28,8 px** — dois traços perdidos lado a lado é onde o
+benefício da dúvida acaba.
+
+| alvo | maior bloco sobre pele | **largura inscrita** |
+|---|---|---|
+| `chanel` · `longo-unilateral` · `coque-simples` · `tigela-franja` · `maria-chiquinha` | 0 px | **0,0 px** |
+| `barba-trancada` · `curto-repartido` · `pixie` · `rabo-baixo` · `dreadlocks` | 2 a 39 px | **2,0 px** |
+| `coques-duplos` · `coque-individual` | 22–23 px | **2,7 px** |
+| `burst-fade` | 14 px | **4,0 px** |
+| `moicano` · `assimetrico` · `espetado` | 106–172 px | **4,7 px** |
+| `trancas-duplas` | 94 px | **6,7 px** |
+| **`cachos-anjo` — a pior das aprovadas** | 640 px | **15,3 px** = 1,06× o traço |
+| **CONTROLE** `chanel` + bochecha fechada r16 | 796 px | **31,3 px ✗** |
+| **CONTROLE** `chanel` + bochecha fechada r24 | 1 792 px | **45,3 px ✗** |
+
+**Vão de 1,88× entre a pior aprovada e o piso.** Os números baixos das 18 são
+consequência da régua, não a origem dela.
+
+### O controle é o defeito montado sobre arte APROVADA
+
+Como em `traco-intacto`: um anel da cor da peça, fechado sobre a bochecha do `chanel`,
+mais uma barra que o prende à massa de cabelo — sem a barra o anel vira componente
+solto e a esteira o descarta como ruído, e o controle mediria zero por vacuidade.
+
+**O centro sai de medição, não de coordenada escrita à mão:** o ponto da metade
+esquerda do rosto mais longe de qualquer borda — fio, contorno, fundo e as cápsulas de
+feição. A primeira versão escolhia por coordenada e caiu **dentro do olho esquerdo**; o
+recorte do passo 2 rasgou o anel e a esteira reprovou com *"o recorte das feições
+cortou o MIOLO da peça"*. Há um contra-controle: o `chanel` limpo tem de PASSAR.
+
+### ⚠️ O ponto cego, declarado
+
+**Ela não julga ONDE o furo está.** O maior furo da `cachos-anjo` fica no alto da testa
+e lê como cabelo; o da arte reprovada ficava na bochecha e lia como mancha. A régua
+separa os dois pela LARGURA e acerta nestes dois casos — mas um furo estreito e
+comprido sobre a bochecha passaria. Se aparecer, o conserto é acrescentar região, não
+afrouxar o piso.
+
+### O que ela NÃO faz, e é de propósito
+
+Ela **não conserta** e **não toca na esteira**. O conserto do passo 2c foi tentado em
+2026-08-24 de manhã, mudou a geometria de 15 peças, derrubou 18 testes e o Doug mandou
+reverter. A saída que fica é pelo DESENHO — *vão que desemboca na borda de fora do
+cabelo nunca é preenchido* —, e o papel desta régua é dizer isso **antes** de ele ter
+de olhar.
+
+## Gates
+
+`typecheck` **0** · `arte:figurinha` **18 artes passam, controle reprova nos dois
+raios** · `verify:arte` **PASS** · `npm test` **836 testes**.
+
+⚠️ Na corrida com a arte ainda no repositório, `arteDaPecaNoDeploy.test.ts` reprovou
+**corretamente**: o PNG de tom novo não estava rastreado pelo git. O gate estava
+fazendo o trabalho dele.
+
+## Onde parou
+
+O elenco segue em **14**, e as três pendências da parte 4 continuam de pé — a
+migration não aplicada, a segunda peça inicial e o buraco do piso de saturação do
+Gate −1. Há um `coque_duplov2(legendary).jpg` em `~/Downloads` que **não** foi
+processado: não é a arte que ele mandou passar.
+
+---
+
+# 2026-08-24 (parte 6) · O coque duplo lendário atravessa na TERCEIRA — e a régua nova estreia julgando
+
+`coque_duplov2(legendary).jpg`, hash `64ed8d666f9c`, entregue às 13:38 — **antes** da
+arte da parte 5, e sem bater com nenhum `-crua` do repositório. É a terceira tentativa
+do modelo. As duas anteriores morreram pela mesma mancha na bochecha.
+
+## A estreia da `arte:figurinha`, e ela responde a pergunta que custou duas artes
+
+| | v2 (reprovada, parte 5) | **v3 (esta)** | piso |
+|---|---|---|---|
+| cabelo sobre pele | 3 390 px | **664 px** em 188 ilhas | — |
+| **maior bloco** | **3 160 px** | **77 px** | — |
+| **largura inscrita** | acima do piso | **2,7 px** | **28,8 px** |
+
+2,7 px é exatamente o número da `coques-duplos` e da `coque-individual`, as duas
+aprovadas da mesma família. **A mancha não existe nesta**, e desta vez quem disse isso
+foi a máquina, em 6 segundos, antes de o Doug abrir o navegador. É a amarra do §14
+funcionando pela primeira vez.
+
+## A peça
+
+| | |
+|---|---|
+| peça (difere da base) | **321 461 px** em 1 componente — **a maior massa do slot**, mais que o dobro da `longo-unilateral` (149 717) |
+| linha instrumental | 99 841 px = 31,2% |
+| Gate −1 | **APROVADA** — 0 ladrilho em rosto e corpo, deslocamento 0/0, escala 100,00%. Dos 11 533 px nas protegidas, **94,4% é peça cobrindo o boneco**, 417 px (3,6%) não explicado |
+| `arte:traco` · `arte:borda` | **0 px** · **0 px** de cinza |
+| figurinha (2c) | 1 589 px preenchidos · 0 janela de feição |
+| esticão lum | 17 → 169 |
+| tom | 379×408 · **78,8 KB** — o maior do slot |
+| `d` | **9 626 B** nas 2 formas |
+| caixa da máscara | u x **−70,8** y **−55,8** w 630,8 h 678,3 |
+
+## ⚠️ DUAS PRIMEIRAS VEZES NO EIXO DO ENQUADRAMENTO, e uma delas não tem régua
+
+**1. Folga do topo: 23,3 px — a mais apertada já medida.** Pela régua validada na
+parte 4 (`folga_px = 74,6 + 0,92 × topoU`, conferida contra o render em 4 peças com
+1 px de erro) ela **cabe**, mas por menos que a `coque-individual` (24,0) e o `moicano`
+(24,7), que eram as duas mais justas.
+
+**2. É a PRIMEIRA peça do elenco que sai do `viewBox` DE LADO.** Medidas as 18 caixas:
+
+| peça | x0 | x1 | transborda |
+|---|---|---|---|
+| **`duplo-coque-real`** | **−70,8** | **560,0** | **70,8 esq · 60,0 dir** |
+| `dreadlocks` — a mais larga das aprovadas | 0,0 | 485,0 | 0 · 0 |
+| `coques-duplos` | 18,3 | 480,8 | 0 · 0 |
+| `moicano` — a mais estreita | 136,7 | 395,0 | 0 · 0 |
+
+**As 17 aprovadas cabem todas em 0→500. Nenhuma encosta.** Não existe régua validada
+para a guilhotina lateral — a da parte 4 foi medida contando tinta na **primeira
+linha** do quadro, e o eixo horizontal nunca foi exercitado porque nenhuma peça tinha
+chegado perto. Fica **declarado como não medido**, e é o que foi dito ao Doug antes de
+ele olhar.
+
+⚠️ `arte:revisao` **não serve para peça tonal** — ela recusa com *"a peça não está em
+`pecas-da-arte.ts`"*, porque é a folha da família **traçada**. Não é defeito: o parecer
+do tonal é no render do `/dev/avatar-kokeshi`, por decisão do Doug de 2026-08-24. Fica
+registrado para ninguém gastar 3 minutos de Playwright descobrindo isso de novo.
+
+## Onde parou
+
+A peça foi ao seletor *"da arte · tonal"* e o Doug aprovou o desenho — *"gostei da
+peça"* —, **vendo o corte**. A promoção começou e **não terminou**: ver a parte 7, em
+que um gate que já existia reprovou o eixo lateral numa segunda superfície, e o modelo
+inteiro acabou abolido.
+
+---
+
+# 2026-08-24 (parte 7) · O duplo coque real é ABOLIDO — quatro artes, e o que fica é uma régua e um número para a Frente B
+
+*"delete a peça. não vou regenerar. vou abolir esta peça."* O modelo sai do projeto
+depois de **quatro** artes em um dia. Nenhuma delas está no repositório; o que fica é
+o que elas ensinaram.
+
+## As quatro, e por que cada uma caiu
+
+| | o que reprovou | quem pegou |
+|---|---|---|
+| v1 (manhã) | mancha de cabelo na bochecha | **o olho do Doug**, no render |
+| v2 (parte 5) | a mesma mancha, maior — 3 160 px num bloco | **o olho do Doug** de novo; a régua nasceu aqui |
+| v3 (parte 6) | sangra fora do `viewBox` **e** fora do retrato de 32 px | `arte:figurinha` limpou a bochecha; **`recorte-cabeca.test.ts`** pegou o resto |
+| v4 (esta) | sangra 19,2 u fora do retrato, **só pela esquerda** | a mesma régua, na qualificação, antes da promoção |
+
+## O que a v4 provou, e é o que faz a abolição ser decisão e não desistência
+
+O Doug refez a arte *"com volume de cabelo lateral menor"*, e o alvo foi acertado quase
+inteiro numa volta:
+
+| | v3 | **v4** | teto |
+|---|---|---|---|
+| corte no quadro grande | 20 504 px = **6,38%** | **63 px = 0,02%** | — |
+| folga que o RETRATO pede | **145,8 u** | **99,2 u** | 80 |
+| folga do topo | 23,3 px | **42,4 px** | > 0 |
+| `arte:figurinha` | 2,7 px | 4,7 px | 28,8 |
+| Gate −1 · `arte:traco` · `arte:borda` | aprovada · 0 · 0 | **aprovada · 0 · 0** | |
+
+**Faltavam 19,2 u de uma mecha só.** A peça morreu qualificada em tudo menos num eixo,
+e por menos de 4% da própria largura.
+
+## O ACHADO QUE FICA: a promoção tem uma SEGUNDA superfície, e eu não a tinha na conta
+
+Quando o Doug perguntou *"promover agora ou esperar?"*, a recomendação saiu com **um**
+custo na mesa: 6,38% cortados no quadro grande, que somem sozinhos quando a Frente B
+alargar o `viewBox` (doc 21 §b). **A premissa estava incompleta**, e quem mostrou foi o
+`npm test` da própria promoção:
+
+```
+FAIL  recorte-cabeca.test.ts > duplo-coque-real cabe inteiro na janela
+AssertionError: duplo-coque-real sangra pela ESQUERDA: expected 0 to be >= 15.4
+```
+
+`RECORTE_CABECA` (`src/lib/avatar/estilo/recorte.ts`) é o retrato de 32/40 px que
+`AvatarCabeca` serve na **navbar, dashboard, ranking, mural e ranking de turma** — cinco
+telas. Ele **não** deriva do `viewBox`: deriva de `FOLGA_LATERAL_DO_CABELO`, uma
+constante própria, hoje **80 u**, cujo comentário diz *"medido: 68,7 no pior caso do
+catálogo (o `assimetrico`)"*.
+
+Quanto cada peça pede, medido nas 18:
+
+| peça | pede |
+|---|---|
+| `moicano` (a mais estreita) | −44,8 |
+| as outras 15 | 8,3 a 56,7 |
+| **`dreadlocks`, a pior aprovada** | **75,0** — cabe por 5 |
+| `duplo-coque-real` v3 | 145,8 |
+| `duplo-coque-real` v4 | **99,2** |
+
+**A lição é da ORDEM, e é irmã da lição da manhã.** Aquela dizia *"meça o respingo nas
+peças aprovadas ANTES de tocar num passo compartilhado"*. Esta diz: **meça TODAS as
+superfícies que a peça atravessa antes de recomendar promover.** O quadro grande é uma;
+o retrato é outra; e nada avisa que existe uma segunda até o gate dela reprovar.
+
+## O que NÃO foi feito, e é de propósito
+
+**`FOLGA_LATERAL_DO_CABELO` não subiu.** Ela caberia a v4 em 80 → 100, e o custo era
+mensurável e pequeno: a janela alarga 7,6% e a cabeça de todo aluno fica ~7% menor nas
+cinco telas (a asserção irmã, *"a cabeça ocupa pelo menos metade da janela"*, seguiria
+passando com 64,5%). Foi levado ao Doug com esse número e **ele escolheu abolir a peça**.
+
+O argumento que decidiu, e ele fica escrito porque vale para a próxima:
+
+- o custo de subir a folga é pago por **todo aluno, para sempre, na tela mais vista**, e
+  por causa de uma peça **lendária** que a maioria nunca terá;
+- e aquele 80 é número que **acompanha o elenco**: se sobe para caber uma peça, sobe de
+  novo na próxima peça grande. É catraca sem freio, e a hora de não puxar é a primeira.
+
+Afrouxar o gate por peça nunca esteve na mesa.
+
+## O NÚMERO QUE A FRENTE B GANHOU, e é o que sobra de material
+
+O doc 21 §b decidiu alargar o `viewBox` para `0 −80 500 780` e travou em *"as 80
+unidades são chute"*, esperando um chapéu de prova para medir o eixo **vertical**. Estas
+artes mediram o **horizontal**, que ninguém tinha exercitado porque nenhuma peça tinha
+chegado perto:
+
+- as 17 promovidas cabem todas em u x **0 → 500**; nenhuma encosta;
+- a v3 pedia **−70,8 → 559,2**; a v4, **−24,2 → 504,2**;
+- **e o `viewBox` não é a única janela.** A Frente B tem de dimensionar `RECORTE_CABECA`
+  junto, senão ela conserta o quadro grande e deixa o retrato cortando.
+
+## A régua que fica
+
+`arte:figurinha` (parte 5) provou-se em produção nesta parte: nas v3 e v4 ela respondeu
+a bochecha em 6 s, antes de o Doug abrir o navegador. **O modo de falha que custou duas
+artes não volta.**
+
+## Gates
+
+Depois de apagar tudo: `git diff` **vazio** contra o índice em `src/`, `promovidas.ts` e
+`peso-baseline.json`. O catálogo segue em **14**, `MODELOS_TONAIS` em 14, e o seletor
+*"da arte · tonal"* com as 17 de sempre.
+
+## Onde o dia parou
+
+As três pendências da parte 4 continuam de pé — a migration não aplicada, a segunda
+peça inicial e o buraco do piso de saturação do Gate −1 — e agora há uma quarta: a
+**Frente B precisa cobrir três janelas**, não uma (`viewBox` vertical, `viewBox`
+horizontal, `RECORTE_CABECA`).
+
+---
+
+# 2026-08-24 (parte 8) · O teto do chapéu não era o `viewBox` — era o retângulo de colagem, e o conserto custou duas constantes
+
+*"prossiga"* na Frente B. A bancada foi montada para medir o teto que um chapéu
+pede, como o Bloco 6 do doc 21 manda. Ela mediu outra coisa: **a Frente B não
+resolvia o problema que ela existe para resolver.**
+
+## As três bancadas, e a que virou o dia
+
+| bancada | o que mediu |
+|---|---|
+| 1 · o teto de hoje, peça a peça | a coroa está em y 111,0 do quadro; a peça mais alta do elenco (`moicano`) encosta em **25,0**. Sobram **25 u livres**, e nenhuma peça toca o teto |
+| 2 · a guilhotina, calibrada | uma toca de prova em `formas`, varrendo o topo: cabe em interno −70 (tinta a 4,5), é cortada em −77. **O quadro mostra até interno −81,1** |
+| 3 · onde a ARTE cola | uma arte com tinta na 1ª linha do próprio arquivo cai em **y 75,0** do quadro (previsto 74,6). O `<image>` ocupava interno **0 → 700** |
+
+**As duas primeiras dizem que o quadro tem espaço. A terceira diz que a arte não
+o alcança.**
+
+| janela | teto acima da coroa | em alturas de cabeça |
+|---|---|---|
+| o QUADRO, para paths | 114,6 u | 36,5% |
+| a TELA DE ARTE (canvas 1024², origem y=92) | 116,2 u | 37,0% |
+| a COLAGEM no `viewBox` | **39,5 u** | **12,6%** |
+
+## Por que a Frente B não consertava isso
+
+O chapéu chega como `<image>` (doc 23 §7, linha 307). `colarArte()` derivava o
+retângulo do `VIEWBOX`, e o recorte da esteira (`RECORTE`) era o mesmo retângulo
+em pixels — px 212→812 × 92→932. Alargar o `viewBox` para `0 −80 500 780`
+alargaria os dois **e não adiantaria**, porque quem manda no topo é a **tela de
+arte**: o canvas de edição tem 92 px acima do `y = 0`, e o recorte de um `viewBox`
+a −80 começaria em px **−4** — fora do arquivo. O −80 do plano está **3,3 u além
+do que a base pode entregar**, e ninguém tinha medido isso.
+
+Levado ao Doug com as três saídas medidas. Ele escolheu **A: o recorte cresce**.
+
+## O conserto
+
+`CAIXA_DA_ARTE = { x: 0, y: −75, w: 500, h: 775 }` nasce em `geometria.ts`;
+`colarArte()` cola nela; `RECORTE` **deriva** dela em vez de espelhá-la — um
+sistema de coordenadas, dois lados, que é a promessa que `peca-de-arte.ts` já
+fazia.
+
+**Por que −75 e não o teto inteiro do canvas.** Três números disputam o topo e o
+menor manda: o canvas dá −76,67 (e 92 ÷ 1,2 não é exato em binário); o quadro
+mostra até −81,1, então não é ele que corta; **−75 é exato dos dois lados** —
+92 − 75 × 1,2 = **2 px** cravados, 775 × 1,2 = **930** cravados —, e sobra 2 px de
+margem da borda do arquivo. Abre-se mão de 1,67 u pela exatidão que `base.ts`
+inteiro persegue.
+
+| | antes | **depois** |
+|---|---|---|
+| teto de arte acima da coroa | 39,5 u · 12,6% de cabeça | **114,5 u · 36,5%** |
+| medido no render | tinta da arte em y 75,0 do quadro | **y 6,0** |
+| `viewBox` | `0 0 500 700` | **não foi tocado** |
+| figura na tela | — | **do mesmo tamanho** |
+
+## O RESPINGO nas peças aprovadas, medido ANTES de aceitar
+
+A lição da manhã (parte 4) manda medir o respingo antes de tocar em passo
+compartilhado. Render do boneco com cada traje × dois cabelos, antes e depois,
+pixel a pixel:
+
+| peça | px diferentes de 1 400 000 | maior desvio de canal |
+|---|---|---|
+| `traje-farda` × chanel | **3** (0,0002%) | 15 |
+| `traje-farda` × moicano | **3** | 15 |
+| `traje-gambesao` × chanel | **0** | 0 |
+| `traje-gambesao` × moicano | **0** | 0 |
+
+Os 3 px da farda são **adjacentes**, em u (323–325, 543) — meio do peito, sobre
+uma linha de construção. É antialiasing de um retraço sobre um raster 10,7% mais
+alto, e não desenho perdido. Os dois `.svg` foram re-exportados no mesmo commit,
+que é o que torna o respingo essa ordem de grandeza em vez de **37,5 u de
+deslocamento** (o que aconteceria se o recorte crescesse sem a re-exportação —
+medido antes de re-exportar).
+
+## As duas travas que reprovaram, e a régua que faltava
+
+`npm test` pegou duas asserções do retângulo velho — é o contrato mudando por
+decisão, e as duas foram atualizadas:
+
+- `traje-de-elenco.test.ts` passou a casar a `CAIXA_DA_ARTE`;
+- `peca-raster.test.ts` tinha `viewBox="0 0 600 840"` **em literal**, e passou a
+  **derivar de `RECORTE`**.
+
+⚠️ **E as duas juntas ainda deixavam o ganho sem guarda.** Elas casam *um*
+retângulo, qualquer que seja — quem devolvesse a caixa ao `viewBox` as veria
+verdes. Nasceu a terceira, *"a caixa da arte alcança ACIMA DA COROA"*, e as três
+foram provadas **plantando o defeito**:
+
+| defeito plantado | quem reprovou |
+|---|---|
+| `colarArte` volta ao `VIEWBOX` | a asserção do retângulo — **e só ela** |
+| a caixa volta a `y = 0` | a régua do teto — **e só ela** |
+
+## A PERNA DO CHAPÉU NA ESTEIRA, que não existia
+
+`noCampoDoChapeu` não estava em lugar nenhum: o slot tinha lugar no compositor
+(`sobrepor(estado.chapeu, …)`) e **nenhum caminho de arte**. Entrou:
+
+- **`Y_PISO_DO_CHAPEU`** (`base.ts`) — o topo da sobrancelha **mais alta** (as duas
+  não estão na mesma altura: é o giro), com meio traço. É o número que o doc 23
+  §2.2 declarava faltar: *"é próprio do slot e ainda não está medido — sai da
+  primeira peça"*. Sai da geometria: **y 157,7**;
+- **`noCampoDoChapeu`** — teto na `CAIXA_DA_ARTE`, piso na sobrancelha, lados na
+  caixa. E aqui um número que surpreende: **a caixa (x 0→500) é mais estreita que
+  o retrato** da navbar (x −5→519). O transbordo lateral livre é **69,2 u à
+  esquerda e 54,8 à direita**;
+- **`chapeu.ts`** — o slot inteiro em quatro linhas, que é a prova de que separar
+  `peca-de-arte.ts` de `traje.ts` em 2026-08-17 pagou;
+- **`chapeus.ts`** (`arte:chapeus`, `arte:chapeus-check` em `verify:arte`) — o P5.
+  Ele **aceita catálogo vazio de propósito**: zero é o estado inicial legítimo, e
+  gate vermelho por ausência de trabalho é gate que se aprende a ignorar;
+- **`base-chapeu.ts`** → `base-chapeu-campo.png`, o campo pintado sobre a base, no
+  molde do `base-barba-campo.png`. Só **lê** a base, nunca a reescreve;
+- **`CHAPEUS`** deixa de ser literal vazio e passa a derivar de `CHAPEUS_DA_ARTE`;
+- o seletor `chapéu:` no `/dev/avatar-kokeshi`, que some quando a lista é vazia;
+- **`PEDIDO-CHAPEU.md`** — irmão do pedido do TRAJE e não do cabelo: cor final,
+  contorno **preto**. Azul-marinho instrumental no chapéu ficaria azul no produto.
+
+## A PROVA DE PONTA A PONTA, com chapéu sintético
+
+Pedido de um caminho que nunca rodou não se entrega. Uma cartola pintada sobre a
+base, no limite exato do campo, passada pela esteira REAL:
+
+```
+esteira: chapeu-zz-prova · 137.844 px · 1,8 KB no fio · controle na base 0 px
+topo desenhado (interno)  : y −75
+previsto no quadro        : y 5,6 u
+MEDIDO no quadro          : y 5,5 u        erro 0,1 u
+```
+
+Resíduo apagado; `git status` sem sobra.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em
+`GameReview.tsx:285`) · **834 testes em 41 arquivos** (eram 833; a régua do teto é
+a nova) · `verify:arte` **exit 0** · `npm run build` **exit 0** · `verify:all`
+**exit 0**.
+
+⚠️ `verify:all` reprovou **uma vez** em `verify:estado` — painel gerado
+desatualizado depois das mudanças. `npm run estado` e a cadeia fechou. Vale o
+registro porque `verify:estado` fica **antes** de `verify:aberturas`,
+`verify:fonte-peca` e `verify:arte` na cadeia: enquanto ele estava vermelho, os
+três não rodaram. É a lição do gate vermelho que esconde os de trás, de novo.
+
+⚠️ `tom-da-peca.test.ts` estourou o timeout de 5 s **uma vez** na corrida cheia e
+mediu **637 ms sozinho**. É contenção da corrida paralela, o mesmo modo do
+`recorte-cabeca.test.ts` na parte 4 — não é a mudança.
+
+## O que NÃO foi feito, e é de propósito
+
+- **`escondeCabelo` continua ABERTO** (doc 23 §8: `nada` · `franja` · `tudo`). É
+  decisão de produto do Doug, mora no ITEM, e enquanto não vier o compositor
+  desenha o chapéu por cima do cabelo inteiro — o comportamento `"nada"`. Nenhuma
+  peça declara o campo, e `PecaDeChapeu` continua com `cabeloPorCima?: never`;
+- **`NOMES` de `chapeus.ts` está vazio.** Uma arte sem nome **reprova em vez de
+  inventar** — a linha se escreve quando a peça existe;
+- **o `viewBox` não foi tocado, e a Frente B não foi executada.** O que ela ainda
+  entregaria: teto de quadro para peça de `formas` (hoje 114,6 u, e o elenco de
+  cabelo usa 86), e o eixo horizontal do `RECORTE_CABECA` — que é outro problema,
+  o que abateu o `duplo-coque-real`. Nenhum dos dois está pedindo hoje.
+
+## Onde parou
+
+A esteira do chapéu está montada e provada; falta **a arte do Doug**. As três
+pendências da parte 4 seguem: a segunda peça inicial de cabelo, o piso de
+saturação do Gate −1, e as três artes de cabelo sem parecer (`coques-duplos`,
+`coque-individual`, `dreadlocks`).
+
+---
+
+# 2026-08-24 (parte 9) · O slot CHAPÉU nasce inteiro — e as duas primeiras artes reprovam numa régua que não existia
+
+A parte 8 abriu o teto. Esta constrói a perna do chapéu na esteira, leva duas artes
+ao render, e as duas voltam reprovadas pelo olho do Doug — com o achado de sempre
+atrás: **a régua que reprovaria não estava lá.**
+
+## A perna do slot, que não existia
+
+`sobrepor(estado.chapeu, …)` tinha lugar no compositor desde o Bloco 1, e
+`noCampoDoChapeu` não estava em lugar nenhum. Entrou:
+
+| o quê | o que é |
+|---|---|
+| `Y_PISO_DO_CHAPEU` (`base.ts`) | o topo da sobrancelha **mais alta** — as duas não estão na mesma altura (o giro) —, com meio traço. **y 157,7**. É o número que o doc 23 §2.2 declarava faltar |
+| `noCampoDoChapeu` | teto na `CAIXA_DA_ARTE`, piso na sobrancelha, lados na caixa. E um número que surpreende: **a caixa (x 0→500) é mais estreita que o retrato** da navbar (x −5→519). Transbordo livre: 69,2 u à esquerda, 54,8 à direita |
+| `chapeu.ts` | o slot em quatro linhas — a prova de que separar `peca-de-arte.ts` de `traje.ts` em 2026-08-17 pagou |
+| `chapeus.ts` · `arte:chapeus` · `arte:chapeus-check` | o P5. **Aceita catálogo vazio de propósito**: zero é o estado inicial legítimo, e gate vermelho por ausência de trabalho é gate que se aprende a ignorar |
+| `base-chapeu.ts` → `base-chapeu-campo.png` | o campo pintado sobre a base, no molde do `base-barba-campo.png`. Só **lê** a base |
+| `CHAPEUS` | deixa de ser literal vazio e passa a derivar de `CHAPEUS_DA_ARTE` |
+| o seletor `chapéu:` no `/dev/avatar-kokeshi` | some quando a lista é vazia |
+| `PEDIDO-CHAPEU.md` | irmão do traje na **cor** (final), do cabelo na **linha** (azul) |
+
+**Provado de ponta a ponta antes de pedir arte.** Uma cartola sintética pintada sobre
+a base, no limite do campo, pela esteira REAL: 137 844 px, controle na base 0 px, e no
+render o topo caiu em y 5,5 contra 5,6 previsto — **erro de 0,1 u**.
+
+## A LINHA INSTRUMENTAL ATRAVESSA PARA O CHAPÉU, e o Doug pediu por nome
+
+Primeira arte ao render, e ele: *"a borda da arte se misturou com a borda da cabeça e
+a esteira se confundiu e eliminou a borda. Para resolver isso de vez, quero fazer nos
+chapéus a mesma técnica tonal usada nos cabelos."*
+
+**A técnica tonal inteira não atravessa** — o cabelo recolore com `var(--av-cabelo)`,
+e chapéu com token de cor viola a Regra Inviolável nº 4. **A parte que resolve o
+defeito dele atravessa inteira**, e é a linha azul.
+
+`linha-instrumental.ts` nasce com **uma** definição do predicado, do halo de 2 px e
+das conversões. Ela morava dentro de `restaurar-peca.ts`, que é script da esteira do
+cabelo; copiar seria a segunda cópia que diverge.
+
+**São duas conversões, e a diferença é o DESTINO, não o método:**
+
+- `marcar` → `(L, L, L+48)` para quem **recolore**: os 48 de azul são o recado para a
+  etapa seguinte, que precisa distinguir a linha do preto da base;
+- `neutralizar` → `(L, L, L)` para quem tem **cor assada**: não há etapa seguinte, o
+  pixel que sai é o que a criança vê, e 48 de azul seriam contorno azulado no avatar.
+  `#0000C8` sai `(14, 14, 14)`.
+
+**A prova, com o caso difícil na forma pura** — um gorro cuja linha cai *exatamente
+sobre a tabela `CABECA.contorno`*, a mesma que o compositor usa:
+
+| contorno | borda que sobrevive à extração |
+|---|---|
+| preto | 370 de 4 897 px — **7,6%** |
+| azul `#0000C8` | 4 739 de 4 897 px — **96,8%** |
+
+O braço preto ficou como **controle negativo** em `linha-instrumental.test.ts`. Dois
+defeitos plantados: com o predicado desligado ela reprova; com a asserção em 99,99%
+devolveu `expected 96.77353481723505` — o número sai de dentro dela.
+
+⚠️ **Respingo ZERO na esteira que aprova cabelo:** `restaurar-peca` na
+`cachos-anjo-crua.jpg` antes e depois da refatoração dá **hash SHA-256 idêntico**.
+
+⚠️ **E um defeito de molde achado no caminho:** `PEDIDO-CABELOS.md` pedia `#000080`
+em quatro lugares. O Doug usa `#0000C8`, e `restaurar-peca.ts:114-117` registra que o
+azul escuro **falha** — p50 de 47 no canal azul, antialias derruba a média a 23,2,
+meio nível abaixo do limiar de 24, e metade da linha se perde. Corrigido.
+
+## AS DUAS TOCAS, E A REPROVAÇÃO
+
+*"reprovada e muito! (sem borda, descolada, cor vazando etc)"*
+
+| | Toca Alta | Toca Curta | as que ele APROVOU |
+|---|---|---|---|
+| Gate −1 | **APROVADA** (0/0 px, 100,00%, rosto 0, corpo 0) | REPROVADA — o gerador desceu o boneco **8 px** e o ampliou **1,5%** | — |
+| topo acima da coroa | 80,3 u · 25,6% de cabeça | 22,8 u · 7,3% | — |
+| **perímetro com linha escura** | **65,2%** | **77,5%** | **99,7%** |
+| **amputado pelo campo** | **13,0%** | **73,3%** | 0–0,6% |
+| testa livre até a sobrancelha | **2 px** | **3 px** | — |
+| contraste contra o fundo | 1,04 : 1 | 1,03 : 1 | — |
+
+**Os três defeitos que ele nomeou são um evento só.** Onde o perímetro acaba numa cor
+clara em vez de numa linha escura: não há borda, a cor encosta direto na pele — que é
+vazar — e a peça deixa de parecer assentada — que é descolar. A 1,03:1 contra o fundo,
+o trecho sem linha é **matematicamente invisível**.
+
+E morreu na **base**: 47% da borda inferior da Alta sem um pixel escuro, num trecho
+contínuo da largura da cabeça. Causa dupla — a linha não fechou embaixo, **e** a aba
+desceu abaixo do piso e o campo a amputou em reta.
+
+**Três que ninguém tinha nomeado**, e saíram da leitura da folha:
+
+- **furos por dentro** — 8 cunhas na barriga das pregas da Alta, 5,6% do interior, nas
+  mesmas coordenadas nas cinco figuras: buraco no arquivo, não composição;
+- **hierarquia de traço achatada** — externo 3 px, internos 1–3 px;
+- **a 40 px nenhuma lê como chapéu** — a Alta lê como cabelo loiro tigelinha, a Curta
+  como faixa de suor. Falta a pista que faz toque de chef ler pequeno: **faixa escura
+  embaixo, copa clara e larga em cima**.
+
+## `arte:perimetro` — A RÉGUA QUE FALTAVA
+
+`arte:borda`, `arte:traco` e `arte:figurinha` percorrem `ARTES_PROMOVIDAS` = rosto +
+cabelo: **o slot chapéu tinha cobertura zero.** E as três medem o traço **do boneco**,
+não o contorno **da peça**. O doc 23 §7 já registrava o buraco: *"chapéu · óculos ·
+pet — nenhuma"*.
+
+Ela mede duas coisas, e **o piso sai das peças que o Doug aprovou**:
+
+- **perímetro com linha ≥ 95%** — 99,7% nas aprovadas, 65% e 77% nas reprovadas. Duas
+  populações a 20 pontos uma da outra, não um número ajustado para passar raspando;
+- **amputação pelo campo ≤ 3%** — porque `construirPeca` contava os 15 766 px
+  descartados e **construía a peça assim mesmo**. Descarte em silêncio é *o* modo de
+  falha que esta rota existe para fechar.
+
+⚠️ **A fronteira do CAMPO não é perímetro**, e a primeira versão contou 5 360 px em
+vez de 1 329 — 4 031 daqueles pixels eram a borda do recorte, onde não há linha para a
+artista ter desenhado.
+
+⚠️ **O CONTROLE MENTIU UMA RODADA.** Ele apagava a linha pintando-a de
+`e.corDominante` — que no `chanel` vale **(18, 18, 66)**, a cor da própria linha,
+porque o traço é a maior massa de um tom só. Apagar linha pintando de linha não apaga
+nada, e a régua passou uma rodada dizendo que o controle se comportou. Corrigido para
+a média da MASSA (71, 107, 110): chanel limpo **99,7% passa**, mutilado **79,6%
+reprova**.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em
+`GameReview.tsx:285`) · **838 testes em 42 arquivos** · `verify:arte` **exit 0** ·
+`verify:all` **exit 0** · `build` **exit 0**.
+
+## Onde parou
+
+As duas artes saíram do disco; os `-crua.jpg` das três ficam como registro. O slot
+está vazio e verde, esperando arte nova. O `PEDIDO-CHAPEU.md` foi reescrito com o que
+a folha ensinou, e o bloco colável **cabe em ~310 palavras** — o Doug avisou que o
+gerador se perde em texto longo, então acrescentar uma linha ali obriga a cortar outra.
+
+**Pendências antigas, todas de pé:** a segunda peça inicial de cabelo, o piso de
+saturação do Gate −1, e as três artes de cabelo sem parecer (`coques-duplos`,
+`coque-individual`, `dreadlocks`). **E uma nova:** `escondeCabelo` (doc 23 §8) continua
+aberto — medido, com o chapéu por cima do cabelo inteiro, o que sobra à mostra vai de
+**13,4%** (`coque-simples`) a **66,7%** (`assimetrico`).
+
+---
+
+# 2026-08-25 (parte 10) · A terceira toca passa — e o Doug reprova a RÉGUA, com razão em três dos quatro pontos
+
+A arte nova de chapéu chegou, a `arte:perimetro` reprovou, e o Doug devolveu a
+reprovação: *"o problema está então em sua régua. As artes estão perfeitas! Ou eu
+sou leigo e não estou entendendo, ou você criou uma régua muito rígida que impede
+arte boa de ser aprovada (se isso aprovar: avatar base 100% igual, contorno em
+azul, arte chapéu não cobre os olhos)."*
+
+Ele estava certo em três dos quatro pontos, e o quarto era um defeito real que a
+régua achou pelo motivo errado.
+
+## A esteira, e o número que reprovou
+
+| passo | resultado |
+|---|---|
+| Gate −1 | **APROVADA** — deslocamento 0/0 px, escala 100,00%, rosto 0, corpo 0 |
+| `arte:chapeus` | 77 249 px · 14,2 KB no fio · controle na base 0 px |
+| `arte:perimetro` | **REPROVA** — perímetro com linha **61,3%** (piso 95) · amputado **7,0%** (teto 3) |
+
+E a mensagem que ela imprimiu mandava consertar **o contorno**.
+
+## O QUE A RÉGUA NÃO SEPARAVA: silhueta × furo
+
+Separando o perímetro em borda que dá para fora e borda de vazio cercado:
+
+| | px | com linha |
+|---|---|---|
+| borda **externa** | 1 022 | **100,0%** |
+| borda de **furo** | 2 861 | 47,4% |
+
+**O contorno externo estava 100% fechado** — a correção que o `PEDIDO-CHAPEU.md`
+ganhou na parte 9 funcionou na primeira arte que a usou. O que reprovava eram
+**40 238 px de furo, 34,2% do interior**.
+
+## E OS FUROS NÃO ERAM DESENHO — ERAM A EXTRAÇÃO NÃO ENXERGANDO
+
+Medindo a cor da arte e a da base em cada pixel de furo:
+
+```
+arte  rgb(240,245,249)  ≈ branco   luminância 244
+base  rgb(251,248,245)  = o fundo  luminância 249
+delta mediano 11        ← o corte da extração é 24
+```
+
+**A copa é branca sobre um fundo bege quase branco.** Extração é *diferença contra
+a base*; onde a diferença é 11 e o corte é 24, um terço da peça simplesmente não
+existe para a esteira. Contraste medido: **1,02 : 1**.
+
+## OS TRÊS ERROS MEUS, MEDIDOS
+
+**1. Eu disse que o render sairia esburacado. Não saía.** Prova da figurinha
+aplicada à mão no slot — compor o avatar, trocar pele e cabelo, ver o que muda
+dentro do chapéu:
+
+```
+tinta do chapéu no render : 88 653 px
+mudou ao trocar pele+cabelo :   132 px — 0,15%, e em y 205→210 (a borda de baixo)
+```
+
+Sobre o fundo do produto a peça renderiza sólida. **Eu afirmei o contrário sem ter
+renderizado** — o oposto exato da lição *"medir o render, não a arte"*.
+
+**2. O piso do slot não era a regra do produto.** `Y_PISO_DO_CHAPEU` parava na
+**sobrancelha** (y 157,7). A regra que o Doug enuncia é o **olho** (topo em y 190,5)
+— 32,8 unidades de diferença. E a arte, medida contra a regra dele:
+
+| faixa | px | sobre a faixa dos olhos (x 187→380) | onde está |
+|---|---|---|---|
+| y 150→170 | 3 148 | 244 | x 42→448 |
+| y 170→190 | 2 045 | **0** | x 66→448 |
+| y 190→210 | 624 | **0** | x 66→106 — lateral esquerda, fora do rosto |
+
+**Zero pixel sobre os olhos.** Sobre o rosto a peça para em y 170, 20 u acima do
+olho. O piso velho cortava **5 817 px numa reta horizontal** de u x 42→448 por uma
+regra que o produto não pede.
+
+**3. A mensagem nomeava a causa errada.** Ela imprimia sempre as mesmas duas
+frases, e a primeira ("a linha não dá a volta completa") era falsa numa peça de
+contorno externo 100% fechado.
+
+## O QUE ERA DEFEITO DE VERDADE: a peça saía VAZADA
+
+Renderizada sobre magenta em vez do bege da página:
+
+```
+casco do chapéu no render : 123 187 px
+ainda MAGENTA por dentro  :  22 905 px
+```
+
+Invisível hoje **por coincidência** — o fundo da página é do mesmo bege que
+aparecia pelo vão. Apareceria no dia em que existisse peça de `fundo` atrás do
+avatar (doc 22), ou o avatar sentasse sobre qualquer outra cor.
+
+E a lei do projeto já resolvia isso sem ninguém ter escrito em código: **peça é
+figurinha, opaca por dentro.**
+
+## OS TRÊS CONSERTOS
+
+### 1. `taparFurosCercados` (`peca-de-arte.ts`)
+
+Vazio que **não alcança a borda do canvas por caminho nenhum** entra na máscara, e
+o laço de `construirPeca` o pinta com `tinta.aplicar(i)` — a tinta da própria
+artista naquele pixel. Nada é inventado: é *reconhecer* tinta que a régua não viu.
+
+**Cercado é o adjetivo que faz isto ser medida e não desenho.** Fenda que se abre
+para fora — a fresta entre o braço e o tronco de uma túnica — continua aberta.
+
+⚠️ **O respingo nas duas peças aprovadas, medido ANTES de aceitar:**
+
+| peça | máscara antes | furo tapado | `.svg` | render |
+|---|---|---|---|---|
+| `traje-farda` | 90 510 px | **196 px (0,2%)** | 29 371 → **24 897 B** | **0 px** de 617 520 |
+| `traje-gambesao` | 113 538 px | **1 001 px (0,9%)** | 233 694 → **223 530 B** | **0 px** |
+| `chapeu-toca-de-cozinha` | 77 249 px | **40 238 px (34,2%)** | — | — |
+
+Os dois `.svg` mudaram (hash diferente, conferido — respingo zero por arquivo
+idêntico seria vacuidade) e **o render é idêntico pixel a pixel**, com o vetor
+mais leve: o traçador não precisa mais contornar alfinete.
+
+### 2. O piso desce da sobrancelha para o olho (`base.ts`)
+
+`Y_PISO_DO_CHAPEU = min(OLHO_CY_ESQ, OLHO_CY_DIR) − OLHO.h/2 − TRACO/2` = **183,0**,
+contra 157,7. Mesma construção — *"o marco mais alto, menos meio traço"* —, só o
+marco mudou. **É decisão do Doug**, não conveniência da esteira.
+
+### 3. A mensagem da `arte:perimetro` sai do que foi medido
+
+Três causas independentes, cada uma impressa só quando o número dela reprova:
+silhueta sem linha, furo por dentro, amputação pelo campo. E a régua passa a
+**tapar furo antes de medir no slot chapéu**, porque é o que `construirPeca` faz —
+o braço tonal (cabelo, rosto) segue medido cru, porque `construirPecaTonal` não
+tapa. A régua segue a esteira de cada slot em vez de inventar uma terceira.
+
+## A TRAVA — `furo-cercado.test.ts`, e os DOIS defeitos plantados
+
+| defeito plantado | quem reprovou | o que disse |
+|---|---|---|
+| o tapa-furo devolve 0 sem tapar | as duas asserções de tamanho | `expected 0 to be greater than 15120` |
+| o tapa-furo tapa TODO vazio, cercado ou não | **o controle da fenda** | `expected 179500 to be +0` |
+
+O braço da fenda é metade do teste: sem ele, um tapa-tudo passaria — e comeria a
+fresta desenhada de uma túnica.
+
+## O RESULTADO
+
+```
+chapeu-toca-de-cozinha.png   perím 1.359   com linha 100,0%   externo 100,0%
+                             furo 0   tapado 40.238   amput 1,3%   ·
+```
+
+De 61,3% para **100,0%**; de 7,0% amputado para **1,3%**. E no render:
+
+| | antes | depois |
+|---|---|---|
+| magenta por dentro da copa | 22 905 px | **89 px — 0,1%** |
+| prova da figurinha | 0,15% | **0,11%** |
+| a peça no render | px y 0→210 | **y 0→243** (a aba deixou de ser guilhotinada) |
+| a peça extraída | 77 249 px | **122 212 px** |
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente em
+`GameReview.tsx:285`) · **842 testes em 43 arquivos** (eram 838; `furo-cercado` é o
+novo) · `arte:perimetro` **exit 0** · `verify:all` **37 passed | 1 failed**
+— e o que ficou **atrás do vermelho, rodado um a um, deu exit 0 em tudo** (ver o
+aviso logo abaixo).
+
+⚠️ **E ela PAROU A CADEIA cedo.** `verify:catalogo-slots` mora dentro
+de `verify:phase8`, e de `verify:turmas` em diante nada rodou — inclusive
+`verify:estado`, `verify:fonte-peca` e **`verify:arte`**, que é justamente onde a
+`arte:perimetro` vive. "O resto está verde" seria território não medido, então cada
+um deles foi rodado à mão: **exit 0 em todos**. É a lição do gate vermelho que esconde
+os de trás, de novo — a terceira vez nesta rota.
+
+⚠️ **A reprovação é `verify:catalogo-slots`, e é a certa:**
+*"slot chapeu: 1 peça(s) do código sem linha no banco — chapeu-toca-de-cozinha"*.
+Falta a seed em `avatar_catalogo`. **Ela não foi escrita de propósito**: migration
+não se desfaz, e a peça ainda não passou pelo olho do Doug. A migration é o passo
+seguinte à aprovação visual, nunca anterior.
+
+## ⚠️ A ARMADILHA DO PIPE MORDEU DE NOVO
+
+`npx tsc --noEmit 2>&1 | head -10 && echo "TYPECHECK OK"` imprimiu **TYPECHECK OK**
+sobre um arquivo com erro de sintaxe (crase crua dentro de template literal). O
+`&&` lê o exit do `head`, que é sempre 0. O erro só apareceu quando o `tsx` tentou
+rodar. É a mesma lição de `pipe-para-tail-mascara-exit-code`, e a forma certa é
+`comando > arquivo 2>&1; echo "EXIT=$?"`.
+
+## Onde parou
+
+A `chapeu-toca-de-cozinha` está verde em todas as réguas e **esperando o olho do
+Doug** em `/dev/avatar-kokeshi`. Depois dele: a seed em `avatar_catalogo`.
+
+**Pendências antigas, todas de pé:** a segunda peça inicial de cabelo, o piso de
+saturação do Gate −1, as três artes de cabelo sem parecer (`coques-duplos`,
+`coque-individual`, `dreadlocks`) e `escondeCabelo` (doc 23 §8).
+
+**E uma nova, de doc:** o `PEDIDO-CHAPEU.md` diz que o bloco colável tem "~310
+palavras" e ele tem **565** (459 antes do trecho de preservação). A regra de
+"cortar uma linha para entrar outra" está sendo aplicada sobre um teto que não
+existe.
+
+---
+
+# 2026-08-25 (parte 11) · O campo do chapéu era um RETÂNGULO, e devia ser um recorte com forma — o Doug pegou os três cortes de uma vez
+
+Oito artes novas de chapéu, sete passando o Gate −1, e o Doug olhando os renders:
+
+> *"os renders aprovam, mas com ressalvas: a lateral esquerda está cortando os
+> chapéus. A proteção dos olhos está afetando a lateral do rosto, chapéus que descem
+> pelas laterais são cortados por causa da proteção dos olhos. Os chapéus mais largos
+> são cortados pelo limite da tela do avatar (aumentar ela)."*
+
+Três queixas, **uma causa**: o campo do slot é um retângulo, e o que ele precisa
+proteger não tem forma de retângulo.
+
+## O LOTE, e o que ele mediu antes de qualquer conserto
+
+| candidato | Gate −1 | contorno | amputado | onde perdia |
+|---|---|---|---|---|
+| 1 · 09:18 | APROVADA | 100,0% | 3,0% | piso |
+| 2 · 09:23 | APROVADA | 99,5% | **22,5%** | piso 17,8% + lados 4,7% |
+| 3 · 09:25 | **REPROVADA** | — | — | repintura de 54% do rosto, deslocamento 0 |
+| 4 · 09:29 | APROVADA | 100,0% | 1,3% | piso |
+| 5 · 09:32 | APROVADA | 100,0% | 9,2% | piso |
+| 6 · 09:40 | APROVADA | 96,3% | 2,4% | piso |
+| 7 · 09:48 | APROVADA | 100,0% | 10,7% | piso 5,2% + lados 5,5% |
+| 8 · 10:00 | APROVADA | 94,9% | 10,3% | piso 4,1% + lados 6,2% |
+
+⚠️ **O contorno azul virou hábito do gerador** — 94,9% a 100% nos oito. A linha do
+`PEDIDO-CHAPEU.md` que nasceu na parte 9 está pagando sozinha.
+
+⚠️ **E NENHUM DELES ENCOSTOU NO TETO.** A coluna TETO deu zero nos oito. O mais alto
+(cand-6, y −56) é mais BAIXO que a toca já aprovada (y −58). Eu tinha acabado de
+medir 17 unidades de folga no topo e de dizer que era pouco; o lote provou que a
+folga do topo **não estava nem sendo usada**. O corte era lateral e de baixo, sempre.
+
+## CONSERTO 1 — a `CAIXA_DAS_FEICOES`: o piso deixa de ser uma reta
+
+`Y_PISO_DO_CHAPEU` existe para uma coisa: **o chapéu não come os olhos.** Ele valia
+para todo x de 0 a 500. Os olhos ocupam **x 181 → 386** — 41% da largura. Nos outros
+59% o piso não protegia nada e cortava tudo.
+
+```
+CAIXA_DAS_FEICOES = { x0: 187,5, x1: 392,5, y0: 183,0 }
+```
+
+Dentro dessa coluna o piso é o olho; fora dela é a **base da cabeça** (y 347,2), que
+é onde começa pescoço. A BOCA mora dentro da caixa (largura 37 u, centrada) — as três
+feições que um chapéu comeria estão na mesma coluna central, e é por isso que uma
+caixa basta.
+
+## CONSERTO 2 — o campo lateral vai de `0 → 500` para `−20 → 520`
+
+**O mesmo defeito do eixo vertical da parte 8, e mais barato de achar.** A figura é
+desenhada a `ESCALA_PADRAO = 0,92` e reancorada, então `naTela(x) = 20 + 0,92x` e a
+janela visível vai de **interno −21,7 a 521,7**. A caixa parava em 0 e 500 — **21,7
+unidades desperdiçadas de cada lado**, e o Doug viu isso como "a lateral cortando".
+
+**Por que −20 e não −21,7:** o mesmo critério do −75 do teto — cair em pixel INTEIRO.
+`212 + 1,2 × (−20) = 188` cravado e `540 × 1,2 = 648` cravado. Os −21,7 dariam 185,96.
+
+O `RECORTE` cresce de **600 × 930 para 648 × 930** px.
+
+## O RESPINGO, medido ANTES de aceitar
+
+| peça | px diferentes de 617 520 | maior desvio |
+|---|---|---|
+| `traje-farda` × chanel · × moicano | **0** · **0** | 0 |
+| `traje-gambesao` × chanel · × moicano | **0** · **0** | 0 |
+| `rosto-barba-trancada` (tonal) | **0** | 0 |
+| `chapeu-toca-de-cozinha` | 105 974 (17,2%) | 216 |
+
+Os trajes não se mexeram **um pixel** com o recorte 8% mais largo, e o braço tonal
+não passa por aqui (`construirPecaTonal` não lê `CAIXA_DA_ARTE`).
+
+Os 17,2% do chapéu foram investigados em vez de aceitos, e são duas coisas
+diferentes:
+
+| desvio | px | o que é |
+|---|---|---|
+| ≤ 8 | 103 566 — **97,7%** | reamostragem do recorte mais largo. Invisível |
+| > 32 | 896 — 0,8% | **em y 323 → 351**: o elemento lateral que o piso velho cortava, voltando |
+
+A caixa da peça no render é **idêntica** antes e depois (px x 34→618, topo y 29); só
+o rodapé desceu de y 323 para 353. A peça não se moveu — ela recuperou o que era
+cortado.
+
+## O RESULTADO: cinco reprovações viram uma
+
+| candidato | amputado antes | **depois** |
+|---|---|---|
+| 1 | 3,0% ✗ | **0,0%** · |
+| 2 | 22,5% ✗ | 6,6% ✗ |
+| 4 | 1,3% · | 0,1% · |
+| 5 | 9,2% ✗ | **0,0%** · |
+| 6 | 2,4% · | 0,7% · |
+| 7 | 10,7% ✗ | **2,5%** · |
+| 8 | 10,3% ✗ | **1,9%** · |
+| `toca-de-cozinha` | 1,3% · | **0,0%** · |
+
+E o que sobra no cand-2 é **só lateral** (2,5% esquerda, 4,1% direita): ele vai de
+x −57 a 573, e o campo novo vai de −20 a 520.
+
+## O QUE FICA ABERTO, E É DECISÃO DO DOUG
+
+**A terceira queixa dele — "aumentar a tela do avatar" — não foi executada.** Ela é
+de outra natureza: o campo já alcança a borda do quadro, então crescer mais exige
+mexer no `viewBox` ou na `ESCALA_PADRAO`, e as duas mudam o avatar em toda tela do
+produto. Medido, para caber o cand-2 (interno −57 → 573, vão de 630 u):
+
+| saída | número | o que muda |
+|---|---|---|
+| `ESCALA_PADRAO` 0,92 → **0,79** | vão de 633 u | o boneco encolhe 14% em toda tela |
+| `VIEWBOX.w` 500 → **580** | vão de 630 u | a proporção sai de 5:7 para 29:35 |
+
+É a Frente B, e ela agora tem um pedido concreto atrás.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** (1 warning pré-existente) · **842 testes em 43
+arquivos** · `verify:estado` **0** · `verify:fonte-peca` **0** · `verify:arte` **1**
+— só o `chapeu-cand-2`, que é bancada.
+
+⚠️ **DOIS TESTES PASSARAM A ESTOURAR O TIMEOUT, e não é flaky.**
+`recorte-cabeca.test.ts` (hook `afterAll`, 10 s) e `tom-da-peca.test.ts` (dois testes,
+5 s) passavam antes e falharam nas duas corridas seguintes ao conserto. Medidos solo:
+**699 ms e 390 ms**, e o arquivo inteiro em 2,5 s. O que acabou foi a **margem** — o
+`RECORTE` 8% mais largo deixou a esteira mais pesada e a corrida paralela apertou. Os
+tetos foram alargados para 30 s **com o motivo e o número medido escritos ao lado**,
+porque "é flaky" seria eu jogando fora a informação de que a minha mudança custou
+alguma coisa.
+
+## Onde parou
+
+Sete candidatos e a toca aprovada estão no seletor de `/dev/avatar-kokeshi`,
+esperando o olho do Doug. Depois dele: apagar os descartados, e a seed da vencedora
+em `avatar_catalogo`.
+
+---
+
+# 2026-08-25 (parte 12) · O QUADRO cresce — `viewBox` 500 → 600, e o caminho até lá acha dois enganos da mesma família
+
+O Doug, depois do campo virar forma na parte 11: *"ainda corta lateral dois chapéus
+com aba comprida."* A parte 11 tinha esgotado a folga do quadro de 500; daí em diante
+era o quadro ou nada.
+
+## A DECISÃO, com as duas saídas medidas
+
+| | quadro segura | o que custa |
+|---|---|---|
+| hoje, 500 | **1,49 × a largura da cabeça** (543 u) | — |
+| o chapéu mais largo pede | **1,77 ×** (645 u) | — |
+| **A · encolher a figura** (`ESCALA_PADRAO` 0,92 → 0,775) | 645 u | o boneco 16% menor **em toda tela** |
+| **B · alargar o quadro** (`VIEWBOX.w` 500 → 600) | 652 u | componente 20% mais largo, mesma altura |
+
+**A recomendação foi B, e o argumento que decidiu não é o tamanho — é ONDE cada
+saída cobra.** `RECORTE_CABECA` (navbar, dashboard) tem `ESCALA_PADRAO` **dentro** da
+conta e a largura do quadro **fora** dela:
+
+```
+lado = 2 × (CAIXA_CABECA.larg / 2 + FOLGA_LATERAL_DO_CABELO) × ESCALA_PADRAO
+```
+
+Encolher a figura levaria o rosto junto nos **32 px da navbar** — o tamanho que o doc
+23 existe para defender. Alargar o quadro **não toca a navbar**: a janela da cabeça
+não sabe que o quadro cresceu.
+
+## A FOLHA, e o que ela custou provar
+
+O Doug pediu ver antes de decidir. A folha (500 × 600, quatro tamanhos, três chapéus)
+saiu de um experimento **de verdade**: as constantes foram editadas, as peças
+reconstruídas, os renders capturados, e os três arquivos devolvidos **byte a byte**,
+conferido por hash. `typecheck` 0 depois da restauração, e `git status` sem sobra.
+
+E o parecer dele veio com um defeito junto: *"não esquecer de centralizar o avatar,
+você esqueceu na folha."* Medido: **28 px fora do centro num quadro de 408 — 6,9%**,
+margem 44 à esquerda e 99 à direita.
+
+## OS DOIS ENGANOS, e eles são o MESMO engano
+
+**`VIEWBOX.w` escrito onde se queria dizer "a largura do DESENHO".** As duas mediam
+500, então a troca não custava nada — até o dia em que deixaram de ser iguais.
+
+| onde | o que fazia | o que aconteceu com o quadro em 600 |
+|---|---|---|
+| `naTela`, `daTela`, o `translate` de `compor()` | `VIEWBOX.w × (1 − s) ÷ 2` | corrigi só o `naTela` no experimento; o `translate` ficou com a conta velha e **a figura saiu 28 px à esquerda** |
+| `pathFacetaEsq` e `pathFacetaDir` | `VIEWBOX.w + FORA` na aba que fecha o polígono | os 4 números andaram 100 u **sem mudar um pixel do render** — a aba já estava fora da figura |
+
+O segundo é o mais instrutivo: **o olho não pegaria nunca**, porque não muda nada na
+tela. Quem pegou foram os 14 selos byte a byte.
+
+`LARGURA_INTERNA = 500` nasce em `geometria.ts` para separar as duas, e
+`ancoraDaFigura(s)` nasce em `compositor.ts` para que a âncora seja **uma conta só**,
+lida pelo emissor e pelas duas réguas — a duplicação de três cópias foi o que
+permitiu consertar uma e esquecer as outras.
+
+## A EXECUÇÃO EM QUATRO BLOCOS, cada um com um número no fim
+
+| bloco | o quê | o número |
+|---|---|---|
+| **1** | a âncora vira função; nada mais muda | **16 renders, 0 px diferentes** |
+| **2** | `viewBox` 600 · `CAIXA_DA_ARTE` `x −75, w 650` (px 122 → 902, inteiros) | desvio do centro **3,0 px (0,7%)** — o mesmo que a 500 tinha (0,9%), e ele é o giro da cabeça |
+| **3** | re-exportar todas as peças raster | trajes **0 px** · rosto **0 px** · toca 106 240 px com **desvio máximo 21**, 98% deles ≤ 8 |
+| **4** | re-selar os 29 selos | **bytes idênticos em todos**; só o `sha` mudou |
+
+## A PROVA DE QUE OS SELOS PODIAM SER REESCRITOS
+
+Selo se reescreve respondendo *"por que mudou?"*, nunca para o vermelho sumir. A
+resposta foi medida, não argumentada:
+
+> Desfazendo no SVG de hoje **apenas dois tokens** — `viewBox="0 0 600 700"` de volta
+> a 500, e `translate(70 ` de volta a 20 — **os 28 selos de cabelo voltam a bater byte
+> a byte.**
+
+`28 de 28`. Antes de consertar as facetas o mesmo teste dava **0 de 28**, e foi ele
+que apontou o segundo engano.
+
+## O RESULTADO
+
+| candidato | amputado na parte 11 | **agora** |
+|---|---|---|
+| 1 | 0,0% | 0,0% |
+| **2** | **6,6% ✗** | **0,0% ·** |
+| 4 | 0,1% | 0,1% |
+| 5 | 0,0% | 0,0% |
+| 6 | 0,7% | 0,7% |
+| **7** | 2,5% | **0,0% ·** |
+| **8** | 1,9% | **0,1% ·** |
+| `toca-de-cozinha` | 0,0% | 0,0% |
+
+`arte:perimetro` **exit 0** pela primeira vez com os oito no disco. O cand-2, que
+chegou perdendo 22,5% do desenho, perde **zero**.
+
+## O QUE MUDA NO PRODUTO, e não foi conferido no olho ainda
+
+- **a proporção do avatar é 6:7**, não mais 5:7. `<AvatarKokeshi>` deriva a largura da
+  altura pelo `viewBox`, então ele acompanha sozinho;
+- **a `MolduraPatente` do perfil** envolve o avatar e muda de proporção junto. É a
+  mudança visual mais perceptível, e **ninguém olhou ainda**;
+- **navbar e dashboard não mudam** — medido na conta do `RECORTE_CABECA`.
+
+## Gates
+
+`typecheck` **0** · **842 testes em 43 arquivos** · `verify:estado` **0** ·
+`verify:aberturas` **0** · `verify:fonte-peca` **0** · `arte:perimetro` **0**.
+
+## Onde parou
+
+Os sete candidatos e a toca estão inteiros no seletor. Falta o olho do Doug — nos
+chapéus e na moldura do perfil. Depois: apagar os descartados e a seed da vencedora
+em `avatar_catalogo`.
+
+---
+
+# 2026-08-25 (parte 13) · O DOUG APROVA O QUE A RÉGUA REPROVA — e o magenta que eu mostrei a ele não era chapéu
+
+Duas artes novas de chapéu, as primeiras a chegar em **PNG** e não em JPG. O
+`cand-9` (11:56) ele apagou no render. O `cand-10` (12:47) ele **aprovou** — e a
+`arte:perimetro` o reprovava a **78,8%**, dentro da faixa das duas tocas que ele
+mesmo tinha reprovado em 2026-08-24 (65,2% e 77,5%).
+
+## AS QUATRO HIPÓTESES, E TRÊS MORRERAM NO PRÓPRIO CONTROLE
+
+Quando o olho dele e a régua discordam, quem está sob suspeita é a régua. Mas
+suspeita não é veredito, e cada saída foi testada contra as peças cujo destino ele
+já tinha decidido:
+
+| hipótese | veredito |
+|---|---|
+| a linha existe e ficou **fora da máscara** | explica 18,8%. Recuperando tudo: 82,8% — segue abaixo do piso |
+| a silhueta **se destaca no render** mesmo sem linha | a `toca-de-cozinha`, **aprovada**, mede pior (48,7% × 39,6%). **Descartada** |
+| a borda sem linha se apoia **sobre o boneco** | verdade (100%) — **e a `toca-curta` reprovada tem os mesmos 100%**. **Descartada** |
+| a borda **contrasta** com o que está atrás | separa, mas põe o `cand-10` sozinho no meio (73,4% contra 96,2→100%) |
+
+⚠️ **Nenhuma delas era o conserto, e eu ia parar aqui e devolver a decisão a ele.**
+O que destravou não foi medição: foi eu mostrar a ele **o painel com os 632 px
+marcados em magenta**, e ele responder em uma linha:
+
+> *"onde vc marcou em magenta, nem é parte do chapéu."*
+
+## O DIAGNÓSTICO DELE, MEDIDO
+
+Extração é diferença contra a base, com corte `NIVEL_TRAJE = 24`:
+
+| onde | diferença contra a base, mediana |
+|---|---|
+| a **massa** do chapéu | **223** |
+| a borda **com** linha | 66 |
+| **os 632 px que reprovavam** | **29** — e 87,5% deles abaixo de 45 |
+
+Não era desenho faltando. Era o **halo** que o gerador pinta em volta da peça
+passando raspando do corte, entrando na máscara, e a **conectividade adotando-o**
+por estar colado na peça. A régua media a silhueta do halo e cobrava contorno dela.
+
+**A régua estava certa sobre a máscara e errada sobre a PEÇA.** As três hipóteses
+que eu testei perguntavam todas *"a régua mede bem a máscara?"*. A pergunta certa
+era *"a máscara é a peça?"* — e essa eu não fiz porque eu não olhei a arte.
+
+## O CONSERTO: a extração passa a ter DOIS cortes (`extrair.ts`)
+
+Um corte só não distingue duas coisas fracas de significado oposto:
+
+- o **anti-aliasing da borda de verdade** — 1 a 3 px, colado em tinta forte. É peça;
+- o **halo** — faixa larga e fraca, que não é peça nenhuma.
+
+A diferença não é a intensidade, é a **distância até tinta forte**. Então histerese,
+a ideia do Canny: `NIVEL_FORTE = 100` entra sempre; fraco entra só se houver forte a
+até `ALCANCE_DO_FRACO = 3` px.
+
+**O número não foi escolhido para caber:** entre `K = 2` e `K = 6` o veredito das
+dez peças medidas é o mesmo. Insensível ao parâmetro é o que separa régua de ajuste.
+
+## O RESPINGO, MEDIDO ANTES DE ACEITAR — e o controle é o que decide
+
+| peça | perímetro antes | depois |
+|---|---|---|
+| **`cand-10`** (ele aprovou) | 78,8% ✗ | **95,8% ·** |
+| as outras 8 (já verdes) | 96,5 → 100% | **96,4 → 100%** |
+| **`toca-curta`** (ele **reprovou**) | 50,0% ✗ | **53,8% ✗** |
+
+**O conserto não salva arte que ele reprovou.** Sem esse braço, ele seria um
+afrouxamento com nome bonito.
+
+### O PENTE FINO NO RENDER, chapéu a chapéu
+
+| chapéu | px mudados de 478 080 | ≤ 8 (recompressão) | **> 32** |
+|---|---|---|---|
+| `cand-7` | 44 008 | **99,4%** | **30** |
+| `cand-8` | 38 377 | **99,2%** | **33** |
+| **`cand-10`** | 46 240 | 91,7% | **3 356** ← o halo saindo |
+| `cand-1,2,4,5,6`, `toca` | 201 a 1 317 | 71 → 94% | 8 a 20 |
+
+Os números grandes de `cand-7` e `cand-8` são **recompressão do WEBP**, não forma —
+a mesma leitura da parte 11.
+
+## ⚠️ DOIS ACHADOS DE BANCADA QUE NÃO SÃO DESTE CONSERTO
+
+**1. `arte:trajes-check` NÃO OLHA A GEOMETRIA DO TRAJE.** Teste de vacuidade: com
+`ALCANCE_DO_FRACO = 0` a máscara da farda cai de 90 684 para 89 464 px e de 53 para
+51 formas — e o `--check` segue dizendo *"confere caractere a caractere"*. Ele
+compara o **literal `.ts`**, e a geometria mora no `.svg`. É um gate com ponto cego.
+
+**2. Os `.svg` de traje no working tree NÃO REPRODUZEM da esteira de hoje.**
+Regenerando com a histerese neutralizada — no-op provado — os dois saem com hash
+diferente do que está no disco. A esteira é determinística (duas corridas, mesmo
+hash), então a divergência é anterior a este conserto.
+
+Medido, só do conserto: `traje-gambesao` **0 px** no render, `traje-farda` **286 px
+de 478 080 (0,06%)**. **Os dois `.svg` foram DEVOLVIDOS** ao que estavam — eu não
+mexo em peça aprovada sem ele mandar. O Doug já disse que os trajes congelados vão
+ser apagados e refeitos; quando forem, os dois achados morrem junto.
+
+## A TRAVA — `halo-do-gerador.test.ts`, e os DOIS defeitos plantados
+
+| defeito plantado | quem reprovou | o que disse |
+|---|---|---|
+| a esteira de ontem (`NIVEL_FORTE = 24`) | o braço do **halo** | `expected 3408 to be less than 2500` |
+| corta-tudo (`ALCANCE_DO_FRACO = 0`) | o braço do **anti-aliasing** | `expected 0 to be greater than 400` |
+
+O braço negativo é metade do teste: sem ele, uma implementação que jogasse fora todo
+pixel fraco passaria — e comeria a borda de toda peça do projeto.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** · **845 testes em 44 arquivos** (eram 842;
+`halo-do-gerador` é o novo) · `arte:perimetro` **exit 0 com as nove peças** ·
+`verify:all` **37 passed | 1 failed** — o `verify:catalogo-slots`, que é a seed que
+ainda não existe. **Os 12 gates atrás do vermelho foram rodados um a um: exit 0 em
+todos**, inclusive `verify:arte` e `verify:estado`.
+
+## Onde parou
+
+O `cand-10` é a **aprovada**. Falta: escolher o slug canônico do doc 22 (ele sabe o
+que a peça é; eu não abri a imagem), apagar os descartados, e a seed em
+`avatar_catalogo`. E a **`MolduraPatente` do perfil** segue sem ninguém ter olhado.
+
+## O ELENCO SAI DA BANCADA — os nomes vieram nos arquivos, e o casamento foi por MD5
+
+O Doug renomeou as entregas em `Downloads/chapéus/` na forma `nome(raridade)`, e as
+nove artes foram casadas com elas **por hash**, não por horário de arquivo:
+
+| slug novo | nome | raridade | era | doc 22 |
+|---|---|---|---|---|
+| `chapeu-touca-de-la` | Touca de Lã | `common` | cand-1 | — |
+| `chapeu-chapeu-de-palha` | Chapéu de Palha | `common` | cand-2 | nº 47, lá `rare` |
+| `chapeu-bone` | Boné | `epic` | cand-4 | nº 44, lá `common` |
+| `chapeu-boina` | Boina | `rare` | cand-5 | nº 42, lá `common` |
+| `chapeu-cartola` | Cartola | `rare` | cand-6 | — |
+| `chapeu-pirata` | Chapéu de Pirata | `epic` | cand-7 | — |
+| `chapeu-cowboy` | Chapéu de Cowboy | `rare` | cand-8 | — |
+| `chapeu-mago` | Chapéu de Mago | `legendary` | cand-10 | — |
+| `chapeu-toca-de-cozinha` | Toca de Cozinheiro | `common` | — | nº 46 |
+
+**A prova de que renomear foi só renomear:** a massa de cada peça saiu idêntica à de
+antes (`mago` 130 774 px, `touca-de-la` 87 047 px…), e `arte:perimetro` deu **exit 0**
+com as nove.
+
+⚠️ **O menu do doc 22 tem DEZ chapéus (nº 42–51) e QUATRO destes não estão nele** —
+`cartola`, `pirata`, `cowboy` e `mago`. Medido: a palavra "cartola" só aparece neste
+registro, como fixture sintética da parte 9; "pirata", "cowboy" e "mago" não aparecem
+em `docs/` nenhum. E **três raridades divergem** do menu. O Doug disse *"todas estão
+no menu"* — a divergência está registrada aqui para ele decidir se o doc 22 ganha as
+quatro linhas novas ou se os slugs mudam. **Nada disso bloqueia a arte**; bloqueia a
+seed, que é onde raridade vira coluna.
+
+⚠️ **Sobraram no menu, sem arte:** `chapeu-gorro`, `chapeu-bandana`, `chapeu-capelo`,
+`chapeu-turbante`, `chapeu-oculos-de-forja`, `chapeu-coroa-de-vitral`.
+
+## O MENU PASSA A SEGUIR A PASTA — doc 22 §5-C e §5-E reescritas, e o `elvis` entra
+
+O Doug: *"mude o menu e adapte de acordo com a pasta. o que falta deixe marcado que
+farei no futuro."* O doc 22 deixou de ser a fonte e virou o espelho de
+`Downloads/chapéus/` e `Downloads/cabelos/`.
+
+**§5-C CHAPÉU — de 10 para 14 peças, 9 com arte.** Quatro entraram (`cartola`,
+`pirata`, `cowboy`, `mago`), três raridades trocaram, e `chapeu-gorro` virou
+`chapeu-touca-de-la` — é a mesma peça com o nome dele. O pet foi renumerado de 52–55
+para 56–59.
+
+**§5-E CABELO — de 4 para 19 linhas.** A seção estava parada em quatro peças, de
+quando o elenco tinha quatro; ele fechou em **14** no commit `80bd4d9` e **cinco
+artes esperam a esteira**. O casamento pasta × código foi feito arquivo a arquivo:
+**as 14 do código têm arquivo na pasta, e nenhuma do código ficou órfã.**
+
+### O `elvis` atravessou, a pedido dele
+
+Estava na pasta desde 2026-08-24 e nunca tinha sido importado — a divergência
+apareceu justamente ao reescrever a §5-E pela pasta.
+
+| régua | resultado |
+|---|---|
+| Gate −1 | **APROVADA** — 0/0 px, escala 100,00%, **0 ladrilho** em rosto e corpo |
+| `arte:traco` | 0 px apagados, 0 ilhas |
+| `arte:borda` | **0 px de cinza** |
+| `arte:cabelos` | 124 410 px · 2 formas · esticão 12→137 · tom 269×222 (31,4 KB) · **0 px descartados nas feições** |
+
+Ele está no seletor *"da arte · tonal"* e **não** está em `CABELOS` — a aprovação
+continua sendo o olho do Doug no render.
+
+⚠️ **O `arteDaPecaNoDeploy.test.ts` reprovou na primeira corrida**, e é a régua
+fazendo o trabalho dela: `cabelo-elvis-tom.png` não estava rastreado pelo git, e o
+que não é rastreado não viaja no deploy. Resolvido com `git add` — **staging, não
+commit**. Os nove `.svg` de chapéu foram para o índice na mesma passada, pelo mesmo
+motivo, que o próprio `arte:chapeus` imprime no fim.
+
+### ⚠️ TRÊS COISAS MARCADAS PARA O FUTURO, e uma delas é defeito
+
+**1. A única INICIAL do slot cabelo virou `legendary`.** O `cabelo-assimetrico` era
+`common` e `inicial`; a pasta o traz como `legendary`. Inicial lendária não é
+inicial — ou o aluno começa com uma peça de 7% de baú, ou começa só com a careca. A
+migration do slot reprova se **nenhuma** inicial sobrar, mas não reprova se a única
+virar cara. **Precisa de decisão antes de qualquer seed.**
+
+**2. Duas `legendary` no slot chapéu** — `mago` (com arte) e `coroa-de-vitral` (sem).
+Contraria a linha do §2 *"uma por slot"*.
+
+**3. A pirâmide global saiu do lugar:** `common` de 45,5% para **40,7%**, `legendary`
+de 7,3% para **8,5%**. Não reequilibrei — mexer em raridade que ele acabou de decidir
+seria eu decidindo por ele, e nada disso morde enquanto o baú não estiver ligado.
+
+**Cinco artes de cabelo ainda fora da esteira:** `curto-penteado`, `coque-individual`,
+`coques-duplos`, `dreadlocks` — estas três já têm `.png` no repositório e nome em
+`NOMES_CABELO`, faltando só o parecer — e o `curto-penteado`, que não tem nem arquivo.
+
+## Gates
+
+`typecheck` **0** · `lint` **0** · **848 testes em 44 arquivos** · `arte:perimetro`
+**0** · `arte:cabelos-check` **0** · `verify:arte` · `estado` · `fonte-peca` · `pose`
+· `design-tokens` **todos 0**.
+
+## AS DECISÕES DO DOUG, 2026-08-25 — e a promoção de cinco cabelos
+
+Ele pediu as pendências em bloco e respondeu oito de uma vez:
+
+| # | decisão |
+|---|---|
+| iniciais do cabelo | **`rabo-baixo` e `curto-repartido`** — duas, as duas `common` |
+| 2ª `legendary` de chapéu | **`chapeu-coroa-de-vitral` SAI do menu**; o `mago` é o lendário do slot |
+| elenco de chapéu | **as nove ficam** |
+| trajes congelados | **não apagar ainda** |
+| artes das pastas | **todas entram no repositório** — `curto-penteado` atravessou |
+| `escondeCabelo` | **sessão própria, depois do `/clear`** — *"é bem complexo devido à variedade de formas"* |
+| `FOLGA_LATERAL_DO_CABELO` | **quer ver as 3 opções em folha** ← PENDENTE |
+| pirâmide do §2 | **congelada até as artes acabarem** — *"vamos mudar apenas quando eu acabar todas as artes do avatar"* |
+| `MolduraPatente` | **deixar para depois** |
+| corredor das 4 novas | **deixar *a definir*** |
+
+### OS CINCO CABELOS ENTRAM EM `CABELOS` — *"já olhei e todos aprovados"*
+
+O elenco vai de **14 para 19**. Três (`coque-individual`, `coques-duplos`,
+`dreadlocks`) estavam no seletor desde 2026-08-24; duas (`elvis`, `curto-penteado`)
+atravessaram a esteira no próprio dia 25.
+
+| peça | massa | `d` | bytes do composto | Gate −1 |
+|---|---|---|---|---|
+| `curto-penteado` | **75 060 px** — a MENOR do elenco | 4 266 B | 11 504 | 0 ladrilho em rosto, corpo e sobrancelha |
+| `coque-individual` | 81 666 px | 4 210 B | 11 462 | 0 px em rosto e corpo |
+| `coques-duplos` | 91 870 px | 3 168 B | **10 413** — 173 B de caber no teto | 0 ladrilho até na permitida |
+| `elvis` | 124 410 px | 4 606 B | 11 851 | 0 ladrilho em rosto e corpo |
+| `dreadlocks` | 144 527 px | 9 436 B | **16 672 — a peça mais pesada do slot** | 98,7% do que toca "corpo" é a própria peça |
+
+**A prova de que a regravação de selo era lícita, feita ANTES de aceitar o número:**
+`parametrico-congelado.ts` foi de 14 selos para 19 — **5 novos, 0 mudados, 0
+sumidos**, e os 14 antigos vieram byte a byte. É a régua que o próprio teste pede:
+*"nunca em lote, a menos que o lote seja de peças NOVAS e nenhum selo anterior tenha
+se mexido"*.
+
+⚠️ **`curto-penteado` é o primeiro cabelo do elenco que não zera a `arte:borda`** — 2
+px de cinza em 2 ilhas de 1 px (lum 45). Passa com folga (o piso é 8 px por
+componente) e fica escrito porque massa baixa somada a borda não-preta é o conjunto
+que faz uma peça ler "rala".
+
+## O QUE FICOU FALTANDO, e é tudo do mesmo tipo: BANCO
+
+`verify:catalogo-slots` reprova com **duas** linhas agora, e as duas são a mesma
+dívida:
+
+```
+slot chapeu: 9 peça(s) do código sem linha no banco
+slot cabelo: 5 peça(s) do código sem linha no banco
+```
+
+Mais a migration das **iniciais** — um `UPDATE` marcando `rabo-baixo` e
+`curto-repartido` como `inicial = true` e o `assimetrico` como `false`, porque a
+decisão mora na coluna e não em lista escrita.
+
+**Nada disso foi feito**: migration bate no Supabase de PRODUÇÃO e não se desfaz.
+
+## Gates
+
+`typecheck` **0** · `lint` **0** · **916 testes em 44 arquivos** (eram 848 — os 5
+cabelos novos multiplicam os blocos por peça) · `verify:arte` · `estado` ·
+`fonte-peca` · `pose` · `design-tokens` **todos 0** · `verify:catalogo-slots` **1**,
+pela seed que falta.
+
+## AS DUAS MIGRATIONS ESTÃO ESCRITAS E **NÃO APLICADAS**
+
+Decisão dele: *"escrever e me mandar para eu aplicar via terminal"*.
+
+| arquivo | o que faz |
+|---|---|
+| `20260825150000_nove_chapeus_entram_no_catalogo.sql` | INSERT dos 9 chapéus com a raridade da pasta. Asserção: o slot fecha em **9** e tem **zero** iniciais |
+| `20260825150100_cinco_cabelos_e_as_duas_iniciais.sql` | INSERT dos 5 cabelos; `rabo-baixo` e `curto-repartido` viram `inicial`; `assimetrico` vira `legendary` e perde a inicial; `chanel` vira `common`. Asserção: **19** peças, **2** iniciais, e **toda inicial é `common` de baú** |
+
+**A ordem dentro da segunda importa e está escrita lá:** as duas iniciais novas são
+marcadas **antes** de o `assimetrico` perder a dele, para o slot nunca passar por um
+estado com zero iniciais, nem por um instante.
+
+⚠️ **A segunda mexe em linha já aplicada, e é lícito:** ela é uma migration NOVA
+fazendo `UPDATE`, que é o caminho que o `CLAUDE.md` manda usar. As raridades de
+`assimetrico` e `chanel` estavam TRADUZIDAS do gate de nível de 2026-08-23 (livre →
+common, nível 30 → legendary), e o Doug as reclassificou desenhando arte nova.
+
+⚠️ **A asserção `toda inicial é common de baú` é NOVA e é global.** Conferido antes
+de escrever: a única linha com `inicial = true` no banco hoje é o
+`cabelo-assimetrico` — nenhum outro slot marca inicial, e a coluna nasce `false`.
+Sem essa conferência, uma asserção global podia estourar por causa de peça de outro
+slot na hora de aplicar.
+
+---
+
+# 2026-08-25 (noite) — O `escondeCabelo` FECHA, e a resposta não era nenhuma das três
+
+O Doug abriu a sessão com o objetivo, não com a solução: *"o objetivo final é que
+todos os chapéus e cabelos combinem e pareçam vestidos de forma natural, como na
+vida real"*. A decisão estava aberta desde o doc 23 §8, com três valores propostos —
+`nada` · `franja` · `tudo` — e ele mesmo tinha marcado o motivo do adiamento: *"é bem
+complexo devido à variedade de formas"*.
+
+## O que estava quebrado, e ninguém tinha medido
+
+**As duas esteiras nunca se cruzaram.** `arte:cabelos-check` mede cabelo sozinho,
+`arte:chapeus-check` mede chapéu sozinho, e o defeito só existe no PAR. Os 171 pares
+(9 × 19) foram renderizados e medidos pela primeira vez nesta sessão:
+
+| medida | antes |
+|---|---|
+| escape médio (massa do cabelo visível acima da linha do chapéu) | **5,62%** |
+| pior par | `moicano` + `touca-de-la`, **29,2%** |
+| pior defeito por altura | `coque-individual` + `cartola`: **0,2% da massa subindo 238 u** |
+
+⚠️ **Porcentagem sozinha mente, e os dois piores provam por caminhos opostos.** Um é
+muito cabelo do lado errado; o outro é pouco cabelo muito longe — um coque furando o
+topo de uma cartola. Régua de escape precisa das duas colunas.
+
+A folha do `chapeu-mago` contra os 19 cabelos, lida a olho, nomeou o mecanismo que a
+régua não via: o cone inclinado abre **duas fendas de fundo** contra a aba (uma a
+10 h, outra a 1–2 h), e **17 dos 19 penteados** vazavam no mesmo par de coordenadas.
+Cabelo emoldurado por preto em cima e embaixo lê como mecha enfiada numa fresta.
+
+## A decisão: `escondeCabelo` é uma LINHA, não um enum
+
+Os três valores caíram, e o terceiro caiu por medição nova:
+
+- **`"nada"`** era o que estava em produção. É o que quebra;
+- **`"tudo"`** apaga uma das duas cores que o aluno escolhe — colide com a Regra
+  Inviolável nº 4 na prática, e o doc 23 já marcava a colisão;
+- **`"franja"`** estava vetada por `camadas.ts` por precisar de máscara que o doc 15
+  §7c item 17 proíbe em runtime. **Esse argumento caducou:** `sobrepor()` emite um
+  `<mask>` por peça, em runtime, desde o tonal — `compositor.ts:778` — e os 19
+  cabelos do elenco são tonais. A máscara chegou de qualquer forma.
+
+E mesmo destravada, `"franja"` não bastava: **ela é UMA altura de corte, e cada
+chapéu corta na sua.** Medido nos 9, a linha de baixo sobre o crânio vai de y 130
+(`mago`) a y 170 (`cartola`) no ponto mais alto, e de 183 a 290 no mais baixo — 160
+unidades de faixa. `"nada"` e `"tudo"` são a mesma coisa que os outros, nos extremos:
+a linha no infinito e a linha no queixo.
+
+## A construção, e a que foi descartada com o número na mão
+
+A linha responde, ponto a ponto: *"dá para chegar aqui vindo de baixo sem atravessar
+o chapéu?"* — varredura de alcance que sobe linha a linha e propaga **para baixo e
+para os lados, nunca para cima**.
+
+A construção ingênua (*"tudo acima do pixel mais baixo da coluna"*) é errada por
+construção — abre buraco em coluna com enfeite pendurado e vão acima. **Nos 9
+chapéus de hoje, as duas dão a MESMA linha: 0 de 780 colunas divergindo.** Isso não
+promove a ingênua a correta; promove o empate a fato medido, e `conferirOclusao`
+reprova o dia em que uma peça nova desempatar.
+
+⚠️ **Inundação livre teria dado "nada é ocluído".** A aba do `mago` para em x −72 e a
+`CAIXA_DA_ARTE` começa em −75: por essa fresta de 3 u a maré entra e alaga o quadro
+por cima da copa. A propagação sem subida é o que impede isso.
+
+Custo: **243 B por chapéu**, decimado por Douglas–Peucker com erro de corda de 2 u
+(um sexto do traço do boneco), depois de mediana de 9 px — sem ela, um pico de duas
+colunas virava quina de 27 u na `cartola`.
+
+## O que mudou no código
+
+| arquivo | o quê |
+|---|---|
+| `tipos.ts` | `PecaDeChapeu.escondeCabelo?: string` — o `d` da região contida |
+| `geometria.ts` | `FORA_DO_CHAPEU`, o retângulo que serve de contorno externo do clip |
+| `compositor.ts` | `clipDoChapeu` + `contidoPeloChapeu`, embrulhando as QUATRO emissões de `dono: "cabelo"` |
+| `oclusao-do-chapeu.ts` | **novo** — a derivação, do alfa do `.svg` ao `d` |
+| `chapeus.ts` | mede e grava; imprime aviso quando as duas construções divergem |
+| `chapeu-e-cabelo.ts` | **novo** — `npm run arte:par`, em `verify:arte` |
+| `chapeu-contem-cabelo.test.ts` | **novo** — 8 testes de estrutura |
+
+**Ausente ≡ o padrão histórico, byte a byte** — a 4ª condição que `camadas.ts` cobra
+de toda válvula nova. Sem chapéu, sem cabelo ou sem linha, o SVG não ganha um byte.
+
+## A prova, nas duas pontas
+
+**O gate, com o clip desligado à mão:** `4 failed | 4 passed`. Religado:
+`8 passed`. As quatro que caem são exatamente as que afirmam a ligação.
+
+**A medição, nos 171 pares:** escape médio **5,62% → 0,12%**. Pior par depois:
+`cachos-anjo` + `touca-de-la`, 0,3%.
+
+⚠️ **A régua do par nasceu verde por vacuidade e foi pega na primeira rodada.** Ela
+media 0% de cabelo sobrevivendo em TODO par — número que teria passado por "o chapéu
+cobre tudo". A causa: as duas `formas` de um cabelo tonal carregam o **mesmo `d`**
+(uma é o contorno, a outra é a tinta com a máscara de tom), e concatenadas sob
+`evenodd` elas se cancelam inteiras. A união agora é forma a forma, e o comentário
+ficou no arquivo.
+
+## O QUE FICOU ABERTO, e é decisão do Doug — não de máquina
+
+**Em 11 dos 171 pares sobra menos de 3% da massa do cabelo**, e **9 deles são o
+`moicano`**, que some debaixo dos nove chapéus. Os outros dois são
+`coque-individual` + `boina` e `coque-simples` + `boina`.
+
+Isso é fisicamente correto — moicano sob touca some na vida real também — e é
+produto ruim: a criança não vê a peça que desbloqueou, e perde junto a cor que
+escolheu. `arte:par` conta e nomeia, **sem reprovar**.
+
+**A causa tem número e é de ARTE, não de código.** A régua agora imprime onde cada
+peça tem massa:
+
+| peça | topo | piso | massa sob y 183 |
+|---|---|---|---|
+| `moicano` | −54 | **122** | **0,0%** |
+| `coque-individual` | −54 | 228 | 4,7% |
+| `coque-simples` | −30 | 220 | 5,2% |
+| … | | | |
+| `assimetrico` | 14 | 585 | 59,9% |
+
+**O `moicano` é a única peça das 19 que TERMINA acima da aba mais alta do elenco**
+(piso 122 contra a linha mais alta em 130). Não há chapéu que o deixe aparecer, e não
+haverá: a peça inteira mora dentro do volume do chapéu. Toda outra peça tem pelo
+menos 4,7% abaixo de y 183.
+
+Saídas, e a escolha é dele: **(a)** aceitar que o par não se veste; **(b)** o produto
+não oferecer o par; **(c)** redesenhar o `moicano` com massa na nuca ou nas laterais
+abaixo de y 183 — **uma arte conserta 9 dos 11 pares**.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** · **924 testes em 45 arquivos** (eram 916 —
+os 8 do gate novo) · `verify:all` **exit 0, cadeia inteira** · `build` **exit 0**.
+
+## O VEREDITO VISUAL, e o que a régua não tinha visto
+
+A folha do `chapeu-mago` — o pior chapéu do elenco, e o que o Doug pediu — lida
+antes e depois, com três réguas independentes sobre o render:
+
+| régua | antes | depois |
+|---|---|---|
+| px de cabelo acima da linha da aba | 1 a 533, em **17 dos 19** | **0 nos 19** |
+| px de cabelo por cima da tinta do chapéu | 1 a 12, em 17 dos 19 | **0 nos 19** |
+| topo do cabelo com fundo logo acima (tufo solto) | 0–1 | **0 nos 19** |
+
+As **duas fendas** entre o cone inclinado e a aba — a de 10 h e a de 1–2 h, que
+vazavam em 17 dos 19 penteados no MESMO par de coordenadas — fecharam as duas.
+Nada abaixo de dy 93 no painel mudou um pixel: o cabelo que desce pelos ombros é
+bit a bit idêntico.
+
+⚠️ **O corte não é uma reta, e isso importa para o olho.** O topo do cabelo no
+depois varia de dy 57 a dy 126 conforme a coluna: ele acompanha a curva da aba,
+que é o que a linha medida É.
+
+### O DEFEITO QUE SOBROU, e ele NÃO está no `mago`
+
+Medido nos 171 pares depois do conserto: **borda criada pelo corte encostando no
+FUNDO** — soma 6 243 px, pior caso **431 px** (`elvis` + `touca-de-la`), e **42
+pares com zero**. Borda contra a PELE não conta: é nascimento de cabelo, e é o que
+um penteado faz.
+
+**A causa é largura, não altura.** A `touca-de-la` tem 114% da largura da cabeça —
+a mais estreita das nove — e o `bone` 124%. Cabelo mais largo que o chapéu é cortado
+num ponto em que não há aba preta para tapar a emenda. Os quatro piores são
+`elvis`+`touca-de-la` (431), `coques-duplos`+`touca-de-la` (369),
+`dreadlocks`+`touca-de-la` (365) e `dreadlocks`+`bone` (352) — **os quatro em
+chapéu estreito, nenhum no `mago`**, que é por isso que a folha do mago passou
+limpa nas três réguas.
+
+O close está em `.scratch/escondecabelo/folha-ARESTA.png`, recortado no **centro de
+massa medido** da borda, em 3×.
+
+### As folhas desta sessão
+
+`.scratch/escondecabelo/` — `folha-AD-<chapeu>.png` para os nove (antes × depois,
+19 cabelos cada), `folha-CUSTO.png` (os pares em que o cabelo some) e
+`folha-ARESTA.png` (o close dos quatro piores cortes).
+
+## CORREÇÃO — o defeito da aresta tem outra causa, e duas tentativas de conserto caíram
+
+⚠️ **A leitura do close derrubou duas afirmações minhas.** Ficam escritas porque o
+modo de errar é o que se aproveita.
+
+**1. O close estava quebrado, e o erro é de método.** `close-aresta.ts` centrava o
+recorte no **centro de massa** da borda. A borda é um ARCO em volta da cabeça, e o
+centroide de um arco cai no meio do arco — que é o meio do chapéu, onde antes e
+depois são bit a bit a mesma imagem. Três dos quatro recortes não mostravam nada, e
+o relatório teria passado por "está limpo". Corrigido para **janela mais densa**,
+por soma acumulada 2D.
+
+**2. A causa não é "largura" — é a PAREDE VERTICAL na borda x da oclusão.** Medido:
+o corte do `dreadlocks` + `bone` cai em **x 57–63**, e a borda x da oclusão está em
+**x 55,4**; o do `elvis` + `touca-de-la` em **x 459–461** contra **462,1**. A
+região fecha por cima no topo do quadro, então no extremo em x do chapéu — onde a
+peça tem só a ponta da aba — o caminho sobe reto por **~265 u**. Cabelo que passa
+por ali é cortado numa vertical perfeita, ~51% dela cor chapada contra o fundo, com
+um vão de fundo de até ~43 u entre o corte e a aba.
+
+### As duas construções alternativas, medidas e descartadas
+
+| construção | ideia | resultado medido |
+|---|---|---|
+| **B′** — região de alcance inteira, com as duas fronteiras | sem parede por construção | **no-op.** Os px ocultos batem com a massa do próprio chapéu (`bone`: 96 862 = 96 862). A maré contorna a peça por todo lado e não oclui nada além do que já é opaco |
+| **C** — a linha limitada às colunas do crânio | a copa taparia a parede | **pior:** borda contra o fundo de 6 243 → **12 948 px**, pares limpos de 42 → **20**. A parede migrou para a borda do crânio, onde há MAIS cabelo |
+
+Traçar a região exata com `potrace` funcionou (1,3–2,5 KB por chapéu, via `tracar`
++ `paraUnidades` de `barba-para-formas.ts`) — o problema de B′ não era emitir o
+caminho, era a região estar errada.
+
+**Fica a construção A**, e o defeito residual fica **medido e nomeado**: 6 243 px
+somados nos 171 pares, pior 431 px (`elvis` + `touca-de-la`), **42 pares com zero**.
+
+⚠️ **Não tentei uma terceira construção de propósito.** Duas caíram por medição, e a
+terceira seria eu escolhendo forma pela régua — o que este projeto já apanhou de
+fazer. O que decide agora é o olho do Doug sobre `folha-ARESTA.png`.
+
+### A ARESTA, MEDIDA NO TAMANHO REAL — e a decisão fica com o olho
+
+O close ampliado responde *"a aresta existe?"*. Existe: **reta vertical de 13 a 19 px**
+num boneco de 150, e dela **1,9 a 2,9 px sem contorno preto**, cor chapada contra o
+fundo. Os outros 77% da reta terminam no tom mais escuro do próprio cabelo, que lê
+como contorno.
+
+**A localização foi confirmada por dois caminhos independentes**, e os dois dão a
+borda x da oclusão:
+
+| par | borda contra o fundo, caixa em u | borda x da oclusão |
+|---|---|---|
+| `dreadlocks` + `bone` | **x 4 → 58** | **55,4** |
+| `elvis` + `touca-de-la` | x 26 → 474 | 462,1 |
+| `coques-duplos` + `touca-de-la` | x 19 → 476 | 462,1 |
+
+⚠️ **Três cabelos de forma completamente diferente cortam no MESMO x** — é a
+assinatura da parede, não coincidência, e é o que prova que o defeito é da esteira
+e não da arte. O próximo cabelo herda.
+
+⚠️ **O close ampliado NÃO serve para decidir se alguém nota.** Retidão se julga
+contra a silhueta inteira, e uma janela de 20 px reais não mostra silhueta — a
+mesma janela muda só 27 a 35 dos 400 px quando reduzida a 1×. Daí a
+`folha-1X.png`: os quatro pares no boneco inteiro, a **150, 100 e 56 px**, sem
+ampliação nenhuma, com o DEPOIS repetido a 2× por vizinho — bitmap esticado, nunca
+re-render, que sairia mais nítido que o produto.
+
+**Parei aqui de propósito.** Duas construções caíram por medição; uma terceira seria
+escolher forma pela régua. O que falta é o olho do Doug sobre a `folha-1X.png`, e a
+pergunta para ele é uma só: **dá para ver?**
+
+---
+
+# 2026-08-25 (fim da noite) — A MÃO ENTRA NA OCLUSÃO: editor com lupa
+
+O Doug olhou a folha a 1×: *"dá pra ver sim. e outros cabelos também algumas
+partes. melhorou, mas acredito que você não conseguirá resolver 100% de todos os
+cabelos devido à sua visualização, mas eu consigo"* — e pediu **borracha**, depois
+**lupa para apagar até os detalhes**.
+
+Ele está certo no diagnóstico: o que sobrou não é medível, é forma. Duas
+construções alternativas já tinham caído por medição, e a terceira seria escolher
+forma pela régua.
+
+## A mudança estrutural que a ferramenta exigiu — e que já melhorou sozinha
+
+`escondeCabelo` deixou de ser **perfil por coluna** e passou a ser **região
+traçada**. Um perfil é, por definição, *"daqui para cima"*: ele **não consegue**
+descrever um topo que afina, que é exatamente o que a parede vertical precisava.
+
+Só de trocar, sem mão nenhuma:
+
+| | perfil | região traçada |
+|---|---|---|
+| escape médio, 171 pares | 0,12% | **0,09%** |
+| borda de corte contra o fundo | 6 243 px | **5 443 px** |
+| pior par | 431 px | **408 px** |
+| `d` por chapéu | 243 B | 1 066 B |
+| pior composto | 29 681 B | **30 808 B** (teto 40 240) |
+
+O traçado é o `potrace` da esteira, pelos mesmos `tracar` + `paraUnidades` da
+`barba-para-formas.ts` — uma segunda configuração de traçado neste repositório
+seria uma segunda descrição de *"como máscara vira caminho"*.
+
+## A correção é ENTRADA, nunca saída
+
+`scripts/avatar/arte/oclusao/<slug>.png`, opcional, ao lado da arte. Verde
+(G > R) esconde, vermelho (R > G) mostra, transparente deixa a máquina decidir.
+
+**É isso que mantém `chapeus-da-arte.ts` sendo arquivo gerado.** Se a pincelada
+substituísse o `d`, o `arte:chapeus --check` brigaria com o Doug a cada regeração e
+apagar o PNG não voltaria ao estado anterior. Provado nos dois sentidos, por
+memória e por disco, e a volta é exata.
+
+⚠️ **A pasta estava ignorada e isso teria comido o trabalho dele em silêncio.** O
+`scripts/avatar/arte/.gitignore` tem `*/`, que engolia `oclusao/` junto — o mesmo
+defeito que já tinha nascido invisível com `__tests__/` em 2026-08-20. Sem a
+exceção, um clone novo perderia a mão e o `arte:chapeus` devolveria a região de
+máquina **sem nada reprovar**: a pior forma de perder trabalho, silenciosa e verde.
+Conferido com `git add --dry-run`, que é o teste honesto — o `check-ignore -v`
+imprime a regra de negação e se lê como se ainda estivesse ignorado.
+
+## O editor: `/dev/avatar-oclusao`
+
+| | |
+|---|---|
+| pincéis | **mostrar** (devolve cabelo) e **esconder** (engole o que sobrou), 2 a 80 px |
+| lupa | 1× a **8×**, com deslocamento pelo botão do meio |
+| prévia | o boneco grande com a linha **do editor** aplicada |
+| tira | os **19 cabelos ao vivo**, a 150 px e a 56 px — em tamanho REAL |
+| botões | desfazer (40 níveis), limpar a mão, salvar na arte |
+
+**A prévia é o produto, não uma aproximação.** Quem traça é a esteira, pela rota
+`/api/dev/oclusao`, e o `d` que volta é caractere a caractere o que
+`npm run arte:chapeus` escreveria.
+
+**A tira fica em tamanho real de propósito.** A lupa responde *onde está o
+defeito*; só o tamanho real responde *alguém vê*. Uma janela ampliada engana nos
+dois sentidos — mostra como grave um degrau de 2 px e esconde que uma reta de 19 px
+atravessa a silhueta.
+
+### A rota tem DUAS trancas, e a segunda foi de brinde
+
+1. `NODE_ENV !== "development"` devolve **404** em ambos os verbos, antes de ler o
+   corpo — provado nos dois;
+2. **o proxy de auth já a protege.** Descoberto testando com `curl`: `/api/dev/*`
+   não está na lista pública e o proxy redireciona para `/login`.
+
+Mais o `slug` validado contra o catálogo em memória: não há nome de arquivo vindo
+do cliente. `?slug=../../../etc/passwd` responde 400.
+
+## A conferência, e ela foi feita rodando
+
+| o quê | resultado |
+|---|---|
+| 404 em produção, GET e POST | ✓ |
+| slug de travessia | 400 |
+| prévia não grava | ✓ |
+| salvar grava · salvar vazio APAGA e volta ao `d` de máquina | ✓ |
+| correção que não é PNG | 400 |
+| a página compila | 307 (o auth), não 500 |
+| a caixa do editor × `naTela` | **erro 0,000000** nos quatro campos, ida-e-volta exato |
+
+⚠️ **A caixa do quadro é DERIVADA de `ancoraDaFigura` e `CAIXA_DA_ARTE`.** A
+primeira versão tinha `translate(20 25.2)` cravado, e a âncora real é **70**. Três
+sistemas de coordenada convivem no editor — interna, viewBox e pixel de tela — e é
+onde um editor erra em silêncio.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** · **932 testes em 46 arquivos** (eram 924 —
+os 8 do gate novo da esteira) · `verify:all` **exit 0** · `build` **exit 0**.
+
+## O que continua aberto, e é do Doug
+
+1. **passar a borracha nos 9 chapéus** — é para isso que a ferramenta existe;
+2. **o `moicano`**: piso y 122 contra a aba mais alta em y 130. Nenhuma borracha
+   resolve, porque não há cabelo do lado de fora para devolver. Ou aceita, ou o
+   produto não oferece o par, ou a peça é redesenhada com massa abaixo de y 183.
+
+## O EDITOR RESPONDIA 500 EM TODA CHAMADA — e o build não acusava
+
+O Doug abriu a tela e o `salvar na arte` devolveu *"a rota respondeu 500"*.
+
+**Causa, no log do `next dev` e não no build:**
+`TypeError: Right-hand side of 'instanceof' is not callable`. O Turbopack empacotava
+`sharp` (módulo NATIVO) e `potrace` (CJS) dentro da rota; os dois fazem
+`x instanceof Buffer` por dentro, e depois do empacotamento o lado direito vira
+objeto de namespace, que não é chamável.
+
+**Conserto:** `serverExternalPackages: ["sharp", "potrace"]` no `next.config.mjs`.
+
+⚠️ **`npm run build` compilava com exit 0 o tempo todo.** O defeito era de EXECUÇÃO,
+e nenhum gate do repositório o alcançava — nenhum deles levanta o servidor. Verde
+não quer dizer que roda.
+
+### O defeito que fez o primeiro passar despercebido, e ele é meu
+
+O cliente fazia `if (!r.ok) return;` no GET da linha. Quando a rota passou a
+responder 500, a tela **abriu sem `d`**: o chapéu parecia certo, o cabelo escapava
+por cima dele, e nada na interface dizia que a linha não tinha chegado. O `moicano`
+da tira estava com a crista de fora na captura do Doug e eu li como "está clipado".
+
+Agora o GET falha alto, e há uma tarja quando `d` está ausente — *"este chapéu está
+sem linha de oclusão"*. **Editor que engole o erro do próprio motor mente com cara
+de funcionando.**
+
+### Como o erro foi encontrado, e o caminho vale a nota
+
+O proxy de auth protege `/api/dev/*`, então `curl` só devolvia 307 e nunca o erro.
+O que resolveu: **o log do `next dev` do próprio Doug**, em
+`.next/dev/logs/next-development.log` — o servidor dele estava de pé na 3000, e o
+primeiro `instanceof` aparecia logo depois do `○ Compiling /dev/avatar-oclusao`.
+
+Uma sonda temporária sob `/authdev-sonda` (público por começar com `/auth`) serviu
+para exercitar a rota por HTTP sem sessão; foi apagada depois de confirmar
+**GET 200 · POST 200 · mão 7 007 px mostrados · o `d` muda**.
+
+⚠️ **Reproduzir o handler FORA do Next não pega este defeito** — em processo ele
+respondia 200 desde o começo, porque não passa pelo empacotador. Testar a lógica
+não é testar a rota.
+
+## O layout, refeito
+
+O primeiro gastava ~150 px de altura em título e parágrafo e punha a tira dos 19 em
+grade de 3 colunas a 150 px cada: o quadro de pintura caía abaixo da dobra. Agora:
+cabeçalho de uma linha, barra única com pincéis, grossura e lupa, quadro de 430 px,
+e os 19 a **56 px** — o tamanho do ranking — com o escolhido repetido a 150 px.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** · **932 testes** · `verify:all` **exit 0** ·
+`build` **exit 0**.
+
+⚠️ **`arte:chapeus-check` reprova enquanto a mão do Doug não for incorporada**, e é
+o certo: a correção é entrada, o catálogo é saída, e entre pintar e rodar
+`npm run arte:chapeus` os dois estão fora de fase. A primeira correção dele —
+`oclusao/chapeu-boina.png`, pincel `mostrar` na borda da aba — devolveu 2 804 px e
+levou `dreadlocks` + `boina` de 40% para **42%** de sobrevivência.
+
+---
+
+# 2026-08-26 — A RÉGUA SÓ OLHAVA PARA CIMA, e o Doug viu o que ela não via
+
+O Doug: *"a régua diz que só sobra cabelo do lado esquerdo da boina; eu vejo também
+no direito. Ela mede escape acima da linha da aba — e o que me incomoda é cabelo ao
+lado do chapéu, que não entra nessa conta."*
+
+Ele estava certo, e o erro era de construção, não de calibragem.
+
+## O ponto cego, com o tamanho medido
+
+`arte:par` contava escape como *"cabelo acima da linha de baixo do chapéu, NA MESMA
+COLUNA"*. Onde o chapéu não tem tinta não existe linha — `limite[x] = -1` —, e o
+pixel caía num balde chamado `fora` que **nada lia**. Cabelo ao lado do chapéu era
+invisível para a régua **por construção**.
+
+Medido nos 171 pares, no raster da arte, depois do `escondeCabelo`:
+
+| zona | px somados |
+|---|---|
+| ACIMA da linha, na coluna do chapéu — o que ela media | **4 636** |
+| **AO LADO do chapéu, na altura dele — o balde `fora`** | **644 057** |
+| ABAIXO — franja, costeleta, rabo: legítimo | 3 638 235 |
+
+**139 vezes o que ela media.** E ela chegava a dizer o LADO ERRADO: a `boina` é torta
+e sua massa pende para x menor, então sobra mais cabelo **à direita** (78 247 px) do
+que à esquerda (26 606 px) — o oposto do que estava escrito.
+
+Dos 644 057 px, **264 987 estão acima de y 196** (meia altura da cabeça). Acima dessa
+linha, cabelo ao lado do chapéu é cabelo mais largo que o chapéu, e nenhum chapéu de
+verdade deixa isso; abaixo é altura de orelha, onde qualquer boina deixa cabelo sair.
+
+## O que mudou na régua
+
+| o quê | antes | agora |
+|---|---|---|
+| quadro | 0,5 px/u (325×388) | **o raster da arte, 1,2 px/u (780×930)** — o mesmo em que a arte vive e a mão pinta |
+| o que ela lê da peça | só a região `escondeCabelo` | região **+ a tinta do `<image>`**, que é quem separa *ao lado* de *por trás* |
+| zonas | `acima` × `fora` (não lido) | **acima · ao lado · abaixo**, cada uma partida por LADO |
+| conferência | — | **as quatro zonas têm de fechar a massa**, senão reprova |
+
+Custa 1,8 s nos 171 pares. Continua em `verify:arte`.
+
+⚠️ **A conferência de zonas nasceu como gate que grita e passa.** A reprovação dela
+acontece depois do `process.exit(1)` das reprovações de peça, e sem uma linha nova no
+fim ela imprimia `✗` em vermelho e devolvia **exit 0**. Provado plantando o defeito
+(um pixel em dois baldes): **exit 1 com 159 reprovações**, e exit 0 ao restaurar.
+
+## O overlay — o olho vê o que sobra, não o que a régua escolheu olhar
+
+`/dev/avatar-oclusao`, caixa **"o que sobra"**. Ele pinta **todo** o cabelo que
+sobrevive ao chapéu e usa a cor só para dizer de que tipo é cada pedaço:
+
+| cor | zona |
+|---|---|
+| vermelho | acima da linha, na coluna do chapéu |
+| **magenta** | **ao lado, no alto** — mais largo que o chapéu |
+| âmbar | ao lado, embaixo — altura da orelha |
+| azul fraco | abaixo — franja, costeleta, rabo: legítimo |
+
+Mais a tabela ao lado, **partida por lado**, em px e em % da peça, que reconta a cada
+pincelada. `src/app/(main)/dev/avatar-oclusao/sobra.ts`.
+
+**As três máscaras saem do que está na tela** — as `formas` do tonal por `Path2D`, o
+`d` que a rota devolveu, e o `.svg` da peça (que já é 780×930 e já é a
+`CAIXA_DA_ARTE`, então entra sem escala). Nenhuma conversão nova.
+
+**Conferido por HTTP, não por leitura de código:** sonda pública temporária sob
+`/authdev-sobra` (o proxy libera `/auth*`), lida pelo Chromium. Quatro pares contra a
+mesma conta feita pelo `sharp`:
+
+| par | navegador (esq/dir) | `sharp` (esq/dir) |
+|---|---|---|
+| `dreadlocks` + `boina` | 1 806 / 7 343 | 1 845 / 7 385 |
+| `espetado` + `boina` | 935 / 5 826 | 973 / 5 900 |
+| `elvis` + `touca-de-la` | 6 531 / 3 264 | 6 612 / 3 271 |
+| `chanel` + `mago` | 8 763 / 5 597 | 8 782 / 5 606 |
+
+Menos de 1,5% de diferença — é o antialias do Chromium contra o do librsvg. A sonda
+foi apagada depois.
+
+## AS DUAS SAÍDAS PARA O CABELO, MEDIDAS — e a escolha é do Doug
+
+Ele pediu para editar o cabelo também, e marcou a decisão: máscara por par (171,
+mais 9 a cada cabelo novo) **ou** variante "sob chapéu" por cabelo (19, independente
+de chapéu). Medido antes de escolher, e **nada implementado**.
+
+### A) máscara por par
+
+Simulação: esconder todo o cabelo que sobra ao lado do chapéu acima de y 196.
+
+| medida | valor |
+|---|---|
+| pares que já estão limpos (nada a pintar) | **27 de 171** |
+| cabelo escondido, somado | 267 631 px |
+| **borda de corte criada contra o FUNDO** | **4 974 px** |
+| borda contra pele/chapéu (nascimento de cabelo, legítima) | 9 646 px |
+| pior par | `assimetrico` + `bone`, 109 px contra o fundo |
+
+⚠️ **A mão só sabe ESCONDER, e esconder cria borda.** É o mesmo defeito da parede
+vertical de 25/08 (5 443 px residuais) — some o escape, nasce o corte. Os oito piores
+são todos com `bone`, o chapéu mais estreito depois da touca.
+
+Custo de esteira: **144 pinturas hoje**, +9 por cabelo novo, +19 por chapéu novo. No
+alvo do doc 22 (13 chapéus × 19 cabelos) são **247 máscaras**. No catálogo: de 9,6 KB
+de `d` para ~182 KB hoje, ~263 KB no alvo.
+
+### B) variante "sob chapéu" por cabelo
+
+O ENVELOPE que serve aos nove ao mesmo tempo — o que TODOS escondem em comum:
+
+| y (u) | x0 | x1 | largura | % da cabeça |
+|---|---|---|---|---|
+| −40 a 80 | 56 | 462 | 406 | **112%** |
+| 120 | 56 | 449 | 393 | 108% |
+| 140 | 56 | 447 | 391 | 107% |
+| 160 | 56 | 173 | 117 | 32% |
+| 180 | 66 | 77 | 11 | 3% |
+
+**Acima de y 140 o envelope é largo e estável: 111% da largura da cabeça.** Abaixo de
+160 ele desmorona, porque é onde a aba mais alta do elenco já acabou.
+
+E as peças de hoje têm **105% a 133%** da largura da cabeça — 13 das 19 passam dos
+111%. É essa a causa raiz do cabelo ao lado, e ela é de ARTE.
+
+Quanto cada peça teria de perder (união do escape lateral nos 9 chapéus, acima de
+y 196):
+
+| peça | a perder | % da massa |
+|---|---|---|
+| `coques-duplos` | 9 964 px | **10,8%** |
+| `dreadlocks` | 15 312 px | 10,5% |
+| `cachos-anjo` | 8 309 px | 8,8% |
+| … mediana ≈ 5% … | | |
+| `coque-individual` | 2 362 px | 2,9% |
+| `moicano` | 0 | 0,0% |
+
+**Não é redesenhar a peça: é enfiar 3 a 11% da massa para dentro de 111% da cabeça,
+acima de y 196.** Que é literalmente o que um chapéu faz com o cabelo.
+
+Custo de esteira: **19 artes**, +1 por cabelo novo, **+0 por chapéu novo**. No
+catálogo: +90 KB de `d` (o elenco tonal de hoje, duplicado). **Não cria borda de
+corte nenhuma** — a silhueta é desenhada, não cortada.
+
+### O que fica aberto, e é dele
+
+1. **A escolha entre A e B** — os números estão acima, a decisão não é de máquina;
+2. **o `moicano`**: piso y 122 contra a aba mais alta em y 130. Nenhuma borracha
+   resolve. Ou aceita, ou o produto não oferece o par, ou a peça é redesenhada com
+   massa abaixo de y 183.
+
+## Gates
+
+`typecheck` **0** · `lint` **0 erros** · **932 testes** · `verify:all` **exit 0** ·
+`build` **exit 0**.
+
+---
+
+## A APAGADA DE MÁQUINA — o Doug escolheu, e ela fechou
+
+*"vamos tentar máquina apaga, se não resolver, eu pinto no editor. se não resolver,
+eu desenho 19 cabelos achatados (último recurso)"* — e escolheu `chapeu-de-palha` +
+`chanel` para o teste.
+
+⚠️ **O par do teste não podia mostrar nada, e eu avisei antes de aplicar.** O
+`chapeu-de-palha` tem aba larga e baixa: os 4 949 px que a régua marcou como "ao
+lado" no `chanel` estão **embaixo da aba**, que é o que um chapéu de palha faz. Quem
+estava errada era a régua nova, não o par.
+
+### A régua estava generosa demais, e a linha certa é do CHAPÉU
+
+A primeira versão usou **meia altura da cabeça** (y 196) para separar *"estourando"*
+de *"saindo por baixo"*. É constante de cabeça, e chapéu não é cabeça. A linha certa
+é o **PONTO MAIS LARGO DA PEÇA, de cada lado**:
+
+- **abaixo dele a aba está abrindo** — cabelo ali é cabelo saindo por baixo do
+  chapéu, e é o que todo chapéu de verdade deixa;
+- **acima dele o chapéu está sobre a cabeça** — cabelo por fora é cabelo mais largo
+  que o chapéu.
+
+**Por lado, nunca uma linha só:** a `boina` é torta, e o ponto mais largo dela está em
+y 208 à esquerda e y **69** à direita. Uma linha comum comeria o lado baixo ou
+pouparia o alto.
+
+Com a linha certa, o defeito real do elenco não é 644 057 px — é **43 868 px**. O
+resto do balde `fora` era cabelo legítimo embaixo da aba.
+
+### A regra, e as duas que caíram medidas
+
+| construção | esconde | borda de corte contra o fundo | contra a pele |
+|---|---|---|---|
+| R1 — ao lado, acima de meia cabeça | 266 282 px | 3 598 px | 9 646 px |
+| **R2 — ao lado, acima do ponto mais largo** | **43 868 px** | **333 px** | **0 px** |
+
+R1 come seis vezes mais e a maior parte é cabelo legítimo ao lado do rosto. **Fica a
+R2**, como metade 2 de `medirOclusao` — 26 linhas, sem constante nenhuma.
+
+### Alargar o chapéu — a terceira saída, medida e descartada
+
+O Doug: *"uma possibilidade também seria você alargar o chapéu, para caber certinho
+na cabeça"*. Esticando o alfa da peça em x em volta do eixo da cabeça, e recontando o
+escape a cada passo:
+
+| chapéu | 1,00× | 1,10× | 1,20× | largura final |
+|---|---|---|---|---|
+| `touca-de-la` | 14 675 px | 5 959 | **3 697** | 137% da cabeça |
+| `bone` | 13 803 | 8 264 | **4 161** | 149% |
+| `boina` | 8 119 | 4 937 | **4 302** | 151% |
+| `cartola` | 4 098 | 3 891 | **4 155** | 163% — **piora** |
+
+**Cabe no quadro** (a `CAIXA_DA_ARTE` aguenta), mas **não fecha**: a 1,20× ainda
+sobra 25% do escape, e a peça vira outra peça — uma touca de lã com 137% da largura
+da cabeça não lê como touca. Descartada como conserto; fica como nota de arte.
+
+⚠️ **A primeira medição dessa saída deu 101×, e o erro é meu.** Perguntei *"em cada
+LINHA, quanto o chapéu precisa esticar?"* e dividi pela meia-largura na linha do
+BICO, onde a peça tem 2 u. A pergunta é de COLUNA — a região sobe a partir do pixel
+mais baixo de cada coluna. Refeita esticando o alfa de verdade e remedindo.
+
+### O resultado, lido na folha
+
+`.scratch/oclusao2/folha-AD.png` — 9 chapéus × 8 cabelos, antes | depois, a 110 px.
+Lida por subagente, medida célula a célula:
+
+- **71 dos 72 pares leem como naturais**; 51 não mudaram um pixel (os 4 chapéus de
+  aba larga — `palha`, `cowboy`, `mago`, `pirata` — já estavam limpos);
+- **nenhum corte a faca.** A borda nova acompanha a curva do próprio chapéu: em
+  `bone` + `dreadlocks` o passo na junção chapéu→cabelo é de **1 px**;
+- o ganho maior é `bone` + `dreadlocks`: uma mecha de 10×25 px que subia pela lateral
+  esquerda **acima da costura do boné**, como antena, sumiu — o contorno do boneco
+  agora segue o do boné de y5 a y29;
+- três ilhas de cabelo soltas no bege foram mortas junto: `cartola`+`dreadlocks`,
+  `touca`+`coques-duplos` e `touca`+`elvis` — esta última a **18 px** de distância do
+  contorno da touca, o pior caso da folha.
+
+**Nota de catálogo, e é decisão do Doug:** `coques-duplos` sob `boina`, `bone` e
+`touca-de-la` ficou indistinguível de uma franja lisa. O que sobrava era o nó
+espiando ao lado do chapéu — e o nó mora exatamente onde o chapéu está.
+
+### ⚠️ A MÃO DE ONTEM VIROU DEFEITO HOJE, e isso é da natureza da correção
+
+O único par defeituoso da folha era `boina` + `dreadlocks`: uma lasca de 2×9 px
+solta no bege, à esquerda, na altura da têmpora. **A causa não era a máquina — era o
+`oclusao/chapeu-boina.png`.**
+
+A pincelada `mostrar` que o Doug passou na borda da aba **ontem** foi pintada contra
+a proposta antiga, quando ali não havia nada para revelar: valia **6 px**. Com a
+metade 2 da região, a mesma pincelada passou a devolver **1 823 px** — e devolveu
+exatamente a banda que a regra nova acabara de fechar.
+
+Guardado em `.scratch/oclusao2/chapeu-boina-MAO-DO-DOUG.png` (nada foi apagado; para
+voltar, é um `mv` de volta para `scripts/avatar/arte/oclusao/`). Sem ela:
+
+| | antes da R2 | com a R2 e a mão | **com a R2, sem a mão** |
+|---|---|---|---|
+| cabelo estourando o chapéu, 171 pares | 43 868 px | 527 px | **5 px** |
+
+**A lição fica escrita:** correção à mão é ENTRADA, e entrada envelhece quando a
+máquina muda. Quem mexer na proposta tem de reler as correções — elas não reprovam
+sozinhas, e uma pincelada velha volta como defeito com cara de bug de esteira.
+
+### O custo em bytes
+
+`escondeCabelo` somado: **9 593 B → 10 750 B** (+12%). O pior composto continua
+folgado no `ORCAMENTO_COM_CHAPEU`.
+
+### Gates
+
+`typecheck` **0** · `lint` **0 erros** · **932 testes** · `verify:all` **exit 0** ·
+`build` **exit 0** · overlay reconferido por HTTP no Chromium: 0 px estourando nos
+quatro pares de prova.
+
+---
+
+## 2026-08-26 (tarde) — O APERTO, A TABELA, E A SOMBRA DO ROSTO NO `curto-penteado`
+
+### O aperto: o chapéu ACHATA o cabelo
+
+`escondeCabelo` fecha o cabelo que atravessa a peça e o que estoura acima dela. O que
+sobrou é de LARGURA: **os 19 penteados vão de 105% a 133% da cabeça**, e abaixo da aba
+não há chapéu para esconder nada. Esconder ali cortaria a silhueta contra o fundo.
+
+**Estreitar não corta.** `EstadoAvatar.apertoDoCabelo` — escala em x, em volta do eixo
+da cabeça, só com chapéu. `1` (ou ausente) é o SVG de sempre **byte a byte**, provado
+nos três casos (sem chapéu, aperto 1, sem cabelo). Custo: **+72 B** quando ligado.
+
+⚠️ **Dois grupos aninhados, e não é estilo:** `transform` e `clip-path` no mesmo
+elemento fazem o clip ser resolvido no espaço já transformado — a região do chapéu
+encolheria junto com o cabelo. O de fora carrega o clip, o de dentro a escala.
+
+**A escada é do Doug, não minha.** Comecei com 4 valores de 5 em 5 centésimos; ele
+voltou duas vezes dizendo que o olho caía ENTRE dois degraus. Hoje são 16 botões
+(1,00 a 0,84, de 0,01) mais `−`/`+` de 0,01 até 0,75.
+
+### A tabela — porque o aperto NÃO é derivável
+
+A primeira ideia foi a máquina calcular (largura do chapéu ÷ largura do cabelo). Cai
+por medição: o `elvis` fecha em 0,95 porque o que sobra é UMA mecha na têmpora; o
+`dreadlocks` precisaria de 0,85 e ali as cordas perdem **57%** do volume. Largura
+igual, aperto diferente — o que decide é ONDE está a massa e o que a peça perde ao
+encolher. É o mesmo lugar em que este projeto já apanhou: deixar a régua projetar.
+
+| peça | onde mora |
+|---|---|
+| `aperto.json` | **entrada** da esteira, ao lado da arte. Ordenado; par que vale 1,00 **não ocupa linha** |
+| `aperto-do-cabelo.ts` | dono do arquivo — leitura tolerante (JSON quebrado = tabela vazia), gravação ordenada |
+| `/api/dev/aperto` | 404 fora de dev, os dois nomes validados contra os catálogos |
+| editor | grade 9 × 19 clicável; a tira dos 19 desenha cada um com o **valor gravado dele**, só o da mesa usa o valor em prova |
+
+8 testes novos de ida-e-volta. Os dois verbos exercitados um a um: grava, acumula,
+`valor 1` apaga a linha, e **400** para chapéu inventado, cabelo inventado, cabelo não
+tonal, valor fora da faixa e valor que não é número.
+
+### A sombra do rosto que virou cabelo
+
+O Doug: *"aquela mancha ali não faz parte do cabelo, é a sombra do rosto"*.
+
+**Achar de quem era a mancha: trocar a cor e ver o que anda.** Pixel que muda quando
+o CABELO troca de cor é peça; o que muda com a PELE é pele. Medido: **9 223 px** da
+faixa andavam com `--av-cabelo`.
+
+⚠️ **Errei o lado na primeira volta e gastei uma folha inteira com isso.** A régua de
+invasão de rosto não isolava nada (o `chanel` entra mais e é um bob legítimo), então
+fui pelo perfil linha a linha e li a faixa GROSSA — 55 a 85 u, à esquerda — como o
+defeito. É o sweep do penteado, e está certo. O defeito era a orla ESTREITA do outro
+lado: 24 u rente à borda, do olho ao queixo. Só a marcação dele resolveu.
+
+**O conserto foi na ORIGEM.** A peça sai por diferença contra a base, então apagar
+massa é devolver àqueles pixels a cor que a base tem ali — 10 298 px — e regerar. Não
+se toca no `d` nem no catálogo.
+
+| | antes | depois |
+|---|---|---|
+| px que andam com o cabelo, na bochecha DIREITA | 9 223 | **39** (o contorno da cabeça, 1 u) |
+| na bochecha esquerda (tem de ficar igual) | 9 223 | 9 192 (retraçado) |
+| bytes do composto | 11 504 | 10 916 |
+
+A arte de antes está em `.scratch/oclusao2/curto-penteado-ANTES.png`.
+
+**Os dois selos de regressão caíram, e é o certo:** eles existem para perguntar *"por
+que uma peça aprovada mudou?"*. Refeitos com o motivo escrito. Conferido que **só os
+dois do `curto-penteado`** se moveram — os outros 37 selos, byte a byte iguais.
+
+### Gates
+
+`typecheck` **0** · `lint` **0 erros** · **940 testes em 47 arquivos** · `verify:all`
+**exit 0** · `build` **exit 0**.
+
+---
+
+## 2026-08-26 (fim da tarde) — O APERTO VIRA PRODUTO: 169 decisões do Doug no catálogo
+
+O Doug preencheu a tabela no editor, par a par, e mandou ligar. A cadeia fechou:
+
+```
+aperto.json  ->  npm run arte:apertos  ->  apertos-da-arte.ts  ->  compor()
+ (a mão)          (o gerador)              (o catálogo)          (o produto)
+```
+
+| | |
+|---|---|
+| pares decididos | **169 de 171** |
+| valores distintos usados | 0,83 a 0,99 |
+| ficaram em 1,00 | `burst-fade` + `bone` · `cachos-anjo` + `chapeu-de-palha` |
+
+### Por que este número NÃO é derivado, e fica escrito
+
+A máquina calculando (*largura do chapéu ÷ largura do cabelo*) cai por medição: o
+`elvis` fecha em 0,95 sob a `touca-de-la` porque o que sobra é UMA mecha na têmpora;
+o `dreadlocks` precisaria de 0,85, e ali as cordas perdem **57%** do volume. **Largura
+igual, aperto diferente** — decide onde está a massa e o que a peça deixa de ser ao
+encolher. É o mesmo lugar em que este projeto apanhou antes: régua projetando forma.
+
+E os números do Doug provam: a `toca-de-cozinha` pediu **0,83** para `cachos-anjo` e
+**0,99** para `coque-simples`. Nenhuma fórmula de largura produz esse espalhamento.
+
+### Quem lê o número é o COMPOSITOR, nunca o chamador
+
+`compor()` busca o par sozinho (`chapeu.id|cabelo.id`). Exigir que o chamador
+passasse seria garantir divergência — ranking, perfil, folha e editor desenhariam o
+mesmo aluno de larguras diferentes conforme quem lembrou do campo.
+`estado.apertoDoCabelo` continua valendo como **override de bancada**, e é o que faz
+o editor mostrar o valor EM PROVA antes de virar decisão gravada.
+
+### A régua estava medindo o alvo errado — de novo
+
+⚠️ `arte:par` rasterizava o `d` CRU e media um cabelo mais largo que o do produto:
+acusaria escape que o compositor já não desenha. Agora a massa é **por par**, com o
+aperto aplicado antes da conta. Resultado nos 171 pares:
+
+| | antes do `escondeCabelo` | com a região | **com a região + o aperto** |
+|---|---|---|---|
+| cabelo estourando o chapéu | 43 868 px | 5 px | **0 px, nos nove** |
+
+Custo: 3,0 s no `verify:arte` (eram 1,8), com cache por `cabelo@aperto`.
+
+### As travas
+
+| gate | o que fecha |
+|---|---|
+| `arte:apertos --check` | o Doug decide um número no editor e o produto desenha outro |
+| chave órfã reprova | par de peça apagada em `aperto.json` — decisão que nunca chegaria ao produto |
+| cobertura **conta e NÃO reprova** | par sem linha vale 1,00, e 1,00 é decisão legítima |
+| `aperto-do-cabelo.test.ts` (estilo) | **175 testes**: os 169 pares saem com o número do catálogo, ausente é byte a byte nos três casos, o override vence, e a escala fica DENTRO do clip |
+| `aperto-do-cabelo.test.ts` (arte) | 8 testes de ida-e-volta do arquivo |
+
+⚠️ **A régua do teste também nasceu errada e foi pega na bancada:** ela procurava
+`scale(0.` no SVG, e isso casa com a escala da FIGURA. Passou a casar
+`translate(<eixo> 0) scale(x 1)`, que é a única transformação que gira em volta do
+eixo da cabeça.
+
+### Gates
+
+`typecheck` **0** · `lint` **0 erros** · **1 115 testes em 48 arquivos** (eram 940) ·
+`verify:all` **exit 0** · `build` **exit 0** · painel `docs/ESTADO.md` regerado.
+
+---
+
+## 2026-08-26 (noite) — O APERTO VIRA ESTEIRA: `1,00` passa a ocupar linha
+
+O Doug: *"faça com que este processo se torne parte da esteira, quando eu fizer novos
+cabelos. Como podemos deixar isso anotado e permanente?"*
+
+### A primeira trava que eu escrevi era VAZIA, e a bancada pegou
+
+Fiz `arte:par` reprovar cabelo ESTOURANDO o chapéu, com piso de um px de ranking
+(225 px neste quadro). Plantei o defeito — apaguei o `elvis` da tabela, simulando peça
+nova — e o gate **passou**.
+
+⚠️ **Ele media a zona errada.** O que o aperto conserta é cabelo mais largo que o
+chapéu **abaixo** da aba, e essa zona a régua classifica como *saindo por baixo*, que
+é legítima. A reprovação fica (é barata e fecha a zona de cima), mas ela **não**
+protege o aperto.
+
+### A segunda tentativa também caiu, e por medição
+
+Gate de contenção — *"o cabelo tem de caber na largura do chapéu"*. Medido nos 171
+pares com os apertos do Doug aplicados: **6 pares ainda passam**, de 7 a 27 u, todos
+no `bone` e na `touca-de-la`. O `dreadlocks` + `bone` passa **27 u e está aprovado**.
+Um gate de contenção reprovaria a decisão do dono.
+
+### O que trava de verdade: separar "não aperta" de "ninguém olhou"
+
+O buraco não era de medida, era de **vocabulário**. Até aqui `1,00` e *par nunca
+aberto* caíam na mesma ausência no `aperto.json` — então um cabelo novo entrava com
+nove pares em 1,00 e nada tinha como reprovar.
+
+| arquivo | o que ele é agora |
+|---|---|
+| `aperto.json` | **livro de DECISÕES** — uma linha por par do elenco, **inclusive as que valem 1** |
+| `apertos-da-arte.ts` | **catálogo** — só o que muda desenho; o `1` não atravessa, e é isso que mantém o SVG byte a byte |
+
+Com isso o gate fica exato, sem piso e sem limiar: **par sem linha reprova.** A régua
+não exige que o Doug aperte 171 peças — exige que ele tenha **olhado** as 171.
+
+**Provado na primeira rodada, e com peça real:** `verify:arte` **exit 1**, nomeando
+`burst-fade + bone` e `cachos-anjo + chapeu-de-palha` — os dois pares que ficaram de
+fora quando a tabela foi preenchida. Cabelo novo custa 9 pares; chapéu novo custa 19,
+e a mesma reprovação pega os dois.
+
+### Onde ficou escrito
+
+| lugar | o quê |
+|---|---|
+| **doc 19 §7b** (nova) | *"Vestir a peça — o cabelo se adapta ao chapéu, par a par"*: por que existe, por que não se deriva, a esteira em 5 passos, e as 4 reprovações |
+| doc 19 §7 item 7 | a promoção passa a apontar para a §7b |
+| `CLAUDE.md` | a linha do doc 19 diz que a §7b é o passo que fecha um cabelo novo |
+| skill `avatar-importar-arte` | seção nova depois da promoção |
+| `aperto-do-cabelo.ts` | a nota do `1` que ocupa linha, com o modo de falha que ela fecha |
+| `apertos.ts` | as duas travas, com o porquê de cada uma |
+
+⚠️ **As duas derivações que NÃO se deve tentar ficam escritas nos dois lugares**, com
+número: *largura do chapéu ÷ largura do cabelo* (o `elvis` fecha em 0,95 por UMA
+mecha; o `dreadlocks` pediria 0,85 e perde 57% do volume) e *"cabe dentro do chapéu"*
+(o Doug aprovou 27 u de folga negativa).
+
+### Gates
+
+`typecheck` **0** · `lint` **0 erros** · **1 115 testes** · `build` **exit 0** ·
+`verify:arte` **exit 1 — de propósito**, nos dois pares sem decisão.
+
+⚠️ O `verify:all` também bateu num `EAUTHQUERY — auth_query secret check timed out` do
+pooler do Supabase, em `verify:phase5`. **Transiente e alheio:** na segunda passada,
+`verify:phase5` exit 0. Fica anotado porque a cadeia para no primeiro erro e esconde
+os de trás — o `verify:arte` é o último da fila e não teria rodado.
+
+---
+
+## 2026-08-27 — A TABELA FECHA EM 171, e o gate abre
+
+O Doug preencheu no editor os dois pares que o gate acusou e **reapertou outros 32**.
+`aperto.json` chegou a **171 de 171 decididos**.
+
+| | |
+|---|---|
+| pares decididos | **171 de 171** |
+| decididos em `1,00` ("não precisa apertar") | 2 — `burst-fade` + `bone`, `cachos-anjo` + `chapeu-de-palha` |
+| valores mudados nesta rodada | **32**, todos para BAIXO |
+| linhas no catálogo | 169 (o `1` não atravessa) |
+
+O reaperto tem padrão, e ele diz o que o olho estava vendo: os 32 são quase todos
+peça LONGA ou de mecha solta — `rabo-baixo` (5 chapéus), `longo-unilateral` (6),
+`elvis` (5), `dreadlocks` (5), `pixie` (3). Os maiores saltos foram
+`pirata` + `elvis` (0,93 -> **0,86**) e `cowboy` + `rabo-baixo` (0,92 -> **0,87**).
+Nenhum par foi afrouxado.
+
+⚠️ **O gate abriu sozinho quando a decisão chegou** — não houve exceção, teto nem
+lista de dispensa. É o formato certo de trava para esta rota: ela cobra a decisão, e
+some assim que a decisão existe.
+
+### Gates
+
+`typecheck` **0** · `lint` **0 erros** · **1 115 testes em 48 arquivos** ·
+`verify:arte` **exit 0** · `verify:all` **exit 0** · `build` **exit 0** ·
+`next dev` recompilou limpo.
+
+---
+
+## 2026-08-27 — O SLOT `oculos` NASCE, e cinco peças entram nele
+
+Cinco artes do Doug, cinco aprovadas, **um slot novo no banco e no código**. O que o
+dia provou não é sobre óculos: é que a bifurcação da Regra Inviolável nº 4 cai dentro
+de um slot, e que duas famílias no mesmo slot é o mesmo que proibir a combinação delas.
+
+### O elenco fechado
+
+| slug | nome | raridade | massa | janelas | perímetro |
+|---|---|---|---|---|---|
+| `oculos-redondo-simples` | Óculos Redondo Simples | common | 26 796 px | 2 | 100,0% |
+| `oculos-escolar-simples` | Óculos Escolar Simples | rare | 20 962 px | 2 | 100,0% |
+| `oculos-quadrado-retro-rosa` | Quadrado Retrô Rosa | epic | 31 535 px | 2 | 100,0% |
+| `oculos-duplo-art-nouveau` | Duplo Art Nouveau | legendary | 31 255 px | 2 | 100,0% |
+| `oculos-aviator` | Aviator | epic | 26 733 px | 2 | 100,0% |
+
+Gate −1 nas cinco: **0/0 px** de deslocamento, escala **100,00%**, **0 ladrilho** de
+forma em rosto, corpo e sobrancelha. `arte:traco`: **0 px** do traço do boneco
+apagados nas cinco. `arte:perimetro`: **0,0% amputado** nas cinco.
+
+Tinta dentro da cápsula do olho, medida no raster: **0, 52, 1, 0 e 1 px** de 9 000. A
+`escolar-simples` é a maior e são 0,6%. Nenhuma tem lente assada.
+
+Uma sexta arte entrou e saiu: a terceira do lote era a das volutas com corrente, e o
+Doug a substituiu pelo `aviator` — *"aqui entrou, entrou no lugar"*. Foi ela que
+derrubou o piso do campo; ver o achado 3.
+
+### ACHADO 1 — a esteira raster assava a PELE DA BASE dentro dos aros
+
+`taparFurosCercados` tapa todo vão que não alcança a borda, porque *peça é figurinha,
+opaca por dentro*. Para toca, aba e túnica é a lei; **para o óculos é o contrário**: a
+peça É definida pelos dois vãos que ela cerca.
+
+| | com a regra | sem ela |
+|---|---|---|
+| máscara | 31 535 px | **53 478 px** |
+| furos tapados | 1 095 px | **23 038 px** |
+| cor dominante | `#040000` (o contorno) | **`#E6AB7A` — PELE** |
+| anel em volta dos olhos, opaco | 21,6% | **98,1%** |
+
+**O campo do slot NÃO resolve, e foi medido antes da segunda versão:** excluir
+`naCapsulaDoOlho` protege 38 × 83 u por olho e deixa o resto do vão ser assado — foi a
+primeira tentativa, e deu os 23 038 px.
+
+O conserto é `SlotDeArte.janela`: furo cercado que contém feição fica aberto INTEIRO.
+**Não é regra nova** — é a que a esteira TONAL já tinha (`janelasDeFeicao`, passo 2c),
+portada para o outro lado. Opcional, então traje e chapéu saem byte a byte iguais por
+construção. Controle negativo em `__tests__/vao-da-lente.test.ts`, dois braços: mesmo
+anel com e sem `janela`, e mesmo anel sobre o olho contra sobre a têmpora.
+
+### ACHADO 2 — `mascaraDaPeca` semeava só no ciano
+
+Uma das artes reprovou com **56 ladrilhos** de forma sobre arte intacta — a mensagem
+de *"o gerador redesenhou o boneco"* pela terceira vez, depois da `entrada-2` e da
+`rala`.
+
+A causa é a semente da busca em largura (`extrair.ts`): partia **só do ciano**. Isso
+serviu enquanto toda peça era MASSA com um fio em volta (o `assimetrico` tem uma cúpula
+inteira para semear). Aquela arte é **21 901 px de linha contra 1 863 de massa — 92%
+fio**: armação fina é quase toda contorno, e o aro que não encostava em ciano nunca era
+alcançado.
+
+Conserto: a **linha instrumental também semeia**. Ela é declaração, não inferência —
+existe desde 2026-08-22 para o gerador dizer *"esta linha é minha"*. Respingo medido em
+**zero** nos quatro geradores de peça promovida.
+
+### ACHADO 3 — o piso do campo cortava a CORRENTE, e eu li errado
+
+Os pixels recusados pelo campo estavam todos abaixo do queixo, e eu escrevi que eram
+*"ruído do gerador no tronco"*. **Errado.** O Doug: *"a corrente que desce do aro… eu
+quero que eles apareçam."* A régua que separa não é a ALTURA, é a CONECTIVIDADE —
+corrente encosta no aro, ruído não encosta em nada.
+
+Medido: 950 px ligados à peça na `duplo-art-nouveau` (as contas) e 4 818 px na arte
+substituída (a corrente). O piso desceu da base da CABEÇA (347,2) para o piso do TRAJE
+(658), que é teto já publicado em `noCampoDoTraje`. **Não deixou ruído entrar**, e não
+é sorte: quem segurava o solto sempre foi `extrairPorCampo`, que descarta componente
+com menos de 5% da maior.
+
+### ACHADO 4 — RÉGUA CEGA CONFIRMA AUSÊNCIA, e me pegou TRÊS vezes num dia
+
+O padrão é um só e é o mais caro do dia:
+
+| régua | alvo | o que devolveu | para que lado falhou |
+|---|---|---|---|
+| `information_schema.columns` | colunas de matview | **0 de 8** sobre matview correta | SEGURO — derrubou a migration |
+| `information_schema.role_table_grants` | grants de matview | **zero linhas** | **INSEGURO** — abriu leitura da matview a `anon` |
+| `sharp()` sobre o `.svg` | alfa da peça | **0 opacos no quadro inteiro** | quase reportei "sem lente" sobre peça não medida |
+
+`information_schema` segue o padrão SQL e **não cobre matview** (`relkind = 'm'`); o
+`sharp` **não desenha `<image>` data:webp** dentro de SVG. Nos dois casos o zero não é
+ausência, é cegueira.
+
+**A assimetria é o que importa:** medir uma PRESENÇA com régua cega dá erro visível;
+medir uma AUSÊNCIA dá falso *"está limpo"*. Antes de escrever "conferido" sobre uma
+ausência, rode a régua contra um caso onde a coisa EXISTE.
+
+O caso inseguro virou a migration `20260827180000`: cinco migrations anteriores que
+recriam `user_public_profiles` terminam com `REVOKE ALL ... FROM anon, authenticated,
+PUBLIC`, e a minha não terminou. Permissão de matview se mede em `pg_class.relacl` e
+`has_table_privilege`.
+
+### O slot novo — o que ele custou
+
+O Doug: *"óculos e barba não podem ser a mesma coisa. Eu preciso que dê para vestir a
+barba e o óculos, ao mesmo tempo."* **Slot é exclusivo por construção** — uma coluna em
+`users`, um slug —, então enquanto as duas famílias dividissem `rosto`, vestir uma
+tirava a outra.
+
+A alternativa (duas peças num slot) fura o modelo em todo lugar de uma vez: a coluna
+vira array, `equipar_peca` vira dois caminhos, o guarda-roupa perde a chave e as
+leituras devolvem lista onde devolvem valor.
+
+Quatro migrations, todas aplicadas: o slot (`160000`), as leituras (`170000`), o
+`REVOKE` de conserto (`180000`) e as cinco peças (`190000`). Mais o código: tipo
+`PecaDeOculos` com `cabeloPorCima?: never`, camada `oculos` entre o cabelo e o chapéu,
+gerador próprio (`arte:oculos`), prateleira própria (`public/items/oculos/`), e o grupo
+"Óculos" separado do "Rosto" no guarda-roupa.
+
+### Gates
+
+`typecheck` **0** · `lint` **0 erros** · **1 124 testes em 49 arquivos** ·
+`verify:arte` **exit 0** · `verify:catalogo-slots` **41 passed, 0 failed** ·
+`verify:perfil-publico` **35 passed, 0 failed** · `verify:estado` **exit 0** ·
+`build` **exit 0**.
+
+### O que fica em aberto
+
+1. **A LENTE.** Não existe. O `PEDIDO-OCULOS.md` §3 mantém a pendência: branco a 30%
+   foi medido e falha (o olho fica L77 fixo nas 8 peles, e na pele 8 fica mais claro
+   que o rosto). Agora ela pode ser decidida MEDINDO — as armações estão no lugar e os
+   vãos abertos nas cinco. Um véu que ESCURECE não tem esse defeito.
+2. **Duas observações de desenho que o Doug aprovou assim mesmo:** o `aviator` some a
+   32 px (fio claro sobre pele clara) e é o par mais próximo do `escolar-simples` em
+   forma; o pendente do `duplo-art-nouveau` lê como pontinhos soltos, não fio contínuo.
+3. **`rosto-sobre-cabelo` ficou sem peça.** A linha era do óculos. `PecaDeRosto`
+   continua com `cabeloPorCima: boolean` e a partição continua no compositor — apagar
+   os dois é decisão separada, que mexe na trava `never` do chapéu e do óculos.
+4. **As réguas de bancada não conhecem o slot.** `arte:perimetro` e vizinhas varrem
+   `chapeu-*.png` por `readdir`; o óculos só entra por argumento.

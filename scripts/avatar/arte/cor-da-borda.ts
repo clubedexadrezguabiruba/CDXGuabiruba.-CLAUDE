@@ -126,6 +126,7 @@ import sharp from "sharp";
 
 import { ESCALA, LADO, ORIGEM, PNG_BASE, paraUnidade } from "./base";
 import { NIVEL, PISO_COMPONENTE, componentes, cru, dilatar, lum } from "./traco-intacto";
+import { ARTES_PROMOVIDAS } from "./promovidas";
 
 /**
  * O teto da janela do cinza — o mesmo `LUM_APAGADO` do `arte:traco`.
@@ -307,13 +308,15 @@ export async function comQueixoEmCinza(arteBase: string, alturaU = 2, alvo = 70)
  * `arte:traco`, e ela é a mesma de propósito: as duas réguas julgam o mesmo traço em
  * faixas vizinhas do mesmo eixo, e listas que divergissem deixariam arte com um dono
  * e sem o outro.
+ *
+ * ⚠️ **DERIVADA desde 2026-08-24, e a troca veio de um defeito medido.** Ela era
+ * escrita à mão aqui e escrita à mão outra vez em `traco-intacto.ts`, e as duas
+ * cópias estavam defasadas: `moicano`, `assimetrico` e `burst-fade` foram promovidos
+ * em 2026-08-22 e nunca entraram em nenhuma das duas. As duas réguas julgavam **1 dos
+ * 4** cabelos do catálogo e diziam "aprovado". Ver `promovidas.ts` para o argumento
+ * inteiro e para o que as três mediram quando finalmente entraram.
  */
-const APROVADAS = [
-  "scripts/avatar/arte/barba-trancada.png",
-  "scripts/avatar/arte/chanel.png",
-  "scripts/avatar/arte/entrada.png",
-  "scripts/avatar/arte/entrada-2.png",
-];
+const APROVADAS = ARTES_PROMOVIDAS;
 
 const ARTE_DO_CONTROLE = "scripts/avatar/arte/chanel.png";
 
@@ -329,30 +332,25 @@ const ARTE_DO_CONTROLE = "scripts/avatar/arte/chanel.png";
  * É o mesmo desenho de `CONGELADAS_NO_VETOR` (`traje.ts`) e do ratchet de
  * `rpc-baseline.json`: uma decisão sobre UMA coisa, mecânica, com nome e número.
  *
- * `entrada.png` é a arte do cabelo **`espetado`**, e ele está em produção assim. O
- * gerador redesenhou um trecho do contorno do boneco em cinza lum ~70 no lado
- * esquerdo da cabeça (u x 349→385, y 189→271) — **9 296 px, o maior componente com
- * 3 945** —, indiferente ao raio da máscara de 2 a 8, o que prova que não é franja de
- * borda: está no meio do traço.
+ * ✅ **VAZIO desde 2026-08-24, e o defeito foi fechado pela porta larga.** A única
+ * entrada que existiu era `entrada.png`, a arte do cabelo `espetado`: o gerador
+ * redesenhara um trecho do contorno do boneco em cinza lum ~70 no lado esquerdo da
+ * cabeça (u x 349→385, y 189→271) — **9 296 px, o maior componente com 3 945** —, no
+ * meio do traço e não na franja de borda.
  *
- * **Consertar tem duas saídas defensáveis, e escolher é do Doug:**
+ * Ele ficou registrado de 2026-08-21 a 2026-08-24 esperando uma de duas saídas
+ * (repintar por programa, ou o Doug redesenhar e a peça reentrar pela rota). Nenhuma
+ * das duas aconteceu: ele **apagou o modelo**. Sem `espetado` no catálogo não há peça
+ * em produção com o defeito, e `entrada.png` saiu do repositório junto.
  *
- *  1. **repintar por programa** — os pixels são descritíveis em régua (núcleo preto
- *     na base, 40–180 na arte, fora da peça), então cabe no critério do G20, que
- *     separa restaurar de desenhar; é o mesmo gesto do passo 2 do `restaurar-peca`.
- *     Mas mexe numa peça JÁ PROMOVIDA: `pecas-da-arte.ts` seria regerado e o
- *     `espetado` mudaria em produção;
- *  2. **redesenhar** — o Doug repinta o trecho em preto puro sobre a arte, e a peça
- *     reentra pela rota.
- *
- * Enquanto ele não decidir, o número fica aqui, visível, e não cresce.
+ * ⚠️ **O mecanismo fica de pé, e é para isso que o registro continua existindo
+ * vazio.** Ele não é tolerância afrouxada: o piso (`LIMIAR_CINZA` 40,
+ * `PISO_COMPONENTE` 8) nunca se moveu — quem entra aqui é uma ARTE nomeada, com a
+ * medida dela escrita, e o gate reprova no instante em que essa medida **piorar**. É
+ * o mesmo desenho de `CONGELADAS_NO_VETOR` (`traje.ts`) e do ratchet de
+ * `rpc-baseline.json`: uma decisão sobre UMA coisa, mecânica, com nome e número.
  */
-const DEFEITO_REGISTRADO: Record<string, { maior: number; porque: string }> = {
-  "scripts/avatar/arte/entrada.png": {
-    maior: 3945,
-    porque: "o `espetado` em produção — traço em cinza lum ~70, achado em 2026-08-21",
-  },
-};
+const DEFEITO_REGISTRADO: Record<string, { maior: number; porque: string }> = {};
 
 const n1 = (v: number) => v.toFixed(0).padStart(5);
 const n2 = (v: number | null) => (v === null ? "   —" : v.toFixed(0).padStart(4));

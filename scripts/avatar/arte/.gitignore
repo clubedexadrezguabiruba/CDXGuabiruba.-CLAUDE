@@ -16,6 +16,16 @@
 # Pego em 2026-08-20, quando `franja-da-borda.test.ts` nasceu invisível.
 !__tests__/
 
+# ...E MENOS a oclusão, pelo mesmo motivo pelo qual as três artes ficam: ela é
+# DESENHO DO DOUG, não derivado. `oclusao/<slug>.png` é a mão dele corrigindo a
+# região que o chapéu esconde, e a esteira a lê como ENTRADA — igual ao `.png` da
+# peça. Fora do repositório ela sumiria no próximo clone e o `arte:chapeus` voltaria
+# a região para a proposta da máquina sem ninguém notar, que é a pior forma de
+# perder trabalho: silenciosa e verde.
+!oclusao/
+!oclusao/*.png
+!oclusao/LEIA-ME.md
+
 # Os artefatos soltos.
 folha.html
 folha.png

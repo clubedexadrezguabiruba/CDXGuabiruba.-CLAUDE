@@ -30,22 +30,27 @@
  * dominante — é o mesmo para todo slot, e é por isso que mora aqui e não lá.
  *
  * ---------------------------------------------------------------------------
- * O RECORTE É O `viewBox` INTEIRO, EM TODO SLOT — e isso é amarra
+ * O RECORTE É A `CAIXA_DA_ARTE` INTEIRA, EM TODO SLOT — e isso é amarra
  * ---------------------------------------------------------------------------
  *
- * `tintaTronco()` e o ramo novo de `sobrepor()` emitem `<image>` ocupando o
- * `viewBox` inteiro com `k = 1`. O recorte é `[ORIGEM, ORIGEM + VIEWBOX × ESCALA]`
- * = px 212→812 × 92→932, que mede 600 × 840 e é 5:7 cravado — a MESMA proporção.
- * `preserveAspectRatio` encaixa 1 : 1 sem sobra em nenhum eixo.
+ * `tintaTronco()` e o ramo novo de `sobrepor()` emitem `<image>` ocupando a
+ * `CAIXA_DA_ARTE` inteira com `k = 1`. O recorte é o mesmo retângulo em pixels —
+ * px 212→812 × 2→932, que mede 600 × 930 —, e `preserveAspectRatio` encaixa
+ * 1 : 1 sem sobra em nenhum eixo.
  *
  * **A colagem é conta, não ajuste**, e manter isso vale mais que economizar bytes
  * num slot: um recorte próprio por slot seria um segundo sistema de coordenadas
  * atravessando a rota, que é exatamente o que `base-tronco.ts` recusou em 2026-08-13.
+ * O recorte **cresceu**; o sistema continua sendo um só, e `RECORTE` deriva da caixa
+ * em vez de espelhá-la.
  *
- * ⚠️ **Consequência declarada, e ela decide o chapéu:** peça que suba acima de
- * `y = 0` sai **medida, não colada** — o `viewBox` não tem teto livre até a Frente B
- * (P5). O número que sobra é `caixaUnidades.y0`, negativo, e é justamente o teto que
- * o P5 espera medir em vez de chutar.
+ * ⚠️ **A caixa era o `viewBox`, e o parágrafo que ficava aqui dizia que peça acima
+ * de `y = 0` saía "medida, não colada", esperando a Frente B.** A medição de
+ * 2026-08-24 mostrou que o `viewBox` não era o gargalo: o quadro já mostrava 114,6
+ * unidades acima da coroa e a **colagem** só alcançava 39,5 — 12,6% de uma altura de
+ * cabeça, e é isso que não deixava chapéu existir. A caixa subiu para −75, o chapéu
+ * ganhou 3× de teto, e o `viewBox` não foi tocado. Ver `CAIXA_DA_ARTE`
+ * (`src/lib/avatar/estilo/geometria.ts`).
  */
 
 import { mkdirSync, writeFileSync } from "fs";
@@ -56,15 +61,23 @@ import sharp from "sharp";
 import { ColorMode, Hierarchical, PathSimplifyMode, vectorize } from "@neplex/vectorizer";
 
 import { prepararSvg } from "../estilo/vtracer";
-import { ESCALA, LADO, ORIGEM, PNG_BASE } from "./base";
+import { CAIXA_DA_ARTE } from "../../../src/lib/avatar/estilo/geometria";
+import { ESCALA, LADO, ORIGEM, PNG_BASE, paraUnidade } from "./base";
 import { type ExtracaoPorCampo, extrairPorCampo } from "./extrair";
 
-/** O recorte: o `viewBox` inteiro, em pixels da base de edição. Ver o topo. */
+/**
+ * O recorte: a `CAIXA_DA_ARTE` inteira, em pixels da base de edição. Ver o topo.
+ *
+ * **DERIVADO, nunca escrito.** A caixa mora em `geometria.ts` porque é o compositor
+ * quem cola; aqui ela só é convertida para pixel pela mesma `ESCALA`/`ORIGEM` que
+ * toda a rota usa. Os quatro números saem inteiros — x 212, y **2**, w 600, h **930**
+ * —, e é essa exatidão que decidiu o −75 lá (92 − 75 × 1,2 = 2).
+ */
 export const RECORTE = {
-  x: ORIGEM.x,
-  y: ORIGEM.y,
-  w: Math.round(500 * ESCALA),
-  h: Math.round(700 * ESCALA),
+  x: Math.round(ORIGEM.x + CAIXA_DA_ARTE.x * ESCALA),
+  y: Math.round(ORIGEM.y + CAIXA_DA_ARTE.y * ESCALA),
+  w: Math.round(CAIXA_DA_ARTE.w * ESCALA),
+  h: Math.round(CAIXA_DA_ARTE.h * ESCALA),
 } as const;
 
 /**
@@ -291,6 +304,44 @@ export interface SlotDeArte {
    * silêncio é o modo de falha que esta rota inteira existe para fechar.
    */
   campo: (x: number, y: number) => boolean;
+  /**
+   * O QUE UM FURO CERCADO PODE TER DENTRO PARA CONTINUAR ABERTO — e é o vão da lente.
+   *
+   * ---------------------------------------------------------------------------
+   * A ESTEIRA TONAL JÁ TINHA ESTA REGRA; A RASTER NÃO TINHA
+   * ---------------------------------------------------------------------------
+   *
+   * `taparFurosCercados` tapa todo vão que não alcança a borda, porque *peça é
+   * figurinha, opaca por dentro*. Isso é certo para toca, túnica e aba — e é
+   * **errado para óculos**, cuja peça é definida pelos dois vãos que ela cerca.
+   *
+   * Medido no primeiro óculos, em 2026-08-27, com o campo já excluindo a cápsula do
+   * olho e a espinha da boca:
+   *
+   * | | com a regra | sem ela |
+   * |---|---|---|
+   * | furos tapados | (o vão fica aberto) | **23 038 px** |
+   * | cor dominante da peça | a armação | **`#E6AB7A` — PELE** |
+   * | anel em volta dos olhos | aberto | **98,1% opaco** |
+   *
+   * O campo sozinho não basta, e o número acima é o porquê: a cápsula do olho tem
+   * 38 × 83 u e o vão da lente é muito maior que ela. Proteger a feição deixa o
+   * RESTO do vão ser assado — e o que é assado ali é a pele e o olho da base de
+   * edição, não a pele que o aluno escolheu. A peça chegaria ao produto com um
+   * retrato da base dentro de cada lente.
+   *
+   * A esteira que RECOLORE já resolvia isto desde 2026-08-22, e com esta mesma
+   * régua: `construirPecaTonal` conta `janelasDeFeicao` e deixa aberto o furo que
+   * contém feição (`barba-para-formas.ts`, passo 2c). O que entra aqui não é regra
+   * nova — é a mesma regra, do outro lado da bifurcação da Regra Inviolável nº 4.
+   *
+   * ⚠️ **Ela é OPCIONAL, e isso é o que a torna inerte para quem já foi aprovado.**
+   * Traje e chapéu não a declaram, então `taparFurosCercados` recebe `undefined` e
+   * roda o laço de sempre — nenhum byte dos `.svg` no ar pode mudar, e não por
+   * medição feita depois, e sim por construção. `arte:trajes --check` e
+   * `arte:chapeus --check` são a prova, e estão no `verify:arte`.
+   */
+  janela?: (x: number, y: number) => boolean;
 }
 
 /**
@@ -339,6 +390,22 @@ export interface Peca {
   pixels: number;
   /** Candidatos que diferiam da base mas caíram fora do campo do slot. */
   foraDoCampo: number;
+  /**
+   * Pixels de furo CERCADO que a esteira tapou com a tinta da própria arte.
+   *
+   * Não é erro nem é sempre zero: é o preço de a extração ser diferença contra a
+   * base. Ver `taparFurosCercados`. Alto (dezenas de milhares) quer dizer que a
+   * peça foi pintada numa cor perto da que estava atrás dela.
+   */
+  furosTapados: number;
+  /**
+   * Vãos que a peça cerca e deixou ABERTOS — a lente do óculos, e nada mais hoje.
+   *
+   * Sem `SlotDeArte.janela` ele é sempre 0, porque o tapa-furo não deixa vão nenhum
+   * de pé: é o valor certo para toca, aba e túnica, e é o valor que traje e chapéu
+   * medem. Para o óculos o esperado é **2**, e 0 ali quer dizer peça cega.
+   */
+  janelasAbertas: number;
   salpico: number;
   descartadas: number;
   foraDoRecorte: number;
@@ -384,6 +451,225 @@ export const slugDaArte = (caminhoArte: string): string =>
  */
 export type FormatoDaPeca = "vetor" | "raster";
 
+/**
+ * TAPAR FURO CERCADO — a peça é figurinha, e figurinha é opaca por dentro.
+ *
+ * ---------------------------------------------------------------------------
+ * O QUE É UM FURO CERCADO, E POR QUE ELE NUNCA É DESENHO
+ * ---------------------------------------------------------------------------
+ *
+ * A extração é *diferença contra a base*: entra na máscara o pixel que difere em
+ * mais de `NIVEL_TRAJE` = 24 níveis. Isso responde bem "onde a artista pintou?" e
+ * responde MAL uma pergunta específica — **e se ela pintou uma cor parecida com a
+ * que já estava lá?**
+ *
+ * O caso que abriu esta função, medido na `chapeu-toca-de-cozinha` em 2026-08-25:
+ *
+ * | | |
+ * |---|---|
+ * | a copa da toca, pintada | `rgb(240,245,249)` — branco |
+ * | o fundo da base, atrás dela | `rgb(251,248,245)` — bege |
+ * | diferença mediana | **11** — o corte é 24 |
+ *
+ * **40 238 px da copa — 34,2% da peça — não entraram na máscara.** Não porque a
+ * artista tenha deixado vão: porque branco sobre bege quase não difere. O `.svg`
+ * saiu vazado, e o vazamento era invisível só porque o fundo da PÁGINA é do mesmo
+ * bege. Renderizado sobre magenta, 22 905 px do casco continuavam magenta.
+ *
+ * A lei do projeto já resolvia isto e ninguém a tinha escrito em código: **peça é
+ * figurinha, opaca por dentro** — furo na silhueta é falha da esteira, não arte
+ * (`arte:figurinha` mede o mesmo defeito nas peças de cabelo e rosto).
+ *
+ * ---------------------------------------------------------------------------
+ * CERCADO É O ADJETIVO QUE FAZ ISTO SER MEDIDA E NÃO DESENHO
+ * ---------------------------------------------------------------------------
+ *
+ * Só é tapado o vazio que **não alcança a borda do canvas por caminho nenhum**. Um
+ * vão que se abre para fora — a fresta entre o braço e o tronco de uma túnica, o
+ * buraco do meio de uma rosquinha que encoste na borda — continua aberto, porque
+ * ele se comunica com o lado de fora e o algoritmo o vê como lado de fora.
+ *
+ * E a cor com que se tapa **não é inventada**: o laço de `construirPeca` pinta todo
+ * pixel de máscara com `tinta.aplicar(i)`, que lê a arte da artista naquele pixel.
+ * O que estava lá é o que sai. Tapar aqui é *reconhecer* tinta que a régua não viu,
+ * o mesmo gesto que o `restaurar-peca` faz do outro lado.
+ *
+ * ---------------------------------------------------------------------------
+ * O RESPINGO NAS PEÇAS APROVADAS, MEDIDO ANTES DE ACEITAR
+ * ---------------------------------------------------------------------------
+ *
+ * | peça | máscara | furo cercado | maior furo |
+ * |---|---|---|---|
+ * | `traje-farda` | 90 510 px | **196 px (0,2%)** | 101 px |
+ * | `traje-gambesao` | 113 538 px | **1 001 px (0,9%)** | 991 px |
+ * | `chapeu-toca-de-cozinha` | 77 249 px | **40 238 px (34,2%)** | 22 565 px |
+ *
+ * As duas aprovadas mudam, e mudam pouco: furo de menos de 1% em tamanho de
+ * alfinete é o mesmo ruído de reencode que a rota já persegue. **O respingo no
+ * render está medido em `ESTADO-DA-ROTA.md`** — a regra é medir antes de aceitar,
+ * nunca aceitar e medir depois.
+ *
+ * ⚠️ **Ele NÃO é silencioso.** O número volta em `Peca.furosTapados` e os P5
+ * imprimem. Descarte — e remendo — em silêncio é o modo de falha que esta rota
+ * inteira existe para fechar.
+ */
+export function taparFurosCercados(
+  mascara: Uint8Array,
+  w: number,
+  h: number,
+  noCampo: (i: number) => boolean,
+  /**
+   * O furo que contém isto fica ABERTO — o vão da lente. Ver `SlotDeArte.janela`.
+   *
+   * Ausente é o modo de sempre: o laço não muda de forma, e traje e chapéu saem byte
+   * a byte iguais. É o que faz esta regra nascer inerte para quem já foi aprovado.
+   */
+  janela?: (i: number) => boolean,
+): number {
+  // O lado de FORA: o vazio conexo à borda do canvas, por varredura em pilha.
+  const fora = new Uint8Array(mascara.length);
+  const pilha: number[] = [];
+  const empilhar = (i: number) => {
+    if (!mascara[i] && !fora[i]) {
+      fora[i] = 1;
+      pilha.push(i);
+    }
+  };
+  for (let x = 0; x < w; x++) {
+    empilhar(x);
+    empilhar((h - 1) * w + x);
+  }
+  for (let y = 0; y < h; y++) {
+    empilhar(y * w);
+    empilhar(y * w + w - 1);
+  }
+  while (pilha.length) {
+    const i = pilha.pop() as number;
+    const x = i % w;
+    const y = (i / w) | 0;
+    if (x > 0) empilhar(i - 1);
+    if (x < w - 1) empilhar(i + 1);
+    if (y > 0) empilhar(i - w);
+    if (y < h - 1) empilhar(i + w);
+  }
+
+  // O que sobrou — vazio que não é fora — é furo. O campo do slot continua
+  // mandando: tapar não é licença para a peça crescer para onde ela não pode ir.
+  //
+  // SEM `janela`, o laço é o de sempre e nada mais precisa ser dito.
+  if (!janela) {
+    let tapados = 0;
+    for (let i = 0; i < mascara.length; i++) {
+      if (mascara[i] || fora[i]) continue;
+      if (!noCampo(i)) continue;
+      mascara[i] = 1;
+      tapados++;
+    }
+    return tapados;
+  }
+
+  // COM `janela`, a pergunta passa a ser POR FURO e não por pixel: um vão que contém
+  // feição fica aberto INTEIRO. Perguntar por pixel deixaria a cápsula do olho aberta
+  // e o resto do vão da lente assado — foram os 23 038 px medidos no primeiro óculos.
+  const visto = new Uint8Array(mascara.length);
+  let tapados = 0;
+  for (let semente = 0; semente < mascara.length; semente++) {
+    if (mascara[semente] || fora[semente] || visto[semente]) continue;
+    visto[semente] = 1;
+    const furo: number[] = [];
+    const pilha2 = [semente];
+    let temJanela = false;
+    while (pilha2.length) {
+      const i = pilha2.pop() as number;
+      furo.push(i);
+      if (janela(i)) temJanela = true;
+      const x = i % w;
+      const y = (i / w) | 0;
+      for (const q of [
+        x > 0 ? i - 1 : -1,
+        x < w - 1 ? i + 1 : -1,
+        y > 0 ? i - w : -1,
+        y < h - 1 ? i + w : -1,
+      ])
+        if (q >= 0 && !mascara[q] && !fora[q] && !visto[q]) {
+          visto[q] = 1;
+          pilha2.push(q);
+        }
+    }
+    if (temJanela) continue;
+    for (const i of furo) {
+      if (!noCampo(i)) continue;
+      mascara[i] = 1;
+      tapados++;
+    }
+  }
+  return tapados;
+}
+
+/**
+ * QUANTOS VÃOS A PEÇA CERCA E DEIXOU ABERTOS — contados no RESULTADO, não no caminho.
+ *
+ * O número podia sair de dentro de `taparFurosCercados`, que já sabe quantos furos
+ * pulou. Sai daqui de propósito: ali ele seria a contagem do que o algoritmo *quis*
+ * fazer, e aqui é a contagem do que a máscara *ficou*. Quando as duas discordam, é a
+ * segunda que está certa — a lição de medir o render e não a arte.
+ *
+ * Para o óculos ele tem valor esperado: **2**, um por lente. Zero quer dizer peça
+ * cega, e é o defeito que `SlotDeArte.janela` existe para não deixar acontecer.
+ */
+export function janelasAbertas(mascara: Uint8Array, w: number, h: number): number {
+  const fora = new Uint8Array(mascara.length);
+  const pilha: number[] = [];
+  const empilhar = (i: number) => {
+    if (!mascara[i] && !fora[i]) {
+      fora[i] = 1;
+      pilha.push(i);
+    }
+  };
+  for (let x = 0; x < w; x++) {
+    empilhar(x);
+    empilhar((h - 1) * w + x);
+  }
+  for (let y = 0; y < h; y++) {
+    empilhar(y * w);
+    empilhar(y * w + w - 1);
+  }
+  while (pilha.length) {
+    const i = pilha.pop() as number;
+    const x = i % w;
+    const y = (i / w) | 0;
+    if (x > 0) empilhar(i - 1);
+    if (x < w - 1) empilhar(i + 1);
+    if (y > 0) empilhar(i - w);
+    if (y < h - 1) empilhar(i + w);
+  }
+
+  const visto = new Uint8Array(mascara.length);
+  let quantas = 0;
+  for (let semente = 0; semente < mascara.length; semente++) {
+    if (mascara[semente] || fora[semente] || visto[semente]) continue;
+    quantas++;
+    visto[semente] = 1;
+    const p = [semente];
+    while (p.length) {
+      const i = p.pop() as number;
+      const x = i % w;
+      const y = (i / w) | 0;
+      for (const q of [
+        x > 0 ? i - 1 : -1,
+        x < w - 1 ? i + 1 : -1,
+        y > 0 ? i - w : -1,
+        y < h - 1 ? i + w : -1,
+      ])
+        if (q >= 0 && !mascara[q] && !fora[q] && !visto[q]) {
+          visto[q] = 1;
+          p.push(q);
+        }
+    }
+  }
+  return quantas;
+}
+
 export async function construirPeca(
   caminhoArte: string,
   slot: SlotDeArte,
@@ -399,6 +685,19 @@ export async function construirPeca(
   }
 
   const e = await extrairPorCampo(caminhoArte, slot.campo);
+
+  // A peça é figurinha: furo cercado pela própria peça é falha da régua, não vão
+  // desenhado. Ver o docstring de `taparFurosCercados` — e o número volta em
+  // `furosTapados`, porque remendo em silêncio é tão ruim quanto descarte em
+  // silêncio.
+  const furosTapados = taparFurosCercados(e.mascara, LADO, LADO, (i) => {
+    const u = paraUnidade(i % LADO, Math.floor(i / LADO));
+    return slot.campo(u.x, u.y);
+  }, slot.janela && ((i) => {
+    const u = paraUnidade(i % LADO, Math.floor(i / LADO));
+    return slot.janela!(u.x, u.y);
+  }));
+  const janelas = janelasAbertas(e.mascara, LADO, LADO);
 
   // Sem fábrica, a tinta é a IDENTIDADE: a cor que sai é a que a artista pintou.
   const tinta: Tinta = fabricaDeTinta
@@ -504,6 +803,8 @@ export async function construirPeca(
     cor: hex(dominante),
     recolorida: tinta.declarada,
     pixels,
+    furosTapados,
+    janelasAbertas: janelas,
     foraDoCampo: e.foraDoCampo,
     salpico: e.salpico,
     descartadas: e.descartadas.length,

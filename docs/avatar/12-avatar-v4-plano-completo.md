@@ -87,7 +87,7 @@ invisíveis. Distribuídos pela pirâmide de raridade do D28.
 | **D25** | **Régua da patente** | **aulas concluídas**, não trilhas — 30 aulas → 7 tiers. Ver §9.1: só existem 2 trilhas, então a régua atual torna 5 dos 7 uniformes inalcançáveis |
 | **D26** | **Mérito × gosto** | separação **sem exceção**: uniforme, relíquia e itens de conquista são determinísticos e legíveis; cabelo, fundo, cor e pets comuns são sorteados e não significam nada. Hoje estão no mesmo pote |
 | **D27** | **Cor escolhida pelo aluno** | ~~cabelo e fundo~~ → **só pele e cabelo**. Ver a emenda abaixo |
-| **D28** | **Pirâmide de raridade** | 40% comum, 30% raro, 20% épico, **10% lendário**. Hoje é 19/20/20/**18** — um quarto do catálogo é lendário, então lendário não quer dizer nada |
+| **D28** | **Pirâmide de raridade** | ⛔ **SUPERADA pelos números** — a decisão (mais raro é mais raro) vale; a razão 40/30/20/10 não é a que o banco usa. Ver §9.4 |
 | **D29** | **Baú de escolha** | em marcos (trilha completa, tier de bots): a criança escolhe **1 entre 3**. Sem moeda e sem loja, transforma "torcer" em "decidir" |
 | **D30** | **Avatar em toda superfície social** | hoje aparece em **2 telas**, nenhuma social (§10). Passa a ser a identidade em navbar, ranking, mural e Companhia. **O avatar É a foto de perfil** — mesmo SVG, `viewBox` recortado na cabeça |
 
@@ -117,7 +117,7 @@ uma camada própria, `av-sobrancelha`, separada de `av-olho` por um corte medido
 | `palette.ts` | `PROPRIEDADES` encolheu para `--av-traco`, `--av-linha`, `--av-pele`, `--av-pele-s`, `--av-cabelo`, `--av-cabelo-s`. `camada` ficou **vazia** — nada mais é escopado por camada porque nada mais recolore |
 | `svgContrato.ts` | o gate passa a **reprovar** desenho que leia `--av-roupa`, `--av-fundo`, `--av-item-a/b`, `--av-detalhe`, `--av-calca`, `--av-sapato` ou `--av-raridade`. A decisão deixou de depender de disciplina |
 | Boneco base | o macacão leva `TRAJE_BASE.roupa` (**`#C9BFA8`**) assado. A paleta continua a fonte de verdade, só que lida na geração |
-| Migration (T2.1) | **`users.avatar_bg_color` não entra.** Sobram `avatar_skin`, `avatar_hair`, `avatar_hair_color` |
+| Migration (T2.1) | **`users.avatar_bg_color` não entra.** Sobram `avatar_skin`, `avatar_hair`, `avatar_hair_color` — ⛔ e `avatar_hair` virou **`avatar_cabelo`** em 2026-08-23, com FK para `avatar_catalogo(slug)`, quando o cabelo passou a ser peça de baú (doc 22 §5-E) |
 | `criar-personagem` (T2.10) | **três** escolhas, não quatro: tom de pele, modelo de cabelo, cor do cabelo |
 | §9.5 | perde um eixo. Fica 8 tons × 5 modelos × 8 cores de cabelo = **320 combinações** com 5 arquivos de cabelo |
 | `--av-raridade` | a moldura é `frame_ui` — CSS na camada z=10, fora do SVG (§2.3). Se um dia precisar entrar num desenho, é uma linha no contrato, e o gate vai exigir |
@@ -508,8 +508,16 @@ contradizer "nunca vender mérito".
 
 ## 9.4 Raridade não significava nada (D28)
 
-Distribuição atual: 19 comuns, 20 raros, 20 épicos, **18 lendários** — um quarto
-do catálogo é lendário. Reseed adota pirâmide: **40 / 30 / 20 / 10**.
+⛔ **SUPERADO nos números desde 2026-08-13, registrado em 2026-08-23.** A pirâmide
+que o banco sorteia é **45 / 30 / 18 / 7**, escrita em
+[`20260813160000_b6_bau_da_peca.sql:124-133`](../../supabase/migrations/20260813160000_b6_bau_da_peca.sql#L124-L133)
+e cobrada por `verify:chest-pool`. Os 40/30/20/10 abaixo nunca chegaram a existir
+no banco. **A decisão de D28 continua de pé** — raro tem de ser raro, e um quarto
+do catálogo lendário não é raridade; só a razão mudou. Doc 22 §2 é a fonte da
+pirâmide viva, e ela está **em revisão pelo Doug** (as contagens de arte vão variar).
+
+~~Distribuição atual: 19 comuns, 20 raros, 20 épicos, **18 lendários** — um quarto
+do catálogo é lendário. Reseed adota pirâmide: **40 / 30 / 20 / 10**.~~
 
 ## 9.5 Cor escolhível resolve o "todo mundo igual" (D27)
 

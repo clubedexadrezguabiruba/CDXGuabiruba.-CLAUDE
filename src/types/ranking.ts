@@ -5,7 +5,7 @@ export interface RankingEntry {
    * A identidade do avatar kokeshi, como as RPCs de ranking a devolvem desde o
    * Bloco 6 (`20260811140000_bloco6_identidade_nas_listas.sql`): índice de paleta
    * e slug, a mesma língua das colunas do Bloco C e a mesma que `<AvatarCabeca>`
-   * recebe. `avatar_hair` NULL é a careca — ausência de peça, não dado faltando.
+   * recebe. `avatar_cabelo` NULL é a careca — ausência de peça, não dado faltando.
    *
    * Saíram junto `avatar_config` (o cache de itens da pilha v2, cujos 69 itens o
    * Bloco B apagou) e `avatar_base`. **`avatar_base` fecha o achado G11**: ele
@@ -14,7 +14,7 @@ export interface RankingEntry {
    * `undefined` num campo que o tipo prometia `string`.
    */
   avatar_skin: number;
-  avatar_hair: string | null;
+  avatar_cabelo: string | null;
   avatar_hair_color: number;
   /**
    * As duas peças que o RECORTE DE CABEÇA mostra — `null` é ausência de peça.
@@ -34,6 +34,8 @@ export interface RankingEntry {
    */
   avatar_chapeu: string | null;
   avatar_rosto: string | null;
+  /** `users.avatar_oculos` — slot próprio desde 2026-08-27. Convive com a barba. */
+  avatar_oculos: string | null;
   level: number;
   metric_value: number;
   title: string;
@@ -66,14 +68,14 @@ export interface PublicProfileData {
   /**
    * A identidade do avatar kokeshi, como `get_public_profile` a devolve desde o
    * E.3: índice de paleta e slug, a mesma língua das colunas do Bloco C e a mesma
-   * que `<AvatarKokeshi>` recebe. `avatar_hair` NULL é a careca — ausência de
+   * que `<AvatarKokeshi>` recebe. `avatar_cabelo` NULL é a careca — ausência de
    * peça, não dado faltando.
    *
    * Saíram no E.3 `avatar_config`, `avatar_base` e `equipped_items`: os três da
    * pilha v2, e a RPC não os devolve mais.
    */
   avatar_skin: number;
-  avatar_hair: string | null;
+  avatar_cabelo: string | null;
   avatar_hair_color: number;
   /**
    * `users.avatar_traje` — o slug da peça equipada, `null` para o macacão de treino.
@@ -85,13 +87,32 @@ export interface PublicProfileData {
    * colega via o aluno de macacão porque o TypeScript jogava a farda fora na
    * fronteira, não porque o banco não a tivesse mandado.
    *
-   * Os outros três slugs da RPC (`chapeu`, `rosto`, `pet`) seguem de fora **de
-   * propósito**: entram quando alguma tela os desenhar. Eram quatro — `fundo` foi
-   * apagado em 2026-08-13, e a RPC não o devolve mais. A conferência 7
+   * Os outros slugs da RPC entram quando alguma tela os desenhar. A conferência 7
    * de `verify:perfil-publico` cobra este tipo a partir do que o próprio `/perfil`
-   * passa ao boneco, então o dia em que o chapéu chegar lá ela reprova aqui sozinha.
+   * passa ao boneco, então o dia em que uma peça nova chegar lá ela reprova aqui
+   * sozinha — **e foi exatamente o que aconteceu com o `rosto` em 2026-08-23**,
+   * quando a vitrine passou a vestir aquele slot. O gate reprovou com "o aluno se
+   * vê com a peça e aparece sem ela para os colegas", que é o único lugar onde a
+   * peça tem plateia.
+   *
+   * Sobra de fora `pet`, que ainda não tem arte. Eram mais dois: `fundo` foi apagado
+   * em 2026-08-13, e a RPC não o devolve; `chapeu` entrou em 2026-08-27, quando o
+   * slot ganhou vitrine e o `/perfil` passou a desenhá-lo no palco.
    */
   avatar_traje: string | null;
+  /** `users.avatar_rosto` — barba, bigode. `null` é rosto limpo. */
+  avatar_rosto: string | null;
+  /** `users.avatar_oculos` — slot próprio desde 2026-08-27. Convive com a barba. */
+  avatar_oculos: string | null;
+  /**
+   * `users.avatar_chapeu` — 9 peças, e elas só puderam ser vestidas em 2026-08-27.
+   *
+   * `get_public_profile` devolve esta coluna desde `20260827170000`; quem a perdia
+   * era o `as PublicProfileData` do `page.tsx`, exatamente como o G21 perdia o traje.
+   * A conferência 7 de `verify:perfil-publico` cobra este campo a partir do que o
+   * `/perfil` passa ao boneco — foi ela que reprovou quando o palco ganhou o chapéu.
+   */
+  avatar_chapeu: string | null;
   level: number;
   xp: number;
   puzzle_rating: number;

@@ -79,7 +79,7 @@ function encolher(pts: readonly PontoFranja[], k: number): PontoFranja[] {
 }
 
 const comNucleo = (extra: Partial<Cabelo> = {}): Cabelo => ({
-  id: "coque" as Cabelo["id"],
+  id: "chanel" as Cabelo["id"],
   nome: "fixture transcrita",
   massa: MASSA,
   nucleo: [encolher(MASSA, 0.86)],
@@ -108,6 +108,26 @@ describe("a peça transcrita emite quatro camadas de laços simples", () => {
     const iPretas = svg.lastIndexOf(`class="kk-tinta"`);
     expect(iClara).toBeGreaterThan(0);
     expect(iPretas).toBeGreaterThan(iClara);
+  });
+
+  it("a silhueta preta e o núcleo saem COLADOS — byte a byte", () => {
+    // ⚠️ VEIO DE `pecas-de-elenco.test.ts` EM 2026-08-23. Lá ela media uma peça
+    // REAL, e quebrou quando a `assimetrico` migrou para o tonal: a técnica antiga
+    // deixou de ter peça viva que a exercitasse. Aqui a fixture declara `nucleo`, e
+    // é o único lugar onde a partição existe para ser medida.
+    //
+    // O que ela protege: os selos byte a byte de `parametrico-congelado.ts`. Nada
+    // entra entre a silhueta preta e o núcleo colorido — um caractere a mais ali
+    // mata os selos de uma vez, com a causa longe do sintoma. Foi escrita em
+    // 2026-08-19, quando a peça saía partida em `{ fundo, frente }` e a barba
+    // entrava no meio; a partição caiu em 2026-08-20, e a linha fica porque é ela
+    // que reprova se alguém tentar de novo.
+    const svg = svgDe(comNucleo());
+    const iTinta = svg.indexOf(`<path class="kk-tinta"`);
+    expect(iTinta).toBeGreaterThan(-1);
+    expect(svg.indexOf(`<path class="kk-cabelo-m"`)).toBe(
+      iTinta + svg.slice(iTinta).indexOf("/>") + 2,
+    );
   });
 
   it("o núcleo multi-componente sai num `<path>` só, como subpaths", () => {
@@ -141,7 +161,7 @@ describe("a INÉRCIA: sem os campos novos, o caminho é o de hoje", () => {
    * byte, "congelado" seria promessa e não mecanismo.
    */
   const semNucleo: Cabelo = {
-    id: "coque" as Cabelo["id"],
+    id: "chanel" as Cabelo["id"],
     nome: "fixture sintetizada",
     massa: MASSA,
     clara: encolher(MASSA, 0.6),
@@ -196,7 +216,7 @@ describe("contencaoDoNucleo — e o controle negativo", () => {
       { t: 0.2, y: 140 },
     ];
     const c: Cabelo = {
-      id: "coque" as Cabelo["id"],
+      id: "chanel" as Cabelo["id"],
       nome: "entalhe",
       massa: entalhe,
       nucleo: [nucleoNosVertices],
@@ -206,11 +226,26 @@ describe("contencaoDoNucleo — e o controle negativo", () => {
 
   it("Infinity pelo caso NOMEADO, nunca por vacuidade", () => {
     // Peça traçada sem núcleo: o contorno dela é sintetizado, e não há o que vazar.
-    expect(contencaoDoNucleo({ id: "coque" as Cabelo["id"], nome: "x", massa: MASSA })).toBe(
+    expect(contencaoDoNucleo({ id: "chanel" as Cabelo["id"], nome: "x", massa: MASSA })).toBe(
       Infinity,
     );
     // Peça paramétrica: quem mede é `sombraSobreAFranja`.
-    expect(contencaoDoNucleo("coque")).toBe(Infinity);
+    //
+    // A fixture é sintética desde 2026-08-24, e a troca é obrigatória, não estilo: era
+    // `contencaoDoNucleo("coque")`, e o catálogo ficou SEM paramétrico quando o Doug
+    // apagou aquele modelo. Apontar para uma peça viva do catálogo mediria a família
+    // tonal com o nome de paramétrica — verde, e medindo outra coisa.
+    expect(
+      contencaoDoNucleo({
+        id: "chanel" as Cabelo["id"],
+        nome: "paramétrico (fixture)",
+        pontos: [
+          { t: -0.1, y: 200 },
+          { t: 0.5, y: 170 },
+          { t: 1.1, y: 200 },
+        ],
+      }),
+    ).toBe(Infinity);
   });
 });
 

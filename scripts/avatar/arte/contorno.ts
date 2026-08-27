@@ -128,7 +128,7 @@ export async function medirCandidato(caminhoArte: string): Promise<{
 }
 
 if (process.argv[1]?.endsWith("contorno.ts")) {
-  const arte = process.argv[2] ?? `${PASTA}/entrada.png`;
+  const arte = process.argv[2] ?? `${PASTA}/chanel.png`;
   medirCandidato(arte)
     .then(({ contorno: m }) => {
       console.log(`CANDIDATO A — CONTORNO DIRETO DA MÁSCARA\n`);

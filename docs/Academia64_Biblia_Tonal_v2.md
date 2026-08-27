@@ -165,25 +165,49 @@ eles pode ter vindo de qualquer parte e de qualquer tempo.
 
 ### O mapa da Academia
 
-São **lugares**, não etapas de marcha. Este mapa é um só, e é o mesmo usado pelo
-elenco de bots, pela landing, pelo catálogo de trajes e por qualquer arte futura.
-Ele **absorve** os corredores que o catálogo de trajes
-([`avatar/22-catalogo-de-pecas.md`](avatar/22-catalogo-de-pecas.md)) já usa — a
-Casa, as Oficinas, o Arquivo, a Estufa, a Cozinha, o Torneio, o Observatório, os
-Visitantes — e acrescenta os que faltavam.
+São **lugares**, não etapas de marcha. **Esta tabela é a lista única de lugares
+da Academia** — decisão D4 de 2026-08-22. O elenco de bots, a landing, o
+catálogo de peças e qualquer arte futura leem daqui; nenhum outro documento
+mantém uma lista própria. A coluna *corredor* é o nome da mesma coisa dentro do
+catálogo de peças ([`avatar/22-catalogo-de-pecas.md`](avatar/22-catalogo-de-pecas.md)),
+que aponta para cá.
 
-| lugar | função no mundo | sensação | serve a |
-|---|---|---|---|
-| **o Pátio** | chegada, encontro, primeiro jogo | acolhimento, barulho bom, começo | matrícula, primeiros bots, onboarding |
-| **as Salas de Treino** | onde se pratica o que se estudou | rotina, foco, repetição com propósito | trilhas do meio, prática contra o motor |
-| **as Oficinas** | onde se constrói e se conserta | mão na massa, engenhoca, tentativa | mini-jogos, ferramentas, experimentação |
-| **a Biblioteca** | onde o conhecimento está guardado | silêncio, altura, profundidade | teoria, aberturas, estudo pesado |
-| **a Estufa / os Jardins** | onde as coisas crescem devagar | paciência, verde, cuidado | revisão espaçada, sequência, progresso lento |
-| **a Cozinha** | o calor humano da Academia | informal, cheiro bom, conversa | humor, textos leves, comunidade |
-| **o Observatório** | onde se olha longe e se calcula | cálculo, noite, precisão | finais, cálculo profundo, análise |
-| **a Arena** | onde se prova o que se aprendeu | disputa, público, adrenalina | duelos, ranking, torneio |
-| **o Arquivo** | o que ainda não foi mostrado | mistério, descoberta, recompensa | conquistas raras, segredos, surpresas |
-| **os Visitantes** | quem vem de fora e passa uma temporada | estranheza boa, mundo maior | bots convidados, trajes de outras partes |
+| lugar | função no mundo | sensação | serve a | corredor |
+|---|---|---|---|---|
+| **o Pátio** | chegada, encontro, primeiro jogo | acolhimento, barulho bom, começo | matrícula, primeiros bots, onboarding | — |
+| **as Salas de Treino** | onde se pratica o que se estudou | rotina, foco, repetição com propósito | trilhas do meio, prática contra o motor | — |
+| **as Oficinas** | onde se constrói e se conserta | mão na massa, engenhoca, tentativa | mini-jogos, ferramentas, experimentação | as Oficinas |
+| **a Biblioteca** | onde o conhecimento está guardado | silêncio, altura, profundidade | teoria, aberturas, estudo pesado | — |
+| **os Jardins** | onde as coisas crescem devagar | paciência, verde, cuidado | revisão espaçada, sequência, progresso lento | os Jardins |
+| **a Cozinha** | o calor humano da Academia | informal, cheiro bom, conversa | humor, textos leves, comunidade | a Cozinha |
+| **o Observatório** | onde se olha longe e se calcula | cálculo, noite, precisão | finais, cálculo profundo, análise | o Observatório |
+| **o Torneio** | onde se prova o que se aprendeu | disputa, público, adrenalina | duelos, ranking, torneio | o Torneio |
+| **o Arquivo** | o que ainda não foi mostrado | mistério, descoberta, recompensa | conquistas raras, segredos, surpresas | o Arquivo |
+| **os Visitantes** | quem vem de fora e passa uma temporada | estranheza boa, mundo maior | bots convidados, peças de outras partes | os Visitantes |
+
+**Duas entradas que não são lugar, e por isso não estão na tabela:**
+
+- **a Casa** — existe só como corredor do catálogo, e quer dizer *a própria
+  Academia*: a peça que ela dá a quem entra (farda, gambesão, alamares). É
+  etiqueta de prateleira, **nunca gate**: não desbloqueia por nível, por título
+  nem por lugar visitado. A regra 4 do `CLAUDE.md` e a lei da moldura (doc 21
+  §0) continuam inteiras — só a moldura marca o título, e traje não presta
+  contas a degrau nenhum.
+- **os Visitantes** — está na tabela por conveniência, mas é gente, não lugar.
+  Anotado para ninguém "consertar" achando que falta um prédio.
+
+**O que mudou em 2026-08-22, e por quê:**
+
+- **"a Arena" virou "o Torneio"** (D1). A palavra *Arena* significava três
+  coisas ao mesmo tempo — lugar do mapa, ala ★★★★★ dos bots e **formato de aula**
+  do currículo, este último já gravado em títulos de aula no banco ("Arena: Caça
+  ao Mate em 1"). Duas Arenas com sentidos diferentes é confusão gratuita para
+  um aluno de 7 a 15 anos. O formato de aula fica com o nome; o lugar cede — e
+  cede para o nome que o catálogo de peças **já usava**, com a campeã da ala
+  sendo Ísis, *a Campeã do Torneio*. Decidido enquanto a migration dos bots
+  ainda era papel, quando o custo era editar documento em vez de mover dado.
+- **"a Estufa / os Jardins" virou "os Jardins"** (D5). Um lugar, um nome. E
+  *jardim* é palavra que toda criança de 7 anos já tem; *estufa*, não.
 
 **Regra de uso.** Lugar não ordena progresso. O aluno não "avança do Pátio para a
 Biblioteca" — ele frequenta a Academia inteira, e o que avança é o **título** que
@@ -194,7 +218,7 @@ onde as alas ordenam dificuldade por conveniência de tela.
 
 Só para a Sala de Duelos, em ordem crescente de dificuldade:
 
-**1 Pátio → 2 Salas de Treino → 3 Biblioteca → 4 Observatório → 5 Arena.**
+**1 Pátio → 2 Salas de Treino → 3 Biblioteca → 4 Observatório → 5 Torneio.**
 
 Isto substitui as 5 regiões da v1 (Acampamento dos Recrutas, Vila dos Soldados,
 Fortaleza dos Estrategistas, Cidade dos Generais, Cidadela dos Mestres), que estão
@@ -216,8 +240,8 @@ concessão. Muda o nome exibido:
 |---|---|---|---|---|
 | 0 | Aprendiz | **Calouro** | — | — |
 | 1 | Soldado | **Aprendiz** | `recruta` | Calouro |
-| 2 | Aspirante | **Estudante** | `soldado` | Aprendiz |
-| 3 | Capitão | **Analista** | `aspirante` | Estudante |
+| 2 | Aspirante | **Explorador** | `soldado` | Aprendiz |
+| 3 | Capitão | **Analista** | `aspirante` | Explorador |
 | 4 | Comandante | **Estrategista** | `capitao` | Analista |
 | 5 | General | **Mestre** | `comandante` | Estrategista |
 | 6 | Grão-Mestre | **Grão-Mestre** | `general` | Mestre |
@@ -236,6 +260,23 @@ palavras diferentes para o mesmo momento do aluno.
 **O que isto fecha.** O achado **D11** — `scripts/avatar/patentes.ts` chamava o
 tier 6 de "Mestre" e o banco chamava de "Grão-Mestre" — morre aqui: os dois
 passam a dizer **Grão-Mestre**, e o nome "Mestre" desce um degrau, para o tier 5.
+
+**Emenda de 2026-08-22 — o tier 2 deixa de ser "Estudante" e passa a ser
+"Explorador"** (decisão D2). O motivo é o teste do recreio, aplicado à faixa
+real do produto, 7 a 15 anos: era o único degrau que premiava a criança com o
+que ela já é — *"virei Estudante!"* não sobe o peito de ninguém. **Explorador**
+lê sozinho aos 7, carrega bem aos 15, e é o único nome da escada que serve os
+**25% de descoberta** da fórmula tonal: o aluno do degrau 2 é exatamente aquele
+que está abrindo as primeiras portas da Academia. Nada mais na escada muda —
+*Analista* foi examinado no mesmo dia e mantido, porque nenhum substituto medido
+ganhava com folga (*Candidato* fica estranho dois degraus antes de Mestre;
+*Calculista* é pejorativo em português), e trocar por trocar é churn.
+
+**A Lenda não aparece na vitrine, e isso é decisão, não esquecimento**
+(D7). A landing anuncia a escada como *"De Calouro a Grão-Mestre"* e para aí. O
+tier 7 **existe, é concedido e tem nome** — mas quem descobre é quem já está
+dentro. É a única promessa do produto que se cumpre sem ter sido feita, e mora
+no espírito do **Arquivo**: o que ainda não foi mostrado.
 
 **O que isto não decide.** O corte do tier 7, que
 [`avatar/17`](avatar/17-patentes-uniformes-design.md) propunha, **não** entra: é
@@ -270,7 +311,7 @@ bloco e feedback. Regra herdada e mantida: navegação prioriza clareza.
 | Review pós-jogo | Revisão de Batalha | **Revisão da Partida** |
 | Ranking | Quadro de Honra | **Quadro de Honra** *(fica)* |
 | Streak | Sequência de Campanha | **Sequência de Presença** |
-| Conquistas / badges | Insígnias | **Insígnias** *(fica)* |
+| Conquistas / badges | Insígnias | **Conquistas** *(emenda de 2026-08-22)* |
 | Itens equipáveis | Equipamentos | **Guarda-roupa** |
 | Turmas em ambientação | Companhias | **Turmas** |
 | Bots | Duelos da Campanha | **Sala de Duelos** |
@@ -318,8 +359,20 @@ Por que cada um dos que mudaram:
 Vivem apenas em: `docs/_superado/`, migrations já aplicadas, nomes internos de
 código e nomes de arquivo de doc antigo. **Nenhuma delas aparece em tela.**
 
-*Insígnia* **não** está banida — é palavra de academia e de escola, e é o nome
-oficial das conquistas. O que está banido é a insígnia militar como imagem.
+*Insígnia* **não** está banida, e continua não estando — é palavra de academia e
+de escola. O que está banido é a insígnia militar como imagem.
+
+**Emenda de 2026-08-22 (D6): o nome oficial passa a ser "Conquistas".** A v2
+tinha escolhido *Insígnias* e as duas palavras acabaram convivendo em tela para
+a mesma coisa. O desempate é a faixa do produto: *conquista* é palavra que um
+aluno de 7 anos já tem; *insígnia* é palavra que ele precisa aprender antes de
+entender o que ganhou. E o nome do prêmio não é lugar de ensinar vocabulário —
+a Academia tem 126 aulas para isso. *Insígnia* segue disponível como palavra de
+texto corrido; o **rótulo** é Conquistas.
+
+**Onde as Conquistas moram:** no **Arquivo**, como estante de troféus (D10) —
+ver §5. É a primeira mecânica que dá função ao lugar que a §5 descreve como "o
+que ainda não foi mostrado".
 
 ---
 
@@ -486,7 +539,7 @@ reprovam; nenhuma delas aprova.
 1. Cada bot tem identidade clara e fácil de lembrar — um traço, não uma biografia.
 2. O humor é leve e pontual, mais presente nas alas iniciais.
 3. Os bots avançados parecem **notáveis**, não aleatórios.
-4. A progressão visual dos bots acompanha a progressão do mundo: do Pátio à Arena.
+4. A progressão visual dos bots acompanha a progressão do mundo: do Pátio ao Torneio.
 5. **Um bot não precisa ser humano nem ser de época.** Coruja, autômato,
    criatura — tudo cabe, desde que **pertença à Academia**: seja aluno, professor,
    funcionário, visitante ou adversário convidado. O que amarra o elenco é o lugar
@@ -522,7 +575,7 @@ avisos, sabe onde parou e decide para onde ir.
 **Visual:** blocos bem organizados, leitura rápida, progresso visível sem excesso.
 
 **Copy:** "Bem-vindo de volta." · "Estas são suas Missões do Dia." · "Sua formação
-continua na trilha Estudante." · "Pronto para o próximo desafio?"
+continua na trilha Explorador." · "Pronto para o próximo desafio?"
 
 **Evitar:** épico demais para tarefa simples; metáfora em todo bloco; home
 dramática.
@@ -590,7 +643,7 @@ que veste.
 
 **Tom:** pessoal, prestigioso, claro, recompensador.
 
-**Copy:** "Seu registro de formação." · "Título atual." · "Insígnias conquistadas."
+**Copy:** "Seu registro de formação." · "Título atual." · "Suas conquistas."
 · "Guarda-roupa."
 
 **Evitar:** cosmético desconectado do progresso; recompensa sem hierarquia; RPG
@@ -630,6 +683,29 @@ Presença mantida." · "Marco de formação alcançado."
 
 **Evitar:** grind sem significado; linguagem agressiva na derrota; fantasia
 descolada do esforço real.
+
+**A lei do ritmo, e como ela se mostra (D11, 2026-08-22).** A progressão da
+Academia é **lenta de propósito** — o modelo é a escola de semestres, não o
+jogo de celular. A 2 aulas por semana, as 26 aulas da primeira trilha dão ~13
+semanas: **um semestre**. A escada inteira, 126 aulas, dá cerca de três anos de
+clube. Quem garante esse ritmo é `title_tiers.lessons_required` no acumulado do
+currículo (0 · 26 · 47 · 66 · 84 · 101 · 115 · 126), e a promoção vem de
+**concluir uma trilha**, nunca de somar aulas soltas.
+
+Ritmo lento cobra uma contrapartida na tela, e ela é regra:
+
+- **o destino é sempre nomeado** — o aluno sabe o tempo todo para qual título
+  está estudando ("Trilha Calouro · você estuda para Aprendiz");
+- **a contagem só aparece na reta final** — nas últimas aulas da trilha, nunca
+  no começo. "Faltam 26" não é meta para um aluno de 7; é muro;
+- **o fim da trilha é um momento nomeado** — a formatura do semestre, não um
+  contador que vira zero;
+- **nível e título são coisas diferentes, e o produto diz qual é qual**: nível
+  mede **presença** (você apareceu), título mede **formação** (você concluiu).
+
+O motivo, em uma frase: numa escola real de semestres ninguém esconde o
+calendário. Lento **e** invisível não é escola — é o aluno remando sem ver a
+margem, e o risco da progressão lenta nunca é pressa, é abandono.
 
 > **Regra técnica que atravessa todas:** recompensa só aparece **depois** de o
 > servidor conceder. Nunca animação otimista (`CLAUDE.md`, regra 1).

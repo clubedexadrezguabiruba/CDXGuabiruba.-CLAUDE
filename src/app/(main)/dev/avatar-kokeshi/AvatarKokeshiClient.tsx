@@ -15,8 +15,61 @@ import { compor } from "@/lib/avatar/estilo/compositor";
 import { AvatarKokeshi } from "@/components/avatar/AvatarKokeshi";
 import { CABELO, PELE } from "@/lib/avatar/palette";
 import { CABELOS, MODELOS_CABELO, type Cabelo, type ModeloCabelo } from "@/lib/avatar/estilo/cabelo";
-import { IDS_DA_ARTE, PECAS_DA_ARTE, type IdDaArte } from "@/lib/avatar/estilo/pecas-da-arte";
+import { IDS_DA_ARTE, PECAS_DA_ARTE } from "@/lib/avatar/estilo/pecas-da-arte";
+import { CABELOS_DA_ARTE } from "@/lib/avatar/estilo/cabelos-da-arte";
+import { CHAPEUS, OCULOS, ROSTOS } from "@/lib/avatar/catalogo";
 import { SANGRIA, TRACO, VIEWBOX } from "@/lib/avatar/estilo/geometria";
+
+/**
+ * AS PEÇAS TRAÇADAS, ALARGADAS PARA `string` — e o alargamento é por catálogo VAZIO.
+ *
+ * `IdDaArte` é `keyof typeof PECAS_DA_ARTE`, e desde 2026-08-24 esse literal não tem
+ * nenhuma chave: o `entrada` (espetado) saiu quando o Doug apagou o modelo, e o
+ * `entrada-2` já tinha saído na promoção do `assimetrico`. `keyof {}` é `never`, e
+ * `never` faz o seletor abaixo não compilar — por vazio, não por defeito.
+ *
+ * A alternativa era apagar o seletor. Ele fica: a esteira traçada continua de pé
+ * (`arte:pecas`, com `--check` em `verify:arte`), e no dia em que uma arte voltar a
+ * precisar dela a oficina já sabe mostrar. Com o catálogo cheio de novo, as duas
+ * linhas abaixo continuam corretas — só param de ser necessárias.
+ */
+const PECAS_TRACADAS = PECAS_DA_ARTE as Record<string, Cabelo>;
+const IDS_TRACADOS = IDS_DA_ARTE as readonly string[];
+
+/** Os slugs do slot `rosto` que existem hoje. Vazio até a primeira peça entrar. */
+const SLUGS_DE_ROSTO = Object.keys(ROSTOS);
+
+/**
+ * Os slugs do slot `oculos` — SLOT PRÓPRIO desde 2026-08-27.
+ *
+ * Ele nasceu dentro de `ROSTOS`, e por um dia barba e óculos foram a mesma escolha:
+ * clicar num tirava o outro, porque slot é exclusivo. O Doug: *"óculos e barba não
+ * podem ser a mesma coisa. Eu preciso que dê para vestir a barba e o óculos, ao mesmo
+ * tempo."* São dois seletores porque são dois slots.
+ */
+const SLUGS_DE_OCULOS = Object.keys(OCULOS);
+
+/**
+ * Os slugs do slot `chapeu`. Vazio até a primeira arte de chapéu entrar na esteira.
+ *
+ * O seletor inteiro some quando a lista é vazia, como o do rosto — um seletor com
+ * zero botões é ruído que ensina que o slot não funciona.
+ */
+const SLUGS_DE_CHAPEU = Object.keys(CHAPEUS);
+
+/**
+ * AS PEÇAS TONAIS DA ARTE — as que atravessaram a esteira, promovidas ou não.
+ *
+ * Elas precisam de seletor próprio pelo mesmo motivo das traçadas: uma arte que
+ * ainda não tem parecer do Doug não está em `CABELOS` e não tem `id` de catálogo,
+ * então não há como escolhê-la pelo seletor de cima. É o passo 9 da esteira
+ * (doc 19 §2) — o parecer acontece AQUI, antes da promoção, não depois.
+ *
+ * Quem já foi promovida aparece nos dois seletores, e isso é de propósito: o botão
+ * do catálogo e o botão daqui desenham o mesmo objeto, então divergência entre eles
+ * seria defeito visível.
+ */
+const CHAVES_TONAIS = Object.keys(CABELOS_DA_ARTE);
 
 /** Os quatro tamanhos do `SIZE_CONFIG`. 56 é o do ranking e é o que manda. */
 const TAMANHOS = [
@@ -43,6 +96,9 @@ function Boneco({
   pele,
   cabelo,
   modelo,
+  rosto,
+  oculos,
+  chapeu,
   h,
   animado,
   ns,
@@ -51,11 +107,17 @@ function Boneco({
   cabelo: string;
   /** Modelo do catálogo, peça traçada da arte, ou `undefined` para careca. */
   modelo: ModeloCabelo | Cabelo | undefined;
+  /** A peça do slot `rosto` — barba, bigode —, ou `undefined` para nenhuma. */
+  rosto?: Parameters<typeof compor>[0]["rosto"];
+  /** A peça do slot `oculos`. SLOT PRÓPRIO: convive com o `rosto`, não o substitui. */
+  oculos?: Parameters<typeof compor>[0]["oculos"];
+  /** A peça do slot `chapeu`, ou `undefined` para cabeça descoberta. */
+  chapeu?: Parameters<typeof compor>[0]["chapeu"];
   h: number;
   animado: boolean;
   ns: string;
 }) {
-  const svg = compor({ pele, cabelo, modeloCabelo: modelo, animado, ns })
+  const svg = compor({ pele, cabelo, modeloCabelo: modelo, rosto, oculos, chapeu, animado, ns })
     .replace("<svg ", `<svg width="${Math.round((h * VIEWBOX.w) / VIEWBOX.h)}" height="${h}" `);
   return <span dangerouslySetInnerHTML={{ __html: svg }} />;
 }
@@ -63,10 +125,11 @@ function Boneco({
 export default function AvatarKokeshiClient() {
   const [pele, setPele] = useState<string>(PELE[2]);
   const [cabelo, setCabelo] = useState<string>(CABELO[0]);
-  // `curto` é o padrão porque é o padrão do `criar-personagem` (D5): ninguém
-  // aparece careca. A opção "careca" fica no seletor como controle — é a base do
-  // Bloco 1d, e é contra ela que se vê o que o cabelo acrescenta.
-  const [modelo, setModelo] = useState<ModeloCabelo | undefined>("coque");
+  // Abre numa peça VIVA, e a escolha migrou duas vezes com o elenco: era `curto`
+  // (apagado em 2026-08-08), depois `coque` (apagado em 2026-08-24). Hoje é o
+  // `chanel`, a primeira peça tonal aprovada. A opção "careca" fica no seletor como
+  // controle — é a base do Bloco 1d, e é contra ela que se vê o que o cabelo põe.
+  const [modelo, setModelo] = useState<ModeloCabelo | undefined>("chanel");
   /**
    * A peça TRAÇADA da arte, quando há uma escolhida. Ela vence o `modelo`.
    *
@@ -77,8 +140,51 @@ export default function AvatarKokeshiClient() {
    * e `id` falso em catálogo é exatamente o defeito que a rota já pegou quando três
    * artes diferentes se diziam `"curto"`.
    */
-  const [daArte, setDaArte] = useState<IdDaArte | undefined>(undefined);
-  const peca = daArte ? (PECAS_DA_ARTE[daArte] as Cabelo) : modelo;
+  const [daArte, setDaArte] = useState<string | undefined>(undefined);
+  /**
+   * A peça TONAL da arte, por chave. Terceiro estado pelo mesmo motivo do segundo:
+   * ela é um `Cabelo` inteiro sem `id` de catálogo enquanto não for promovida.
+   *
+   * A ordem de precedência é tonal → traçada → catálogo, e os três seletores se
+   * limpam entre si: dois botões acesos ao mesmo tempo fariam a página mostrar uma
+   * peça e o botão dizer outra, que é o defeito nº 1 desta rota.
+   */
+  const [tonal, setTonal] = useState<string | undefined>(undefined);
+  const peca = tonal
+    ? CABELOS_DA_ARTE[tonal]
+    : daArte
+      ? PECAS_TRACADAS[daArte]
+      : modelo;
+  /**
+   * A peça do slot `rosto`, por slug. Ela é escolhida à parte do cabelo porque é
+   * outro slot: no produto o aluno veste as duas ao mesmo tempo, e é justamente
+   * o par que precisa ser olhado — a barba recolore com o cabelo (D17), então
+   * cabelo escuro e barba escura podem fundir numa massa só a 56 px.
+   */
+  const [barba, setBarba] = useState<string | undefined>(undefined);
+  const rosto = barba ? ROSTOS[barba] : undefined;
+  /**
+   * A peça do slot `oculos`, por slug — e ela é ESTADO SEPARADO do rosto de propósito.
+   *
+   * Enquanto óculos e barba dividiam o slot `rosto`, este era o mesmo `useState`: um
+   * clique tirava o outro, e não havia como ver os dois. Dois estados é o que faz a
+   * combinação existir na tela, que é o que o Doug pediu em 2026-08-27.
+   */
+  const [oculos, setOculos] = useState<string | undefined>(undefined);
+  const pecaOculos = oculos ? OCULOS[oculos] : undefined;
+  /**
+   * A peça do slot `chapeu`, por slug — e ela é o par que mais precisa ser visto
+   * junto com o cabelo, não com o rosto: os dois disputam o crânio. Desde
+   * 2026-08-25 a regra fina existe e é uma LINHA medida (`escondeCabelo`), extraída
+   * do alfa da própria arte: abaixo dela o cabelo sai, acima dela o chapéu contém.
+   *
+   * Alternar cabelo com o chapéu posto continua sendo como se olha o resultado — e
+   * é aqui que se vê o custo que a régua conta e não reprova: um `moicano` debaixo
+   * de qualquer chapéu do elenco some inteiro, porque a peça toda mora acima da
+   * aba. `npm run arte:par` dá a tabela dos 171 pares.
+   */
+  const [chapeuSlug, setChapeuSlug] = useState<string | undefined>(undefined);
+  const chapeu = chapeuSlug ? CHAPEUS[chapeuSlug] : undefined;
   const [animado, setAnimado] = useState(true);
   const [fundo, setFundo] = useState<string>("#EFEAE2");
 
@@ -140,9 +246,10 @@ export default function AvatarKokeshiClient() {
               onClick={() => {
                 setModelo(m);
                 setDaArte(undefined);
+                setTonal(undefined);
               }}
               className={`rounded border px-2 py-1 text-xs ${
-                m === modelo && !daArte
+                m === modelo && !daArte && !tonal
                   ? "border-zinc-900 bg-zinc-900 text-white"
                   : "border-zinc-300 text-zinc-600"
               }`}
@@ -158,21 +265,123 @@ export default function AvatarKokeshiClient() {
         */}
         <div className="flex items-center gap-1">
           <span className="text-zinc-500">da arte:</span>
-          {IDS_DA_ARTE.map((id) => (
+          {IDS_TRACADOS.map((id) => (
             <button
               key={id}
               type="button"
-              onClick={() => setDaArte(daArte === id ? undefined : id)}
+              onClick={() => {
+                setTonal(undefined);
+                setDaArte(daArte === id ? undefined : id);
+              }}
               className={`rounded border px-2 py-1 text-xs ${
                 daArte === id
                   ? "border-amber-600 bg-amber-600 text-white"
                   : "border-amber-400 text-amber-700"
               }`}
             >
-              {PECAS_DA_ARTE[id].nome}
+              {PECAS_TRACADAS[id].nome}
             </button>
           ))}
         </div>
+        {/*
+          AS PEÇAS TONAIS DA ARTE — silhueta em vetor + máscara de luminosidade.
+          Seletor separado do traçado porque são famílias diferentes, e separado do
+          catálogo porque estar aqui NÃO é estar promovido. Ver `CHAVES_TONAIS`.
+        */}
+        {CHAVES_TONAIS.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">tonal:</span>
+            {CHAVES_TONAIS.map((chave) => (
+              <button
+                key={chave}
+                type="button"
+                onClick={() => {
+                  setDaArte(undefined);
+                  setTonal(tonal === chave ? undefined : chave);
+                }}
+                className={`rounded border px-2 py-1 text-xs ${
+                  tonal === chave
+                    ? "border-violet-600 bg-violet-600 text-white"
+                    : "border-violet-400 text-violet-700"
+                }`}
+              >
+                {CABELOS_DA_ARTE[chave].nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/*
+          O SLOT `rosto` — outro slot, outro seletor. Ele fica ao lado do cabelo
+          porque o par é o que precisa ser conferido: a barba recolore junto com o
+          cabelo (D17), então a única coisa que separa uma da outro é a silhueta.
+        */}
+        {SLUGS_DE_ROSTO.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">rosto:</span>
+            {SLUGS_DE_ROSTO.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                onClick={() => setBarba(barba === slug ? undefined : slug)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  barba === slug
+                    ? "border-emerald-700 bg-emerald-700 text-white"
+                    : "border-emerald-500 text-emerald-700"
+                }`}
+              >
+                {ROSTOS[slug].nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/*
+          O SLOT `oculos` — ao lado do de rosto de propósito, porque o par é o que
+          precisa ser conferido: os dois vestem a cara ao mesmo tempo, e é vendo os
+          dois ligados que se julga se a armação briga com a barba.
+        */}
+        {SLUGS_DE_OCULOS.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">óculos:</span>
+            {SLUGS_DE_OCULOS.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                onClick={() => setOculos(oculos === slug ? undefined : slug)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  oculos === slug
+                    ? "border-sky-700 bg-sky-700 text-white"
+                    : "border-sky-500 text-sky-700"
+                }`}
+              >
+                {OCULOS[slug].nome}
+              </button>
+            ))}
+          </div>
+        )}
+        {/*
+          O SLOT `chapeu` — o segundo slot de cor assada, e o que estreou o teto novo.
+          Até 2026-08-24 uma peça de arte só alcançava 39,5 unidades acima da coroa
+          e não havia chapéu que coubesse; hoje são 114,5 (`CAIXA_DA_ARTE`).
+        */}
+        {SLUGS_DE_CHAPEU.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-500">chapéu:</span>
+            {SLUGS_DE_CHAPEU.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                onClick={() => setChapeuSlug(chapeuSlug === slug ? undefined : slug)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  chapeuSlug === slug
+                    ? "border-sky-700 bg-sky-700 text-white"
+                    : "border-sky-500 text-sky-700"
+                }`}
+              >
+                {CHAPEUS[slug].nome}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-1">
           <span className="text-zinc-500">fundo:</span>
           {["#EFEAE2", "#FF00FF", "#1B1B1F", "#FFFFFF"].map((f) => (
@@ -206,6 +415,9 @@ export default function AvatarKokeshiClient() {
               pele={pele}
               cabelo={cabelo}
               modelo={peca}
+              rosto={rosto}
+              oculos={pecaOculos}
+            chapeu={chapeu}
               h={t.h}
               animado={animado}
               ns={`kk-${t.h}`}
@@ -230,18 +442,18 @@ export default function AvatarKokeshiClient() {
         massa com cabelo dos dois lados.
       </p>
       <div className="mt-2 flex flex-wrap items-end gap-6 rounded-lg p-4" style={{ background: fundo }}>
-        {IDS_DA_ARTE.map((id) => (
+        {IDS_TRACADOS.map((id) => (
           <figure key={id} className="m-0 text-center">
             <Boneco
               pele={pele}
               cabelo={cabelo}
-              modelo={PECAS_DA_ARTE[id] as Cabelo}
+              modelo={PECAS_TRACADAS[id] as Cabelo}
               h={280}
               animado={animado}
               ns={`kka-${id}`}
             />
             <figcaption className="mt-1 text-[10px] text-zinc-500">
-              {PECAS_DA_ARTE[id].nome}
+              {PECAS_TRACADAS[id].nome}
               <span className="block text-[9px] text-zinc-400">{id}.png</span>
             </figcaption>
           </figure>
@@ -250,13 +462,13 @@ export default function AvatarKokeshiClient() {
           <Boneco
             pele={pele}
             cabelo={cabelo}
-            modelo="coque"
+            modelo="chanel"
             h={280}
             animado={animado}
             ns="kka-controle"
           />
           <figcaption className="mt-1 text-[10px] text-zinc-500">
-            {CABELOS.coque.nome}
+            {CABELOS.chanel.nome}
             <span className="block text-[9px] text-zinc-400">controle aprovado</span>
           </figcaption>
         </figure>
@@ -264,18 +476,31 @@ export default function AvatarKokeshiClient() {
 
       {/* As mesmas quatro a 56 px, que é o tamanho que manda. */}
       <div className="mt-2 flex flex-wrap items-end gap-4 rounded-lg p-3" style={{ background: fundo }}>
-        {IDS_DA_ARTE.map((id) => (
+        {IDS_TRACADOS.map((id) => (
           <Boneco
             key={id}
             pele={pele}
             cabelo={cabelo}
-            modelo={PECAS_DA_ARTE[id] as Cabelo}
+            modelo={PECAS_TRACADAS[id] as Cabelo}
+            rosto={rosto}
+            oculos={pecaOculos}
+            chapeu={chapeu}
             h={56}
             animado={false}
             ns={`kkp-${id}`}
           />
         ))}
-        <Boneco pele={pele} cabelo={cabelo} modelo="coque" h={56} animado={false} ns="kkp-c" />
+        <Boneco
+          pele={pele}
+          cabelo={cabelo}
+          modelo="chanel"
+          rosto={rosto}
+          oculos={pecaOculos}
+            chapeu={chapeu}
+          h={56}
+          animado={false}
+          ns="kkp-c"
+        />
         <span className="self-center text-[10px] text-zinc-500">
           ← 56 px, o tamanho do ranking
         </span>
@@ -313,6 +538,9 @@ export default function AvatarKokeshiClient() {
             skin={i % PELE.length}
             hair={MODELOS_CABELO[i % MODELOS_CABELO.length]}
             hairColor={i % CABELO.length}
+            // O slot `rosto` entra aqui pelo SLUG, como o banco o guarda — é a
+            // tradução do componente sendo exercitada, igual aos índices acima.
+            rosto={barba ?? null}
             altura={78}
             animado={animado}
             ns={`kkr-${i}`}

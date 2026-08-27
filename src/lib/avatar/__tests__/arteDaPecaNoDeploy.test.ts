@@ -24,6 +24,7 @@ import { execFileSync } from "child_process";
 import { existsSync } from "fs";
 import { describe, expect, it } from "vitest";
 
+import { CABELOS_DA_ARTE } from "../estilo/cabelos-da-arte";
 import { ROSTOS_DA_ARTE } from "../estilo/rostos-da-arte";
 import { TRAJES_DA_ARTE } from "../estilo/trajes-da-arte";
 
@@ -46,6 +47,19 @@ import { TRAJES_DA_ARTE } from "../estilo/trajes-da-arte";
 const ARTES = [
   ...Object.values(TRAJES_DA_ARTE).map((t) => t.tinta.arte),
   ...Object.values(ROSTOS_DA_ARTE).map((r) => r.tom?.arte),
+  // O SLOT `cabelo` ENTROU EM 2026-08-22, e hoje ele contribui ZERO caminhos.
+  //
+  // `CABELOS_DA_ARTE` nasce vazio de propósito — o elenco é refeito arte a arte, com
+  // parecer do Doug entre uma e outra. Ligá-lo aqui **antes** de haver peça é o que
+  // faz a primeira promoção já nascer coberta: o gate não depende de alguém lembrar
+  // de plugar o slot no dia em que a peça entrar. É o mesmo raciocínio da linha de
+  // não-vacuidade logo abaixo, pelo lado contrário.
+  //
+  // O modo de falha é o mesmo das outras duas famílias, e no cabelo ele é pior: sem
+  // a máscara, `var(--av-cabelo)` cede por inteiro e sobra `var(--av-linha)` — o
+  // aluno escolhe loiro e o boneco aparece de cabelo PRETO, em produção, com todos
+  // os gates verdes.
+  ...Object.values(CABELOS_DA_ARTE).map((c) => c.tonal?.tom.arte),
 ]
   .filter((p): p is string => !!p)
   .map((url) => `public${url}`);

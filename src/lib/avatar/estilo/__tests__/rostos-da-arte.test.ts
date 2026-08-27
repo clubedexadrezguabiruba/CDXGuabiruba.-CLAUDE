@@ -200,6 +200,17 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
     //             de arte, doc 23). Duas cópias de um `d` de 7 400 B, mais 16 516 B
     //             de máscara. A peça é maior — 54 264 px contra 38 505 —, e é dela
     //             que o doc 23 cita toda régua.
+    //   14 656 B  2026-08-22, a ARTE v10 entra na esteira (wip 41bef8f, NÃO
+    //             aprovada) com 92 831 px e máscara de 26 231 B. O wip deixou este
+    //             selo para trás — a suíte estava vermelha no HEAD, e fica
+    //             registrado aqui que foi descuido, não decisão.
+    //   12 040 B  2026-08-22, a FIGURINHA (passo 2c de `barba-para-formas.ts`):
+    //             furo sem feição dentro é preenchido — fio preto pintado sobre o
+    //             traço preto da base ficava fora da máscara e virava furo, e pelo
+    //             furo o maxilar do boneco aparecia DENTRO da barba. A v10 cai de
+    //             6 subcaminhos para 2 (o contorno + a janela da boca), o `d`
+    //             encolhe, e a máscara vai a 26 246 B porque os furos preenchidos
+    //             agora carregam tom. O gate é `figurinha.test.ts`.
     //
     // O `d` caiu 6,6% na `cheia` e a peça ganhou o PNG, que é o preço do tom e está
     // pago com os olhos abertos: a arte tinha 917 tons e chegava ao boneco com dois.
@@ -210,9 +221,9 @@ describe("os `d` traçados — o que a conversão px → unidade pressupõe", ()
     // externo, porque o boneco composto passa da janela de 32.768 B do DEFLATE. Ver
     // `TomDaPeca` (`tipos.ts`). No SVG, a máscara custa hoje 38 bytes de caminho.
     const bytes = ROSTOS_DA_ARTE[SLUG].formas!.reduce((a, f) => a + f.d.length, 0);
-    expect(bytes, "os `d` das duas formas").toBe(14800);
+    expect(bytes, "os `d` das duas formas").toBe(12040);
     expect(readFileSync(`public${ROSTOS_DA_ARTE[SLUG].tom!.arte}`), "o PNG da máscara").toHaveLength(
-      16516,
+      26246,
     );
   });
 });

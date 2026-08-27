@@ -338,7 +338,7 @@ export default function PuzzleRushPage() {
           className="mb-4 flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700"
         >
           <ArrowLeft className="h-4 w-4" />
-          Puzzles
+          Desafios
         </Link>
 
         <div className="mx-auto max-w-md">
@@ -347,7 +347,7 @@ export default function PuzzleRushPage() {
             <div>
               <h1 className="text-2xl font-bold">Puzzle Rush</h1>
               <p className="mt-1 text-sm text-zinc-500">
-                3 erros = Game Over. Resolva o máximo!
+                3 erros = Fim de jogo. Resolva o máximo!
               </p>
             </div>
 
@@ -585,7 +585,7 @@ export default function PuzzleRushPage() {
               <div className="text-2xl font-bold text-orange-600">
                 {gameoverData?.score ?? score}
               </div>
-              <div className="text-xs text-zinc-500">Puzzles Resolvidos</div>
+              <div className="text-xs text-zinc-500">Desafios Resolvidos</div>
             </div>
             <div>
               <div className="text-2xl font-bold">{gameoverData?.bestStreak ?? bestStreak}</div>

@@ -76,9 +76,12 @@ import {
   type CabeloOuModelo,
 } from "./cabelo";
 import {
+  LARGURA_INTERNA,
   BOCA,
   FACETAS,
   CAIXA_CABECA,
+  CAIXA_DA_ARTE,
+  FORA_DO_CHAPEU,
   OLHO,
   OLHO_CX_DIR,
   OLHO_CX_ESQ,
@@ -101,6 +104,7 @@ import {
   pathSombraQueixoTronco,
   pathTronco,
 } from "./geometria";
+import { APERTOS_DA_ARTE } from "./apertos-da-arte";
 import type { EstadoAvatar, PecaSobreposta, Traje } from "./tipos";
 
 /**
@@ -219,19 +223,27 @@ function estilo(ns: string, animado: boolean, modelo: CabeloOuModelo | undefined
   //    arte é a cabeça do BONECO, que é `descarte`. Fill e stroke passam a ser dois
   //    elementos porque passam a ter GEOMETRIA diferente: a massa inteira pintada,
   //    e só os arcos que a arte traça de fato levando linha. Ver `Cabelo.linhas`.
+  //  - **tonal** (`tonal`): NENHUMA regra de cabelo, e a ausência é a resposta certa.
+  //    A peça sai por `sobrepor()`, que pinta `fill="${cor}"` direto no `<path>` — a
+  //    cor mora no dado da peça, não numa classe. Emitir `.kk-cabelo*` para ela seria
+  //    CSS morto: regra sem elemento correspondente, que ninguém vê e todo boneco
+  //    paga. É o avesso do que `folha-unica.test.ts` mede (classe sem regra), e o
+  //    avesso também custa — a mesma economia que faz a base careca não pagar por
+  //    uma camada que ela não tem.
   const c = modelo ? resolverCabelo(modelo) : undefined;
   // O arco pode vir da massa OU de uma das formas irmãs, e a regra do traço sai se
   // qualquer uma declarar — senão uma peça cuja única linha está numa forma extra
   // sairia sem contorno nenhum.
   const temArco = Boolean(c?.linhas?.length) || Boolean(c?.formas?.some((f) => f.linhas?.length));
-  const cabelo = !c
-    ? ""
-    : regra(ns, "kk-cabelo") +
-      (c.massa
-        ? // A peça sobreposta não tem extensão: as formas irmãs são a própria peça,
-          // pintadas pela mesma `.kk-cabelo-m`, então `.kk-cabelo-e` não sai.
-          regra(ns, "kk-cabelo-m") + (temArco ? regra(ns, "kk-cabelo-l") : "")
-        : regra(ns, "kk-cabelo-s") + regra(ns, "kk-cabelo-e"));
+  const cabelo =
+    !c || c.tonal
+      ? ""
+      : regra(ns, "kk-cabelo") +
+        (c.massa
+          ? // A peça sobreposta não tem extensão: as formas irmãs são a própria peça,
+            // pintadas pela mesma `.kk-cabelo-m`, então `.kk-cabelo-e` não sai.
+            regra(ns, "kk-cabelo-m") + (temArco ? regra(ns, "kk-cabelo-l") : "")
+          : regra(ns, "kk-cabelo-s") + regra(ns, "kk-cabelo-e"));
 
   return (
     regra(ns, "kk-traco") +
@@ -426,17 +438,24 @@ function arteDoTraje(traje: Traje | undefined): string {
  * ninguém vê a 56 px e todo mundo vê a 425.
  *
  * **A colagem é conta, não ajuste.** Com `k = 1` — que é o caso de toda peça de
- * hoje, porque nenhuma declara `escalaMedida` — o `<image>` ocupa `x=0 y=0 w=500
- * h=700`: o `viewBox` inteiro. E o `viewBox` inteiro é exatamente o retângulo em que
- * a esteira recortou a arte (px 212→812 × 92→932, 600 × 840, a MESMA proporção 5:7),
- * então `preserveAspectRatio="xMidYMid meet"` encaixa 1 : 1 sem sobra em eixo nenhum.
- * Sem registro, sem ajuste e sem número escolhido a olho.
+ * hoje, porque nenhuma declara `escalaMedida` — o `<image>` ocupa a `CAIXA_DA_ARTE`
+ * inteira: `x=0 y=−75 w=500 h=775`. E ela é exatamente o retângulo em que a esteira
+ * recortou a arte (px 212→812 × 2→932, 600 × 930, a MESMA proporção), então
+ * `preserveAspectRatio="xMidYMid meet"` encaixa 1 : 1 sem sobra em eixo nenhum. Sem
+ * registro, sem ajuste e sem número escolhido a olho.
+ *
+ * ⚠️ **A caixa era o `VIEWBOX` e deixou de ser em 2026-08-24.** O retângulo do
+ * `viewBox` dava a uma peça de arte **39,5 unidades acima da coroa** — 12,6% de uma
+ * altura de cabeça —, enquanto o quadro já mostrava 114,6. Quem sentia era o chapéu,
+ * que é peça de `<image>` por decisão (doc 23 §7): ele não tinha onde existir, e a
+ * causa não era o `viewBox` ser pequeno. Ver `CAIXA_DA_ARTE` (`geometria.ts`) para os
+ * três números que disputaram o topo e por que o −75 venceu.
  */
 function colarArte(href: string, k: number): string {
-  const w = VIEWBOX.w * k;
-  const h = VIEWBOX.h * k;
-  const dx = (VIEWBOX.w - w) / 2;
-  const dy = (VIEWBOX.h - h) / 2;
+  const w = CAIXA_DA_ARTE.w * k;
+  const h = CAIXA_DA_ARTE.h * k;
+  const dx = CAIXA_DA_ARTE.x + (CAIXA_DA_ARTE.w - w) / 2;
+  const dy = CAIXA_DA_ARTE.y + (CAIXA_DA_ARTE.h - h) / 2;
   return (
     `<image href="${attr(href)}" x="${dx.toFixed(2)}" y="${dy.toFixed(2)}" ` +
     `width="${w.toFixed(2)}" height="${h.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`
@@ -919,15 +938,50 @@ export const ESCALA_PADRAO = 0.92;
  * close recortava a largura da cabeça a 100% sobre um render a 92%, e a arte
  * sangrava para fora do quadro nos dois lados.
  */
+/**
+ * O CANTO DA FIGURA NO QUADRO — e ele é UM, lido pelos três que precisam dele.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE ELE VIROU FUNÇÃO, E A DATA
+ * ---------------------------------------------------------------------------
+ *
+ * A mesma conta estava escrita em **três** lugares: `naTela`, `daTela` e o
+ * `translate` que `compor()` emite. Os três liam as mesmas constantes e chegavam ao
+ * mesmo número, então a duplicação não custava nada — **até a hora de mudar.**
+ *
+ * Em 2026-08-25, num experimento que alargava o `viewBox` para 600, foi corrigido
+ * só o `naTela`. O `translate` ficou com a conta velha, e a figura saiu **28 px
+ * fora do centro** num quadro de 408 px — 6,9%. O Doug pegou de olho na folha:
+ * *"não esquecer de centralizar o avatar, você esqueceu na folha."*
+ *
+ * ---------------------------------------------------------------------------
+ * E A CONTA DE `x` MUDOU DE FORMA
+ * ---------------------------------------------------------------------------
+ *
+ * Ela era `VIEWBOX.w × (1 − s) ÷ 2`, e essa forma **só está certa enquanto a largura
+ * do desenho for igual à largura do quadro** — as duas valiam 500, e ninguém tinha
+ * motivo para separá-las. A forma geral é *"o que sobra de quadro, dividido em dois"*:
+ *
+ *     (largura do QUADRO − largura do DESENHO × escala) ÷ 2
+ *
+ * Com `VIEWBOX.w = LARGURA_INTERNA` as duas dão o mesmo número, e é por isso que
+ * este bloco sai com **0 px de diferença** no render. A forma nova é que sobrevive
+ * ao quadro crescer.
+ */
+export function ancoraDaFigura(s: number = ESCALA_PADRAO): { x: number; y: number } {
+  return {
+    x: (VIEWBOX.w - LARGURA_INTERNA * s) / 2,
+    y: VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s,
+  };
+}
+
 export function naTela(
   p: { x?: number; y?: number },
   s: number = ESCALA_PADRAO,
 ): { x: number; y: number } {
   if (s === 1) return { x: p.x ?? 0, y: p.y ?? 0 };
-  return {
-    x: (VIEWBOX.w * (1 - s)) / 2 + (p.x ?? 0) * s,
-    y: VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s + (p.y ?? 0) * s,
-  };
+  const a = ancoraDaFigura(s);
+  return { x: a.x + (p.x ?? 0) * s, y: a.y + (p.y ?? 0) * s };
 }
 
 /**
@@ -953,10 +1007,8 @@ export function daTela(
   s: number = ESCALA_PADRAO,
 ): { x: number; y: number } {
   if (s === 1) return { x: p.x ?? 0, y: p.y ?? 0 };
-  return {
-    x: ((p.x ?? 0) - (VIEWBOX.w * (1 - s)) / 2) / s,
-    y: ((p.y ?? 0) - (VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s)) / s,
-  };
+  const a = ancoraDaFigura(s);
+  return { x: ((p.x ?? 0) - a.x) / s, y: ((p.y ?? 0) - a.y) / s };
 }
 
 export function compor(estado: EstadoAvatar): string {
@@ -990,18 +1042,123 @@ export function compor(estado: EstadoAvatar): string {
   const abre =
     s === 1
       ? ""
-      : `<g transform="translate(${n((VIEWBOX.w * (1 - s)) / 2)} ` +
-        `${n(VIEWBOX.h - FOLGA_BASE - FIGURA_Y1 * s)}) scale(${s})">`;
+      : `<g transform="translate(${n(ancoraDaFigura(s).x)} ` +
+        `${n(ancoraDaFigura(s).y)}) scale(${s})">`;
   const fecha = s === 1 ? "" : `</g>`;
 
-  // AS DUAS FAMÍLIAS SEGUEM CAMINHOS DIFERENTES, e é o `massa` que decide qual.
+  // AS TRÊS FAMÍLIAS SEGUEM CAMINHOS DIFERENTES, e é o dado declarado que decide.
   //
   //  - **paramétrica** (`pontos`): dentro do clip da cabeça, como sempre. É o que
-  //    os cinco modelos do catálogo são, e nada aqui os toca;
-  //  - **traçada** (`massa`): peça sobreposta, depois do contorno, sem clip.
-  const traçada = modeloCabelo ? Boolean(resolverCabelo(modeloCabelo).massa) : false;
-  const cabeloNoLugarDeSempre = traçada ? "" : cabeloNoCranio(modeloCabelo);
-  const sobreposta = traçada ? pecaSobreposta(modeloCabelo) : "";
+  //    dois modelos do catálogo são, e nada aqui os toca;
+  //  - **traçada** (`massa`): peça sobreposta, depois do contorno, sem clip;
+  //  - **tonal** (`tonal`): a MESMA posição da traçada, pela MESMA função que
+  //    desenha barba e chapéu. Silhueta em vetor, claro-escuro em máscara de
+  //    luminosidade — ver `Cabelo.tonal` e `TomDaPeca` (`tipos.ts`).
+  //
+  // **Zero função de render nova, e isso é o ponto.** A peça tonal de cabelo e a
+  // peça de rosto são a mesma coisa desenhada em dois lugares da pilha; escrever um
+  // segundo emissor para ela criaria duas descrições do mesmo `<path>`.
+  //
+  // O slot entra em `sobrepor()` como `"cabelo"`, e é ele que faz o id da máscara
+  // (`${ns}-tom-cabelo`) não colidir com o do rosto no MESMO boneco — que é
+  // exatamente o caso do aluno de barba e cabelo, ou seja, o caso comum.
+  const c = modeloCabelo ? resolverCabelo(modeloCabelo) : undefined;
+  const traçada = Boolean(c?.massa);
+  const tonal = c?.tonal;
+  const cabeloNoLugarDeSempre = traçada || tonal ? "" : cabeloNoCranio(modeloCabelo);
+  const sobreposta = tonal
+    ? sobrepor({ id: c!.id, nome: c!.nome, formas: [...tonal.formas], tom: tonal.tom }, ns, "cabelo")
+    : traçada
+      ? pecaSobreposta(modeloCabelo)
+      : "";
+
+  /**
+   * O CHAPÉU CONTENDO O CABELO — a supressão de `escondeCabelo`, e ela é UMA função.
+   *
+   * `contidoPeloChapeu` embrulha cada uma das QUATRO emissões de `dono: "cabelo"` da
+   * tabela de `camadas.ts` (`cabelo-extensoes-atras`, `cabelo-parametrico`,
+   * `cabelo-extensoes-frente`, `cabelo-sobreposto`). São quatro e não uma porque
+   * elas moram em lugares diferentes da pilha — o paramétrico dentro do clip do
+   * crânio, as extensões dos dois lados do contorno — e juntá-las seria remexer na
+   * ordem, que é o que este campo promete NÃO fazer.
+   *
+   * Hoje só a quarta carrega peça: os 19 cabelos do elenco são tonais. As outras
+   * três são embrulhadas assim mesmo, porque a alternativa é um chapéu que contém o
+   * cabelo de uma família e deixa a outra atravessar — e essa diferença apareceria
+   * como defeito de arte, não como buraco de código.
+   *
+   * **String vazia entra e string vazia sai**: sem cabelo, sem chapéu ou sem linha,
+   * `contidoPeloChapeu` é a identidade e o SVG não muda um byte.
+   */
+  const linhaDoChapeu = estado.chapeu?.escondeCabelo;
+  const temCabelo = Boolean(modeloCabelo);
+  const clipDoChapeu =
+    linhaDoChapeu && temCabelo
+      ? `<clipPath id="${ns}-c-chapeu" clipPathUnits="userSpaceOnUse">` +
+        `<path clip-rule="evenodd" d="${FORA_DO_CHAPEU}${linhaDoChapeu}"/></clipPath>`
+      : "";
+  /**
+   * O CHAPÉU ACHATANDO O CABELO — e é o que um chapéu faz na vida real.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ESCONDER NÃO BASTAVA
+   * ---------------------------------------------------------------------------
+   *
+   * `escondeCabelo` resolve o cabelo que atravessa a peça e o que estoura pela
+   * lateral ACIMA dela. O que ele não alcança é o resto: **os penteados do elenco
+   * são mais largos que os chapéus**. Medido — a cabeça tem 364 u, as peças de
+   * cabelo vão de 105% a 133% dela, e a copa do `bone` deixa folga zero de um lado.
+   * Abaixo da aba o chapéu acabou e não há o que esconder: o cabelo abre 30 u além
+   * da cabeça de cada lado e o chapéu passa a ler como pequeno demais.
+   *
+   * Esconder ali seria cortar a silhueta contra o fundo — o defeito que esta rota
+   * já mediu duas vezes. **Estreitar não corta nada**: as mechas continuam
+   * inteiras, com a forma que o Doug desenhou, e passam a caber sob a peça.
+   *
+   * ---------------------------------------------------------------------------
+   * DOIS GRUPOS ANINHADOS, E ISSO NÃO É ESTILO
+   * ---------------------------------------------------------------------------
+   *
+   * ⚠️ `transform` e `clip-path` no MESMO elemento fazem o clip ser resolvido no
+   * espaço **já transformado**: a região do chapéu encolheria junto com o cabelo e
+   * o corte sairia no lugar errado. O grupo de fora carrega o clip, no espaço do
+   * chapéu; o de dentro carrega a escala, no espaço do cabelo.
+   *
+   * A escala é em x só, em volta do eixo da cabeça — nunca uniforme. Uniforme
+   * encolheria a altura junto e o cabelo descolaria da coroa.
+   *
+   * **`1` é ausente, byte a byte.** Sem chapéu, sem cabelo ou com aperto 1, o SVG
+   * não ganha um caractere — é a mesma quarta condição que `camadas.ts` cobra de
+   * toda válvula nova, e é o que mantém os selos de `parametrico-congelado.ts` e o
+   * teto da `folha-base` sendo teto de regressão.
+   */
+  /**
+   * ⚠️ **QUEM DECIDE O NÚMERO É O CATÁLOGO, NÃO QUEM CHAMA.**
+   *
+   * `compor()` busca o aperto do par sozinho. Exigir que o chamador passasse seria
+   * garantir divergência: o ranking, o perfil, a folha e o editor desenhariam o
+   * mesmo aluno de larguras diferentes conforme quem lembrou de passar o campo — e
+   * este repositório já pagou esse preço em outros slots.
+   *
+   * `estado.apertoDoCabelo` continua valendo como **override de bancada**, e é o que
+   * faz o editor mostrar o valor EM PROVA antes de ele virar decisão gravada.
+   */
+  const cabeloDoPar = modeloCabelo ? resolverCabelo(modeloCabelo) : undefined;
+  const apertoDoCabelo = !estado.chapeu
+    ? 1
+    : (estado.apertoDoCabelo ??
+      APERTOS_DA_ARTE[`${estado.chapeu.id}|${cabeloDoPar?.id ?? ""}`] ??
+      1);
+  const eixoDaCabeca = (CAIXA_CABECA.x0 + CAIXA_CABECA.x1) / 2;
+  const apertado = (dentro: string) =>
+    apertoDoCabelo === 1 || !dentro
+      ? dentro
+      : `<g transform="translate(${eixoDaCabeca} 0) scale(${apertoDoCabelo} 1) ` +
+        `translate(${-eixoDaCabeca} 0)">${dentro}</g>`;
+  const contidoPeloChapeu = (dentro: string) => {
+    const massa = apertado(dentro);
+    return clipDoChapeu && massa ? `<g clip-path="url(#${ns}-c-chapeu)">${massa}</g>` : massa;
+  };
 
   /**
    * O SLOT `rosto`, PARTIDO EM DUAS PASSADAS pelo `cabeloPorCima` da própria peça.
@@ -1069,6 +1226,16 @@ export function compor(estado: EstadoAvatar): string {
     `<path id="${ns}-p-tronco" d="${pathTronco()}"/>` +
     `<clipPath id="${ns}-c-cabeca"><use href="#${ns}-p-cabeca"/></clipPath>` +
     `<clipPath id="${ns}-c-tronco"><use href="#${ns}-p-tronco"/></clipPath>` +
+    // O CLIP DO CHAPÉU — e ele é o COMPLEMENTO da linha que a peça declara.
+    //
+    // `escondeCabelo` descreve o que o chapéu CONTÉM; o que o cabelo pode ocupar é o
+    // resto do quadro. Daí o retângulo grande na frente e `clip-rule="evenodd"`: o
+    // furo é a região do chapéu, e o que sobra é onde o cabelo tem direito de sair.
+    //
+    // **Sai só quando há chapéu COM linha E cabelo.** Sem qualquer um dos três o
+    // `<defs>` não ganha um byte — é a 4ª condição de `camadas.ts` (ausente ≡ o
+    // padrão histórico) sendo cobrada aqui e não na prosa.
+    clipDoChapeu +
     `<radialGradient id="${ns}-sombra">` +
     SOMBRA_CHAO.paradas
       .map(
@@ -1121,12 +1288,12 @@ export function compor(estado: EstadoAvatar): string {
     //
     // Vazia quando não há `tinta.arte` — nenhum byte muda no boneco de sempre.
     arteDoTraje(traje) +
-    extensoesCabelo(modeloCabelo, true) +
+    contidoPeloChapeu(extensoesCabelo(modeloCabelo, true)) +
     `<use href="#${ns}-p-cabeca" class="kk-pele"/>` +
     `<g clip-path="url(#${ns}-c-cabeca)">` +
     `<path d="${pathFacetaEsq()}" fill="url(#${ns}-fe)"/>` +
     `<path d="${pathFacetaDir()}" fill="url(#${ns}-fd)"/>` +
-    cabeloNoLugarDeSempre +
+    contidoPeloChapeu(cabeloNoLugarDeSempre) +
     // O ESPECULAR PASSOU A SER DESENHADO DEPOIS DO CABELO, e a base careca não
     // mudou um byte com isso — a camada some quando não há modelo, e a ordem entre
     // as facetas e a luz continua a mesma.
@@ -1140,7 +1307,7 @@ export function compor(estado: EstadoAvatar): string {
     `<path class="kk-luz" d="${pathEspecular()}"/>` +
     `</g>` +
     `<use href="#${ns}-p-cabeca" class="kk-traco"/>` +
-    extensoesCabelo(modeloCabelo, false) +
+    contidoPeloChapeu(extensoesCabelo(modeloCabelo, false)) +
     olho(OLHO_CX_ESQ, OLHO_CY_ESQ) +
     olho(OLHO_CX_DIR, OLHO_CY_DIR) +
     // AS SOBRANCELHAS NÃO PISCAM E NÃO RESPIRAM DE FORMA PRÓPRIA. Elas ficam fora da
@@ -1204,7 +1371,7 @@ export function compor(estado: EstadoAvatar): string {
     // bandeira ou sem. Hoje não produz defeito porque nenhum dos dois desce ao
     // queixo; no dia em que um descer, a causa está aqui e não na peça.
     rosto(true) +
-    sobreposta +
+    contidoPeloChapeu(sobreposta) +
     // O RESTO DO ROSTO — o que NÃO declarou `cabeloPorCima`, e é o óculos.
     //
     // A linha `rosto-sobre-cabelo` de `camadas.ts`. Ela e a `rosto-sob-cabelo` acima
@@ -1222,6 +1389,27 @@ export function compor(estado: EstadoAvatar): string {
     // slot inteiro. Deixou de valer em 2026-08-19: metade dele sobe, e a metade que
     // sobe é a barba — ver o `rosto(true)` acima.
     rosto(false) +
+    // O ÓCULOS — slot próprio desde 2026-08-27, e não é o `rosto` com outro nome.
+    //
+    // O Doug: *"óculos e barba não podem ser a mesma coisa. Eu preciso que dê para
+    // vestir a barba e o óculos, ao mesmo tempo."* Slot é exclusivo por construção —
+    // uma coluna em `users`, um slug —, então enquanto as duas famílias dividiam o
+    // slot `rosto` vestir uma tirava a outra. Ver `PecaDeOculos` em `tipos.ts`.
+    //
+    // ELE FICA ENTRE O CABELO E O CHAPÉU, e as duas fronteiras são decisão:
+    //
+    //  - **depois do cabelo**, pelo mesmo argumento que já valia quando ele morava no
+    //    `rosto(false)`: sem haste não há o que apoiar (doc 21 §2c), e a peça que a
+    //    criança desbloqueou não pode depender de qual franja está por baixo;
+    //  - **antes do chapéu**, porque aba de chapéu por cima de óculos é o que aba faz.
+    //    A ordem inversa poria a armação por cima da copa, que não existe na vida.
+    //
+    // **Ele NÃO passa por `rosto()`**, e é o mesmo argumento do chapéu logo abaixo: se
+    // a partição fosse parâmetro de `sobrepor()`, um óculos que declarasse
+    // `cabeloPorCima` sumiria do boneco em silêncio. `PecaDeOculos` fecha isso pelo
+    // tipo (`cabeloPorCima?: never`), e esta chamada o mantém fora da partição de
+    // qualquer jeito — mecanismo em vez de disciplina, nos dois níveis.
+    sobrepor(estado.oculos, ns, "oculos") +
     // O CHAPÉU, e ele NÃO participa da partição acima.
     //
     // ⚠️ **ELE NÃO É O ÚLTIMO, e este comentário já afirmou que era.** Logo abaixo
@@ -1236,9 +1424,10 @@ export function compor(estado: EstadoAvatar): string {
     // na mão. O gate trava a posição de hoje.
     //
     // O que continua verdadeiro: ele disputa o crânio e vence, que é o que "esconde
-    // o cabelo" quer dizer. A regra fina — mostra tudo, esconde tudo — mora no ITEM e
-    // não aqui (`escondeCabelo`), e é decisão obrigatória ANTES do primeiro chapéu,
-    // no Bloco 7. Este arquivo só garante o lugar.
+    // o cabelo" quer dizer. A regra fina — QUANTO dele o chapéu contém — mora no ITEM
+    // e não aqui (`escondeCabelo`), e desde 2026-08-25 ela é uma LINHA medida, não um
+    // enum: quem a aplica é `contidoPeloChapeu`, lá em cima, embrulhando as quatro
+    // emissões de cabelo. Este arquivo garante o lugar; a linha garante o recorte.
     //
     // **Por que ele não passa por `rosto()`, e não é descuido.** Se a partição fosse
     // um parâmetro de `sobrepor()`, esta chamada viraria `sobrepor(estado.chapeu,
