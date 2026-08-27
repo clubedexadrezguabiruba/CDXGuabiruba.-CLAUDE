@@ -177,13 +177,14 @@ function corpoDaPeca(
     //
     // A diretriz do empilhamento (linha `rosto-sob-cabelo` de `camadas.ts`) pergunta:
     // a peça NASCE da cabeça, ou é POSTA nela? Barba nasce — o cabelo cai sobre ela,
-    // como na vida. Óculos é posto, e vai por cima; mas óculos é peça de `arte`, com
-    // cor assada, e não passa por aqui.
+    // como na vida.
     //
-    // Por isso é constante e não coluna da tabela `NOMES`: uma coluna com o mesmo valor
-    // em todas as linhas é uma decisão fingindo ser um dado. No dia em que uma peça de
-    // PELO precisar do outro lado, ela vira coluna — e aí o campo vira dado de verdade,
-    // com duas peças para justificá-lo.
+    // ⚠️ **Ela chegou a ser dado, por um dia.** Em 2026-08-27 o óculos entrou neste
+    // literal como segunda família do slot, e o campo passou a ter dois valores. No
+    // mesmo dia o Doug separou os slots — *"óculos e barba não podem ser a mesma
+    // coisa"* — e o campo voltou a ter um valor só. Fica constante enquanto for
+    // constante: uma coluna com o mesmo valor em todas as linhas é uma decisão
+    // fingindo ser um dado.
     `    cabeloPorCima: true,\n` +
     `    formas: [\n` +
     formas

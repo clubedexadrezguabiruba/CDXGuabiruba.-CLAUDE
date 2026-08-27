@@ -8693,3 +8693,146 @@ some assim que a decisão existe.
 `typecheck` **0** · `lint` **0 erros** · **1 115 testes em 48 arquivos** ·
 `verify:arte` **exit 0** · `verify:all` **exit 0** · `build` **exit 0** ·
 `next dev` recompilou limpo.
+
+---
+
+## 2026-08-27 — O SLOT `oculos` NASCE, e cinco peças entram nele
+
+Cinco artes do Doug, cinco aprovadas, **um slot novo no banco e no código**. O que o
+dia provou não é sobre óculos: é que a bifurcação da Regra Inviolável nº 4 cai dentro
+de um slot, e que duas famílias no mesmo slot é o mesmo que proibir a combinação delas.
+
+### O elenco fechado
+
+| slug | nome | raridade | massa | janelas | perímetro |
+|---|---|---|---|---|---|
+| `oculos-redondo-simples` | Óculos Redondo Simples | common | 26 796 px | 2 | 100,0% |
+| `oculos-escolar-simples` | Óculos Escolar Simples | rare | 20 962 px | 2 | 100,0% |
+| `oculos-quadrado-retro-rosa` | Quadrado Retrô Rosa | epic | 31 535 px | 2 | 100,0% |
+| `oculos-duplo-art-nouveau` | Duplo Art Nouveau | legendary | 31 255 px | 2 | 100,0% |
+| `oculos-aviator` | Aviator | epic | 26 733 px | 2 | 100,0% |
+
+Gate −1 nas cinco: **0/0 px** de deslocamento, escala **100,00%**, **0 ladrilho** de
+forma em rosto, corpo e sobrancelha. `arte:traco`: **0 px** do traço do boneco
+apagados nas cinco. `arte:perimetro`: **0,0% amputado** nas cinco.
+
+Tinta dentro da cápsula do olho, medida no raster: **0, 52, 1, 0 e 1 px** de 9 000. A
+`escolar-simples` é a maior e são 0,6%. Nenhuma tem lente assada.
+
+Uma sexta arte entrou e saiu: a terceira do lote era a das volutas com corrente, e o
+Doug a substituiu pelo `aviator` — *"aqui entrou, entrou no lugar"*. Foi ela que
+derrubou o piso do campo; ver o achado 3.
+
+### ACHADO 1 — a esteira raster assava a PELE DA BASE dentro dos aros
+
+`taparFurosCercados` tapa todo vão que não alcança a borda, porque *peça é figurinha,
+opaca por dentro*. Para toca, aba e túnica é a lei; **para o óculos é o contrário**: a
+peça É definida pelos dois vãos que ela cerca.
+
+| | com a regra | sem ela |
+|---|---|---|
+| máscara | 31 535 px | **53 478 px** |
+| furos tapados | 1 095 px | **23 038 px** |
+| cor dominante | `#040000` (o contorno) | **`#E6AB7A` — PELE** |
+| anel em volta dos olhos, opaco | 21,6% | **98,1%** |
+
+**O campo do slot NÃO resolve, e foi medido antes da segunda versão:** excluir
+`naCapsulaDoOlho` protege 38 × 83 u por olho e deixa o resto do vão ser assado — foi a
+primeira tentativa, e deu os 23 038 px.
+
+O conserto é `SlotDeArte.janela`: furo cercado que contém feição fica aberto INTEIRO.
+**Não é regra nova** — é a que a esteira TONAL já tinha (`janelasDeFeicao`, passo 2c),
+portada para o outro lado. Opcional, então traje e chapéu saem byte a byte iguais por
+construção. Controle negativo em `__tests__/vao-da-lente.test.ts`, dois braços: mesmo
+anel com e sem `janela`, e mesmo anel sobre o olho contra sobre a têmpora.
+
+### ACHADO 2 — `mascaraDaPeca` semeava só no ciano
+
+Uma das artes reprovou com **56 ladrilhos** de forma sobre arte intacta — a mensagem
+de *"o gerador redesenhou o boneco"* pela terceira vez, depois da `entrada-2` e da
+`rala`.
+
+A causa é a semente da busca em largura (`extrair.ts`): partia **só do ciano**. Isso
+serviu enquanto toda peça era MASSA com um fio em volta (o `assimetrico` tem uma cúpula
+inteira para semear). Aquela arte é **21 901 px de linha contra 1 863 de massa — 92%
+fio**: armação fina é quase toda contorno, e o aro que não encostava em ciano nunca era
+alcançado.
+
+Conserto: a **linha instrumental também semeia**. Ela é declaração, não inferência —
+existe desde 2026-08-22 para o gerador dizer *"esta linha é minha"*. Respingo medido em
+**zero** nos quatro geradores de peça promovida.
+
+### ACHADO 3 — o piso do campo cortava a CORRENTE, e eu li errado
+
+Os pixels recusados pelo campo estavam todos abaixo do queixo, e eu escrevi que eram
+*"ruído do gerador no tronco"*. **Errado.** O Doug: *"a corrente que desce do aro… eu
+quero que eles apareçam."* A régua que separa não é a ALTURA, é a CONECTIVIDADE —
+corrente encosta no aro, ruído não encosta em nada.
+
+Medido: 950 px ligados à peça na `duplo-art-nouveau` (as contas) e 4 818 px na arte
+substituída (a corrente). O piso desceu da base da CABEÇA (347,2) para o piso do TRAJE
+(658), que é teto já publicado em `noCampoDoTraje`. **Não deixou ruído entrar**, e não
+é sorte: quem segurava o solto sempre foi `extrairPorCampo`, que descarta componente
+com menos de 5% da maior.
+
+### ACHADO 4 — RÉGUA CEGA CONFIRMA AUSÊNCIA, e me pegou TRÊS vezes num dia
+
+O padrão é um só e é o mais caro do dia:
+
+| régua | alvo | o que devolveu | para que lado falhou |
+|---|---|---|---|
+| `information_schema.columns` | colunas de matview | **0 de 8** sobre matview correta | SEGURO — derrubou a migration |
+| `information_schema.role_table_grants` | grants de matview | **zero linhas** | **INSEGURO** — abriu leitura da matview a `anon` |
+| `sharp()` sobre o `.svg` | alfa da peça | **0 opacos no quadro inteiro** | quase reportei "sem lente" sobre peça não medida |
+
+`information_schema` segue o padrão SQL e **não cobre matview** (`relkind = 'm'`); o
+`sharp` **não desenha `<image>` data:webp** dentro de SVG. Nos dois casos o zero não é
+ausência, é cegueira.
+
+**A assimetria é o que importa:** medir uma PRESENÇA com régua cega dá erro visível;
+medir uma AUSÊNCIA dá falso *"está limpo"*. Antes de escrever "conferido" sobre uma
+ausência, rode a régua contra um caso onde a coisa EXISTE.
+
+O caso inseguro virou a migration `20260827180000`: cinco migrations anteriores que
+recriam `user_public_profiles` terminam com `REVOKE ALL ... FROM anon, authenticated,
+PUBLIC`, e a minha não terminou. Permissão de matview se mede em `pg_class.relacl` e
+`has_table_privilege`.
+
+### O slot novo — o que ele custou
+
+O Doug: *"óculos e barba não podem ser a mesma coisa. Eu preciso que dê para vestir a
+barba e o óculos, ao mesmo tempo."* **Slot é exclusivo por construção** — uma coluna em
+`users`, um slug —, então enquanto as duas famílias dividissem `rosto`, vestir uma
+tirava a outra.
+
+A alternativa (duas peças num slot) fura o modelo em todo lugar de uma vez: a coluna
+vira array, `equipar_peca` vira dois caminhos, o guarda-roupa perde a chave e as
+leituras devolvem lista onde devolvem valor.
+
+Quatro migrations, todas aplicadas: o slot (`160000`), as leituras (`170000`), o
+`REVOKE` de conserto (`180000`) e as cinco peças (`190000`). Mais o código: tipo
+`PecaDeOculos` com `cabeloPorCima?: never`, camada `oculos` entre o cabelo e o chapéu,
+gerador próprio (`arte:oculos`), prateleira própria (`public/items/oculos/`), e o grupo
+"Óculos" separado do "Rosto" no guarda-roupa.
+
+### Gates
+
+`typecheck` **0** · `lint` **0 erros** · **1 124 testes em 49 arquivos** ·
+`verify:arte` **exit 0** · `verify:catalogo-slots` **41 passed, 0 failed** ·
+`verify:perfil-publico` **35 passed, 0 failed** · `verify:estado` **exit 0** ·
+`build` **exit 0**.
+
+### O que fica em aberto
+
+1. **A LENTE.** Não existe. O `PEDIDO-OCULOS.md` §3 mantém a pendência: branco a 30%
+   foi medido e falha (o olho fica L77 fixo nas 8 peles, e na pele 8 fica mais claro
+   que o rosto). Agora ela pode ser decidida MEDINDO — as armações estão no lugar e os
+   vãos abertos nas cinco. Um véu que ESCURECE não tem esse defeito.
+2. **Duas observações de desenho que o Doug aprovou assim mesmo:** o `aviator` some a
+   32 px (fio claro sobre pele clara) e é o par mais próximo do `escolar-simples` em
+   forma; o pendente do `duplo-art-nouveau` lê como pontinhos soltos, não fio contínuo.
+3. **`rosto-sobre-cabelo` ficou sem peça.** A linha era do óculos. `PecaDeRosto`
+   continua com `cabeloPorCima: boolean` e a partição continua no compositor — apagar
+   os dois é decisão separada, que mexe na trava `never` do chapéu e do óculos.
+4. **As réguas de bancada não conhecem o slot.** `arte:perimetro` e vizinhas varrem
+   `chapeu-*.png` por `readdir`; o óculos só entra por argumento.

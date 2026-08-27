@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `avatar/barba-trancada-v10` |
-| **Commits à frente de `origin/main`** | 25 |
-| **Árvore** | **98 arquivos sujos** |
-| **Último commit** | 80bd4d9 · 2026-08-24 · feat(avatar): a régua que faltava — `arte:figurinha` pega o cabelo que tapa o rosto, e o duplo coque real é abolido |
+| **Commits à frente de `origin/main`** | 27 |
+| **Árvore** | **51 arquivos sujos** |
+| **Último commit** | 21d9599 · 2026-08-27 · docs(avatar): o pedido de arte dos ÓCULOS — a armação é do Doug, a lente é do código |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -391,9 +391,9 @@ _Fonte: tabela §Estado real de `docs/Recruta64_Roadmap_Tecnico_v1.md`._
 
 ## Gates
 
-**19 entradas** em `verify:all`, que expandem para **40 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
+**19 entradas** em `verify:all`, que expandem para **41 scripts**. O número difere entre branches — a `main` não tem `verify:pose` nem `verify:design-tokens`.
 
-`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:chapeus-check` · `arte:apertos-check` · `arte:par` · `arte:rostos-check` · `arte:cabelos-check` · `arte:traco` · `arte:borda` · `arte:figurinha` · `arte:perimetro` · `arte:peso`
+`verify:phase2` · `verify:seeds` · `verify:revanche` · `verify:rush` · `verify:phase5` · `verify:phase6` · `verify:avatar-db` · `verify:chest-pool` · `verify:paleta-patentes` · `verify:cabelo-catalogo` · `verify:catalogo-slots` · `verify:perfil-publico` · `verify:identidade-nas-listas` · `verify:turmas` · `verify:privileges` · `verify:xp-curve` · `verify:no-dup-rpc` · `verify:puzzle-authority` · `verify:curriculo` · `avatar:pose` · `verify:design-tokens` · `verify:estado` · `verify:aberturas` · `verify:fonte-peca` · `arte:fixtures` · `arte:reguas` · `arte:cor-proibida` · `arte:escala` · `arte:pecas-check` · `arte:trajes-check` · `arte:chapeus-check` · `arte:apertos-check` · `arte:par` · `arte:rostos-check` · `arte:oculos-check` · `arte:cabelos-check` · `arte:traco` · `arte:borda` · `arte:figurinha` · `arte:perimetro` · `arte:peso`
 
 ## Frentes
 
@@ -424,7 +424,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 
 | | |
 |---|---|
-| **Migrations** | 98 |
+| **Migrations** | 102 |
 | **Rotas (`page.tsx`)** | 34 |
 | **Arquivos de teste** | 26 |
 | **Primitivos de UI** | 4 |
@@ -434,11 +434,11 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 <!-- VOLATIL:inicio -->
 | doc | última edição |
 |---|---|
-| `CLAUDE.md` | 2026-08-22 |
+| `CLAUDE.md` | 2026-08-27 |
 | `README.md` | 2026-08-03 |
 | `docs/Recruta64_Roadmap_Tecnico_v1.md` | 2026-08-03 |
 | `docs/avatar/14-backlog-execucao.md` | 2026-08-11 |
-| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-11 |
+| `docs/avatar/15-plano-ate-pronto.md` | 2026-08-27 |
 | `docs/avatar/13-checklist-de-verificacao.md` | 2026-08-06 |
 | `docs/curriculo/01-curriculo-definitivo-v1.md` | 2026-08-20 |
 | `docs/curriculo/02-plano-tecnico-trilha1-v1.md` | 2026-08-11 |

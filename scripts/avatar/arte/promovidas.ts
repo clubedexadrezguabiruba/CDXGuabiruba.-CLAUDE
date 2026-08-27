@@ -221,6 +221,74 @@ export const NOMES_ROSTO: Record<string, string> = {
 };
 
 /**
+ * O nome que a criança lê, por arte de ÓCULOS. A SEGUNDA família do slot `rosto`.
+ *
+ * Ela é outra lista e não outra linha em `NOMES_ROSTO` porque as duas famílias saem
+ * de esteiras diferentes — a bifurcação da Regra Inviolável nº 4 cai DENTRO do slot:
+ * a barba recolore e vira `formas` + máscara de tom; o óculos tem cor final assada e
+ * vira `<image>` WEBP por `peca-de-arte.ts`. Misturá-las numa lista só obrigaria o
+ * gerador a adivinhar de qual esteira cada chave é, pelo prefixo do nome — que é
+ * exatamente a descoberta por nome de arquivo que este repositório recusa.
+ *
+ * ⚠️ **A arte de óculos entra CRUA, e é o contrário da barba.** `restaurar-peca.ts`
+ * gira o matiz da peça para 180°, e uma armação girada chega ao produto CIANO. Então
+ * `oculos-<nome>.png` é a arte como a artista pintou — é dela que a peça é feita — e
+ * `oculos-<nome>-limpa.png` é a versão ciano, que existe só para o Gate −1 e o
+ * `arte:traco` terem o que reconhecer. Na barba os papéis são o inverso, e o sufixo
+ * também: lá o cru é `-crua` e o limpo leva o nome puro.
+ */
+export const NOMES_OCULOS: Record<string, string> = {
+  // ─────────────────────────────────────────────────────────────────────────
+  // O ELENCO DE ÓCULOS, batizado pelo Doug em 2026-08-27 — cinco peças.
+  //
+  // As cinco atravessaram o Gate −1: deslocamento 0/0 px e escala 100,00% nas cinco,
+  // **0 ladrilho de forma** nas cinco, `arte:traco` com 0 px do traço do boneco
+  // apagados, e **2 janelas abertas** em cada uma — uma por lente.
+  //
+  // A raridade é do SERVIDOR (Regra Inviolável nº 1) e não mora aqui; ela fica no
+  // comentário só para quem lê esta lista saber de que degrau é a peça, e entra de
+  // verdade na seed de `avatar_catalogo`.
+  //
+  // ⚠️ **A terceira arte foi SUBSTITUÍDA e APAGADA** — decisão do Doug: *"a arte
+  // substituída pode deletar. Aqui entrou, entrou no lugar."* Ela era a das volutas
+  // com corrente pendurada, e foi a corrente dela — 4 818 px ligados à peça, descendo
+  // até u y 445 — que derrubou o piso do campo da base da cabeça para o piso do traje.
+  //
+  // Apagá-la tiraria a cobaia daquele piso, e é por isso que a régua foi amarrada na
+  // `duplo-art-nouveau` antes: o enfeite de contas dela desce 950 px abaixo do queixo,
+  // e `vao-da-lente.test.ts` cobra isso por nome. **A cobaia mudou de peça, não sumiu**
+  // — régua sem exemplo que a exercite é detector de fumaça sem fumaça.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // common. Dois aros circulares, traço preto grosso, ponte curta. É a peça de
+  // referência do slot: a que lê melhor a 32 px junto com a `quadrado-retro-rosa`.
+  "oculos-redondo-simples": "Óculos Redondo Simples",
+  // rare. Modelo browline — barra superior preta espessa, aros finos fechando por
+  // baixo. ⚠️ É a que FUNDE com a barba a 32 px: a barra e o topo da massa de pelo
+  // viram uma faixa escura contínua. Medido na folha de 2026-08-27; passa porque a
+  // legibilidade é julgamento do Doug e ele aprovou.
+  "oculos-escolar-simples": "Óculos Escolar Simples",
+  // epic. A ÚNICA das cinco que veio com as linhas em PRETO, contra o azul `#0000C8`
+  // que o `PEDIDO-OCULOS.md` exige — e atravessou porque o defeito que o azul evita
+  // não aconteceu nela: `arte:traco` mediu 0 px do traço do boneco apagados. É também
+  // a mais limpa do lote no Gate −1: 3 px não explicados.
+  "oculos-quadrado-retro-rosa": "Quadrado Retrô Rosa",
+  // legendary. Aros finos claros com enfeite de contas na têmpora, descendo abaixo do
+  // queixo — 950 px que o piso antigo do campo cortava.
+  "oculos-duplo-art-nouveau": "Duplo Art Nouveau",
+  // epic. A SEXTA arte do dia e a segunda tentativa da terceira peça: ela substitui a
+  // das volutas, que o Doug trocou. Gate −1 **APROVADA** com 0 ladrilho em rosto,
+  // corpo e sobrancelha; `arte:traco` com 0 px apagados.
+  //
+  // ⚠️ Ela tem **82 px de REPINTURA das feições** no Gate −1 — a maior do lote (as
+  // outras ficam entre 0 e 19). Repintura é tinta, não forma, então o gate aprova; o
+  // que o número diz é que a armação ENCOSTA no olho. É consequência declarada de o
+  // campo do óculos não excluir a cápsula (ver `noCampoDoOculos`), e é o Gate −1 que
+  // a mede, que é onde essa pergunta sempre morou.
+  "oculos-aviator": "Aviator",
+};
+
+/**
  * As artes que a rota já promoveu SOBRE A BASE OFICIAL, como caminho de PNG.
  *
  * É a lista que `arte:traco` e `arte:borda` percorrem quando ninguém passa alvo na

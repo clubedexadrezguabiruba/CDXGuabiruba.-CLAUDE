@@ -585,6 +585,98 @@ export function noCampoDoChapeu(x: number, y: number): boolean {
   return y <= (naColunaDasFeicoes ? CAIXA_DAS_FEICOES.y0 : CAIXA_CABECA.y1);
 }
 
+// ---------------------------------------------------------------------------
+// O CAMPO DO ÓCULOS — o terceiro slot de `<image>`, e o primeiro que mora NO ROSTO
+// ---------------------------------------------------------------------------
+//
+// Traje e chapéu evitam as feições por construção: um mora no tronco, o outro para
+// no piso do olho. O óculos **é a peça que senta em cima delas** — a armação cerca os
+// dois olhos e passa entre eles e a boca. Então o campo dele é o primeiro que precisa
+// dizer, com todas as letras, o que ele NÃO é.
+
+/**
+ * O VÃO DA LENTE — o que um furo cercado pode ter dentro para continuar aberto.
+ *
+ * É a cápsula do olho e a espinha da boca, as mesmas duas formas que a esteira tonal
+ * protege desde 2026-08-20 (`naCapsulaDoOlho`, `naEspinhaDaBoca`). Aqui elas mudam de
+ * papel: lá elas dizem *"a peça não pinta aqui"*; aqui dizem *"o furo que contém isto
+ * é DESENHO, não falha da régua"*.
+ *
+ * A diferença entre os dois papéis é o que decide a peça. Como campo, elas protegem
+ * 38 × 83 u por olho e o resto do vão da lente é assado assim mesmo — 23 038 px de
+ * pele da base dentro da armação, medidos em 2026-08-27. Como janela, o vão inteiro
+ * fica aberto e a pele que aparece por ele é a que o aluno escolheu.
+ */
+export const noVaoDaLente = (x: number, y: number): boolean =>
+  naCapsulaDoOlho(x, y) || naEspinhaDaBoca(x, y);
+
+/**
+ * ONDE UM ÓCULOS PODE LEGITIMAMENTE EXISTIR.
+ *
+ * Três fronteiras, e nenhuma delas é a feição — a feição é `janela`, não campo:
+ *
+ *  - **dos lados e em cima, a `CAIXA_DA_ARTE`.** A armação PODE passar da cabeça, e
+ *    isso é decisão do Doug (2026-08-27, *"não importa se passar um pouco da
+ *    cabeça"*): a peça de rosto fica fora de todo clip, e o primeiro óculos mede
+ *    **x 99,2 → 485,8** numa cabeça que vai de 75,2 a 439,2. Fechar o campo na
+ *    cabeça cortaria 46,6 u de armação legítima;
+ *  - **em cima, a cabeça.** Acima dela é ar, e óculos erguido na testa é peça de
+ *    CHAPÉU neste catálogo (`chapeu-oculos-de-forja`, doc 22 §5-C) — outro slot,
+ *    outro campo;
+ *  - **embaixo, o PISO DO TRAJE.** Ver abaixo: ele era a base da cabeça, e o Doug o
+ *    derrubou no mesmo dia em que o slot nasceu.
+ *
+ * ---------------------------------------------------------------------------
+ * O PISO ERA O QUEIXO, E A CORRENTE NÃO CABIA NELE
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira versão parava em `CAIXA_CABECA.y1` (347,2) com o argumento *"abaixo
+ * dela começa pescoço, e nada que um óculos faça desce até lá"*. **A frase estava
+ * errada, e o contra-exemplo estava na terceira arte do próprio lote:** óculos de
+ * leitura têm CORRENTE, e corrente desce.
+ *
+ * O Doug, olhando o render: *"a corrente que desce do aro… eu quero que eles
+ * apareçam."* Medido no lote de 2026-08-27, separando o que está LIGADO à peça do
+ * que é ruído solto do gerador:
+ *
+ * | arte | ligado à peça e recusado | onde | solto |
+ * |---|---|---|---|
+ * | `oculos-1` | 0 px | — | 165 px |
+ * | `oculos-2` | **950 px** | u x 99→123, até y 386 | 64 px |
+ * | `oculos-3` | **4 818 px** | u x 376→484, até y 445 | 38 px |
+ * | `oculos-4` | 0 px | — | 165 px |
+ * | `oculos-5` | 0 px | — | 195 px |
+ *
+ * ⚠️ **Eu tinha chamado esses pixels de "ruído do gerador no tronco" e estava
+ * errado.** A régua que separa as duas coisas não é a altura: é a CONECTIVIDADE.
+ * Corrente encosta no aro; ruído de reencode não encosta em nada. E ela já existe —
+ * `extrairPorCampo` descarta componente com menos de `PISO_SOLTA` (5%) da maior, e
+ * 38 a 195 px contra 30 mil não chegam perto. **Baixar o piso não deixa o ruído
+ * entrar**, porque não é o piso que o segurava.
+ *
+ * O novo piso é o do TRAJE (`noCampoDoTraje`): a base da silhueta mais
+ * `TRANSBORDO_BARRA`. Não é número escolhido — é teto já publicado, e abaixo dele
+ * mora a sombra do chão, onde corrente nenhuma chega.
+ *
+ * ⚠️ **A camada permite isto, e foi conferido antes:** `rosto-sobre-cabelo` é
+ * emitida DEPOIS de `traje-arte` e de `tronco-tinta` (`camadas.ts`), então a
+ * corrente aparece sobre o peito. Só `traje-extensoes-frente` vem por cima dela —
+ * uma gola alta pode cobrir a ponta da corrente, e isso é oclusão de roupa, que é o
+ * que roupa faz.
+ *
+ * ⚠️ **A cápsula do olho e a boca NÃO saem daqui, e isso é o contrário do que a
+ * primeira versão fez.** Tirá-las do campo protege a feição e não protege a lente:
+ * o vão é muito maior que a cápsula, e o resto dele é assado. Quem responde por isso
+ * é `noVaoDaLente` como `SlotDeArte.janela`. Deixá-las no campo tem custo declarado —
+ * uma armação que encoste no olho pinta por cima dele —, e é o Gate −1 que pega isso,
+ * medindo REPINTURA das feições, que é onde essa pergunta sempre morou.
+ */
+export function noCampoDoOculos(x: number, y: number): boolean {
+  if (x < CAIXA_DA_ARTE.x || x > CAIXA_DA_ARTE.x + CAIXA_DA_ARTE.w) return false;
+  if (y < CAIXA_CABECA.y0) return false;
+  return y <= TRONCO.yBase + TRACO / 2 + TRANSBORDO_BARRA;
+}
+
 /** O canvas inteiro, em unidades. Serve de universo para as contas de área. */
 export const CANVAS_EM_UNIDADES: Caixa = (() => {
   const a = paraUnidade(0, 0);

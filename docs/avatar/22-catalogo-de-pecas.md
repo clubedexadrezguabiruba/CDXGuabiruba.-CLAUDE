@@ -175,7 +175,7 @@ pertencem visivelmente ao mesmo lugar.
 > degrau — só a moldura marca o título (doc 21 §0).
 >
 > **O slot `rosto` não tem corredor, e isso é decisão**: barba e óculos são do
-> aluno, não da Academia. A ausência da coluna nas tabelas 5-B.1 e 5-B.2 é
+> aluno, não da Academia. A ausência da coluna nas tabelas 5-B.1 e 5-F é
 > deliberada, não esquecimento.
 
 A coluna **textura** é o padrão repetido que faz a peça ler no tamanho de julgamento
@@ -267,15 +267,22 @@ tem uma lógica que se entende olhando. É **uma**, e ela é do Bloco H.
 
 ---
 
-## 5-B. ROSTO — 12 peças: 8 barbas + 4 óculos
+## 5-B. ROSTO — 8 barbas. E ÓCULOS é OUTRO SLOT.
 
-**Duas famílias no mesmo slot, e elas não são a mesma coisa** — é a bifurcação da
-Regra Inviolável nº 4 caindo dentro de um slot só:
+⚠️ **Esta seção dizia "12 peças: 8 barbas + 4 óculos", e isso caducou em 2026-08-27.**
+O óculos saiu do slot `rosto` e ganhou o próprio — ver a **§5-F**, logo abaixo.
 
-| família | recolore? | formato | esteira |
+O motivo é do Doug: *"óculos e barba não podem ser a mesma coisa. Eu preciso que dê
+para vestir a barba e o óculos, ao mesmo tempo."* **Slot é exclusivo por construção**
+— `users` guarda UMA coluna por slot e `equipar_peca` escreve UM slug nela —, então
+enquanto as duas famílias dividissem `rosto`, vestir uma tirava a outra.
+
+A bifurcação da Regra Inviolável nº 4 continua valendo, agora entre slots:
+
+| slot | recolore? | formato | esteira |
 |---|---|---|---|
-| **barba** | **sim**, junto com o cabelo (D17 — barba é cabelo) | `formas` + máscara de tom | doc 19 §13 |
-| **óculos** | **não**, cor final assada | `<image>` WEBP no `.svg` | doc 19 §12 |
+| **rosto** (barba) | **sim**, junto com o cabelo (D17 — barba é cabelo) | `formas` + máscara de tom | doc 19 §13 |
+| **oculos** | **não**, cor final assada | `<image>` WEBP no `.svg` | doc 19 §12 |
 
 Tamanho de julgamento: **32 px** (doc 23 §6).
 
@@ -298,16 +305,42 @@ promovida.
 | 36 | `rosto-barba-por-fazer` | `common` | o pontilhado regular da barba de dois dias | a peça de menos massa do elenco; existe para ser a sutil |
 | 37 | `rosto-bigode-fino` | `common` | uma linha, e é o desenho inteiro | bigode fino sobre a boca. A peça `common` do slot: uma forma, sem sub-estrutura |
 
-### 5-B.2 Óculos — 4
+## 5-F. ÓCULOS — 5 peças, e o slot fecha
 
-**Elenco novo em 2026-08-21** — o slot nunca teve um. Cor final, assada.
+*A letra é a SEXTA porque o slot é o sexto a nascer; ele aparece aqui, e não no fim,
+porque quem lê a §5-B precisa achá-lo na linha seguinte — foi de lá que ele saiu.*
+
+**SLOT PRÓPRIO desde 2026-08-27** (`avatar_catalogo.slot = 'oculos'`,
+`users.avatar_oculos`). Cor final, assada. As cinco atravessaram a esteira no mesmo
+dia e o Doug as batizou uma a uma — o elenco está FECHADO, não é menu.
+
+⚠️ **O menu previa QUATRO** (`redondo`, `quadrado`, `meia-lua`, `lentes-de-vitral`) e
+chegaram CINCO artes. O menu cedeu, como cedeu no chapéu: *"mude o menu e adapte de
+acordo com a pasta."*
 
 ⚠️ **A moldura pode ser escura, mas não pode ser o preto do boneco:** óculos com aro
 `#000000` na espessura do contorno funde com a sobrancelha a 32 px. O aro é escuro,
 não é `LINHA`.
 
-| # | slug | raridade | textura repetida | construção |
+Tamanho de julgamento: **32 px** (doc 23 §6).
+
+| # | slug | raridade | massa | o que é |
 |---|---|---|---|---|
+| 38 | `oculos-redondo-simples` | `common` | 26 796 px | dois aros circulares, traço preto grosso, ponte curta |
+| 39 | `oculos-escolar-simples` | `rare` | 20 962 px | browline — barra superior espessa, aros finos fechando por baixo |
+| 40 | `oculos-quadrado-retro-rosa` | `epic` | 31 535 px | acetato retangular arredondado, rosa magenta |
+| 41 | `oculos-duplo-art-nouveau` | `legendary` | 31 255 px | aros finos claros, aro duplo à esquerda e pendente de contas |
+| 42 | `oculos-aviator` | `epic` | 26 733 px | lentes largas de canto arredondado, barra superior contínua, fio claro |
+
+**As cinco deixam os dois olhos à mostra** — 0 a 52 px de tinta dentro da cápsula, de
+9 000. **A LENTE não existe ainda**: ela entra por código, não por desenho, e a cor
+segue por decidir (`PEDIDO-OCULOS.md` §3 — branco a 30% foi medido e falha).
+
+⚠️ Duas observações de desenho que o Doug aprovou assim mesmo: o `aviator` **some a
+32 px** (fio claro sobre pele clara) e é o par mais próximo do `escolar-simples` em
+forma; o pendente do `duplo-art-nouveau` lê como pontinhos soltos, não fio contínuo.
+
+---|---|---|---|---|
 | 38 | `rosto-oculos-redondo` | `common` | o aro fino, e nada mais | dois círculos e a ponte. A peça de referência do slot |
 | 39 | `rosto-oculos-quadrado` | `rare` | o aro grosso **+** a dobradiça visível de cada lado | armação de acetato retangular |
 | 40 | `rosto-oculos-meia-lua` | `rare` | o meio-aro **+** o cordão que passa por trás | óculos de leitura baixos no nariz — o cordão **não** passa atrás da cabeça (doc 23 §7.1) |

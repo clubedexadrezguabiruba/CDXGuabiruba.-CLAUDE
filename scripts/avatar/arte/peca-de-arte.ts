@@ -304,6 +304,44 @@ export interface SlotDeArte {
    * silêncio é o modo de falha que esta rota inteira existe para fechar.
    */
   campo: (x: number, y: number) => boolean;
+  /**
+   * O QUE UM FURO CERCADO PODE TER DENTRO PARA CONTINUAR ABERTO — e é o vão da lente.
+   *
+   * ---------------------------------------------------------------------------
+   * A ESTEIRA TONAL JÁ TINHA ESTA REGRA; A RASTER NÃO TINHA
+   * ---------------------------------------------------------------------------
+   *
+   * `taparFurosCercados` tapa todo vão que não alcança a borda, porque *peça é
+   * figurinha, opaca por dentro*. Isso é certo para toca, túnica e aba — e é
+   * **errado para óculos**, cuja peça é definida pelos dois vãos que ela cerca.
+   *
+   * Medido no primeiro óculos, em 2026-08-27, com o campo já excluindo a cápsula do
+   * olho e a espinha da boca:
+   *
+   * | | com a regra | sem ela |
+   * |---|---|---|
+   * | furos tapados | (o vão fica aberto) | **23 038 px** |
+   * | cor dominante da peça | a armação | **`#E6AB7A` — PELE** |
+   * | anel em volta dos olhos | aberto | **98,1% opaco** |
+   *
+   * O campo sozinho não basta, e o número acima é o porquê: a cápsula do olho tem
+   * 38 × 83 u e o vão da lente é muito maior que ela. Proteger a feição deixa o
+   * RESTO do vão ser assado — e o que é assado ali é a pele e o olho da base de
+   * edição, não a pele que o aluno escolheu. A peça chegaria ao produto com um
+   * retrato da base dentro de cada lente.
+   *
+   * A esteira que RECOLORE já resolvia isto desde 2026-08-22, e com esta mesma
+   * régua: `construirPecaTonal` conta `janelasDeFeicao` e deixa aberto o furo que
+   * contém feição (`barba-para-formas.ts`, passo 2c). O que entra aqui não é regra
+   * nova — é a mesma regra, do outro lado da bifurcação da Regra Inviolável nº 4.
+   *
+   * ⚠️ **Ela é OPCIONAL, e isso é o que a torna inerte para quem já foi aprovado.**
+   * Traje e chapéu não a declaram, então `taparFurosCercados` recebe `undefined` e
+   * roda o laço de sempre — nenhum byte dos `.svg` no ar pode mudar, e não por
+   * medição feita depois, e sim por construção. `arte:trajes --check` e
+   * `arte:chapeus --check` são a prova, e estão no `verify:arte`.
+   */
+  janela?: (x: number, y: number) => boolean;
 }
 
 /**
@@ -360,6 +398,14 @@ export interface Peca {
    * peça foi pintada numa cor perto da que estava atrás dela.
    */
   furosTapados: number;
+  /**
+   * Vãos que a peça cerca e deixou ABERTOS — a lente do óculos, e nada mais hoje.
+   *
+   * Sem `SlotDeArte.janela` ele é sempre 0, porque o tapa-furo não deixa vão nenhum
+   * de pé: é o valor certo para toca, aba e túnica, e é o valor que traje e chapéu
+   * medem. Para o óculos o esperado é **2**, e 0 ali quer dizer peça cega.
+   */
+  janelasAbertas: number;
   salpico: number;
   descartadas: number;
   foraDoRecorte: number;
@@ -472,6 +518,13 @@ export function taparFurosCercados(
   w: number,
   h: number,
   noCampo: (i: number) => boolean,
+  /**
+   * O furo que contém isto fica ABERTO — o vão da lente. Ver `SlotDeArte.janela`.
+   *
+   * Ausente é o modo de sempre: o laço não muda de forma, e traje e chapéu saem byte
+   * a byte iguais. É o que faz esta regra nascer inerte para quem já foi aprovado.
+   */
+  janela?: (i: number) => boolean,
 ): number {
   // O lado de FORA: o vazio conexo à borda do canvas, por varredura em pilha.
   const fora = new Uint8Array(mascara.length);
@@ -502,14 +555,119 @@ export function taparFurosCercados(
 
   // O que sobrou — vazio que não é fora — é furo. O campo do slot continua
   // mandando: tapar não é licença para a peça crescer para onde ela não pode ir.
+  //
+  // SEM `janela`, o laço é o de sempre e nada mais precisa ser dito.
+  if (!janela) {
+    let tapados = 0;
+    for (let i = 0; i < mascara.length; i++) {
+      if (mascara[i] || fora[i]) continue;
+      if (!noCampo(i)) continue;
+      mascara[i] = 1;
+      tapados++;
+    }
+    return tapados;
+  }
+
+  // COM `janela`, a pergunta passa a ser POR FURO e não por pixel: um vão que contém
+  // feição fica aberto INTEIRO. Perguntar por pixel deixaria a cápsula do olho aberta
+  // e o resto do vão da lente assado — foram os 23 038 px medidos no primeiro óculos.
+  const visto = new Uint8Array(mascara.length);
   let tapados = 0;
-  for (let i = 0; i < mascara.length; i++) {
-    if (mascara[i] || fora[i]) continue;
-    if (!noCampo(i)) continue;
-    mascara[i] = 1;
-    tapados++;
+  for (let semente = 0; semente < mascara.length; semente++) {
+    if (mascara[semente] || fora[semente] || visto[semente]) continue;
+    visto[semente] = 1;
+    const furo: number[] = [];
+    const pilha2 = [semente];
+    let temJanela = false;
+    while (pilha2.length) {
+      const i = pilha2.pop() as number;
+      furo.push(i);
+      if (janela(i)) temJanela = true;
+      const x = i % w;
+      const y = (i / w) | 0;
+      for (const q of [
+        x > 0 ? i - 1 : -1,
+        x < w - 1 ? i + 1 : -1,
+        y > 0 ? i - w : -1,
+        y < h - 1 ? i + w : -1,
+      ])
+        if (q >= 0 && !mascara[q] && !fora[q] && !visto[q]) {
+          visto[q] = 1;
+          pilha2.push(q);
+        }
+    }
+    if (temJanela) continue;
+    for (const i of furo) {
+      if (!noCampo(i)) continue;
+      mascara[i] = 1;
+      tapados++;
+    }
   }
   return tapados;
+}
+
+/**
+ * QUANTOS VÃOS A PEÇA CERCA E DEIXOU ABERTOS — contados no RESULTADO, não no caminho.
+ *
+ * O número podia sair de dentro de `taparFurosCercados`, que já sabe quantos furos
+ * pulou. Sai daqui de propósito: ali ele seria a contagem do que o algoritmo *quis*
+ * fazer, e aqui é a contagem do que a máscara *ficou*. Quando as duas discordam, é a
+ * segunda que está certa — a lição de medir o render e não a arte.
+ *
+ * Para o óculos ele tem valor esperado: **2**, um por lente. Zero quer dizer peça
+ * cega, e é o defeito que `SlotDeArte.janela` existe para não deixar acontecer.
+ */
+export function janelasAbertas(mascara: Uint8Array, w: number, h: number): number {
+  const fora = new Uint8Array(mascara.length);
+  const pilha: number[] = [];
+  const empilhar = (i: number) => {
+    if (!mascara[i] && !fora[i]) {
+      fora[i] = 1;
+      pilha.push(i);
+    }
+  };
+  for (let x = 0; x < w; x++) {
+    empilhar(x);
+    empilhar((h - 1) * w + x);
+  }
+  for (let y = 0; y < h; y++) {
+    empilhar(y * w);
+    empilhar(y * w + w - 1);
+  }
+  while (pilha.length) {
+    const i = pilha.pop() as number;
+    const x = i % w;
+    const y = (i / w) | 0;
+    if (x > 0) empilhar(i - 1);
+    if (x < w - 1) empilhar(i + 1);
+    if (y > 0) empilhar(i - w);
+    if (y < h - 1) empilhar(i + w);
+  }
+
+  const visto = new Uint8Array(mascara.length);
+  let quantas = 0;
+  for (let semente = 0; semente < mascara.length; semente++) {
+    if (mascara[semente] || fora[semente] || visto[semente]) continue;
+    quantas++;
+    visto[semente] = 1;
+    const p = [semente];
+    while (p.length) {
+      const i = p.pop() as number;
+      const x = i % w;
+      const y = (i / w) | 0;
+      for (const q of [
+        x > 0 ? i - 1 : -1,
+        x < w - 1 ? i + 1 : -1,
+        y > 0 ? i - w : -1,
+        y < h - 1 ? i + w : -1,
+      ])
+        if (q >= 0 && !mascara[q] && !fora[q] && !visto[q]) {
+          visto[q] = 1;
+          p.push(q);
+        }
+    }
+  }
+  return quantas;
 }
 
 export async function construirPeca(
@@ -535,7 +693,11 @@ export async function construirPeca(
   const furosTapados = taparFurosCercados(e.mascara, LADO, LADO, (i) => {
     const u = paraUnidade(i % LADO, Math.floor(i / LADO));
     return slot.campo(u.x, u.y);
-  });
+  }, slot.janela && ((i) => {
+    const u = paraUnidade(i % LADO, Math.floor(i / LADO));
+    return slot.janela!(u.x, u.y);
+  }));
+  const janelas = janelasAbertas(e.mascara, LADO, LADO);
 
   // Sem fábrica, a tinta é a IDENTIDADE: a cor que sai é a que a artista pintou.
   const tinta: Tinta = fabricaDeTinta
@@ -642,6 +804,7 @@ export async function construirPeca(
     recolorida: tinta.declarada,
     pixels,
     furosTapados,
+    janelasAbertas: janelas,
     foraDoCampo: e.foraDoCampo,
     salpico: e.salpico,
     descartadas: e.descartadas.length,

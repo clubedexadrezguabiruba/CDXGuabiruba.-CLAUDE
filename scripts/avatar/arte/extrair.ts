@@ -119,6 +119,7 @@ import {
   regiaoDoPixel,
   saidaDaArte,
 } from "./base";
+import { ehLinhaInstrumental } from "./linha-instrumental";
 import {
   type Componente,
   type Img,
@@ -383,7 +384,36 @@ export function mascaraDaPeca(
     return ehEscuro(base.data[j], base.data[j + 1], base.data[j + 2]);
   };
 
-  // A busca em largura: semeia no ciano e anda por `ciano ∪ preto ancorado`.
+  // A SEMENTE: ciano **ou LINHA INSTRUMENTAL**. A busca anda por `ciano ∪ preto
+  // ancorado`.
+  //
+  // ---------------------------------------------------------------------------
+  // A LINHA ENTROU COMO SEMENTE EM 2026-08-27, E O DEFEITO TEM NÚMERO
+  // ---------------------------------------------------------------------------
+  //
+  // Semear só no ciano funcionou enquanto toda peça era MASSA com um fio em volta:
+  // o `assimetrico` tem 35 661 px de linha azul e uma cúpula inteira de ciano para
+  // semear, então a linha é alcançada pelo crescimento e ninguém notou a falta.
+  //
+  // O quarto óculos quebrou isso, e quebrou pela proporção: **21 901 px de linha
+  // contra 1 863 px de massa** — 92% da peça é fio. Uma armação fina é quase toda
+  // contorno por definição, e o pedaço de aro que não encosta em ciano nenhum nunca
+  // era alcançado. Medido no Gate −1: **8 321 px mudados em "rosto", dos quais
+  // 7 542 px (90,6%) "preto novo"**, e mesmo assim **56 ladrilhos** de forma —
+  // porque o julgamento é `região ∧ ¬peça` e a peça não continha o próprio aro. A
+  // arte reprovava com a mensagem *"o gerador redesenhou o boneco"* sobre uma arte
+  // em que o boneco está intacto, que é o mesmo modo de falha da `entrada-2` e da
+  // `rala`, pela terceira vez.
+  //
+  // **A linha instrumental é uma declaração, não uma inferência.** Ela existe desde
+  // 2026-08-22 para o gerador poder dizer *"esta linha é minha"*, e `restaurar-peca`
+  // a reescreve como `(L, L, L+48)` — um marcador que nada na base de edição tem
+  // (ela é monocromática entre 26,9° e 43,2° de matiz, `cor-proibida.ts`). Semear
+  // nela não afrouxa nada: é ler o que a arte já declarou.
+  //
+  // ⚠️ **Respingo medido, não argumentado:** `arte:pecas --check`,
+  // `arte:cabelos --check`, `arte:rostos --check`, `arte:trajes --check` e
+  // `arte:chapeus --check` conferem caractere a caractere depois desta linha.
   const peca = new Uint8Array(n);
   {
     const fila = new Int32Array(n);
@@ -394,7 +424,12 @@ export function mascaraDaPeca(
     // já tinha, que é o que pode ser contorno do boneco.
     const aceita = (i: number) =>
       !peca[i] && permitida[i] && (teal[i] || (escuro[i] && (!eraEscuro(i) || perto[i])));
-    for (let i = 0; i < n; i++) if (teal[i] && permitida[i]) (peca[i] = 1), (fila[fim++] = i);
+    const semente = (i: number) => {
+      if (teal[i]) return true;
+      const j = i * 3;
+      return ehLinhaInstrumental(arte.data[j], arte.data[j + 1], arte.data[j + 2]);
+    };
+    for (let i = 0; i < n; i++) if (semente(i) && permitida[i]) (peca[i] = 1), (fila[fim++] = i);
     while (ini < fim) {
       const p = fila[ini++];
       const x = p % arte.w;
