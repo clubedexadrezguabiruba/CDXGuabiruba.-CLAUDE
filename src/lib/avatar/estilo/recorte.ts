@@ -97,6 +97,10 @@
  * plataforma — navbar, ranking, mural, dashboard —, para conter a aba de quatro
  * peças. *"Está ótimo do jeito que está, não precisa alargar."*
  *
+ * **E não parou na folha: em 2026-08-27 o `mago` — o pior caso — foi olhado na
+ * NAVBAR EM PRODUÇÃO, a 32 px, e aprovado ali.** Decisão visual que só passou por
+ * render é decisão sobre um render; esta passou pelo produto.
+ *
  * A regra do cabelo continua valendo para o cabelo, e a diferença não é gosto: o
  * cabelo é uma das duas coisas que o aluno ESCOLHE (emenda à D27) e o retrato
  * existe para mostrá-lo; o chapéu é peça de cor assada que transborda de lado, e
