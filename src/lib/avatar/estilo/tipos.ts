@@ -459,6 +459,44 @@ export type PecaDeChapeu = PecaSobreposta & {
    * tabela de `camadas.ts` continua sendo a autoridade sobre *ordem*.
    */
   escondeCabelo?: string;
+  /**
+   * `abaSobreOculos` — ESTE chapéu tem aba que desce sobre os olhos, e ela ganha do óculos.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ELE EXISTE, E POR QUE É DO CHAPÉU E NÃO DO ÓCULOS
+   * ---------------------------------------------------------------------------
+   *
+   * Até 2026-08-28 o óculos vinha ANTES do chapéu na pilha, com o argumento de que
+   * *"aba de chapéu por cima de óculos é o que aba faz"*. O Doug olhou os 45 pares
+   * renderizados e reprovou: na maioria dos chapéus a aba que cruza o óculos é a de
+   * TRÁS — a que contorna o crânio pelo outro lado —, e aba de trás por cima da
+   * armação é impossível. Medido antes da troca: 8,29% da pegada do óculos comida à
+   * esquerda e 9,23% à direita, somados os 45 pares.
+   *
+   * O óculos subiu, e **um** chapéu reprovou a subida: o `bone`. A pala dele projeta
+   * para a FRENTE, abaixo da linha da testa, e ali a aba está mesmo na frente do
+   * rosto. *"O boné, por ter uma aba que desce abaixo da testa. O óculos por cima
+   * dessa aba não faz sentido."*
+   *
+   * O campo é do CHAPÉU porque o fato é do chapéu: pala para a frente é propriedade
+   * do desenho da peça, e não muda com qual óculos o aluno escolheu. Um campo no
+   * óculos seria 5 declarações para descrever 1 fato de 9.
+   *
+   * ---------------------------------------------------------------------------
+   * ELE É ORDENAÇÃO, E POR ISSO MORA NA TABELA
+   * ---------------------------------------------------------------------------
+   *
+   * Ao contrário de `escondeCabelo`, que é SUPRESSÃO e não move ninguém, este campo
+   * escolhe entre DUAS linhas de `camadas.ts` — `oculos-sob-chapeu` e
+   * `oculos-sobre-chapeu` —, exatamente como `cabeloPorCima` parte o slot `rosto`.
+   * A tabela continua sendo a autoridade sobre ordem; o campo só diz por qual das
+   * duas portas esta peça manda o óculos passar.
+   *
+   * ⚠️ **Ausente ≡ o óculos POR CIMA**, que é o caso de 8 dos 9. O `never` do
+   * `cabeloPorCima` logo acima continua valendo: este campo não é aquele, e um
+   * chapéu não escolhe lado do rosto.
+   */
+  abaSobreOculos?: boolean;
 };
 
 /**

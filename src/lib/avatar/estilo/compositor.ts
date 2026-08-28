@@ -1409,7 +1409,21 @@ export function compor(estado: EstadoAvatar): string {
     // `cabeloPorCima` sumiria do boneco em silêncio. `PecaDeOculos` fecha isso pelo
     // tipo (`cabeloPorCima?: never`), e esta chamada o mantém fora da partição de
     // qualquer jeito — mecanismo em vez de disciplina, nos dois níveis.
-    sobrepor(estado.oculos, ns, "oculos") +
+    // ⚠️ **A ORDEM VIROU EM 2026-08-28, e o comentário acima é do que ela era.**
+    //
+    // O óculos passou a vir DEPOIS do chapéu, e o argumento antigo — "aba de chapéu
+    // por cima de óculos é o que aba faz" — caiu no render: o Doug olhou os 45 pares
+    // e viu que, na maioria dos chapéus, a aba que cruza o óculos é a de TRÁS, a que
+    // contorna o crânio pelo outro lado. Aba de trás por cima da armação é impossível.
+    // Medido antes da troca: 8,29% da pegada do óculos comida à esquerda e 9,23% à
+    // direita, somados os 45 pares — a sobreposição nunca foi de um lado só.
+    //
+    // Sobrou UM chapéu na ordem antiga, e ele declara isso na própria peça: o `bone`,
+    // cuja pala projeta para a FRENTE, abaixo da linha da testa. Ali a aba está mesmo
+    // na frente do rosto. `abaSobreOculos` é o campo, e `camadas.ts` tem as duas
+    // linhas — `oculos-sob-chapeu` e `oculos-sobre-chapeu` —, exatamente como o slot
+    // `rosto` já é partido por `cabeloPorCima`.
+    (estado.chapeu?.abaSobreOculos ? sobrepor(estado.oculos, ns, "oculos") : "") +
     // O CHAPÉU, e ele NÃO participa da partição acima.
     //
     // ⚠️ **ELE NÃO É O ÚLTIMO, e este comentário já afirmou que era.** Logo abaixo
@@ -1436,6 +1450,9 @@ export function compor(estado: EstadoAvatar): string {
     // só do lado do rosto, a bandeira num chapéu é inerte em vez de fatal.
     // `pecas-de-elenco.test.ts` cobra exatamente isso.
     sobrepor(estado.chapeu, ns, "chapeu") +
+    // E o óculos por CIMA, que é o caso de 8 dos 9 chapéus — e o de todo aluno sem
+    // chapéu nenhum, porque aí não há quem declare a exceção.
+    (estado.chapeu?.abaSobreOculos ? "" : sobrepor(estado.oculos, ns, "oculos")) +
     extensoes(traje, false) +
     `</g>` +
     fecha +

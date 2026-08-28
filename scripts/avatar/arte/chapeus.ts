@@ -78,6 +78,25 @@ const NOMES: Record<string, string> = {
   "chapeu-mago": "Chapéu de Mago", // legendary
 };
 
+/**
+ * Quais chapéus têm ABA PARA A FRENTE, que ganha do óculos.
+ *
+ * Escrito à mão, como `NOMES` acima, e pelo mesmo motivo: não se deriva do alfa.
+ * "A aba cruza o óculos" a máquina mede — e mediu, nos 45 pares. O que ela não sabe
+ * é se aquela aba é a da FRENTE (pala de boné, sobre os olhos) ou a de TRÁS (o outro
+ * lado do crânio). Isso é profundidade, e a arte é chapada: só o olho de quem
+ * desenhou responde.
+ *
+ * O Doug olhou os 45 renderizados em 2026-08-28 e reprovou **um**: *"O boné, por ter
+ * uma aba que desce abaixo da testa. O óculos por cima dessa aba não faz sentido,
+ * pois na vida real a aba deve estar acima dos óculos."* Os outros 8 aprovaram com o
+ * óculos por cima.
+ *
+ * Chapéu novo entra FORA desta lista — o óculos por cima é o padrão. Entra aqui só
+ * quando a aba desce sobre os olhos, e a régua é o render, não o palpite.
+ */
+const ABA_SOBRE_OCULOS = new Set<string>(["chapeu-bone"]);
+
 /** `public/items/chapeu/x.svg` → `/items/chapeu/x.svg`, a URL que o browser pede. */
 const urlDaArte = (caminho: string) => caminho.replace(/^public/, "");
 
@@ -96,6 +115,11 @@ const CABECALHO = `/**
  *  - \`arte\` — o \`.svg\` da peça, colado por \`<image>\` na \`CAIXA_DA_ARTE\`. O chapéu
  *    **não recolore** (Regra Inviolável nº 4): a cor sai final da arte, e não há
  *    \`tinta\` nem fábrica de cor neste slot;
+ *  - \`abaSobreOculos\` — este chapéu tem ABA PARA A FRENTE, que desce sobre os
+ *    olhos e ganha do óculos. Ausente ≡ o óculos passa por CIMA, o caso de 8 dos 9.
+ *    É fato de desenho, escrito à mão no gerador: a máquina mede que a aba cruza o
+ *    óculos, mas não sabe se é a da frente ou a de trás — isso é profundidade, e a
+ *    arte é chapada;
  *  - \`escondeCabelo\` — a LINHA que esta peça contém, extraída do alfa do próprio
  *    \`.svg\` por \`oclusao-do-chapeu.ts\`: acima dela o cabelo não sai, abaixo dela
  *    sai inteiro. Não é escolha de arte e ninguém a escreve; mudou o desenho, mudou
@@ -113,6 +137,10 @@ function corpoDaPeca(slug: string, nome: string, arte: string, escondeCabelo?: s
     `    id: ${JSON.stringify(slug)},\n` +
     `    nome: ${JSON.stringify(nome)},\n` +
     `    arte: ${JSON.stringify(arte)},\n` +
+    // Ausente ≡ óculos por cima, que é o caso de 8 dos 9. Só quem está na lista
+    // escreve a linha — o arquivo gerado não carrega `false` por 8 peças.
+    (ABA_SOBRE_OCULOS.has(slug) ? `    abaSobreOculos: true,
+` : "") +
     (escondeCabelo ? `    escondeCabelo:\n      ${JSON.stringify(escondeCabelo)},\n` : "") +
     `  },`
   );

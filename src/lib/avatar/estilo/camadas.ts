@@ -150,6 +150,20 @@ export type GrupoDeClip = "clip-tronco" | "clip-cabeca";
  * que a próxima pessoa vai virar no olho — que é exatamente como a barba virou três
  * vezes.
  */
+/**
+ * O TERCEIRO EIXO DE EXCLUSIVIDADE — e ele pertence ao CHAPÉU, não ao óculos.
+ *
+ * `frente` é a pala que desce sobre os olhos (o `bone`): ali a aba está mesmo na
+ * frente do rosto e ganha do óculos. `tras` é todo o resto — a aba que cruza o
+ * óculos é a que contorna o crânio pelo outro lado, e ela perde.
+ *
+ * `qualquer` é o que 22 das 24 linhas são: elas não dependem disso. Por isso o campo
+ * é OPCIONAL na `Camada` — exigi-lo em todas seria 22 declarações de "tanto faz"
+ * para partir 2 linhas. Quem cobra de verdade é o censo do gate, que reprovou
+ * exatamente assim enquanto este eixo não existia: 27 emitidos contra 29 declarados.
+ */
+export type AbaDoChapeu = "qualquer" | "frente" | "tras";
+
 export interface Camada {
   /** Identidade da camada. `IdDeCamada` sai daqui, então id errado não compila. */
   readonly id: string;
@@ -169,6 +183,8 @@ export interface Camada {
   readonly familiaCabelo: FamiliaDeCabelo;
   /** De que lado do cabelo a peça de rosto veste. */
   readonly ladoDoRosto: LadoDoRosto;
+  /** Se a linha depende de o chapéu ter aba para a FRENTE. Ausente ≡ `qualquer`. */
+  readonly abaDoChapeu?: AbaDoChapeu;
   /** Dentro de que `clipPath` ela é emitida. Ausente = fora de todo clip. */
   readonly grupo?: GrupoDeClip;
   /** O que APAGA esta camada sem mover ninguém de lugar. Supressão, não ordenação. */
@@ -190,12 +206,14 @@ export interface Camada {
  * A PILHA, DE TRÁS PARA A FRENTE. Quem vem depois pinta por cima.
  *
  * ---------------------------------------------------------------------------
- * AS QUATRO VÁLVULAS QUE PARTICIONAM ESTA LISTA, E A REGRA PARA UMA QUINTA
+ * AS CINCO VÁLVULAS QUE PARTICIONAM ESTA LISTA, E A REGRA PARA UMA SEXTA
  * ---------------------------------------------------------------------------
  *
  * `Traje.extensoes[].atras`, `Extensao.atras` (cabelo), `PecaDeRosto.cabeloPorCima`
- * e o `PecaDeChapeu.cabeloPorCima?: never` que é o par de trava da terceira. Cada
- * uma parte uma lista entre **linhas que já existem** aqui.
+ * e o `PecaDeChapeu.cabeloPorCima?: never` que é o par de trava da terceira — mais
+ * `PecaDeChapeu.abaSobreOculos`, que nasceu em 2026-08-28 e parte o slot `oculos`
+ * entre `oculos-sob-chapeu` e `oculos-sobre-chapeu`. Cada uma parte uma lista entre
+ * **linhas que já existem** aqui.
  *
  * `semTraco` **não é válvula de z** e por isso não aparece nesta tabela: ele
  * responde *"esta forma tem borda externa"*, não *"onde ela entra"*.
@@ -414,13 +432,14 @@ export const PILHA = [
     ladoDoRosto: "sobre",
   },
   {
-    id: "oculos",
+    id: "oculos-sob-chapeu",
     dono: "oculos",
-    onde: "compor() → sobrepor(estado.oculos)",
+    onde: "compor() → chapeu.abaSobreOculos ? sobrepor(estado.oculos) : \"\"",
     porQue:
-      "O ÓCULOS, em slot próprio desde 2026-08-27. Ele vem DEPOIS do cabelo e ANTES do chapéu: sem haste não há o que apoiar (doc 21 §2c), a lente é livre para exceder o rosto, e a peça que a criança desbloqueou não pode depender de qual franja está embaixo — mas um chapéu de aba baixa PODE cobri-lo, que é o que aba faz. Ele não participa da partição de `rosto()`: `PecaDeOculos` declara `cabeloPorCima?: never`, então não tem lado a escolher",
+      "O ÓCULOS quando o chapéu tem ABA PARA A FRENTE — a pala do `bone`, que desce abaixo da linha da testa. Ali a aba está mesmo na frente do rosto, e armação por cima dela não existe na vida. **Era a posição de TODO óculos até 2026-08-28**, com o argumento de que \"aba de chapéu por cima de óculos é o que aba faz\"; o render dos 45 pares derrubou o argumento no geral e o preservou aqui. EXCLUSIVA com `oculos-sobre-chapeu`: é o mesmo slot, partido por `PecaDeChapeu.abaSobreOculos` — o mesmo idioma que `cabeloPorCima` usa no slot `rosto`",
     familiaCabelo: "qualquer",
     ladoDoRosto: "qualquer",
+    abaDoChapeu: "frente",
   },
   {
     id: "chapeu",
@@ -430,6 +449,16 @@ export const PILHA = [
       "ele disputa o crânio e vence: é o que 'esconde o cabelo' quer dizer. Não participa da partição do rosto, e isso é trava de tipo (`PecaDeChapeu.cabeloPorCima?: never`), não disciplina",
     familiaCabelo: "qualquer",
     ladoDoRosto: "qualquer",
+  },
+  {
+    id: "oculos-sobre-chapeu",
+    dono: "oculos",
+    onde: "compor() → chapeu.abaSobreOculos ? \"\" : sobrepor(estado.oculos)",
+    porQue:
+      "O ÓCULOS no caso normal — 8 dos 9 chapéus, e todo aluno sem chapéu nenhum. Ele subiu para cá em 2026-08-28: na maioria das peças a aba que cruza o óculos é a de TRÁS, a que contorna o crânio pelo outro lado, e aba de trás por cima da armação é impossível. Medido antes da troca: 8,29% da pegada do óculos comida à esquerda e 9,23% à direita, somados os 45 pares — a sobreposição nunca foi de um lado só, e por isso a correção não pôde ser por lado. EXCLUSIVA com `oculos-sob-chapeu`",
+    familiaCabelo: "qualquer",
+    ladoDoRosto: "qualquer",
+    abaDoChapeu: "tras",
   },
   {
     id: "traje-extensoes-frente",

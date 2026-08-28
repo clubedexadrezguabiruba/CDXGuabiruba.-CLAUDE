@@ -266,10 +266,20 @@ const NAS_FAMILIAS = {
   temExtensao: ["parametrico", "tracado"],
 } as const satisfies Record<FamiliaDeCabelo, readonly Variante[]>;
 type Lado = "sob" | "sobre";
+/**
+ * O TERCEIRO EIXO: o chapéu deste elenco tem aba para a frente?
+ *
+ * Ele dobra os elencos de 6 para 12, e paga por si: sem ele o par
+ * `oculos-sob-chapeu` / `oculos-sobre-chapeu` teria uma linha ativa e outra morta em
+ * TODO elenco, e o censo reprovaria — foi o que aconteceu, 27 emitidos contra 29
+ * declarados, antes deste eixo existir.
+ */
+type Aba = "frente" | "tras";
 
 interface Elenco {
   readonly variante: Variante;
   readonly lado: Lado;
+  readonly aba: Aba;
   readonly nome: string;
   /** O CORPO do SVG: tudo depois de `</defs>`. O que está em `<defs>` não é camada. */
   readonly corpo: string;
@@ -302,23 +312,28 @@ const CABELO_DA_VARIANTE: Record<Variante, Cabelo> = {
 
 const ELENCOS: readonly Elenco[] = (["parametrico", "tracado", "tonal"] as const).flatMap(
   (variante) =>
-    (["sob", "sobre"] as const).map((lado) => ({
-      variante,
-      lado,
-      nome: `${variante} × ${lado}`,
-      corpo: corpoDe({
-        ns: NS,
-        pele: "#E9B183",
-        cabelo: "#3A2F2A",
-        modeloCabelo: CABELO_DA_VARIANTE[variante],
-        traje: TRAJE,
-        rosto: ROSTO(lado === "sob"),
-        // OS DOIS JUNTOS, em todo elenco. É a asserção que o slot novo existe para
-        // sustentar: barba e óculos no mesmo boneco.
-        oculos: OCULOS,
-        chapeu: CHAPEU,
-      }),
-    })),
+    (["sob", "sobre"] as const).flatMap((lado) =>
+      (["frente", "tras"] as const).map((aba) => ({
+        variante,
+        lado,
+        aba,
+        nome: `${variante} × ${lado} × aba-${aba}`,
+        corpo: corpoDe({
+          ns: NS,
+          pele: "#E9B183",
+          cabelo: "#3A2F2A",
+          modeloCabelo: CABELO_DA_VARIANTE[variante],
+          traje: TRAJE,
+          rosto: ROSTO(lado === "sob"),
+          // OS DOIS JUNTOS, em todo elenco. É a asserção que o slot novo existe para
+          // sustentar: barba e óculos no mesmo boneco.
+          oculos: OCULOS,
+          // O chapéu é quem decide de que lado do óculos ele fica — `abaSobreOculos`
+          // é campo dele, não do óculos. `frente` é a pala do `bone`.
+          chapeu: aba === "frente" ? { ...CHAPEU, abaSobreOculos: true } : CHAPEU,
+        }),
+      })),
+    ),
 );
 
 // ---------------------------------------------------------------------------
@@ -367,8 +382,14 @@ const MARCA = {
   // como `class="kk-tinta kk-olho"`.
   "cabelo-sobreposto": /class="kk-(tinta|cabelo-m)"|M 606 606 L 646 606 L 646 646 Z/g,
   "rosto-sobre-cabelo": /M 101 101 L 141 101 L 141 141 Z/g,
-  oculos: /M 707 707 L 747 707 L 747 747 Z/g,
+  // AS DUAS LINHAS DO SLOT `oculos` COMPARTILHAM MARCADOR, e isso é honesto pelo
+  // mesmo motivo do par do rosto: é a MESMA emissão, `sobrepor(estado.oculos)`,
+  // mudando só de lugar. Quem escolhe o lugar é o chapéu (`abaSobreOculos`), então
+  // a linha INATIVA não pode ser cobrada por contagem zero — `marcadorRoubado`
+  // cuida disso, e é a mesma máquina que o `rosto` já usava.
+  "oculos-sob-chapeu": /M 707 707 L 747 707 L 747 747 Z/g,
   chapeu: /M 202 202 L 242 202 L 242 242 Z/g,
+  "oculos-sobre-chapeu": /M 707 707 L 747 707 L 747 747 Z/g,
   "traje-extensoes-frente": /M 505 505 L 545 505 L 545 545 Z/g,
 } satisfies Record<IdDeCamada, RegExp>;
 
@@ -402,8 +423,9 @@ const VEZES = {
   "rosto-sob-cabelo": 2, // preenchimento + traço
   "cabelo-sobreposto": 3, // traçada: silhueta preta + núcleo + pretas (sem clara — ver o elenco)
   "rosto-sobre-cabelo": 2,
-  oculos: 2, // preenchimento + traço
+  "oculos-sob-chapeu": 2, // preenchimento + traço
   chapeu: 2,
+  "oculos-sobre-chapeu": 2,
   "traje-extensoes-frente": 2,
 } satisfies Record<IdDeCamada, number>;
 
@@ -439,6 +461,10 @@ const quantas = (e: Elenco, id: IdDeCamada) => VEZES_NA_VARIANTE[e.variante]?.[i
  */
 const MESMO_MARCADOR: readonly (readonly IdDeCamada[])[] = [
   ["rosto-sob-cabelo", "rosto-sobre-cabelo"],
+  // O par do ÓCULOS, pela mesma razão e desde 2026-08-28: um slot só, uma emissão
+  // só, dois lugares na pilha. Quem parte é `PecaDeChapeu.abaSobreOculos`, e quem
+  // prova o lugar é a ordem (asserção 3), nunca a contagem.
+  ["oculos-sob-chapeu", "oculos-sobre-chapeu"],
 ];
 
 // ---------------------------------------------------------------------------
@@ -463,7 +489,9 @@ const camadaDe = (id: IdDeCamada) => LINHAS.find((c) => c.id === id) as Camada;
 /** A linha existe neste elenco? É a tabela quem responde — os dois eixos exclusivos. */
 const ativa = (c: Camada, e: Elenco) =>
   (NAS_FAMILIAS[c.familiaCabelo] as readonly Variante[]).includes(e.variante) &&
-  (c.ladoDoRosto === "qualquer" || c.ladoDoRosto === e.lado);
+  (c.ladoDoRosto === "qualquer" || c.ladoDoRosto === e.lado) &&
+  // Ausente ≡ `qualquer`, que é o caso de 22 das 24 linhas. Ver `AbaDoChapeu`.
+  (!c.abaDoChapeu || c.abaDoChapeu === "qualquer" || c.abaDoChapeu === e.aba);
 
 const ativas = (e: Elenco) => LINHAS.filter((c) => ativa(c, e));
 

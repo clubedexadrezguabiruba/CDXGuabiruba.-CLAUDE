@@ -13,6 +13,11 @@
  *  - `arte` — o `.svg` da peça, colado por `<image>` na `CAIXA_DA_ARTE`. O chapéu
  *    **não recolore** (Regra Inviolável nº 4): a cor sai final da arte, e não há
  *    `tinta` nem fábrica de cor neste slot;
+ *  - `abaSobreOculos` — este chapéu tem ABA PARA A FRENTE, que desce sobre os
+ *    olhos e ganha do óculos. Ausente ≡ o óculos passa por CIMA, o caso de 8 dos 9.
+ *    É fato de desenho, escrito à mão no gerador: a máquina mede que a aba cruza o
+ *    óculos, mas não sabe se é a da frente ou a de trás — isso é profundidade, e a
+ *    arte é chapada;
  *  - `escondeCabelo` — a LINHA que esta peça contém, extraída do alfa do próprio
  *    `.svg` por `oclusao-do-chapeu.ts`: acima dela o cabelo não sai, abaixo dela
  *    sai inteiro. Não é escolha de arte e ninguém a escreve; mudou o desenho, mudou
@@ -33,6 +38,7 @@ export const CHAPEUS_DA_ARTE: Record<string, PecaDeChapeu> = {
     id: "chapeu-bone",
     nome: "Boné",
     arte: "/items/chapeu/chapeu-bone.svg",
+    abaSobreOculos: true,
     escondeCabelo:
       "M55 -58.8L55 -42.5 -10 -42.5L-75 -42.5 -75 58.8L-75 160 -9.6 160L55.8 160 55.8 164.8C55.8 175.2 59.1 194.5 61.4 198C62.1 199 64.6 200.9 67 202.1L71.5 204.3 73.9 203.8C75.2 203.5 77.6 202.5 79.2 201.5C80.8 200.5 82.5 199.6 83.1 199.5C83.7 199.4 87.8 196.9 92.3 194C103.4 186.7 137.4 169 151.9 162.9L157.6 160.5 171.5 167.5C179.2 171.3 186.2 174.7 187.1 175C188 175.3 191.8 176.6 195.4 177.9C199.1 179.1 204.5 180.9 207.5 181.8L212.9 183.4 237.5 183.1L262.1 182.8 271.7 179.4C283.9 175.1 308.1 164.7 324.6 156.7C328.3 155 333.3 152.8 335.8 152C338.4 151.2 344.5 149.1 349.5 147.3C360.4 143.3 374 140.4 386.7 139.2C396.2 138.3 409.5 138.2 414.9 139L417.6 139.4 420.4 143.2C424.1 148.3 426.9 153.9 429.9 162.4C431.3 166.2 433 170 433.8 170.9C437.7 175.2 466.4 183.8 480 184.7L488 185.2 492.8 183.8L497.6 182.4 500.9 179.4C504.8 175.9 506.7 172.7 506.7 169.6L506.7 167.5 540.8 167.5L575 167.5 575 62.5L575 -42.5 541.3 -42.5L507.5 -42.5 507.5 -58.8L507.5 -75 281.3 -75L55 -75 55 -58.8",
   },
