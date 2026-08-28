@@ -55,6 +55,40 @@ export const PASTA_OCULOS = "public/items/oculos";
  * `chapeu-bone.png` → `chapeu-bone`. `avatar_catalogo` tem chave primária única para
  * todos os slots, e é o prefixo que a garante.
  */
+/**
+ * VÃOS DECLARADOS PEÇA A PEÇA — o que `noVaoDaLente` não alcança.
+ *
+ * `noVaoDaLente` abre o furo que contém OLHO ou BOCA. O `aviator` tem um terceiro
+ * vão, entre as duas lentes e acima delas, que não contém nenhum dos dois — então
+ * era tapado, com a base de edição assada dentro. **1 175 px**, medidos no fluxo do
+ * próprio gerador, em u x 262,5→320,0 y 162,5→182,5. Quem viu foi o Doug, no
+ * produto, e ele marcou o vão na imagem.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE É PEÇA A PEÇA, E POR QUE É UM PONTO
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira tentativa foi uma regra de SLOT — uma "ponte do nariz" derivada das
+ * cápsulas dos olhos. Ela mexeu nas cinco peças e abriu **85 vãos de poeira** só no
+ * `aviator`, além de mudar `quadrado-retro-rosa` e `duplo-art-nouveau`, que estavam
+ * aprovados. O Doug: *"desfaça os outros óculos, eles estavam perfeitos"*.
+ *
+ * A semente é um PONTO e não um retângulo porque a regra do tapa-furo é por FURO:
+ * basta um pixel dentro do vão para ele sobreviver inteiro. Retângulo pegaria de
+ * carona o que encostasse na borda dele — há um vão de 50 px a 2 u da lateral.
+ *
+ * O ponto é o mais FUNDO do vão, medido: o pixel com a maior distância até a
+ * parede, **10 px de folga em todas as direções** (≈ 8,3 u). Não é o centroide — em
+ * vão em crescente o centro de massa cai fora dele. O raio de 4 u é metade da folga
+ * medida: cabe com sobra e não depende de a arte sair pixel a pixel igual.
+ */
+export const VAOS_DECLARADOS: Record<string, readonly { x: number; y: number }[]> = {
+  "oculos-aviator": [{ x: 285.0, y: 171.67 }],
+};
+
+/** Metade da folga medida no vão mais apertado que se declara. Ver acima. */
+const RAIO_DA_SEMENTE = 4;
+
 export const OCULOS: SlotDeArte = {
   nome: "oculos",
   slug: /^oculos-[a-z0-9]+(-[a-z0-9]+)*$/,
@@ -63,7 +97,11 @@ export const OCULOS: SlotDeArte = {
   // O VÃO DA LENTE. Sem esta linha a armação chega ao produto com um retrato da base
   // de edição dentro de cada aro — 23 038 px de pele assada, medidos. Ver
   // `SlotDeArte.janela` e `noVaoDaLente`.
-  janela: noVaoDaLente,
+  janela: (x, y, slug) =>
+    noVaoDaLente(x, y) ||
+    (VAOS_DECLARADOS[slug] ?? []).some(
+      (p) => Math.hypot(x - p.x, y - p.y) <= RAIO_DA_SEMENTE,
+    ),
 };
 
 /**

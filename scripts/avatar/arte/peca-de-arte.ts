@@ -341,7 +341,7 @@ export interface SlotDeArte {
    * medição feita depois, e sim por construção. `arte:trajes --check` e
    * `arte:chapeus --check` são a prova, e estão no `verify:arte`.
    */
-  janela?: (x: number, y: number) => boolean;
+  janela?: (x: number, y: number, slug: string) => boolean;
 }
 
 /**
@@ -695,7 +695,11 @@ export async function construirPeca(
     return slot.campo(u.x, u.y);
   }, slot.janela && ((i) => {
     const u = paraUnidade(i % LADO, Math.floor(i / LADO));
-    return slot.janela!(u.x, u.y);
+    // O SLUG VAI JUNTO desde 2026-08-28, e é o que permite exceção POR PEÇA em vez
+    // de regra de slot. O `aviator` tem um vão entre as lentes que nenhuma outra
+    // armação tem; uma regra de slot para abri-lo mexeria nas cinco — foi tentado,
+    // e reabriu poeira em três peças que estavam aprovadas.
+    return slot.janela!(u.x, u.y, slug);
   }));
   const janelas = janelasAbertas(e.mascara, LADO, LADO);
 

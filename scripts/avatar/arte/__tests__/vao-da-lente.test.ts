@@ -52,6 +52,7 @@ import { CAIXA_CABECA } from "../../../../src/lib/avatar/estilo/geometria";
 import { NOMES_OCULOS } from "../promovidas";
 import { extrairPorCampo } from "../extrair";
 import { janelasAbertas, taparFurosCercados } from "../peca-de-arte";
+import { OCULOS, VAOS_DECLARADOS } from "../oculos";
 import { OLHO_CX_ESQ, OLHO_CY_ESQ } from "../../../../src/lib/avatar/estilo/geometria";
 
 /** O lado do anel e a espessura da parede, em px do canvas de edição. */
@@ -205,15 +206,47 @@ describe("o vão da lente: furo com feição dentro fica aberto", () => {
   // vez (de `oculos-1..5` para os nomes que o Doug deu), e um teste que cita um nome
   // de arquivo morre no primeiro `mv`. Foi o que aconteceu em 2026-08-27.
   it.each(Object.keys(NOMES_OCULOS))(
-    "%s sai com DUAS janelas, uma por lente",
+    "%s sai com uma janela por lente, mais os vãos que a PEÇA declarar",
     { timeout: 120_000 },
     async (arquivo) => {
       // Zero aqui é peça CEGA: os vãos dos aros teriam sido tapados com a pele e os
       // olhos da base de edição, e o aluno veria a pele errada dentro das lentes.
       const e = await extrairPorCampo(`${PASTA}/${arquivo}.png`, noCampoDoOculos);
-      taparFurosCercados(e.mascara, LADO, LADO, noCampo, janela);
 
-      expect(janelasAbertas(e.mascara, LADO, LADO)).toBe(2);
+      // ⚠️ **O `janela` DA ESTEIRA, e não `noVaoDaLente`.** Até 2026-08-28 esta linha
+      // montava o próprio predicado a partir da função de base — e no dia em que o
+      // `aviator` ganhou vão declarado por PEÇA, o teste teria continuado verde
+      // medindo um predicado que o produto não usa mais. Verde por vacuidade,
+      // exatamente o padrão que este repositório já pagou cinco vezes.
+      taparFurosCercados(e.mascara, LADO, LADO, noCampo, (i) => {
+        const u = paraUnidade(i % LADO, Math.floor(i / LADO));
+        return OCULOS.janela!(u.x, u.y, arquivo);
+      });
+
+      // DUAS pelas lentes, mais uma por vão que a peça declara. A conta sai de
+      // `VAOS_DECLARADOS`, e não de um número escrito aqui: declarar vão novo sem
+      // ele aparecer no render passaria a reprovar sozinho.
+      const declarados = (VAOS_DECLARADOS[arquivo] ?? []).length;
+      expect(janelasAbertas(e.mascara, LADO, LADO)).toBe(2 + declarados);
     },
   );
+
+  /**
+   * O CONTROLE DO VÃO DECLARADO: sem a declaração, ele fecha.
+   *
+   * Sem este braço, a asserção acima passaria se `VAOS_DECLARADOS` fosse decorativo e
+   * o vão do `aviator` estivesse aberto por outro motivo qualquer.
+   */
+  it("o vão declarado do `aviator` fecha quando a declaração sai", { timeout: 120_000 }, async () => {
+    const alvo = Object.keys(VAOS_DECLARADOS)[0];
+    expect(alvo, "nenhum vão declarado — este controle ficou sem cobaia").toBeTruthy();
+
+    const e = await extrairPorCampo(`${PASTA}/${alvo}.png`, noCampoDoOculos);
+    // O predicado da esteira MENOS a declaração — `noVaoDaLente` puro.
+    taparFurosCercados(e.mascara, LADO, LADO, noCampo, janela);
+    expect(
+      janelasAbertas(e.mascara, LADO, LADO),
+      `${alvo}: sem a declaração o vão continuou aberto — quem o abre não é VAOS_DECLARADOS`,
+    ).toBe(2);
+  });
 });
