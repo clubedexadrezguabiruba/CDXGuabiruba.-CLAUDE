@@ -373,9 +373,9 @@ de alunos menores de idade.
 | | |
 |---|---|
 | **Branch** | `main` |
-| **Commits à frente de `origin/main`** | 33 |
+| **Commits à frente de `origin/main`** | 3 |
 | **Árvore** | limpa |
-| **Último commit** | 491f984 · 2026-08-27 · merge: seis dias de avatar chegam ao aluno — a esteira de arte, 36 peças e a Academia no logado |
+| **Último commit** | 1b33047 · 2026-08-28 · fix(avatar): o vão entre as lentes do `aviator` deixa de ser tapado |
 <!-- VOLATIL:fim -->
 
 ## Fases do produto
@@ -426,7 +426,7 @@ _Ratchets: o gate reprova se crescerem. Só encolhem com `--update`._
 |---|---|
 | **Migrations** | 102 |
 | **Rotas (`page.tsx`)** | 34 |
-| **Arquivos de teste** | 26 |
+| **Arquivos de teste** | 27 |
 | **Primitivos de UI** | 4 |
 
 ## Frescor das fontes
